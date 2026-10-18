@@ -1,7 +1,7 @@
 ---
 id: T-0003
 title: Decide the equity total-return source for S2
-status: authorised
+status: in_progress
 owner: owner
 assignee_role: architecture agent (research) + owner (procurement decision)
 created: 2026-10-18
@@ -47,3 +47,7 @@ construction.
 ## Non-goals
 - signing a contract;
 - writing code.
+
+## Progress (2026-10-18, begun on OD-0010)
+
+Scorecard drafted at `docs/research/T-0003-equity-total-return-sources.md` (Q1). **Q2 is outstanding:** no vendor response, because contacting vendors needs owner approval. Q3 (ADR-0011) follows.

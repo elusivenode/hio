@@ -13,34 +13,51 @@ defaults: &unverified
 sources:
   # --- S1 candidates (official, keyless, as hypothesised) ---
   - id: rba_statistical_tables
-    name: Reserve Bank of Australia statistical tables (e.g. F1 money market, F11 exchange rates, F2 government yields)
+    name: Reserve Bank of Australia statistical tables (F1 money market incl. cash rate, F11 exchange rates, F2 government yields)
     home: https://www.rba.gov.au/statistics/
     intended_use: [S1 AUD cash rate, S1 AUD/USD 4pm fixing, S3 AU government yields]
-    hypotheses: "public; terms commonly stated as a Creative Commons licence; daily tables [EXT]"
     task: T-0002
-    <<: *unverified
+    verification: vendor_asserted        # the publisher's published terms, read by an agent 2026-10-18; NOT owner_verified
+    evidence: [https://www.rba.gov.au/copyright/, https://www.rba.gov.au/mkt-operations/resources/cash-rate-methodology/, https://www.rba.gov.au/statistics/frequency/exchange-rates.html, https://www.rba.gov.au/schedules-events/frequency-statistical-releases.html]
+    research_note: docs/research/T-0002-source-rights-and-timing.md
+    datasets:
+      cash_rate: {rights_proposed: "see research note §2 (Cash Rate clause: no implied endorsement)", automated_retrieval: unknown, timing: "published before 09:20 Sydney for the preceding RITS business day; republication until 16:00; in arrears"}
+      audusd_4pm: {rights_proposed: "CC BY 4.0 (Financial Data); caveat 'not for regulatory or commercial purposes'", automated_retrieval: unknown, timing: "16:00 AEST fixing (DST question open); released about 17:00"}
+      bab_1m: {rights_proposed: unknown, note: "source not determined; possibly third-party ASX BBSW, which would need ASX consent", automated_retrieval: unknown}
+      f2_yields: {timing: "weekly on Fridays, for daily yields up to 2 business days earlier"}
+    rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown, post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown, audit_retention: unknown, attribution_required: "Source: Reserve Bank of Australia [year]"}   # effective values stay unknown (= deny) until owner_verified
   - id: nyfed_reference_rates
-    name: Federal Reserve Bank of New York reference rates (SOFR)
+    name: Federal Reserve Bank of New York reference rates (SOFR, SOFR Index)
     home: https://www.newyorkfed.org/markets/reference-rates
-    intended_use: [S1 USD cash leg]
-    hypotheses: "public, with terms of use and attribution requirements [EXT]"
+    intended_use: [S1 USD cash leg, SOFR Index triangulation (proposed)]
     task: T-0002
-    <<: *unverified
+    verification: vendor_asserted
+    evidence: [https://www.newyorkfed.org/privacy/termsofuse, https://www.newyorkfed.org/markets/reference-rates/sofr, https://www.newyorkfed.org/markets/reference-rates/additional-information-about-reference-rates]
+    research_note: docs/research/T-0002-source-rights-and-timing.md
+    rights_proposed: "automated access, storage, derivation and redistribution allowed by the terms; label modified content; notice and disclaimer on republication; no endorsement"
+    timing: "about 08:00 ET on the next SIFMA business day; same-day revision about 14:30 ET only if > 1bp; first value date 2018-04-02"
+    rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown, post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown, audit_retention: unknown, attribution_required: "notice '… is subject to the Terms of Use posted at newyorkfed.org' + no-endorsement disclaimer"}   # effective values stay unknown until owner_verified
   - id: us_treasury_rates
     name: US Treasury daily bill rates and par yield curve
     home: https://home.treasury.gov/
     intended_use: [S1 USD cash triangulation (bills), S3 US CMT returns]
-    hypotheses: "US government publication; likely public domain [EXT]"
     task: T-0002
+    verification: unverified          # no site terms located; 17 U.S.C. §105 presumption only [EXT]
+    evidence: [https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics, https://home.treasury.gov/subfooter/site-policies-and-notices]
+    research_note: docs/research/T-0002-source-rights-and-timing.md
+    timing: "bill quotes obtained by the NY Fed at about 15:30 ET each business day; posting time not stated"
     <<: *unverified
   - id: frb_h10
-    name: Federal Reserve Board H.10 foreign exchange rates (noon New York)
+    name: Federal Reserve Board H.10 foreign exchange rates
     home: https://www.federalreserve.gov/releases/h10/
     intended_use: [S1 FX fixing triangulation]
-    hypotheses: "public [EXT]; also distributed via FRED, which needs an API key and has series-specific terms"
     task: T-0002
-    <<: *unverified
-  # --- Later candidates ---
+    verification: vendor_asserted
+    evidence: [https://www.federalreserve.gov/disclaimer.htm, https://www.federalreserve.gov/releases/h10/]
+    research_note: docs/research/T-0002-source-rights-and-timing.md
+    rights_proposed: "public domain unless otherwise indicated; cite the Board; automated access not addressed"
+    timing: "weekly release, Mondays 16:15 (ET assumed); a daily value is first knowable up to about a week later; DDP being retired in favour of FRED"
+    rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown, post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown, audit_retention: unknown, attribution_required: "cite the Federal Reserve Board"}   # effective values stay unknown until owner_verified
   - id: alfred_fred
     name: St. Louis Fed FRED / ALFRED (vintages)
     home: https://fred.stlouisfed.org/
@@ -58,6 +75,7 @@ sources:
     home: https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html
     intended_use: [reference_academic equity factors; US market TR reference (not the S&P 500)]
     hypotheses: "freely downloadable; built from licensed CRSP/Compustat inputs; terms unclear [EXT]"
+    research_note: docs/research/T-0003-equity-total-return-sources.md   # published terms read 2026-10-18; unverified
     <<: *unverified
   - id: aqr_datasets
     name: AQR data sets
@@ -90,6 +108,7 @@ sources:
     intended_use: [S2 equity market-price TR candidate]
     hypotheses: "subscription; storage and derivation terms to be checked [EXT]"
     task: T-0003
+    research_note: docs/research/T-0003-equity-total-return-sources.md   # published terms read 2026-10-18; unverified
     <<: *unverified
   - id: barchart
     name: Barchart OnDemand
@@ -107,6 +126,7 @@ sources:
     intended_use: [S2 equity index TR candidate]
     hypotheses: "licensed [EXT]"
     task: T-0003
+    research_note: docs/research/T-0003-equity-total-return-sources.md   # published terms read 2026-10-18; unverified
     <<: *unverified
   - id: ishares_issuer_files
     name: Issuer NAV and distribution history files (e.g. US-listed S&P 500 ETF)
@@ -114,6 +134,7 @@ sources:
     intended_use: [S2 equity NAV TR candidate, and triangulation]
     hypotheses: "website terms unknown; retrieval may be scraping [EXT]"
     task: T-0003
+    research_note: docs/research/T-0003-equity-total-return-sources.md   # published terms read 2026-10-18; unverified
     <<: *unverified
   - id: ecb_bis_cftc
     name: ECB data portal, BIS statistics, CFTC Commitments of Traders

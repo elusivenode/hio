@@ -1,7 +1,7 @@
 ---
 id: T-0002
 title: Verify rights, coverage and publication timing for the S1 sources
-status: authorised
+status: in_progress
 owner: owner
 assignee_role: architecture agent (research) + owner (verification)
 created: 2026-10-18
@@ -48,3 +48,7 @@ Read-only web access to public terms pages. **An agent may propose `allow`; only
 ## Open issues
 If any source forbids storage or derivation, S1 is re-scoped (stop condition in the
 implementation plan).
+
+## Progress (2026-10-18, begun on OD-0010)
+
+Findings drafted at `docs/research/T-0002-source-rights-and-timing.md`. **R1–R5 need owner verification**; `automated_retrieval` is unresolved for RBA, Treasury and H.10; the BAB source is undetermined.
