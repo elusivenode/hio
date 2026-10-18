@@ -1,7 +1,8 @@
 ---
 id: HIO-STD-REF
 title: Reference identity (instruments, listings, indices, futures, taxonomies)
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 7796e7b38331
 owner: HIO architecture lead (owner)
 version: 0.1
 last_reviewed: 2026-10-18

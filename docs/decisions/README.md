@@ -28,16 +28,16 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 
 | ID | Title | Status | Owner | Gates |
 |---|---|---|---|---|
-| [HIO-ADR-0001](HIO-ADR-0001-separate-system-modular-monolith.md) | HIO is a separate system; modular monolith with independently runnable workloads | proposed | owner | creation of the `hio` repository |
-| [HIO-ADR-0002](HIO-ADR-0002-systems-of-record-and-smsf-boundary.md) | Systems of record and the SMSF boundary | proposed | owner | any SMSF integration |
-| [HIO-ADR-0003](HIO-ADR-0003-instrument-identity-boundary.md) | Instrument identity boundary and HIO-001 | proposed | owner (SMSF and HIO) | HIO-001 activation; the HIO reference context |
-| [HIO-ADR-0004](HIO-ADR-0004-temporal-semantics.md) | Temporal semantics: knowable versus captured | proposed | owner | S1 |
-| [HIO-ADR-0005](HIO-ADR-0005-rights-model.md) | Multi-dimensional rights model; default deny | proposed | owner | S1 publication; any vendor contract |
-| [HIO-ADR-0006](HIO-ADR-0006-releases-artefacts-publication.md) | Immutable releases, artefact envelope, status lifecycle, pinning | proposed | owner | S1 |
-| [HIO-ADR-0007](HIO-ADR-0007-return-accounting-standard.md) | Adopt the return accounting and factor construction standard as a CI-enforced gate | proposed | owner | any factor release |
-| [HIO-ADR-0008](HIO-ADR-0008-canonical-knowledge-and-harness.md) | Canonical knowledge, precedence and agentic harness | proposed | owner | all work |
-| [HIO-ADR-0009](HIO-ADR-0009-catalogue-from-manifests.md) | Catalogue derived from immutable manifests; no hosted database initially | proposed | owner | S1 |
-| [HIO-ADR-0010](HIO-ADR-0010-first-slice-scope.md) | First slice is a cash and FX walking skeleton; equity total return moves to S2 | proposed | owner | S1 |
+| [HIO-ADR-0001](HIO-ADR-0001-separate-system-modular-monolith.md) | HIO is a separate system; modular monolith with independently runnable workloads | **approved** (OD-0008, at `a82aa0d`) | owner | creation of the `hio` repository |
+| [HIO-ADR-0002](HIO-ADR-0002-systems-of-record-and-smsf-boundary.md) | Systems of record and the SMSF boundary | **approved** (OD-0008, at `a82aa0d`) | owner | any SMSF integration |
+| [HIO-ADR-0003](HIO-ADR-0003-instrument-identity-boundary.md) | Instrument identity boundary and HIO-001 | **approved** (OD-0008, at `a82aa0d`) | owner (SMSF and HIO) | HIO-001 activation; the HIO reference context |
+| [HIO-ADR-0004](HIO-ADR-0004-temporal-semantics.md) | Temporal semantics: knowable versus captured | **approved** (OD-0008, at `a82aa0d`) | owner | S1 |
+| [HIO-ADR-0005](HIO-ADR-0005-rights-model.md) | Multi-dimensional rights model; default deny | **approved** (OD-0008, at `a82aa0d`) | owner | S1 publication; any vendor contract |
+| [HIO-ADR-0006](HIO-ADR-0006-releases-artefacts-publication.md) | Immutable releases, artefact envelope, status lifecycle, pinning | **approved** (OD-0008, at `a82aa0d`) | owner | S1 |
+| [HIO-ADR-0007](HIO-ADR-0007-return-accounting-standard.md) | Adopt the return accounting and factor construction standard as a CI-enforced gate | **approved** (OD-0008, at `a82aa0d`) | owner | any factor release |
+| [HIO-ADR-0008](HIO-ADR-0008-canonical-knowledge-and-harness.md) | Canonical knowledge, precedence and agentic harness | **approved** (OD-0008, at `a82aa0d`) | owner | all work |
+| [HIO-ADR-0009](HIO-ADR-0009-catalogue-from-manifests.md) | Catalogue derived from immutable manifests; no hosted database initially | **approved** (OD-0008, at `a82aa0d`) | owner | S1 |
+| [HIO-ADR-0010](HIO-ADR-0010-first-slice-scope.md) | The first slice in two stages: S1a synthetic-fixture-only, then S1b live data (revision 2) | proposed (revision 1 returned by OD-0008; revision 2 awaits decision) | owner | S1 |
 
 ### G1 decision package
 
@@ -45,8 +45,7 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 
 ### Owner decision records
 
-See [`owner/README.md`](owner/README.md). As of 2026-10-18 there is **no `approve` OD record**,
-so every ADR above is `proposed`.
+See [`owner/README.md`](owner/README.md). [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) approves HIO-ADR-0001 to 0009 at `a82aa0d`. HIO-ADR-0010 was returned; its revision 2 is proposed. **G1 is open until it is decided.**
 
 ### Deferred decisions (revisit triggers in [`../architecture.md`](../architecture.md#5-measurable-evolution-triggers))
 

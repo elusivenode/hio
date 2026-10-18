@@ -18,47 +18,48 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 
 ## One-line state
 
-**Nothing is approved or accepted; nothing is implemented.** HIO has no code, no repository
-of its own, no storage, no data and no credentials. The planning baseline is staged in
-`macsmsf/hio/`, on the unmerged branch `docs/hio-a01-baseline`.
+**G1 is open, with one item outstanding.** A01 items 1–11 and 13–20 are approved at `a82aa0d`
+(OD-0008). HIO-ADR-0010 revision 2 (the S1a/S1b split) awaits the owner's decision. Nothing is
+implemented. HIO has no code, no repository of its own, no storage, no data and no credentials.
+The baseline is staged in `macsmsf/hio/` on the unmerged branch `docs/hio-a01-baseline`.
 
 ## Authority snapshot
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | authorise_work: OD-0001 (corrected), OD-0002 (T-0006), OD-0003 (T-0007). accept_work: **OD-0004 (T-0007 at `b48f83c`)**. **No approve or waive record exists** | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
-| Working protocol | `AGENTS.md` and the operating model operate **provisionally** (HIO-ADR-0008 is proposed) | operating model §1.1 |
-| HIO-ADR-0001 to 0010 | all `proposed` | [`docs/decisions/README.md`](docs/decisions/README.md) |
-| Standards and specs | all `proposed` or `draft` | front matter |
-| Independent reviews | A01 at `1502ab8..35c9821`: REQUEST CHANGES. Then VERIFY-2026-10-18-a01-1 at `35c9821..0c74686`: **all 8 findings verified_closed**; Codex opinion **G1 READY WITH CONDITIONS, S1 NOT READY** (received by merge `a82aa0d`; **not approval**). T0007-PILOT at `46ea6a5..b48f83c`: **READY** (a readiness opinion; received by merge `385389d`, under §6.2; **not acceptance**) | [`reviews/README.md`](reviews/README.md) |
-| Open findings | **none**. All eight A01 findings are verified_closed by Codex (no waivers) | [`reviews/README.md`](reviews/README.md) |
+| Owner decision records | OD-0001…0009; the latest are OD-0006/0007 (T-0008/T-0006 accepted), OD-0008 (G1 decisions) and OD-0009 (follow-on instructions) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Approved at `a82aa0d` (OD-0008) | charter; architecture; HIO-ADR-0001…0009 (C1 chosen; projection fund-level); six standards; operating model; `AGENTS.md` | per-file blobs in OD-0008 |
+| Not approved | HIO-ADR-0010 rev. 2 (proposed); the harness-0.6 change adding `reviews/reports/` (directed by OD-0009); factor specs (drafts); roadmap and plan (recommendations) | [`docs/decisions/README.md`](docs/decisions/README.md) |
+| Independent reviews | REVIEW-2026-10-18-a01 (REQUEST CHANGES), then VERIFY-2026-10-18-a01-1: **8/8 verified_closed** (received at `a82aa0d`). T0007-PILOT READY (received at `385389d`) | [`reviews/README.md`](reviews/README.md) |
+| Open findings | **none** | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
 
 | Item | State |
 |---|---|
-| Phase | A01: architecture and research charter |
-| Current gate | **G1: owner decisions pending.** See the [G1 decision package](docs/decisions/G1-decision-package.md) (approval target revision `a82aa0d`) |
-| Next permissible actions | the owner works through the [G1 package §8](docs/decisions/G1-decision-package.md#8-owner-decisions-required-in-order) (T-0008, T-0006, the G1 items, T-0002/T-0003). Agents: none beyond reading and drafting; **S1 is not authorised** |
-| Next implementation slice | **HIO-S1 walking skeleton**: recommended, **not authorised** ([implementation plan](docs/implementation-plan.md#hio-s1-walking-skeleton-recommended)) |
+| Phase | A01 → G1 |
+| Current gate | **G1 open:** the owner decides [HIO-ADR-0010 revision 2](docs/decisions/HIO-ADR-0010-first-slice-scope.md) |
+| Next permissible actions | **Owner:** decide ADR-0010 rev. 2; review the T-0004 branch `docs/hio-001-boundary-c1` (`fe3fdc7`); say when T-0002 and T-0003 research should begin. **Agents:** T-0002 and T-0003 are authorised research (not yet started); **no S1a work** until G1 completes and the owner explicitly authorises its scope; **no live data operations under S1a** (OD-0009) |
+| Next implementation slice | S1a (synthetic-fixture-only), per ADR-0010 rev. 2: **not authorised** |
 
 ## Work cards
 
 | Work | Card | Status |
 |---|---|---|
-| Owner review of the A01 decisions | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed |
-| Rights verification for the S1 sources | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | proposed |
-| Equity total-return source decision | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | proposed |
-| HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | proposed |
+| Owner review of the A01 decisions | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed (largely discharged by OD-0008; ADR-0010 outstanding) |
+| Rights verification for the S1 sources | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **authorised** (OD-0009); not started |
+| Equity total-return source decision | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **authorised** (OD-0009); not started |
+| HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review: branch `docs/hio-001-boundary-c1` at `fe3fdc7`, not merged |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | proposed; **not authorised** |
-| Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; **not accepted** (authorised by OD-0001/OD-0002) |
-| Review branch and worktree protocol (harness-0.5) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | **accepted at `b48f83c`** (OD-0004), after Codex T0007-PILOT READY. The protocol remains provisional while HIO-ADR-0008 is proposed |
-| A01 correction slice (8 findings) | [T-0008](registers/tasks/T-0008-a01-correction-slice.md) | submitted_for_review at `0c74686` (OD-0005); all 8 findings **verified_closed** by Codex; **not accepted** |
+| Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | **accepted** at `35c9821` (OD-0007) |
+| Review branch and worktree protocol (harness-0.5) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | **accepted** at `b48f83c` (OD-0004) |
+| A01 correction slice (8 findings) | [T-0008](registers/tasks/T-0008-a01-correction-slice.md) | **accepted** at `0c74686` (OD-0006) |
 
 ## Verified
 
-The A01 planning baseline has received an independent design review at `35c9821`; its verdict
-is **REQUEST CHANGES**. No HIO implementation, release or source claim has been validated.
+The A01 design contracts and fixture arithmetic were independently reviewed (`35c9821`) and
+verified (`0c74686`) by Codex. **No HIO implementation, release, source licence or publication
+timing has been validated.**
 
 The `macsmsf` repository facts relied on (HIO-001 state, registry scope, loader coupling) were
 checked by the author on 2026-10-18 at `1502ab8`. See

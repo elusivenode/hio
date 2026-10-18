@@ -1,7 +1,8 @@
 ---
 id: HIO-STD-RA
 title: Return accounting and factor construction standard
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 651c3abe1259
 owner: HIO architecture lead (owner); quantitative researcher (maintainer)
 version: 0.2
 last_reviewed: 2026-10-18

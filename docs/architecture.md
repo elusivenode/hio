@@ -1,7 +1,8 @@
 ---
 id: HIO-ARCH
 title: HIO architecture baseline
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 9e384d1c9de2
 owner: HIO architecture lead (owner)
 version: 0.1
 last_reviewed: 2026-10-18

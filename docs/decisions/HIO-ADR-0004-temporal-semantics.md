@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0004
 title: "Temporal semantics: knowable versus captured"
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob bd86ec3938c8
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [HIO-S1]
@@ -66,4 +67,4 @@ Full rules, timezone and session semantics: the
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `bd86ec3938c8`). Edits after that commit record status only.

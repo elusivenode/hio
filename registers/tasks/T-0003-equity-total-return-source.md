@@ -1,12 +1,12 @@
 ---
 id: T-0003
 title: Decide the equity total-return source for S2
-status: proposed
+status: authorised
 owner: owner
 assignee_role: architecture agent (research) + owner (procurement decision)
 created: 2026-10-18
-authorised_by: null       # no owner instruction to execute is recorded, so not authorised
-base_revision: null
+authorised_by: OD-0009   # research task; execution not yet started
+base_revision: f7a9ec90bb2f0cbd58272c5bd0f0da07948a4ecb
 links: {adrs: [HIO-ADR-0005, HIO-ADR-0007, HIO-ADR-0010], depends_on: [], blocks: [S2]}
 ---
 

@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0008
 title: Canonical knowledge, precedence and agentic harness
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob fffb4be30556
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [all HIO work]
@@ -55,7 +56,7 @@ review_record: null
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `fffb4be30556`). Edits after that commit record status only.
 
 ## Changelog
 

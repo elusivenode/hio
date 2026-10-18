@@ -1,7 +1,8 @@
 ---
 id: HIO-STD-SPEC
 title: Factor specification standard
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 6d380434c320
 owner: quantitative researcher (maintainer); owner (approver)
 version: 0.1
 last_reviewed: 2026-10-18

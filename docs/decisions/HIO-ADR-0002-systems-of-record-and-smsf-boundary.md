@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0002
 title: Systems of record and the SMSF boundary
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob d27994cd3663
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [any SMSF integration, consumer contract v1]
@@ -65,4 +66,4 @@ review_record: null
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `d27994cd3663`). Edits after that commit record status only.

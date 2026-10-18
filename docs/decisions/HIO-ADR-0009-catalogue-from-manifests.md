@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0009
 title: Catalogue derived from immutable manifests; no hosted database initially
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 1ec9ed0e95ff
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [HIO-S1 infrastructure]
@@ -43,4 +44,4 @@ Option 2. The adoption triggers for a hosted catalogue are in
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `1ec9ed0e95ff`). Edits after that commit record status only.

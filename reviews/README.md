@@ -17,7 +17,7 @@ record, the record wins. Rules: [operating model §3, §6.1 and
 - **The owner:** *Assigned reviews* (exact SHAs and the review branch); runs the scope check;
   merges reviewer branches (receipt only); acceptance, approval and waivers (by OD id).
 - **The reviewer (Codex):** review records and verification records (`records/`), its
-  handoffs (`handoffs/`), and its own index rows. Written on its review branch, in its own
+  handoffs (`handoffs/`), opinion or readiness reports (`reports/`), and its own index rows. Written on its review branch, in its own
   worktree, never on the staging branch.
 - **The author (Claude):** remediation responses (`responses/`) and the *Remediation claim*
   cell. Never a verdict, a verification or a closure.

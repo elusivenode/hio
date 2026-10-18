@@ -1,7 +1,8 @@
 ---
 id: HIO-STD-OBS
 title: Observations, point-in-time knowledge and vintages
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob bd9eff0893ea
 owner: HIO architecture lead (owner); market-data maintainer
 version: 0.2
 last_reviewed: 2026-10-18

@@ -1,12 +1,12 @@
 ---
 id: T-0002
 title: Verify rights, coverage and publication timing for the S1 sources
-status: proposed
+status: authorised
 owner: owner
 assignee_role: architecture agent (research) + owner (verification)
 created: 2026-10-18
-authorised_by: null       # no owner instruction to execute is recorded, so not authorised
-base_revision: null
+authorised_by: OD-0009   # research task; execution not yet started
+base_revision: f7a9ec90bb2f0cbd58272c5bd0f0da07948a4ecb
 links: {adrs: [HIO-ADR-0004, HIO-ADR-0005], standards: [rights-and-licensing, observations-and-point-in-time], depends_on: [], blocks: [T-0005 publication criteria]}
 ---
 

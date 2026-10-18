@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0003
 title: Instrument identity boundary and HIO-001
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 79b3e40fe1a7
 owner: owner (decides for both SMSF and HIO)
 date: 2026-10-18
 gates: [HIO-001 activation in macsmsf, HIO reference context design]
@@ -128,4 +129,4 @@ section:
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `79b3e40fe1a7`). Edits after that commit record status only.

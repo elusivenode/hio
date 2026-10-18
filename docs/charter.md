@@ -1,7 +1,8 @@
 ---
 id: HIO-CHARTER
 title: HIO five-year vision and architecture charter
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 740d88c5e098
 owner: HIO architecture lead (owner)
 version: 0.1
 last_reviewed: 2026-10-18

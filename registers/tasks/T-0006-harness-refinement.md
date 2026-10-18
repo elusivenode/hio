@@ -1,14 +1,14 @@
 ---
 id: T-0006
 title: Refine the HIO collaboration harness before the Codex A01 review (documentation only)
-status: submitted_for_review
+status: accepted
 owner: owner
 assignee_role: documentation agent (Claude)
 created_at: 2026-10-18
 updated_at: 2026-10-18
 authorised_by: [OD-0001, OD-0002]   # owner instructions: the original (ambiguity recorded) and the final correction
 base_revision: 85ef0fa8821e5f538b739c5fe000f3f63d3bfac1
-accepted_by: null                    # NOT accepted. Acceptance is a separate explicit owner action
+accepted_by: OD-0007                 # accepted as completed work at 35c9821f805955914b05991c1c075b8cb3e082b5
 review_required: independent (Codex), within the A01 review, once the owner assigns it
 links: {adrs_governing_approved: [], adrs_context_proposed: [HIO-ADR-0008], specs: [], standards: [], findings: [], depends_on: [], blocks: [Codex A01 review assignment]}
 ---
@@ -23,8 +23,9 @@ links: {adrs_governing_approved: [], adrs_context_proposed: [HIO-ADR-0008], spec
 | 2026-10-18 | submitted_for_review | `72d1e56`, `23ad27f` | harness-0.2; Claude dry-run cold-start tests (unverified) |
 | 2026-10-18 | changes requested by the owner, then in_progress | from `23ad27f` | OD-0002: the owner directive, based on a Codex focused analysis that Claude has not seen. That analysis was **not** the A01 review and granted no approval |
 | 2026-10-18 | **submitted_for_review** | the head named in the latest handoff | harness-0.3 corrections 1–6 |
+| 2026-10-18 | **accepted** as completed work | `35c9821` | OD-0007: the owner's statement (the harness was later revised under T-0007) |
 
-**Current truth:**
+**Statement of state as at `35c9821`** (historical; superseded on 2026-10-18 by OD-0007, which accepts T-0006, and by OD-0008, which approves HIO-ADR-0008):
 - **not accepted**;
 - **HIO-ADR-0008 and all A01 ADRs remain proposed**;
 - **no Codex review is assigned.**

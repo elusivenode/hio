@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0005
 title: Multi-dimensional rights model; default deny
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 2e223877d9b7
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [any publication, any vendor contract, agent use of datasets]
@@ -67,4 +68,4 @@ Full model: the [rights standard](../standards/rights-and-licensing.md).
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `2e223877d9b7`). Edits after that commit record status only.

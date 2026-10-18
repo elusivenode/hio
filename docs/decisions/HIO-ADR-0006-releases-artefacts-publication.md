@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0006
 title: Immutable releases, artefact envelope, status lifecycle, consumer pinning
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 595e6b4f829c
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [HIO-S1]
@@ -47,4 +48,4 @@ Detail: the [datasets, releases and artefacts standard](../standards/datasets-re
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `595e6b4f829c`). Edits after that commit record status only.

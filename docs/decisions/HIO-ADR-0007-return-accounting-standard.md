@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0007
 title: Adopt the return accounting and factor construction standard as a CI-enforced gate
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob e97a36599575
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [any factor release, any model consuming a factor]
@@ -49,4 +50,4 @@ The earlier reviews made related errors in acceptance criteria, which the owner 
 
 ## Approval
 
-_Unapproved._
+**Approved** by [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) (owner, 2026-10-18), as this file stood at commit `a82aa0d` (blob `e97a36599575`). Edits after that commit record status only.

@@ -2,6 +2,7 @@
 id: HIO-AGENTS
 title: Agent and collaborator onboarding
 status: current
+approved_by: OD-0008   # at a82aa0d, blob 4000ab1895ee
 owner: HIO architecture lead (owner)
 version: harness-0.5
 last_reviewed: 2026-10-18
@@ -40,8 +41,8 @@ canonical documents and does not restate them. The detailed procedures are in
    approves nothing.
 4. **Collaborator drafts (e.g. ChatGPT) are advice.** They become instructions only when the
    owner explicitly adopts them.
-5. **This protocol is provisional.** HIO-ADR-0008 is `proposed`; following the protocol does not
-   approve it.
+5. **This protocol is approved** (HIO-ADR-0008 and this file, by OD-0008 at `a82aa0d`). Later
+   amendments are identified in the operating-model changelog.
 6. **On conflict, or a missing approved revision: stop and flag.** State your **role** and the
    work's **status** (`proposed`, `authorised`, `in_review` or `approved`) before acting.
 

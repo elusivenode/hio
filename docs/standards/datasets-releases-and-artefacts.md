@@ -1,7 +1,8 @@
 ---
 id: HIO-STD-REL
 title: Dataset releases, runs and artefacts
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 8539be643e9d
 owner: HIO architecture lead (owner)
 version: 0.2
 last_reviewed: 2026-10-18

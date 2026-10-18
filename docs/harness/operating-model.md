@@ -1,13 +1,15 @@
 ---
 id: HIO-HARNESS
 title: Agentic operating model and harness specification
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 7172659cf4ba
 owner: HIO architecture lead (owner)
-version: harness-0.5
+version: harness-0.6
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
+  - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba"
   - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
   - "harness-0.4 (2026-10-18): review branch and worktree protocol §6.2; immutable findings with separate response and verification records; scope-check script (T-0007, OD-0003)"
   - "harness-0.3 (2026-10-18): authorise vs accept vs approve vs waive; advice and adoption; trailers as metadata only; provisional protocol; state-aware reviewer test (T-0006 final correction, docs/history/2026-10-18-directive-t0006-final-correction.md)"
@@ -101,14 +103,13 @@ Everything below was observed in the `macsmsf` repository on 2026-10-18 [OBS].
 - The agent records the adoption (source, date, scope, target revision). It never turns the
   draft's recommendations into approved policy.
 
-**Provisional working protocol (bootstrap).**
-- HIO-ADR-0008 and the other A01 ADRs are **proposed**. While they are, `AGENTS.md`, this
-  operating model and the templates operate as a *provisional working protocol* for preparing
-  and reviewing A01.
-- Following the protocol does not approve it.
-- No prior approved OD is needed to start the first bounded task. The owner's explicit
-  instruction suffices (row 1 above). This breaks the circularity of needing an approved
-  harness before work on the harness can begin.
+**Bootstrap history.**
+- Until G1, this protocol operated *provisionally*, to prepare and review A01. Following it did
+  not approve it.
+- It was approved, with HIO-ADR-0008, by OD-0008 at `a82aa0d`. Later amendments are listed in
+  this file's changelog, against the approved blob.
+- The rule that an explicit owner instruction authorises the first bounded task (row 1 above)
+  still stands.
 
 **Precedence of authority:**
 
@@ -116,7 +117,7 @@ Everything below was observed in the `macsmsf` repository on 2026-10-18 [OBS].
 |---|---|---|
 | 1 | explicit owner actions (approve, accept, waive), recorded in OD records **at the stated revision** | governs |
 | 2 | approved standards and specs (by version) | governs |
-| 3 | `proposed` ADRs, charter, architecture, roadmap, plans; the provisional working protocol | recommendation, or provisional procedure only |
+| 3 | `proposed` ADRs, charter, architecture, roadmap, plans | recommendation only |
 | 4 | task cards, with the recorded owner instruction | limit execution to the instructed scope |
 | 5 | `STATUS.md` | navigational snapshot; **no independent authority** |
 | 6 | handoffs, chat, model memory, meeting notes, collaborator drafts | historical context only |
@@ -375,8 +376,9 @@ carry `exploratory` status and never reach a consumer.
 
 ### 6.2 Review branch and worktree protocol
 
-**Status:** adopted into the provisional working protocol by owner instruction (OD-0003).
-HIO-ADR-0008 is still proposed.
+**Status:** adopted by owner instruction (OD-0003); accepted at `b48f83c` (OD-0004); approved as
+part of this operating model by OD-0008 at `a82aa0d`. The `reports/` path was added by
+harness-0.6 (OD-0009).
 
 1. **Assignment** (owner). The owner assigns one review, in the *Assigned reviews* table or
    directly. The assignment states:
@@ -400,6 +402,8 @@ HIO-ADR-0008 is still proposed.
    - review records and verification records in `reviews/records/`;
    - the reviewer's own session handoff in `reviews/handoffs/`, since its other handoff
      locations are out of bounds;
+   - reviewer opinion or readiness reports in `reviews/reports/`. These are supporting opinion;
+     the records stay authoritative (harness-0.6, OD-0009);
    - its own rows in `reviews/README.md`.
 
    The reviewer never edits `STATUS.md`, `hio/handoffs/`, the work under review or any

@@ -1,7 +1,8 @@
 ---
 id: HIO-STD-RIGHTS
 title: Data rights and licensing
-status: proposed
+status: approved
+approved_by: OD-0008   # at a82aa0d, blob 1d7296db6670
 owner: HIO architecture lead (owner)
 version: 0.2
 last_reviewed: 2026-10-18
