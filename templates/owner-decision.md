@@ -1,15 +1,17 @@
 ---
 id: OD-NNNN
-title: <the decision, in one line>
-kind: <approve | reject | supersede | authorise_work | accept_work | waive_finding>
-status: proposed          # proposed | approved | rejected | superseded. Only the owner sets anything other than proposed.
+title: <the owner action, in one line>
+decision: <authorise_work | accept_work | approve | reject | waive_finding | supersede>
+record_status: draft      # draft (text awaiting an owner statement; no authority) | recorded | corrected | superseded
 created_at: YYYY-MM-DD
 updated_at: YYYY-MM-DD
-drafted_by: <owner | claude/<role> | ...>
-decided_by: null          # the owner's name or role; set only by the owner
-decided_at: null
-source: <direct owner commit | transcription of chat/meeting on YYYY-MM-DD (quote or file ref)>
-applies_to:               # exact documents and revisions; a decision without a revision is invalid
+recorded_by: <owner | claude/<role> | ...>
+owner_statement:          # required for record_status: recorded. The authority is the statement, not this file.
+  source: <path to the verbatim owner message or directive under docs/history/, or an owner-authored commit>
+  sha256: <hash of the source file, if a file>
+  date: YYYY-MM-DD
+  quote: <the operative words>
+applies_to:               # exact documents and revision(s)
   - path: <path>
     revision: <commit sha>
 related: {adrs: [], tasks: [], findings: []}
@@ -17,20 +19,18 @@ related: {adrs: [], tasks: [], findings: []}
 
 # OD-NNNN: <title>
 
-## Decision
-What is approved, rejected, authorised, accepted or waived, stated so that it can be tested.
+## Owner action
+What the owner explicitly instructed, accepted, approved or waived. Use the owner's words; do
+not upgrade them.
 
 ## Scope and exclusions
-What it covers. What it explicitly does not cover.
 
 ## For a waiver only
-Rationale; risk accepted; affected revision; expiry or revisit condition.
+The original finding id (preserved), rationale, risk accepted, affected revision, expiry or
+revisit condition, and the accountable owner.
 
-## Evidence considered
-Review records, test evidence, documents.
+## What this record does NOT do
+For example: authorising work does not accept its result or approve any ADR.
 
-## Next action
-
-## Owner confirmation
-_Pending._ The owner replaces this line with their confirmation (name, date) and commits with
-`HIO-Actor: owner`. Until then the record is `proposed` and has no authority.
+## Corrections (append-only)
+Date, what the earlier record said, and what is corrected and why.

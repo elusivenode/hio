@@ -3,7 +3,7 @@ id: HIO-AGENTS
 title: Agent and collaborator onboarding
 status: current
 owner: HIO architecture lead (owner)
-version: harness-0.2
+version: harness-0.3
 last_reviewed: 2026-10-18
 ---
 
@@ -25,53 +25,48 @@ canonical documents and does not restate them. The detailed procedures are in
   trustees decide for the SMSF.
 - Full statement: [`docs/charter.md`](docs/charter.md).
 
-## Authority rules (read before acting)
+## Authority rules (read before acting; detail in operating model §1.1)
 
-1. **Git state is not approval.** A commit, branch or merge makes a document *available*, not
-   *approved*. A `proposed` ADR stays proposed until an **owner decision record** approves that
-   exact revision.
-2. **Owner decision records** in [`docs/decisions/owner/`](docs/decisions/owner/) are the only
-   durable form of owner approval, rejection, authorisation or waiver.
-   - Decisions given in chat or meetings are **pending transcription** until recorded there,
-     with source, date, scope and revision.
-   - An agent may *draft* a record. It may not attest that the owner approved it.
-3. **What governs:**
-   - **Governs:** approved decisions and approved standards and specs.
-   - **Recommendations only:** proposed ADRs and plans.
-   - **Limits execution:** task cards, to work that is authorised.
-   - **Navigation only:** `STATUS.md`.
-   - **Historical context only:** handoffs and chat.
-
-   The full order of precedence is in operating model §1.
-4. **On conflict, stop.** If authoritative documents conflict, or a referenced approved revision
-   is missing, stop and flag it. Do not resolve it, and do not prefer the newer file.
-5. **Declare yourself.** Before acting, state your **role** and the **status** of the work: one
-   of `proposed`, `authorised`, `in_review` or `approved`.
+1. **Git state is not approval.** A commit, branch or merge makes a document available, not
+   approved.
+2. **An explicit owner instruction authorises bounded, reversible work immediately**, within
+   its stated scope.
+   - Record it promptly (source, scope, base revision) in an OD record in
+     [`docs/decisions/owner/`](docs/decisions/owner/README.md). Transcription is an audit step,
+     not a second gate.
+   - Ambiguous instructions are not permission for consequential work: ask.
+3. **Accepting work, approving an ADR, standard, spec, merge or promotion, and waiving a finding
+   are separate explicit owner actions**, each tied to an exact revision. Completing a task
+   approves nothing.
+4. **Collaborator drafts (e.g. ChatGPT) are advice.** They become instructions only when the
+   owner explicitly adopts them.
+5. **This protocol is provisional.** HIO-ADR-0008 is `proposed`; following the protocol does not
+   approve it.
+6. **On conflict, or a missing approved revision: stop and flag.** State your **role** and the
+   work's **status** (`proposed`, `authorised`, `in_review` or `approved`) before acting.
 
 ## Bootstrap (fresh session; about 25k tokens)
 
 **Common path:**
 1. This file.
 2. [`STATUS.md`](STATUS.md).
-3. Your task card in [`registers/tasks/`](registers/tasks/), and the owner decision record that
-   authorised it.
-4. The *approved* ADRs and standards that it governs, plus the relevant evidence.
-5. The review index [`reviews/README.md`](reviews/README.md), for open findings.
+3. Your task card in [`registers/tasks/`](registers/tasks/), and the recorded owner instruction
+   behind it.
+4. The *approved* ADRs and standards that govern it.
+5. The review index [`reviews/README.md`](reviews/README.md).
 
 Record `git rev-parse HEAD`.
 
-**Then, by role:**
-- **Implementation or documentation agent (Claude):**
-  - identify your authorised scope, the files you may change, the governing approved decisions,
-    the blocking open findings, the acceptance tests and the required handoff;
-  - **a proposed ADR is not approved because you wrote it.**
-- **Independent reviewer (Codex):**
-  - identify the target commit or diff, the governing approved plan and contracts, the review
-    scope, the open findings and your own test plan **first**;
-  - only then read the author's handoff or completion note, **as an unverified claim**;
-  - never edit the work under review.
-
-Detail: operating model §2.
+**Then, by role** (detail in operating model §2):
+- **Claude:** identify your instructed scope, the files you may change, the blocking findings,
+  the acceptance tests and the handoff you owe. A proposed ADR is not approved because you
+  wrote it.
+- **Codex (independent reviewer):** check *Assigned reviews* in the review index.
+  - **If nothing is assigned, the answer is "No review target has been assigned."** Never infer
+    a target from a candidate, a branch or the author's notes.
+  - If something is assigned, fix your test plan from the assignment and the records **before**
+    reading the author's handoff. Treat the handoff as unverified.
+  - Never edit the work under review.
 
 **Skills** (Claude Code; other agents read the files directly): `hio-session` and
 `hio-return-accounting`.
@@ -97,8 +92,8 @@ Detail: operating model §2.
 | Any agent | read everything; write handoffs; draft ADRs, specs, hypotheses, task cards and owner decision records (as `proposed`) | approve, authorise, accept, waive or close anything; edit an approved standard or spec in place |
 | Implementation agent (Claude) | change files within an **authorised** task card's scope; record a `remediation_claimed` on a finding | widen scope; edit a reviewer's verdict; close a finding |
 | Independent reviewer (Codex) | open findings; verify or reject remediation claims; write review records | edit the work under review; grant waivers |
-| Owner | approve, reject, authorise, accept, waive, supersede, through owner decision records | — |
-| Strategic collaborators (e.g. ChatGPT) | advise and draft | instruct execution: advice becomes work only through an owner-authorised task card |
+| Owner | instruct (authorise), accept, approve, waive, supersede. Each is an explicit action, recorded in an OD record | — |
+| Strategic collaborators (e.g. ChatGPT) | advise and draft | instruct execution. A draft becomes an instruction only when the owner explicitly adopts it |
 
 ## Ending a session
 

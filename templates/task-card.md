@@ -6,8 +6,8 @@ owner: <who authorises and accepts: the owner>
 assignee_role: <implementation engineer | quantitative researcher | documentation agent | ...>
 created_at: YYYY-MM-DD
 updated_at: YYYY-MM-DD
-authorised_by: null       # OD-NNNN (owner decision record); required before work starts
-base_revision: null       # exact starting commit, set in the authorising OD
+authorised_by: null       # OD-NNNN recording the owner's explicit instruction. The instruction authorises; the record is audit, written promptly
+base_revision: null       # exact starting commit
 accepted_by: null         # OD-NNNN, after the required review gates
 review_required: <independent (Codex) | owner only>
 links: {adrs_governing_approved: [], adrs_context_proposed: [], specs: [], standards: [], findings: [], depends_on: [], blocks: []}

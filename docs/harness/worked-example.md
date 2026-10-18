@@ -3,7 +3,7 @@ id: HIO-HARNESS-EXAMPLE
 title: Harness worked example (end to end)
 status: proposed
 owner: HIO architecture lead (owner)
-version: harness-0.2
+version: harness-0.3
 last_reviewed: 2026-10-18
 ---
 
@@ -14,11 +14,12 @@ artefacts. The flow uses the real S1 factor spec `fx.usd_cash_vs_aud.excess`.
 
 ## 1. The owner authorises a task card
 
-The owner commits `docs/decisions/owner/OD-EXAMPLE-12-authorise-s1.md`
-(`kind: authorise_work`, `status: approved`, `applies_to: T-0005 @ <sha>`, `HIO-Actor: owner`).
-T-0005 moves `proposed → authorised`, with `authorised_by: OD-EXAMPLE-12` and
-`base_revision: <sha>`. A ChatGPT or Claude recommendation to start S1 would not have done
-this. Only the OD record does.
+The owner explicitly instructs: "Execute T-0005 from `<sha>`." The instruction is committed
+verbatim under `docs/history/`, and Claude records it as
+`docs/decisions/owner/OD-EXAMPLE-12-authorise-s1.md` (`decision: authorise_work`,
+`record_status: recorded`, citing the source and its sha256). T-0005 moves
+`proposed → authorised`, with `authorised_by: OD-EXAMPLE-12`. A ChatGPT or Claude
+recommendation to start S1 would not have done this; the owner's instruction does.
 
 The card links:
 - HIO-ADR-0004, 0005, 0006, 0007, 0009 and 0010;
@@ -64,7 +65,8 @@ Records `start_revision`. Invokes skill `hio-return-accounting`.
 
 ## 5. The independent reviewer (Codex) reviews
 
-Codex first fixes the target revision `c3d4…` and its test plan from T-0005 and the approved
+The owner assigns the review (an *Assigned reviews* row: base `a1b2…`, head `c3d4…`). Codex
+takes the target from that assignment and writes its test plan from T-0005 and the approved
 specs. Only then does it read the handoff, treating it as claims.
 
 - Gets a bundle: T-0005, the diff `a1b2..c3d4`, the specs, the manifest, CI logs.
@@ -74,11 +76,11 @@ specs. Only then does it read the handoff, treating it as claims.
 
 ## 6. The engineer claims the fix; the reviewer verifies
 
-- The engineer commits the F-1 fix (`HIO-Actor: claude/implementation`).
+- The engineer commits the F-1 fix.
 - It sets F-1's *Remediation claim* cell in `reviews/README.md` to the commit and test path.
   **F-1 is still open** (`remediation_claimed`).
 - Codex reruns the new test on the fix commit. It appends to the review's verification log and
-  sets F-1 to `verified_closed` (`HIO-Actor: codex/reviewer`).
+  sets F-1 to `verified_closed`. Its output is committed verbatim, attached to the fix commit.
 - Had the test still failed, Codex would have returned F-1 to `open`.
 - Had the owner chosen to accept the gap, it would be `waived` by an OD record. That is not a
   closure.

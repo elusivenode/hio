@@ -41,7 +41,7 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 
 ### Owner decision records
 
-See [`owner/README.md`](owner/README.md). As of 2026-10-18 there is **no approved OD record**,
+See [`owner/README.md`](owner/README.md). As of 2026-10-18 there is **no `approve` OD record**,
 so every ADR above is `proposed`.
 
 ### Deferred decisions (revisit triggers in [`../architecture.md`](../architecture.md#5-measurable-evolution-triggers))

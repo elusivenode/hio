@@ -10,14 +10,15 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 
 # HIO status
 
-> **A navigational snapshot with no independent authority.** Authority lives in owner decision
-> records ([`docs/decisions/owner/`](docs/decisions/owner/README.md)). Review state lives in
+> **A navigational snapshot with no independent authority.** Authority comes from explicit
+> owner actions, evidenced by owner decision records
+> ([`docs/decisions/owner/`](docs/decisions/owner/README.md)). Review state lives in
 > [`reviews/README.md`](reviews/README.md). If this file disagrees with either, they win; flag
 > the conflict.
 
 ## One-line state
 
-**Nothing is approved or authorised; nothing is implemented.** HIO has no code, no repository
+**Nothing is approved or accepted; nothing is implemented.** HIO has no code, no repository
 of its own, no storage, no data and no credentials. The planning baseline is staged in
 `macsmsf/hio/`, on the unmerged branch `docs/hio-a01-baseline`.
 
@@ -25,10 +26,11 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | **none approved**; OD-0001 is `proposed` (unconfirmed transcription) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | two `authorise_work` records (OD-0001, corrected; OD-0002), both for T-0006 documentation. **No accept, approve or waive record exists** | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Working protocol | `AGENTS.md` and the operating model operate **provisionally** (HIO-ADR-0008 is proposed) | operating model §1.1 |
 | HIO-ADR-0001 to 0010 | all `proposed` | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Standards and specs | all `proposed` or `draft` | front matter |
-| Independent reviews | none yet; the A01 review is proposed | [`reviews/README.md`](reviews/README.md) |
+| Independent reviews | **no review target has been assigned**; the A01 review exists as a candidate only | [`reviews/README.md`](reviews/README.md) |
 | Open findings | none recorded | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
@@ -36,7 +38,8 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | Item | State |
 |---|---|
 | Phase | A01: architecture and research charter |
-| Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)), expected after the Codex A01 review |
+| Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)), after an owner-assigned Codex A01 review |
+| Next permissible actions | the owner: accept or return T-0006; assign (or not) the A01 review. Agents: none beyond reading and drafting |
 | Next implementation slice | **HIO-S1 walking skeleton**: recommended, **not authorised** ([implementation plan](docs/implementation-plan.md#hio-s1-walking-skeleton-recommended)) |
 
 ## Work cards
@@ -48,7 +51,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | Equity total-return source decision | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | proposed |
 | HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | proposed |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | proposed; **not authorised** |
-| Harness refinement (harness-0.2) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; its authorisation (OD-0001) is unconfirmed |
+| Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; **not accepted** (authorised by OD-0001/OD-0002) |
 
 ## Verified
 

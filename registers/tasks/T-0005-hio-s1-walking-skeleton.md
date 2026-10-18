@@ -5,7 +5,7 @@ status: proposed
 owner: owner
 assignee_role: implementation engineer (+ quantitative researcher for specs; independent reviewer)
 created: 2026-10-18
-authorised_by: null       # OD record id; none exists, so this card is not authorised
+authorised_by: null       # no owner instruction to execute is recorded, so not authorised
 base_revision: null
 links:
   adrs: [HIO-ADR-0001, HIO-ADR-0004, HIO-ADR-0005, HIO-ADR-0006, HIO-ADR-0007, HIO-ADR-0008, HIO-ADR-0009, HIO-ADR-0010]

@@ -3,11 +3,12 @@ id: HIO-HARNESS
 title: Agentic operating model and harness specification
 status: proposed
 owner: HIO architecture lead (owner)
-version: harness-0.2
+version: harness-0.3
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
+  - "harness-0.3 (2026-10-18): authorise vs accept vs approve vs waive; advice and adoption; trailers as metadata only; provisional protocol; state-aware reviewer test (T-0006 final correction, docs/history/2026-10-18-directive-t0006-final-correction.md)"
   - "harness-0.2 (2026-10-18): owner decision records; record lifecycles; review index and findings; role-specific bootstrap; advice→authorisation chain; migration continuity; role-specific cold-start test (per docs/history/2026-10-18-directive-harness-refinement.md)"
 ---
 
@@ -68,34 +69,55 @@ Everything below was observed in the `macsmsf` repository on 2026-10-18 [OBS].
 
 ### 1.1 Authority model
 
-**Two separate dimensions.**
-- **Availability** is git state: committed, on a branch, merged.
-- **Authority** is recorded owner decisions.
+**Availability is not authority.** Git state (committed, branched, merged) makes a document
+*available*. Only an explicit owner action gives it authority.
 
-A merge makes a document available. It never makes it approved.
+**Four distinct owner actions.** None of them implies another.
 
-**Owner decision record (OD).** This is the only durable form of owner authority. It contains:
-- the decision;
-- its scope;
-- the **exact document path(s) and the revision (commit id) it applies to**;
-- the source (a direct owner commit, or the transcription of a chat or meeting decision, with
-  its date);
-- the owner's confirmation.
+| Action | What it does | Takes effect | Recorded as |
+|---|---|---|---|
+| **Instruct (authorise work)** | lets an agent do bounded, reversible work within a stated scope | **immediately**, on the owner's explicit instruction | an OD record (`decision: authorise_work`), written promptly by the agent. Transcription is an **audit step, not a second permission gate** |
+| **Accept work** | accepts a submitted task result | only by an explicit owner statement tied to the exact revision | an OD record (`accept_work`) |
+| **Approve** (an ADR, standard or spec; a merge or promotion) | makes it policy, or permits the merge | only by an explicit owner statement naming the exact revision | an OD record (`approve`) |
+| **Waive** an independent finding | accepts a risk without technical closure | only by an explicit owner statement | an OD record (`waive_finding`): the original finding, rationale, scope, affected revision and accountable decision are all preserved |
 
-A Claude-drafted OD stays `proposed` until the owner confirms it. An agent never attests the
-owner's approval without evidence. Where git provenance is available, the evidence is an
-owner-authored commit or an owner-signed line in the record.
+**Consequences:**
+- A task can be authorised, completed and submitted, and still **not accepted**. Completing a
+  task approves nothing, including any ADR it touches.
+- **Ambiguous instructions are not permission** for consequential work. Ask the owner when it
+  genuinely matters. Reversible documentation work inside a stated scope is not consequential;
+  code, infrastructure, data, merges, promotions and `macsmsf` changes are.
+- An agent records what the owner **actually said**, quoting or citing the source. It never
+  upgrades a request, a forwarded draft or its own reading into an approval.
+
+**Advice and adoption.**
+- Material written by ChatGPT or another strategic collaborator is **advice or a draft** by
+  default.
+- The owner may explicitly **adopt** it as an instruction, in the same message or a later one.
+  The owner's adoption, not the draft's authorship, gives it task authority.
+- Forwarding a draft for discussion, without directing execution, is not authorisation.
+- The agent records the adoption (source, date, scope, target revision). It never turns the
+  draft's recommendations into approved policy.
+
+**Provisional working protocol (bootstrap).**
+- HIO-ADR-0008 and the other A01 ADRs are **proposed**. While they are, `AGENTS.md`, this
+  operating model and the templates operate as a *provisional working protocol* for preparing
+  and reviewing A01.
+- Following the protocol does not approve it.
+- No prior approved OD is needed to start the first bounded task. The owner's explicit
+  instruction suffices (row 1 above). This breaks the circularity of needing an approved
+  harness before work on the harness can begin.
 
 **Precedence of authority:**
 
 | Rank | Source | Authority |
 |---|---|---|
-| 1 | approved owner decision records, and the ADRs, standards and specs they approve **at the stated revision** | governs |
+| 1 | explicit owner actions (approve, accept, waive), recorded in OD records **at the stated revision** | governs |
 | 2 | approved standards and specs (by version) | governs |
-| 3 | `proposed` ADRs, charter, architecture, roadmap, plans | recommendation only |
-| 4 | task cards | limit execution to **authorised** work |
+| 3 | `proposed` ADRs, charter, architecture, roadmap, plans; the provisional working protocol | recommendation, or provisional procedure only |
+| 4 | task cards, with the recorded owner instruction | limit execution to the instructed scope |
 | 5 | `STATUS.md` | navigational snapshot; **no independent authority** |
-| 6 | handoffs, chat, model memory, meeting notes | historical context only; chat decisions are *pending transcription* |
+| 6 | handoffs, chat, model memory, meeting notes, collaborator drafts | historical context only |
 
 **Conflict rule.** If two authoritative sources conflict, or a referenced approved revision is
 missing or does not match, **stop and flag**. Record the conflict in the handoff and ask the
@@ -112,18 +134,25 @@ approved decision.
 - **Common bootstrap (≈25k tokens):**
   1. `AGENTS.md`
   2. `STATUS.md`
-  3. the task card **and its authorising OD record**
+  3. the task card **and the recorded owner instruction (OD) behind it**
   4. the *approved* ADRs and standards it governs
   5. `reviews/README.md` (open findings)
   6. the relevant evidence
 
   Then record `git rev-parse HEAD`.
 - **Never bulk-load `docs/`.** Skills point to sections, not whole documents.
+- **Skills (scoped):**
+  - `hio-session`: the bootstrap and handoff procedure;
+  - `hio-return-accounting`: a pointer to the standard plus its invariant list.
+
+  New skills are added only when a repeated task has a stable procedure. Each has a trigger
+  description.
 
 ### 2.1 Claude (implementation or documentation agent)
 
 Before changing anything, write down:
-1. the authorising OD and the card's status (it must be `authorised` or `in_progress`);
+1. the owner instruction that authorised the card (its OD record, or, if it is not yet
+   transcribed, the source you were given; record it first), and the card's status;
 2. the governing **approved** decisions and standards, with versions. Treat proposed ADRs as
    recommendations, including your own;
 3. the files you may change;
@@ -135,8 +164,12 @@ If the card is not authorised, you may only read and draft.
 
 ### 2.2 Codex (independent reviewer)
 
-1. Establish the **target revision or diff** from the review request or task card, not from the
-   author's summary.
+1. **Find your assignment.** Look in the *Assigned reviews* table of `reviews/README.md`, or in
+   an owner assignment you were given directly.
+   - **If there is none, your answer is "No review target has been assigned."** Stop there.
+     Never infer a target from a candidate row, a branch tip or an author's self-assessment.
+   - If there is one, take the repository, base SHA, head SHA, task and scope **from the
+     assignment**, not from the author's summary.
 2. Read the governing approved plan, contracts and acceptance criteria, and the open findings in
    `reviews/README.md`.
 3. Write your test plan.
@@ -145,19 +178,13 @@ If the card is not authorised, you may only read and draft.
 5. Never edit the implementation under review to make it pass. Record findings instead.
 
 You may critique the harness itself. You do not inherit any authority claim the author makes.
-- **Skills (scoped):**
-  - `hio-session`: the bootstrap and handoff procedure;
-  - `hio-return-accounting`: a pointer to the standard plus its invariant list.
-
-  New skills are added only when a repeated task has a stable procedure. Each has a trigger
-  description.
 
 ## 3. Records and their lifecycles
 
 | Record | Originator | Allowed transitions | Authoritative closure |
 |---|---|---|---|
-| **Owner decision** (`docs/decisions/owner/OD-*`) | the owner, or Claude drafting for explicit owner confirmation | `proposed → approved \| rejected \| superseded` | the owner, with date, decision and exact revision |
-| **Work card** (`registers/tasks/T-*`) | Claude drafts; the owner authorises | `proposed → authorised → in_progress → submitted_for_review → accepted \| changes_required` (`changes_required → in_progress`) | the owner accepts, only after the card's required review gates pass |
+| **Owner decision** (`docs/decisions/owner/OD-*`) | the owner, or an agent transcribing an explicit owner statement | `draft → recorded`; `recorded → corrected \| superseded`. `draft` means the text awaits an owner statement and has no authority | the owner's explicit statement (cited source); the record only evidences it |
+| **Work card** (`registers/tasks/T-*`) | Claude drafts; the owner instructs | `proposed → authorised → in_progress → submitted_for_review → accepted \| changes_required` (`changes_required → in_progress`) | the owner accepts, only after the card's required review gates pass |
 | **Codex finding** (in a review record; listed in `reviews/README.md`) | Codex opens | `open → remediation_claimed → verified_closed`; `remediation_claimed → open` (failed verification); `open → waived` | Codex verifies closure; **only the owner waives** |
 | **Handoff** (`handoffs/*`) | Claude or Codex | none: a dated snapshot | never authoritative over ADRs, OD records or findings |
 
@@ -175,7 +202,8 @@ You may critique the harness itself. You do not inherit any authority claim the 
   - any expiry or revisit condition.
 
   No agent creates a waiver by inference.
-- **Work-card authorisation** cites an OD id (`authorised_by`) and the exact starting revision
+- **Work-card authorisation** comes from the owner's explicit instruction. The card cites the
+  OD record of that instruction (`authorised_by`) and the exact starting revision
   (`base_revision`). Acceptance cites an OD id (`accepted_by`) and the review records relied
   on.
 
@@ -250,8 +278,9 @@ trustees keep investment decision authority for the SMSF. Nothing in HIO's lifec
 
 1. **Advice.** A strategic collaborator's recommendation, or a brief it drafted, is **advice**.
    It is not an instruction to execute, even when it is pasted into a session.
-2. **Authorisation.** The owner authorises work by approving a scoped task card, or an OD record
-   that the card references. The card must capture:
+2. **Adoption and authorisation.** The owner explicitly instructs execution, or adopts the
+   draft as an instruction (§1.1). The agent records that instruction (source, date, scope,
+   base revision) in an OD record and the task card. The card must capture:
    - purpose, and the investment or architecture rationale;
    - the owner-approved scope, exclusions and **exact starting revision**;
    - the governing *approved* ADRs and standards, with versions (proposed ones are listed as
@@ -303,17 +332,23 @@ carry `exploratory` status and never reach a consumer.
   - **Claude** may add only a remediation claim (commit id + evidence path) to a finding's
     row. Claude never edits a verdict and never closes a finding.
   - **The owner** records waivers, by OD reference.
-- **Provenance is checked, not enforced.** In a shared repository, file-level ownership cannot
-  be technically enforced. Every commit therefore carries an actor trailer:
-  - `HIO-Actor: claude/<role>`, `HIO-Actor: codex/reviewer` or `HIO-Actor: owner`;
-  - plus `Co-Authored-By` where the tooling adds one.
+- **Provenance: four different things, not to be conflated.**
 
-  Reviewers and the owner check from `git log` (or PR review provenance, once a hosted
-  repository exists) that each verdict or closure was committed by the right actor. A
-  closure committed under the wrong actor trailer is void, and the finding reverts to its last
-  validly recorded state.
-- **The trailer convention starts at `72d1e56`.** Earlier HIO commits (`85ef0fa`) carry only
-  `Co-Authored-By` and are attributed by it.
+  | Claim | Evidence while staged locally | It is not |
+  |---|---|---|
+  | **Declared role or author** | an `HIO-Actor:` commit trailer (and `Co-Authored-By`) | **not** authentication. Anyone can write any trailer. It is self-declared metadata, from `72d1e56` onward; `85ef0fa` carries only `Co-Authored-By` |
+  | **Git provenance** | the commit id, the files changed and the committer identity (every commit here uses the owner's local git identity, whoever drafted it) | not proof of who decided anything |
+  | **Independent reviewer action** | the reviewer's own output (review record or response), supplied by the owner and committed **verbatim**, attached to the fixed commit it reviewed, with a sha256 of the supplied file | not established by Claude's summary of it |
+  | **Owner confirmation** | the owner's explicit statement, committed verbatim under `docs/history/` with a sha256, and cited by an OD record that names the exact revision | not inferable from a merge, a trailer or silence |
+
+  **The lightest credible proof available now** is the last two rows: verbatim, hashed
+  artefacts supplied directly by the owner.
+
+  **Evolution path, with no infrastructure built now:** a hosted repository with authenticated
+  PR reviews (the reviewer account's approval on the exact head), then signed commits or tags
+  for owner decisions.
+
+  A trailer mismatch is a red flag to investigate, never proof either way.
 - **Review targets are commit ids.** A review request names its exact base and head SHAs. They
   are set when the owner issues the go-ahead, never by pointing to an author's handoff.
 - **Stable finding ids.** Ids are `F-<review id>-<n>` and are never reused or renumbered. The
@@ -354,7 +389,7 @@ carry `exploratory` status and never reach a consumer.
   - a STATUS line-count limit;
   - the import-rule check;
   - a "no secret patterns" check;
-  - an `HIO-Actor` trailer present on every commit touching `hio/`.
+  - an `HIO-Actor` trailer on every commit touching `hio/` (metadata hygiene only; not proof).
 
 ### 8.1 Migration continuity (`macsmsf/hio/` → the standalone `hio` repository)
 
@@ -390,7 +425,7 @@ the checklist for when migration is authorised (an OD record under HIO-ADR-0001)
 4. Hypothesis and experiment registers (schema + seeds).
 5. Sources register with the rights model.
 6. Two scoped skills (`hio-session`, `hio-return-accounting`).
-7. Review-record template; the review index (`reviews/README.md`); `HIO-Actor` commit trailers.
+7. Review-record template; the review index (`reviews/README.md`); `HIO-Actor` role trailers (metadata).
 8. CI documentation checks (§8). These are delivered **with** S1 code, because no CI exists
    while staged.
 9. The cold-start tests (§10): run for harness-0.2 as an owner exercise; an S1 acceptance criterion.
@@ -427,18 +462,26 @@ as a harness review.
 > 5. What findings are open, and what is the next handoff or action?
 > 6. What is the HIO/SMSF ownership boundary?
 
-**Codex prompt:**
+**Codex prompt** (the same text in both states):
 
-> You are starting a fresh session in this repository. Work only from version-controlled files.
-> Follow `hio/AGENTS.md` for the role "independent reviewer". Answer with a repository path and
-> commit id for every claim:
+> You are starting a fresh session in this repository. Work only from version-controlled files
+> and any owner assignment you have been given. Follow `hio/AGENTS.md` for the role
+> "independent reviewer". Answer with a repository path and commit id for every claim:
 > 1. What is your independence relative to the author?
-> 2. Which commit and task are under review?
+> 2. Has a review target been assigned to you? If so, give the repository, base SHA, head SHA,
+>    task and scope.
 > 3. Which approved specifications and acceptance criteria govern it?
 > 4. How do you independently find open findings and their evidence?
 > 5. How do you verify a remediation without the author closing it?
 > 6. Who can grant waivers?
 > 7. What standing does the author's completion report have?
+
+**Expected answers, by state:**
+- **Before the owner assigns a review:** Q2 is **"No review target has been assigned."** A
+  session that names a candidate row, a branch tip or the author's proposed head **fails**.
+- **After an assignment:** Q2 matches the owner assignment exactly. The session also lists the
+  relevant ADRs, the open findings and the required evidence, from records rather than from the
+  author's report.
 
 **Pass** requires all of:
 - **no false approval or authorisation claim**;
@@ -454,8 +497,11 @@ fix, recorded in the harness changelog, not a better prompt.
 named release hash.
 
 **Dry runs.** A run that uses the same vendor's sub-agent as a proxy for Codex, or that is
-otherwise not genuinely independent, is labelled **unverified dry run**. It does not satisfy the
-test.
+otherwise not genuinely independent, is labelled **unverified dry run**. It is useful
+preparation. It does not satisfy the test.
+
+**Validating independence** requires an actual fresh Codex session, on a fixed revision, run by
+the owner. Until then the test status is **pending**.
 
 ## 11. Security and licences
 

@@ -37,8 +37,10 @@ review_record: null
 - **Work happens through task cards; sessions end with handoffs.** Both are templated.
 - **Research memory is a versioned register** (hypotheses, experiments), including failures and
   variant counts.
-- **Owner decision records** (`docs/decisions/owner/`) are the only durable owner authority.
-  Git state is not approval. Chat decisions are pending transcription. Findings follow
+- **Owner decision records** (`docs/decisions/owner/`) evidence explicit owner actions:
+  instruct (authorise work), accept, approve, waive. These are distinct actions, and git state
+  is not approval. An explicit owner instruction authorises bounded work immediately; recording
+  it is audit (harness-0.3). Findings follow
   `open → remediation_claimed → verified_closed | waived`: reviewer-closed, owner-waived only.
   There is one review index (`reviews/README.md`). See operating model §1.1, §3 and §6.1
   (harness-0.2).
@@ -59,3 +61,4 @@ _Unapproved._
 
 - 2026-10-18: created (85ef0fa).
 - 2026-10-18: added OD records, finding lifecycle and the review index (T-0006). Status unchanged: proposed.
+- 2026-10-18: separated instruct, accept, approve and waive; trailers are metadata only (T-0006 final correction). Status unchanged: proposed.

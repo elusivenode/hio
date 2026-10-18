@@ -1,55 +1,72 @@
 ---
 id: OD-0001
-title: Authorise documentation-only refinement of the staged HIO harness (T-0006)
-kind: authorise_work
-status: proposed
+title: Owner instruction to execute the harness refinement brief (T-0006), as recorded and later corrected
+decision: authorise_work
+record_status: corrected
 created_at: 2026-10-18
 updated_at: 2026-10-18
-drafted_by: claude/documentation-agent
-decided_by: null
-decided_at: null
-source: >-
-  Transcription. On 2026-10-18 the owner supplied, in a Claude Code chat session, the brief
-  hio/docs/history/2026-10-18-directive-harness-refinement.md (sha256 6e2ca7f3…648feeed) as the
-  instruction for this session. The brief states its own status as "Proposed documentation-only
-  assignment", and says the owner "need only authorise documentation-only harness refinement on
-  the staged branch".
+recorded_by: claude/documentation-agent
+owner_statement:
+  source: hio/docs/history/2026-10-18-directive-harness-refinement.md
+  sha256: 6e2ca7f35de53d2cfeb87aef9ad489489e7d3a7330bf31d47750b0f3648feeed
+  date: 2026-10-18
+  quote: >-
+    The owner sent the file path of this brief in the Claude Code chat, with no accompanying
+    words. The brief describes itself as a "Proposed documentation-only assignment; not
+    architectural or implementation approval", and says the owner "need only authorise
+    documentation-only harness refinement on the staged branch".
 applies_to:
   - path: hio/
     revision: 85ef0fa8821e5f538b739c5fe000f3f63d3bfac1
 related: {adrs: [HIO-ADR-0008], tasks: [T-0006], findings: []}
 ---
 
-# OD-0001: authorise the documentation-only harness refinement
+# OD-0001: the T-0006 harness refinement instruction
 
-## Decision (as transcribed; not yet confirmed)
+## Owner action (as it actually happened)
 
-Authorise task T-0006: documentation-only refinement of the HIO harness under `hio/`, on branch
-`docs/hio-a01-baseline`, starting from `85ef0fa`, within the scope of the brief.
+On 2026-10-18 the owner supplied the brief by file path, without other words. Claude treated
+that as an instruction to execute it, and carried out T-0006 (commits `72d1e56`, `23ad27f`).
 
-## Scope and exclusions
+**The original ambiguity is preserved here.** Whether a bare file path, attached to a brief that
+calls itself "proposed", was an explicit instruction to execute was not clear at the time.
 
-**Scope:** minimal edits to HIO planning, harness and reviewer documentation within `hio/`.
+The owner's subsequent directive
+(`hio/docs/history/2026-10-18-directive-t0006-final-correction.md`, recorded in OD-0002):
+- directs Claude to *repair* T-0006 and this record, rather than reverting the work;
+- states that the owner has **not accepted T-0006** and **not approved HIO-ADR-0008**.
+
+This record claims nothing beyond that.
+
+## Scope and exclusions (from the brief)
+
+**Scope:** documentation-only edits to the HIO harness within `hio/`.
 
 **Excluded:**
-- HIO application code; infrastructure;
+- code; infrastructure;
 - `macsmsf` application changes;
-- activation of HIO-001 or HIO-S1;
+- HIO-001 or HIO-S1 activation;
 - roadmap changes;
-- any change to an ADR's status;
-- any claim that Codex endorsed the changes.
+- ADR status changes;
+- claims of Codex endorsement.
 
-## Evidence considered
+## What this record does NOT do
 
-The brief (above).
+- It does not accept T-0006.
+- It does not approve HIO-ADR-0008 or any other ADR, standard or spec.
 
-## Next action
+## Corrections (append-only)
 
-The owner confirms or rejects this record. **If it is rejected, the T-0006 changes have no
-standing and should be reverted or re-proposed.**
-
-## Owner confirmation
-
-_Pending._ Claude executed T-0006 on the strength of the owner's direct instruction in chat.
-Under the harness that T-0006 itself introduces, that instruction is *pending transcription*
-until the owner confirms this record.
+**2026-10-18 (T-0006 final correction, under OD-0002).**
+- **What the earlier version said** (at `72d1e56`/`23ad27f`): `status: proposed`;
+  "Claude transcription, unconfirmed"; and that T-0006 had "no standing" until the owner
+  confirmed this record.
+- **Why that was inconsistent:** it treated transcription as a second permission gate, after
+  the work had already been done on the owner's instruction.
+- **The corrected rule** (operating model §1.1):
+  - an explicit owner instruction authorises bounded, reversible work immediately;
+  - recording it is an audit step;
+  - acceptance and approval are separate owner actions.
+- **The correction does not resolve, after the fact, whether the original bare-path message was
+  explicit.** That ambiguity is recorded above. The owner's later directive is the evidence of
+  the owner's position on it.
