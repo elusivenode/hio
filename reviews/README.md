@@ -45,11 +45,15 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
 | REVIEW-2026-10-18-a01 | A01 architecture, mathematics, S1 specs and harness-0.3 | `1502ab8..35c9821` | Codex, on the owner's direct 2026-10-18 request | **REQUEST CHANGES** | [record](records/REVIEW-2026-10-18-a01.md) |
+| REVIEW-2026-10-18-t0007-pilot | T-0007 review-worktree protocol and harness-0.5 corrections | `46ea6a5..b48f83c` | Codex, on the owner's direct 2026-10-18 assignment | **READY** | [record](records/REVIEW-2026-10-18-t0007-pilot.md) |
 
-The owner assigned this fixed review directly in the Codex session. The *Assigned reviews*
-table above was not updated beforehand; it is not evidence that the candidate row authorised
-the review. The reviewed base/head and assignment source are in the record. The review record
-does not accept or approve the A01 baseline.
+The owner assigned the A01 review directly in the Codex session. The *Assigned reviews* table
+above was not updated beforehand; it is not evidence that the candidate row authorised the
+review. The reviewed base/head and assignment source are in that record. The review record does
+not accept or approve the A01 baseline.
+
+The owner also assigned T0007-PILOT directly in the Codex session at the fixed base/head in its
+record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-0008.
 
 **Other reviewer inputs (not reviews; no findings opened):**
 - A **Codex focused analysis** (`hio-harness-refinement-codex-analysis-for-chatgpt-2026-10-18.md`,
