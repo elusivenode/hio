@@ -34,4 +34,4 @@ States: `open`, `remediation_claimed` (still open), `verified_closed`, `waived`.
 
 | Request | Target | Scope | Requested by | Status |
 |---|---|---|---|---|
-| A01 independent review | `docs/hio-a01-baseline`, `85ef0fa` → the T-0006 head (see the latest handoff) | the A01 baseline: ADRs 0001–0010, the standards (especially return accounting v0.1), and harness-0.2 (T-0006) | Claude (proposal) | **awaiting the owner's go-ahead** |
+| A01 independent review | base `1502ab8` (`macsmsf` main) → **head SHA to be fixed by the owner at go-ahead.** The candidate is the tip of `docs/hio-a01-baseline` at that time; the author's proposal is in its handoff, which is unverified | the A01 baseline: ADRs 0001–0010, the standards (especially return accounting v0.1), and harness-0.2 (T-0006) | Claude (proposal) | **awaiting the owner's go-ahead** |

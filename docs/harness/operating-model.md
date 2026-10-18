@@ -196,7 +196,8 @@ There is no tracking database: these are Markdown and YAML files under git.
   for what an authorised card must capture. **Implementation requires an `authorised` card.**
 - **Handoff** ([`../../templates/handoff.md`](../../templates/handoff.md)), written at the end
   of every session that changed anything:
-  - base and head revisions;
+  - base and head revisions. `head_revision: self` means the commit that adds the handoff,
+    resolved with `git log -n1 --format=%H -- <handoff path>`. Earlier commits are listed by id;
   - changed files;
   - the work card id;
   - tests and evidence;
@@ -311,6 +312,10 @@ carry `exploratory` status and never reach a consumer.
   repository exists) that each verdict or closure was committed by the right actor. A
   closure committed under the wrong actor trailer is void, and the finding reverts to its last
   validly recorded state.
+- **The trailer convention starts at `72d1e56`.** Earlier HIO commits (`85ef0fa`) carry only
+  `Co-Authored-By` and are attributed by it.
+- **Review targets are commit ids.** A review request names its exact base and head SHAs. They
+  are set when the owner issues the go-ahead, never by pointing to an author's handoff.
 - **Stable finding ids.** Ids are `F-<review id>-<n>` and are never reused or renumbered. The
   original evidence references are kept, including across migration (§8.1).
 

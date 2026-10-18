@@ -4,7 +4,8 @@ date: 2026-10-18
 actor: claude/documentation-agent (Claude Opus 5.5, Claude Code session)
 work_status: proposed     # T-0006 is submitted_for_review; its authorisation OD-0001 is unconfirmed
 base_revision: 85ef0fa8821e5f538b739c5fe000f3f63d3bfac1
-head_revision: "the commit on docs/hio-a01-baseline whose message begins 'Refine the HIO harness'; see git log"
+head_revision: self       # resolve: git log -n1 --format=%H -- hio/handoffs/2026-10-18-harness-refinement.md
+work_commits: [72d1e56a6f2c349cdfaf645e3d2092a662d1365a]
 work_card: T-0006
 ---
 
@@ -43,10 +44,61 @@ work_card: T-0006
 | Claim | Method | Result |
 |---|---|---|
 | The base matches the owner's stated baseline | `git rev-parse HEAD` before editing | `85ef0fa8821e5f538b739c5fe000f3f63d3bfac1` |
-| YAML and front matter parse; relative links resolve; STATUS ≤150 lines | a one-off check script (not committed) | see the commit message |
+| YAML and front matter parse; relative links resolve; STATUS ≤150 lines | the documentation check recorded under *Cold-start dry-run results* | `OK`; STATUS 73 lines |
 | No ADR status changed | `git diff 85ef0fa -- hio/docs/decisions/HIO-ADR-*` shows no `status:` line change | see the commit message |
 | No file outside `hio/` changed | `git diff --stat 85ef0fa -- . ':!hio'` | empty |
-| Cold-start tests | Claude sub-agent dry runs (**not** independent; **not** Codex) | recorded below once run |
+| Cold-start tests | two isolated, read-only Claude sub-agents with the §10 prompts @ 72d1e56 (**unverified dry run**: not independent, not Codex) | both answered every question correctly, with no false approval or authorisation claims; 5 distinct issues raised (one by both runs); dispositions below |
+
+## Cold-start dry-run results (@ 72d1e56; unverified dry run)
+
+- **Claude role:** 6/6 correct.
+  - It found no approved OD, all ADRs proposed, S1 not authorised, no open findings.
+  - Its next action was "owner confirms OD-0001; owner requests the review".
+  - It read about 10–12k tokens.
+  - **Gap:** no committed file names the head commit.
+- **Reviewer role:** 7/7 correct.
+  - It fixed the target from git **before** reading the handoff, and treated the handoff as
+    unverified.
+  - It read about 28–32k tokens: over the 25k target, under the 40k cap.
+  - **Gaps raised:**
+    - (a) the review request pointed at the author's handoff for its head;
+    - (b) 85ef0fa has no `HIO-Actor` trailer;
+    - (c) the "links resolve" check was not reproducible;
+    - (d) the `docs/implementation-plan.md` edit needed checking against the "no roadmap
+      changes" exclusion.
+- **Dispositions:**
+  - the head gap and (a): `head_revision: self` convention; review targets are SHAs fixed at
+    go-ahead (operating model §3, §6.1; handoff template; review index);
+  - (b): the trailer convention is stated to start at 72d1e56;
+  - (c): the check procedure is recorded below;
+  - (d): the edit is one sentence changing "approved task card" to "authorised task card (an OD
+    record)". It is a harness-vocabulary change, not a roadmap or slice-content change. **Owner
+    to confirm this reading.**
+
+**Reproducible documentation check** (run from the repository root with any Python 3 with
+PyYAML):
+
+```python
+import re, pathlib, yaml
+root = pathlib.Path("hio"); bad = []
+slug = lambda h: re.sub(r"[^\w\- ]", "", h.strip().lower()).replace(" ", "-")
+for p in root.rglob("*.yaml"):
+    yaml.safe_load(p.read_text())
+for p in root.rglob("*.md"):
+    t = p.read_text()
+    if "history" in p.parts and p.name != "README.md":
+        continue
+    for m in re.finditer(r"\]\(([^)#\s]*)(?:#([^)\s]+))?\)", t):
+        tgt, anc = m.group(1), m.group(2)
+        if tgt.startswith("http"):
+            continue
+        f = (p.parent / tgt).resolve() if tgt else p.resolve()
+        if not f.exists():
+            bad.append(f"{p}->{tgt}"); continue
+        if anc and f.suffix == ".md" and anc not in [slug(re.sub(r"^#+\s*", "", l)) for l in f.read_text().splitlines() if l.startswith("#")]:
+            bad.append(f"{p}->{tgt}#{anc}")
+print(bad or "OK", len((root / "STATUS.md").read_text().splitlines()))
+```
 
 ## Known limitations and not verified
 

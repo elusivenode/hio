@@ -4,7 +4,8 @@ date: YYYY-MM-DD
 actor: <claude/<role> | codex/reviewer | owner> (<model/agent or person>)
 work_status: <proposed | authorised | in_review | approved>   # status of the work this session touched
 base_revision: <git sha>
-head_revision: <git sha, or "uncommitted: see changeset">
+head_revision: self       # a file cannot contain its own commit id; resolve with: git log -n1 --format=%H -- <this file>
+work_commits: [<sha>, ...]   # earlier commits of this session, by id
 work_card: T-NNNN
 ---
 
