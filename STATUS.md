@@ -39,7 +39,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 |---|---|
 | Phase | A01: architecture and research charter |
 | Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)); the first independent review requested changes |
-| Next permissible actions | the owner considers the [A01 findings](reviews/records/REVIEW-2026-10-18-a01.md) and directs a correction slice; the owner accepts or returns T-0006 |
+| Next permissible actions | the owner assigns Codex verification of T-0008 at its submission head (see the latest handoff); the owner accepts or returns T-0006 |
 | Next implementation slice | **HIO-S1 walking skeleton**: recommended, **not authorised** ([implementation plan](docs/implementation-plan.md#hio-s1-walking-skeleton-recommended)) |
 
 ## Work cards
@@ -53,6 +53,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | proposed; **not authorised** |
 | Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; **not accepted** (authorised by OD-0001/OD-0002) |
 | Review branch and worktree protocol (harness-0.5) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | **accepted at `b48f83c`** (OD-0004), after Codex T0007-PILOT READY. The protocol remains provisional while HIO-ADR-0008 is proposed |
+| A01 correction slice (8 findings) | [T-0008](registers/tasks/T-0008-a01-correction-slice.md) | submitted_for_review (OD-0005); remediation **claimed**, findings **still open** pending Codex verification at the submission head |
 
 ## Verified
 

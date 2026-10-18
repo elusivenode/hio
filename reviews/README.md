@@ -67,14 +67,14 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
-| F-REVIEW-2026-10-18-a01-1 | REVIEW-2026-10-18-a01 | critical | **open** | — | — | — |
-| F-REVIEW-2026-10-18-a01-2 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-18-a01-3 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-18-a01-4 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-18-a01-5 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-18-a01-6 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-18-a01-7 | REVIEW-2026-10-18-a01 | medium | **open** | — | — | — |
-| F-REVIEW-2026-10-18-a01-8 | REVIEW-2026-10-18-a01 | medium | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-1 | REVIEW-2026-10-18-a01 | critical | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-2 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-3 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-4 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-5 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-6 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-7 | REVIEW-2026-10-18-a01 | medium | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-8 | REVIEW-2026-10-18-a01 | medium | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
 
 States: `open`, `remediation_claimed` (still open), `verified_closed`, `waived`. A waiver
 preserves the finding. It is not a verification.

@@ -1,7 +1,7 @@
 ---
 id: T-0008
 title: Correct the A01 baseline for the eight open REVIEW-2026-10-18-a01 findings (documentation and fixtures)
-status: in_progress
+status: submitted_for_review
 owner: owner
 assignee_role: documentation agent / quantitative researcher (Claude)
 created_at: 2026-10-18

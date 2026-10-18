@@ -19,6 +19,7 @@ are in operating model §1.1; the template is
 | [OD-0002](OD-0002-authorise-t0006-final-correction.md) | authorise_work | T-0006 final harness correction | `hio/` from `23ad27f` | recorded |
 | [OD-0003](OD-0003-adopt-review-worktree-protocol.md) | authorise_work | T-0007 review branch and worktree protocol | `hio/` from `bada952` | recorded |
 | [OD-0004](OD-0004-accept-t0007.md) | accept_work | T-0007 accepted | T-0007 at `b48f83c` | recorded |
+| [OD-0005](OD-0005-authorise-a01-correction-slice.md) | authorise_work | T-0008 A01 correction slice | `hio/` from `e99fae1` | recorded |
 
 **There is no `approve` or `waive_finding` record.** The only `accept_work` record is OD-0004 (T-0007). Therefore:
 - no HIO ADR, standard or spec is approved;
