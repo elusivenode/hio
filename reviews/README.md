@@ -29,7 +29,7 @@ actions are evidenced by the reviewer's own output on a scope-checked review bra
 
 | Review | Repository | Base SHA | Head SHA | Task / scope | Assigned by (OD / source) | Status |
 |---|---|---|---|---|---|---|
-| — | — | — | — | — | — | **No review target has been assigned.** |
+| REVIEW-2026-10-18-t0004 | `macsmsf`, branch `docs/hio-001-boundary-c1` | `1502ab8804c5968a8bf91fa36275c44e6e84f575` (`main`) | `fe3fdc78cb2d2b9f147122528cc5cf97db976397` | T-0004: the documentation-only ADR 0003 C1 boundary amendment and the HIO-001 review-record pointer. Check it is consistent with HIO-ADR-0003 (approved, OD-0008) and changes no code, schema or activation prerequisite. Review branch `review/t0004-codex`, cut from the staging commit that adds OD-0010; the target is inspected read-only (cross-lineage mechanics in OD-0010) | [OD-0010](../docs/decisions/owner/OD-0010-g1-followup-instructions.md) (owner instruction, transcribed) | **assigned** |
 
 ## Candidate review targets (NOT assigned; a reviewer must not treat these as its target)
 
