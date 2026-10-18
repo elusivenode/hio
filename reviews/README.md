@@ -47,6 +47,12 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 | REVIEW-2026-10-18-a01 | A01 architecture, mathematics, S1 specs and harness-0.3 | `1502ab8..35c9821` | Codex, on the owner's direct 2026-10-18 request | **REQUEST CHANGES** | [record](records/REVIEW-2026-10-18-a01.md) |
 | REVIEW-2026-10-18-t0007-pilot | T-0007 review-worktree protocol and harness-0.5 corrections | `46ea6a5..b48f83c` | Codex, on the owner's direct 2026-10-18 assignment | **READY** | [record](records/REVIEW-2026-10-18-t0007-pilot.md) |
 
+## Verification rounds
+
+| Verification | Original review | Base..submission head | Fix commit | Reviewer outcome | Record |
+|---|---|---|---|---|---|
+| VERIFY-2026-10-18-a01-1 | REVIEW-2026-10-18-a01, findings 1–8 | `35c9821..0c74686` | `0e3de4b` | **Eight verified_closed** | [record](records/VERIFY-2026-10-18-a01-1.md) |
+
 The owner assigned the A01 review directly in the Codex session. The *Assigned reviews* table
 above was not updated beforehand; it is not evidence that the candidate row authorised the
 review. The reviewed base/head and assignment source are in that record. The review record does
@@ -67,14 +73,14 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
-| F-REVIEW-2026-10-18-a01-1 | REVIEW-2026-10-18-a01 | critical | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
-| F-REVIEW-2026-10-18-a01-2 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
-| F-REVIEW-2026-10-18-a01-3 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
-| F-REVIEW-2026-10-18-a01-4 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
-| F-REVIEW-2026-10-18-a01-5 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
-| F-REVIEW-2026-10-18-a01-6 | REVIEW-2026-10-18-a01 | high | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
-| F-REVIEW-2026-10-18-a01-7 | REVIEW-2026-10-18-a01 | medium | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
-| F-REVIEW-2026-10-18-a01-8 | REVIEW-2026-10-18-a01 | medium | **open** | remediation_claimed (still open): fix `0e3de4b`; [RESPONSE-REVIEW-2026-10-18-a01-1](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md); submission head in the T-0008 handoff | — | — |
+| F-REVIEW-2026-10-18-a01-1 | REVIEW-2026-10-18-a01 | critical | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
+| F-REVIEW-2026-10-18-a01-2 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
+| F-REVIEW-2026-10-18-a01-3 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
+| F-REVIEW-2026-10-18-a01-4 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
+| F-REVIEW-2026-10-18-a01-5 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
+| F-REVIEW-2026-10-18-a01-6 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
+| F-REVIEW-2026-10-18-a01-7 | REVIEW-2026-10-18-a01 | medium | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
+| F-REVIEW-2026-10-18-a01-8 | REVIEW-2026-10-18-a01 | medium | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
 
 States: `open`, `remediation_claimed` (still open), `verified_closed`, `waived`. A waiver
 preserves the finding. It is not a verification.
