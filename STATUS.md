@@ -18,19 +18,18 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 
 ## One-line state
 
-**G1 is open.** A01 items 1–11 and 13–20 are approved at `a82aa0d` (OD-0008). Two decisions
-are pending in [`docs/decisions/pending-owner-decisions.md`](docs/decisions/pending-owner-decisions.md):
-HIO-ADR-0010 revision 3 (G1) and the harness-0.6 amendment. Nothing is
-implemented. HIO has no code, no repository of its own, no storage, no data and no credentials.
-The baseline is staged in `macsmsf/hio/` on the unmerged branch `docs/hio-a01-baseline`.
+**G1 is complete** (OD-0008, OD-0011). **S1a is not authorised.** It needs a future, separate
+owner authorisation (HIO-ADR-0010 rev 3). Nothing is implemented. HIO has no code, no repository
+of its own, no storage, no data and no credentials. The baseline is staged in `macsmsf/hio/`, on
+the unmerged branch `docs/hio-a01-baseline`.
 
 ## Authority snapshot
 
 | Item | State | Record |
 |---|---|---|
 | Owner decision records | OD-0001…0009; the latest are OD-0006/0007 (T-0008/T-0006 accepted), OD-0008 (G1 decisions) and OD-0009 (follow-on instructions) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
-| Approved at `a82aa0d` (OD-0008) | charter; architecture; HIO-ADR-0001…0009 (C1 chosen; projection fund-level); six standards; operating model; `AGENTS.md` | per-file blobs in OD-0008 |
-| Not approved | HIO-ADR-0010 rev. 3 (proposed); the harness-0.6 change adding `reviews/reports/` (directed by OD-0009); factor specs (drafts); roadmap and plan (recommendations) | [`docs/decisions/README.md`](docs/decisions/README.md) |
+| Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model harness-0.6 at `f2275e2` (OD-0012) | per-file blobs in the OD records |
+| Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1a and S1b not authorised**; all T-0002 source permissions **unverified and blocked** (OD-0013) | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Independent reviews | REVIEW-2026-10-18-a01 (REQUEST CHANGES), then VERIFY-2026-10-18-a01-1: **8/8 verified_closed** (received at `a82aa0d`). T0007-PILOT READY (received at `385389d`) | [`reviews/README.md`](reviews/README.md) |
 | Open findings | **none** | [`reviews/README.md`](reviews/README.md) |
 
@@ -39,15 +38,15 @@ The baseline is staged in `macsmsf/hio/` on the unmerged branch `docs/hio-a01-ba
 | Item | State |
 |---|---|
 | Phase | A01 → G1 |
-| Current gate | **G1 open:** the owner decides [HIO-ADR-0010 revision 2](docs/decisions/HIO-ADR-0010-first-slice-scope.md) |
-| Next permissible actions | **Owner:** decide ADR-0010 rev. 3 and harness-0.6 ([pending decisions](docs/decisions/pending-owner-decisions.md)). **Codex:** the assigned REVIEW-2026-10-18-t0004 at `fe3fdc7`. **Claude:** T-0002 and T-0003 research (OD-0010: begin now); **no S1a work** until G1 completes and the owner explicitly authorises its scope; **no live data operations under S1a** (OD-0009) |
-| Next implementation slice | S1a (synthetic-fixture-only), per ADR-0010 rev. 3: **not authorised**; it needs a future, separate owner authorisation |
+| Current gate | **G1 complete.** Next: the owner's separate decision whether, and in what scope, to authorise S1a |
+| Next permissible actions | **Owner:** consider S1a authorisation; answer the T-0002 open questions (evidence); review the [vendor question drafts](docs/research/T-0003-vendor-questions-draft.md) (**not sent**); run Codex REVIEW-2026-10-18-t0004. **Agents:** T-0002 evidence-gathering from published pages; no S1a; no live data; no vendor contact |
+| Next implementation slice | S1a (synthetic-fixture-only), per approved HIO-ADR-0010 rev 3: **not authorised** |
 
 ## Work cards
 
 | Work | Card | Status |
 |---|---|---|
-| Owner review of the A01 decisions | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed (largely discharged by OD-0008; ADR-0010 outstanding) |
+| Owner review of the A01 decisions | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed (its acceptance criteria are met by OD-0008 and OD-0011; owner acceptance not recorded) |
 | Rights verification for the S1 sources | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: findings drafted ([research](docs/research/T-0002-source-rights-and-timing.md)); awaiting owner verification |
 | Equity total-return source decision | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: scorecard drafted ([research](docs/research/T-0003-equity-total-return-sources.md)); vendor questions need owner approval |
 | HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review: `fe3fdc7` on `docs/hio-001-boundary-c1`; **review REVIEW-2026-10-18-t0004 assigned** (OD-0010); not merged |

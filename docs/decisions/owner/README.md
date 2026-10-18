@@ -25,11 +25,18 @@ are in operating model §1.1; the template is
 | [OD-0008](OD-0008-g1-decisions-a82aa0d.md) | approve | G1: items 1–11 and 13–20 approved (C1 chosen; projection fund-level); item 12 (ADR-0010) returned | each file at `a82aa0d` | recorded |
 | [OD-0009](OD-0009-g1-follow-on-instructions.md) | authorise_work | §6.2 `reports/` path; T-0002 and T-0003 authorised; prepare T-0004; S1a limits | `hio/` from `f7a9ec9` | recorded |
 | [OD-0010](OD-0010-g1-followup-instructions.md) | authorise_work | ADR-0010 S1a gate corrected; harness-0.6 presented for approval; begin T-0002/T-0003; T-0004 review assigned | `hio/` from `f2275e2` | recorded |
+| [OD-0011](OD-0011-approve-adr-0010-rev3.md) | approve | HIO-ADR-0010 rev 3; **G1 complete**; S1a not authorised | ADR-0010 at `760f73e` (blob `8ade1962cf28`) | recorded |
+| [OD-0012](OD-0012-approve-harness-0.6.md) | approve | harness-0.6, including the `reviews/reports/` rule | operating model at `f2275e2` (blob `e3114bd188ad`) | recorded |
+| [OD-0013](OD-0013-t0002-hold-t0003-drafts.md) | authorise_work | keep T-0002 permissions unverified and blocked; draft (do not send) vendor questions | `hio/` from `8e11581` | recorded |
 
 **Current position:**
-- **Approved:** HIO-ADR-0001 to 0009; the charter; the architecture; six standards; the
-  operating model and `AGENTS.md`, each at `a82aa0d` (OD-0008).
-- **Not approved:** HIO-ADR-0010 revision 2; the factor specs (drafts); the roadmap and plan
-  (recommendations); the harness-0.6 text change (directed by OD-0009).
+- **Approved:**
+  - charter, architecture, HIO-ADR-0001…0009, six standards and `AGENTS.md`, at `a82aa0d`
+    (OD-0008);
+  - HIO-ADR-0010 rev 3 at `760f73e` (OD-0011);
+  - the operating model, harness-0.6, at `f2275e2` (OD-0012).
+- **G1 is complete.**
+- **Not approved:** the factor specs (drafts); the roadmap and plan (recommendations).
+- **Not authorised:** S1a; S1b.
 - **Accepted:** T-0006, T-0007 and T-0008.
 - **No finding is waived.**

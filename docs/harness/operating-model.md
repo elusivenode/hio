@@ -2,14 +2,14 @@
 id: HIO-HARNESS
 title: Agentic operating model and harness specification
 status: approved
-approved_by: OD-0008   # at a82aa0d, blob 7172659cf4ba
+approved_by: OD-0012   # harness-0.6 at f2275e2, blob e3114bd188ad (earlier: OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
 owner: HIO architecture lead (owner)
 version: harness-0.6
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
-  - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba"
+  - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only"
   - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
   - "harness-0.4 (2026-10-18): review branch and worktree protocol §6.2; immutable findings with separate response and verification records; scope-check script (T-0007, OD-0003)"
   - "harness-0.3 (2026-10-18): authorise vs accept vs approve vs waive; advice and adoption; trailers as metadata only; provisional protocol; state-aware reviewer test (T-0006 final correction, docs/history/2026-10-18-directive-t0006-final-correction.md)"

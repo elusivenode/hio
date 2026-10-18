@@ -23,6 +23,8 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-18-codex-assessment-t0007.md` | a Codex assessment of T-0007 at `46ea6a5`, pasted by the owner without words | historical evidence; remediated within T-0007 (OD-0003); not a review record | — |
 | `2026-10-18-directive-g1-approval-package.md` | owner directive ("From: HIO owner, on architectural advice from ChatGPT") authorising receipt of VERIFY-2026-10-18-a01-1 and preparation of the G1 package | historical; the package's `authorised_by` | — |
 | `2026-10-18-owner-g1-decisions.md` | the owner's own G1 decisions, verbatim (sha256 `111b6fc2…c306a99e`) | **authority** for OD-0006…0009 (not superseded) | — |
+| `2026-10-18-owner-g1-followup.md` | the owner's follow-up instructions, verbatim | authority for OD-0010 | — |
+| `2026-10-18-owner-g1-completion.md` | the owner's approval of ADR-0010 rev 3 and harness-0.6, and the T-0002/T-0003 instructions, verbatim | authority for OD-0011…0013 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is

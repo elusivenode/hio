@@ -1,13 +1,15 @@
 ---
 id: HIO-PENDING-DECISIONS
 title: Pending owner decisions (revision-specific)
-status: current            # a decision aid; nothing here is approved
+status: resolved           # both decisions made 2026-10-18 (OD-0011, OD-0012); kept as the record of what was presented
 owner: owner (decides); prepared by claude/documentation-agent
 last_reviewed: 2026-10-18
 authorised_by: OD-0010
 ---
 
-# Pending owner decisions
+# Pending owner decisions (resolved)
+
+> **Resolved 2026-10-18.** Decision A was approved by [OD-0011](owner/OD-0011-approve-adr-0010-rev3.md), completing G1. Decision B was approved by [OD-0012](owner/OD-0012-approve-harness-0.6.md). Nothing is pending here now.
 
 > Each decision applies to the exact blob named. Verify with
 > `git rev-parse <commit>:<path>`. **Nothing here is approved until you say so in your own

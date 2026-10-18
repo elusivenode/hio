@@ -52,3 +52,5 @@ implementation plan).
 ## Progress (2026-10-18, begun on OD-0010)
 
 Findings drafted at `docs/research/T-0002-source-rights-and-timing.md`. **R1–R5 need owner verification**; `automated_retrieval` is unresolved for RBA, Treasury and H.10; the BAB source is undetermined.
+
+- 2026-10-18: **OD-0013:** every source permission stays `unverified` and blocked until the outstanding terms, source, timing and calendar questions have evidence.

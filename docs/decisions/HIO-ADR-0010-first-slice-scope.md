@@ -1,7 +1,8 @@
 ---
 id: HIO-ADR-0010
 title: "The first slice is a cash and FX walking skeleton in two stages: S1a synthetic-fixture-only, S1b live data; equity total return moves to S2"
-status: proposed
+status: approved
+approved_by: OD-0011   # revision 3 at 760f73e, blob 8ade1962cf28
 owner: HIO architecture lead (owner)
 date: 2026-10-18
 gates: [G1 completion, S1a authorisation, S1b authorisation]
@@ -72,7 +73,7 @@ recommendation, and will be updated to this split once this ADR is approved.
 
 ## Approval
 
-_Unapproved._ Revision 1 was returned by OD-0008. Revision 2's S1a gate wording was corrected on the owner's instruction (OD-0010). **This revision 3 awaits the owner's revision-specific decision.**
+**Approved** (revision 3) by [OD-0011](owner/OD-0011-approve-adr-0010-rev3.md) (owner, 2026-10-18), as this file stood at commit `760f73e` (blob `8ade1962cf28`). This completes G1. **It does not authorise S1a.** Edits after that commit record status only.
 
 ## Changelog
 

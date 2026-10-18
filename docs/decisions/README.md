@@ -37,7 +37,7 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 | [HIO-ADR-0007](HIO-ADR-0007-return-accounting-standard.md) | Adopt the return accounting and factor construction standard as a CI-enforced gate | **approved** (OD-0008, at `a82aa0d`) | owner | any factor release |
 | [HIO-ADR-0008](HIO-ADR-0008-canonical-knowledge-and-harness.md) | Canonical knowledge, precedence and agentic harness | **approved** (OD-0008, at `a82aa0d`) | owner | all work |
 | [HIO-ADR-0009](HIO-ADR-0009-catalogue-from-manifests.md) | Catalogue derived from immutable manifests; no hosted database initially | **approved** (OD-0008, at `a82aa0d`) | owner | S1 |
-| [HIO-ADR-0010](HIO-ADR-0010-first-slice-scope.md) | The first slice in two stages: S1a synthetic-fixture-only, then S1b live data (revision 3) | proposed (rev 1 returned by OD-0008; **rev 3** awaits decision) | owner | S1 |
+| [HIO-ADR-0010](HIO-ADR-0010-first-slice-scope.md) | The first slice in two stages: S1a synthetic-fixture-only, then S1b live data (revision 3) | **approved** rev 3 (OD-0011, at `760f73e`) | owner | S1 |
 
 ### G1 decision package
 
@@ -45,7 +45,7 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 
 ### Owner decision records
 
-See [`owner/README.md`](owner/README.md). [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) approves HIO-ADR-0001 to 0009 at `a82aa0d`. HIO-ADR-0010 was returned; its revision 3 is proposed. **G1 is open until it is decided** (see [`pending-owner-decisions.md`](pending-owner-decisions.md)).
+See [`owner/README.md`](owner/README.md). [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) approves HIO-ADR-0001 to 0009 at `a82aa0d`. [OD-0011](owner/OD-0011-approve-adr-0010-rev3.md) approves HIO-ADR-0010 revision 3 at `760f73e`. **G1 is complete. S1a is not authorised.**
 
 ### Deferred decisions (revisit triggers in [`../architecture.md`](../architecture.md#5-measurable-evolution-triggers))
 

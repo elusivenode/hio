@@ -17,7 +17,8 @@ sources:
     home: https://www.rba.gov.au/statistics/
     intended_use: [S1 AUD cash rate, S1 AUD/USD 4pm fixing, S3 AU government yields]
     task: T-0002
-    verification: vendor_asserted        # the publisher's published terms, read by an agent 2026-10-18; NOT owner_verified
+    verification: unverified             # held by OD-0013: the published terms were read 2026-10-18, but permissions stay unverified and blocked until the outstanding questions have evidence
+    blocked_by: OD-0013
     evidence: [https://www.rba.gov.au/copyright/, https://www.rba.gov.au/mkt-operations/resources/cash-rate-methodology/, https://www.rba.gov.au/statistics/frequency/exchange-rates.html, https://www.rba.gov.au/schedules-events/frequency-statistical-releases.html]
     research_note: docs/research/T-0002-source-rights-and-timing.md
     datasets:
@@ -31,7 +32,8 @@ sources:
     home: https://www.newyorkfed.org/markets/reference-rates
     intended_use: [S1 USD cash leg, SOFR Index triangulation (proposed)]
     task: T-0002
-    verification: vendor_asserted
+    verification: unverified             # held by OD-0013 (published terms read; not verified)
+    blocked_by: OD-0013
     evidence: [https://www.newyorkfed.org/privacy/termsofuse, https://www.newyorkfed.org/markets/reference-rates/sofr, https://www.newyorkfed.org/markets/reference-rates/additional-information-about-reference-rates]
     research_note: docs/research/T-0002-source-rights-and-timing.md
     rights_proposed: "automated access, storage, derivation and redistribution allowed by the terms; label modified content; notice and disclaimer on republication; no endorsement"
@@ -43,6 +45,7 @@ sources:
     intended_use: [S1 USD cash triangulation (bills), S3 US CMT returns]
     task: T-0002
     verification: unverified          # no site terms located; 17 U.S.C. §105 presumption only [EXT]
+    blocked_by: OD-0013
     evidence: [https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics, https://home.treasury.gov/subfooter/site-policies-and-notices]
     research_note: docs/research/T-0002-source-rights-and-timing.md
     timing: "bill quotes obtained by the NY Fed at about 15:30 ET each business day; posting time not stated"
@@ -52,7 +55,8 @@ sources:
     home: https://www.federalreserve.gov/releases/h10/
     intended_use: [S1 FX fixing triangulation]
     task: T-0002
-    verification: vendor_asserted
+    verification: unverified             # held by OD-0013 (published terms read; not verified)
+    blocked_by: OD-0013
     evidence: [https://www.federalreserve.gov/disclaimer.htm, https://www.federalreserve.gov/releases/h10/]
     research_note: docs/research/T-0002-source-rights-and-timing.md
     rights_proposed: "public domain unless otherwise indicated; cite the Board; automated access not addressed"

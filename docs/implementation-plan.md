@@ -10,6 +10,12 @@ decisions: [HIO-ADR-0010]
 
 # HIO implementation plan
 
+> **Since HIO-ADR-0010 rev 3 (approved, OD-0011):** S1 runs as **S1a**, synthetic-fixture-only
+> with no network, real sources, credentials or buckets, then **S1b**, live data. Each needs its
+> own owner authorisation. The S1 detail below remains a recommendation. Its live-data tests
+> (S1-A10, S1-A13, and real-source parts of S1-A12) belong to S1b; the ADR lists S1a's
+> acceptance.
+
 No slice is approved. **S1 is the recommended next slice.** Each slice needs an **authorised** task
 card (an OD record) before work starts.
 

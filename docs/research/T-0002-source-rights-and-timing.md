@@ -15,8 +15,9 @@ method: >-
 # T-0002 research: S1 source rights and timing
 
 > **Not verification.** These are the publishers' own published statements, as read by an
-> agent. Under the rights standard §3 they count as `vendor_asserted`, which still **refuses
-> every operation** until the owner records `owner_verified` (section, date, URL).
+> agent. **By owner instruction (OD-0013), every permission stays `unverified` and blocked**
+> until the outstanding terms, source, timing and calendar questions (§4) have evidence. The
+> §2 values are proposals only.
 
 ## 1. Findings by source
 
@@ -101,8 +102,8 @@ last updated 5 October 2026):
 
 ## 2. Proposed rights records
 
-These are proposed values for the owner to verify. All carry `verification: vendor_asserted`
-in `registers/sources.yaml`.
+These are proposed values for the owner to verify. In `registers/sources.yaml` every source is
+recorded `unverified`, with `blocked_by: OD-0013`.
 
 | Permission | RBA cash rate | RBA AUD/USD (F11) | RBA 1m BAB (F1) | NY Fed SOFR | Treasury bills | FRB H.10 |
 |---|---|---|---|---|---|---|

@@ -36,3 +36,7 @@ See [`../../docs/risks-and-open-decisions.md`](../../docs/risks-and-open-decisio
 
 ## Review status
 _Not reviewed._
+
+## Progress (2026-10-18)
+
+The acceptance criteria A1–A3 are met by OD-0008 (items 1–11 and 13–20) and OD-0011 (ADR-0010 rev 3), so G1 is complete. The card's own acceptance is a separate owner action, not recorded.
