@@ -26,7 +26,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | two `authorise_work` records (OD-0001, corrected; OD-0002), both for T-0006 documentation. **No accept, approve or waive record exists** | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | authorise_work: OD-0001 (corrected), OD-0002 (T-0006), OD-0003 (T-0007). accept_work: **OD-0004 (T-0007 at `b48f83c`)**. **No approve or waive record exists** | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Working protocol | `AGENTS.md` and the operating model operate **provisionally** (HIO-ADR-0008 is proposed) | operating model §1.1 |
 | HIO-ADR-0001 to 0010 | all `proposed` | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Standards and specs | all `proposed` or `draft` | front matter |
@@ -39,7 +39,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 |---|---|
 | Phase | A01: architecture and research charter |
 | Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)); the first independent review requested changes |
-| Next permissible actions | the owner considers the [A01 findings](reviews/records/REVIEW-2026-10-18-a01.md) and directs a correction slice; the owner accepts or returns T-0006 and T-0007 (separate actions) |
+| Next permissible actions | the owner considers the [A01 findings](reviews/records/REVIEW-2026-10-18-a01.md) and directs a correction slice; the owner accepts or returns T-0006 |
 | Next implementation slice | **HIO-S1 walking skeleton**: recommended, **not authorised** ([implementation plan](docs/implementation-plan.md#hio-s1-walking-skeleton-recommended)) |
 
 ## Work cards
@@ -52,7 +52,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | proposed |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | proposed; **not authorised** |
 | Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; **not accepted** (authorised by OD-0001/OD-0002) |
-| Review branch and worktree protocol (harness-0.5) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | submitted_for_review at `b48f83c`; Codex T0007-PILOT **READY** (received at `385389d`); **not accepted** (OD-0003) |
+| Review branch and worktree protocol (harness-0.5) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | **accepted at `b48f83c`** (OD-0004), after Codex T0007-PILOT READY. The protocol remains provisional while HIO-ADR-0008 is proposed |
 
 ## Verified
 
