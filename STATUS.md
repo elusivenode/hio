@@ -30,8 +30,8 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | Working protocol | `AGENTS.md` and the operating model operate **provisionally** (HIO-ADR-0008 is proposed) | operating model §1.1 |
 | HIO-ADR-0001 to 0010 | all `proposed` | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Standards and specs | all `proposed` or `draft` | front matter |
-| Independent reviews | A01 at `1502ab8..35c9821`: **REQUEST CHANGES** on the owner's direct assignment; no A01 approval | [`reviews/README.md`](reviews/README.md) |
-| Open findings | eight (one critical, five high, two medium) | [`reviews/README.md`](reviews/README.md) |
+| Independent reviews | A01 at `1502ab8..35c9821`: **REQUEST CHANGES**; no A01 approval. T0007-PILOT at `46ea6a5..b48f83c`: **READY** (a readiness opinion; received by merge `385389d`, under §6.2; **not acceptance**) | [`reviews/README.md`](reviews/README.md) |
+| Open findings | eight A01 findings (one critical, five high, two medium); the T0007-PILOT review opened none | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
 
@@ -39,7 +39,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 |---|---|
 | Phase | A01: architecture and research charter |
 | Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)); the first independent review requested changes |
-| Next permissible actions | owner considers the [A01 findings](reviews/records/REVIEW-2026-10-18-a01.md) and directs a correction slice; T-0006 acceptance remains separate |
+| Next permissible actions | the owner considers the [A01 findings](reviews/records/REVIEW-2026-10-18-a01.md) and directs a correction slice; the owner accepts or returns T-0006 and T-0007 (separate actions) |
 | Next implementation slice | **HIO-S1 walking skeleton**: recommended, **not authorised** ([implementation plan](docs/implementation-plan.md#hio-s1-walking-skeleton-recommended)) |
 
 ## Work cards
@@ -52,7 +52,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | proposed |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | proposed; **not authorised** |
 | Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; **not accepted** (authorised by OD-0001/OD-0002) |
-| Review branch and worktree protocol (harness-0.4) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | submitted_for_review; **not accepted** (OD-0003). Applies from the next assigned review |
+| Review branch and worktree protocol (harness-0.4) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | submitted_for_review at `b48f83c`; Codex T0007-PILOT **READY** (received at `385389d`); **not accepted** (OD-0003) |
 
 ## Verified
 
