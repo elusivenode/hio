@@ -52,6 +52,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | proposed |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | proposed; **not authorised** |
 | Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; **not accepted** (authorised by OD-0001/OD-0002) |
+| Review branch and worktree protocol (harness-0.4) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | submitted_for_review; **not accepted** (OD-0003). Applies from the next assigned review |
 
 ## Verified
 

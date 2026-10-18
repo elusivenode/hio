@@ -66,7 +66,8 @@ Record `git rev-parse HEAD`.
     a target from a candidate, a branch or the author's notes.
   - If something is assigned, fix your test plan from the assignment and the records **before**
     reading the author's handoff. Treat the handoff as unverified.
-  - Never edit the work under review.
+  - Work in your own worktree, on a review branch at the assigned head, and write only under
+    `hio/reviews/` (operating model §6.2). Never edit the work under review.
 
 **Skills** (Claude Code; other agents read the files directly): `hio-session` and
 `hio-return-accounting`.

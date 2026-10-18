@@ -8,17 +8,22 @@ last_reviewed: 2026-10-18
 
 # HIO review index
 
-**The single place** to find what is assigned for review, what has been reviewed at which
-revision, and what remains open. Rules: [operating model §3 and
-§6.1](../docs/harness/operating-model.md#61-review-index-and-provenance).
+A **navigation summary**: what is assigned, what has been reviewed at which revision, and what
+remains open. **The individual records are the source of truth.** If this index disagrees with a
+record, the record wins. Rules: [operating model §3, §6.1 and
+§6.2](../docs/harness/operating-model.md#62-review-branch-and-worktree-protocol).
 
 **Who writes what:**
-- **The owner:** *Assigned reviews*; waivers (by OD id).
-- **The reviewer (Codex):** review rows, finding rows, verification outcomes.
-- **The author (Claude):** only the *Remediation claim* cell of a finding.
+- **The owner:** *Assigned reviews* (exact SHAs and the review branch); runs the scope check;
+  merges reviewer branches (receipt only); acceptance, approval and waivers (by OD id).
+- **The reviewer (Codex):** review records and verification records (`records/`), its
+  handoffs (`handoffs/`), and its own index rows. Written on its review branch, in its own
+  worktree, never on the staging branch.
+- **The author (Claude):** remediation responses (`responses/`) and the *Remediation claim*
+  cell. Never a verdict, a verification or a closure.
 
 Commits carry `HIO-Actor` role trailers as **self-declared metadata, not proof**. Reviewer
-actions are evidenced by the reviewer's own output, committed verbatim and hashed (§6.1).
+actions are evidenced by the reviewer's own output on a scope-checked review branch (§6.1–6.2).
 
 ## Assigned reviews (owner-assigned; the only source of a review target)
 

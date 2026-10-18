@@ -3,11 +3,12 @@ id: HIO-HARNESS
 title: Agentic operating model and harness specification
 status: proposed
 owner: HIO architecture lead (owner)
-version: harness-0.3
+version: harness-0.4
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
+  - "harness-0.4 (2026-10-18): review branch and worktree protocol §6.2; immutable findings with separate response and verification records; scope-check script (T-0007, OD-0003)"
   - "harness-0.3 (2026-10-18): authorise vs accept vs approve vs waive; advice and adoption; trailers as metadata only; provisional protocol; state-aware reviewer test (T-0006 final correction, docs/history/2026-10-18-directive-t0006-final-correction.md)"
   - "harness-0.2 (2026-10-18): owner decision records; record lifecycles; review index and findings; role-specific bootstrap; advice→authorisation chain; migration continuity; role-specific cold-start test (per docs/history/2026-10-18-directive-harness-refinement.md)"
 ---
@@ -168,8 +169,10 @@ If the card is not authorised, you may only read and draft.
    an owner assignment you were given directly.
    - **If there is none, your answer is "No review target has been assigned."** Stop there.
      Never infer a target from a candidate row, a branch tip or an author's self-assessment.
-   - If there is one, take the repository, base SHA, head SHA, task and scope **from the
-     assignment**, not from the author's summary.
+   - If there is one, take the repository, review id, base SHA, head SHA, task, scope and
+     review branch **from the assignment**, not from the author's summary.
+   - Then create your own worktree and review branch at the assigned head (§6.2), and work
+     only there.
 2. Read the governing approved plan, contracts and acceptance criteria, and the open findings in
    `reviews/README.md`.
 3. Write your test plan.
@@ -192,6 +195,20 @@ You may critique the harness itself. You do not inherit any authority claim the 
 - **A `remediation_claimed` finding is still open.** Only Codex, after independently checking the
   changed revision and its evidence, sets `verified_closed`. A failed check returns the finding
   to `open`, with a verification note.
+- **Submitted findings are immutable.**
+  - Claude's response is a separate *remediation response* record: the finding ids, what was
+    changed, the remediation SHA and the evidence.
+  - Codex's check is a separate *verification record* that references the original finding ids
+    and the remediation SHA.
+  - Neither edits the original review record.
+  - The directive's suggested states map onto ours:
+
+    | Directive state | Our state |
+    |---|---|
+    | REMEDIATION_PROPOSED / IMPLEMENTED | `remediation_claimed`, with a SHA |
+    | VERIFIED + CLOSED | `verified_closed` |
+    | REJECTED | back to `open` |
+    | WAIVED | `waived` |
 - **A waiver is not a technical closure.** `waived` is a distinct terminal state, recorded by an
   OD record. That record holds:
   - the owner's authority;
@@ -353,6 +370,74 @@ carry `exploratory` status and never reach a consumer.
   are set when the owner issues the go-ahead, never by pointing to an author's handoff.
 - **Stable finding ids.** Ids are `F-<review id>-<n>` and are never reused or renumbered. The
   original evidence references are kept, including across migration (§8.1).
+
+### 6.2 Review branch and worktree protocol
+
+**Status:** adopted into the provisional working protocol by owner instruction (OD-0003).
+HIO-ADR-0008 is still proposed.
+
+1. **Assignment** (owner). The owner assigns one review, in the *Assigned reviews* table or
+   directly. The assignment states:
+   - review id;
+   - repository;
+   - **full base and head SHAs**;
+   - scope (files, work package, standards);
+   - review branch name;
+   - reviewer (a declared role).
+
+   The head is never rebased or force-pushed during the review. If the work changes, a new
+   review, or a scoped verification against the new head, is needed.
+2. **Isolated checkout** (reviewer):
+
+   ```
+   git worktree add ../macsmsf-review-<id> <head> -b review/<id>-codex
+   ```
+
+   Worktrees isolate checkouts operationally. **They are not a security boundary.**
+3. **Allowed writes** (reviewer). Only add or modify `.md` files under `hio/reviews/`:
+   - review records and verification records in `reviews/records/`;
+   - the reviewer's own session handoff in `reviews/handoffs/`, since its other handoff
+     locations are out of bounds;
+   - its own rows in `reviews/README.md`.
+
+   The reviewer never edits `STATUS.md`, `hio/handoffs/`, the work under review or any
+   submitted record. There are no merge commits on the review branch.
+4. **Scope check** (owner, before merging). Run **the staging branch's copy** of
+   `hio/tools/check_review_branch.sh <head> review/<id>-codex`. It fails on:
+   - paths outside `hio/reviews/`;
+   - non-`.md` files;
+   - symlinks, executables or submodules;
+   - deletions or renames;
+   - modified submitted records;
+   - merge commits.
+
+   **A pass is a content-scope constraint, not reviewer authentication.** The owner also reads
+   the diff.
+5. **Receipt** (owner). Merge with `--no-ff` into the staging branch. Delete the review branch
+   and worktree afterwards. **A merge means the evidence has been received.** It does not mean
+   the conclusions are accepted, defects are fixed, an ADR is approved, a slice is authorised,
+   or the work is accepted. Those remain separate owner actions (§1.1). After receipt, the owner
+   or Claude updates `STATUS.md`.
+6. **Remediation** (Claude, on the staging branch):
+   - commit the fix;
+   - add a remediation response (`reviews/responses/`);
+   - set the finding's *Remediation claim* cell;
+   - record the new head SHA.
+7. **Verification** (reviewer). A fresh worktree and branch, at the **remediation head the owner
+   assigns**. Add a verification record. Steps 3–5 apply again.
+
+**Index.** The records are the source of truth. `reviews/README.md` is a manually maintained
+navigation summary. If the two disagree, the record wins. Generating the index from record
+metadata is a later option, not built now.
+
+**Transition note.** The first A01 review (`bada952`) was committed directly on the staging
+branch, before this protocol existed. It also changed `hio/STATUS.md` and added
+`hio/handoffs/2026-10-18-a01-independent-review.md`. The scope check correctly fails on it. It
+is accepted as pre-protocol history, not as a precedent.
+
+**Hosted evolution** (not built): implementation PRs at exact heads; authenticated Codex
+reviews; branch protection and required checks (including this scope check); verifiable owner
+acceptance and waiver records.
 
 ## 7. Artefact-driven collaboration
 

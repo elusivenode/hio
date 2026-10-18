@@ -17,8 +17,9 @@ are in operating model §1.1; the template is
 |---|---|---|---|---|
 | [OD-0001](OD-0001-authorise-harness-refinement.md) | authorise_work | T-0006 harness refinement (the original ambiguity is preserved) | `hio/` from `85ef0fa` | corrected |
 | [OD-0002](OD-0002-authorise-t0006-final-correction.md) | authorise_work | T-0006 final harness correction | `hio/` from `23ad27f` | recorded |
+| [OD-0003](OD-0003-adopt-review-worktree-protocol.md) | authorise_work | T-0007 review branch and worktree protocol | `hio/` from `bada952` | recorded |
 
 **There is no `accept_work`, `approve` or `waive_finding` record.** Therefore:
 - no HIO ADR, standard or spec is approved;
-- T-0006 is not accepted;
+- T-0006 and T-0007 are not accepted;
 - no finding is waived.

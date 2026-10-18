@@ -5,14 +5,15 @@ reviewer: codex/reviewer      # or a human reviewer; never the author
 reviewed_base: <git sha>
 reviewed_head: <git sha>      # the exact revision examined; must equal the owner's assignment
 assignment: <reviews/README.md 'Assigned reviews' row, or the owner assignment source>
+review_branch: review/<id>-codex   # created at reviewed_head in a separate worktree (operating model §6.2)
 created_at: YYYY-MM-DD
 updated_at: YYYY-MM-DD
-verdict: <APPROVE | APPROVE WITH CONDITIONS | REQUEST CHANGES | REJECT>
+verdict: <READY | READY WITH CONDITIONS | NOT READY>   # a readiness opinion; never an approval
 ---
 
 # Review: <subject>
 
-> Immutable once committed, apart from appending to the **Verification log**. The reviewer
+> Immutable once committed. Verification happens in separate verification records. The reviewer
 > writes this file. The author never edits it. When the reviewer cannot commit directly, the
 > owner commits the reviewer's output verbatim, with its sha256 (operating model §6.1).
 > `HIO-Actor` trailers are metadata, not proof.
@@ -37,9 +38,9 @@ triangulation checks.
 Finding states are tracked in `reviews/README.md`: `open → remediation_claimed →
 verified_closed`, or `open → waived` (owner OD only).
 
-## Verification log (append-only)
-| Date | Finding | Remediation commit (from the author) | Reviewer check | Outcome (`verified_closed` / back to `open`) |
-|---|---|---|---|---|
+## Verification
+Not in this file. See the verification records (`templates/verification-record.md`) that
+reference these finding ids.
 
 ## Verdict and conditions
 
