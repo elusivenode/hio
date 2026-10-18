@@ -39,6 +39,10 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 | [HIO-ADR-0009](HIO-ADR-0009-catalogue-from-manifests.md) | Catalogue derived from immutable manifests; no hosted database initially | proposed | owner | S1 |
 | [HIO-ADR-0010](HIO-ADR-0010-first-slice-scope.md) | First slice is a cash and FX walking skeleton; equity total return moves to S2 | proposed | owner | S1 |
 
+### G1 decision package
+
+[`G1-decision-package.md`](G1-decision-package.md): every A01 item pinned at `a82aa0d`, with the evidence, the conditions and the ordered owner decisions. It is a decision aid, not a decision.
+
 ### Owner decision records
 
 See [`owner/README.md`](owner/README.md). As of 2026-10-18 there is **no `approve` OD record**,

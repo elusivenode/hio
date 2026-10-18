@@ -26,6 +26,7 @@ last_reviewed: 2026-10-18
 |---|---|
 | What is HIO for? | [`docs/charter.md`](docs/charter.md) |
 | What has the owner actually decided? (the only authority) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| What does the owner need to decide for G1? | [`docs/decisions/G1-decision-package.md`](docs/decisions/G1-decision-package.md) |
 | What has been proposed as architecture decisions? | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | How is HIO built, and what may run where? | [`docs/architecture.md`](docs/architecture.md) |
 | Which return mathematics is authoritative? | [`docs/standards/return-accounting-and-factor-construction.md`](docs/standards/return-accounting-and-factor-construction.md) |

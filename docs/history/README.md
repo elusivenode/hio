@@ -21,6 +21,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-18-directive-t0006-final-correction.md` | owner directive ("From: HIO owner, with ChatGPT acting as strategic architecture collaborator"), supplied by file path. It explicitly authorises six documentation corrections, and cites a Codex focused analysis that was not supplied | historical; recorded in OD-0002 | — |
 | `2026-10-18-directive-review-worktree-protocol.md` | proposed harness amendment (it names ChatGPT among its roles), adopted by the owner's chat instruction "please implement ... I will advise Codex" | historical; recorded in OD-0003; implemented as T-0007 | — |
 | `2026-10-18-codex-assessment-t0007.md` | a Codex assessment of T-0007 at `46ea6a5`, pasted by the owner without words | historical evidence; remediated within T-0007 (OD-0003); not a review record | — |
+| `2026-10-18-directive-g1-approval-package.md` | owner directive ("From: HIO owner, on architectural advice from ChatGPT") authorising receipt of VERIFY-2026-10-18-a01-1 and preparation of the G1 package | historical; the package's `authorised_by` | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is

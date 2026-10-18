@@ -30,16 +30,16 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | Working protocol | `AGENTS.md` and the operating model operate **provisionally** (HIO-ADR-0008 is proposed) | operating model §1.1 |
 | HIO-ADR-0001 to 0010 | all `proposed` | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Standards and specs | all `proposed` or `draft` | front matter |
-| Independent reviews | A01 at `1502ab8..35c9821`: **REQUEST CHANGES**; no A01 approval. T0007-PILOT at `46ea6a5..b48f83c`: **READY** (a readiness opinion; received by merge `385389d`, under §6.2; **not acceptance**) | [`reviews/README.md`](reviews/README.md) |
-| Open findings | eight A01 findings (one critical, five high, two medium); the T0007-PILOT review opened none | [`reviews/README.md`](reviews/README.md) |
+| Independent reviews | A01 at `1502ab8..35c9821`: REQUEST CHANGES. Then VERIFY-2026-10-18-a01-1 at `35c9821..0c74686`: **all 8 findings verified_closed**; Codex opinion **G1 READY WITH CONDITIONS, S1 NOT READY** (received by merge `a82aa0d`; **not approval**). T0007-PILOT at `46ea6a5..b48f83c`: **READY** (a readiness opinion; received by merge `385389d`, under §6.2; **not acceptance**) | [`reviews/README.md`](reviews/README.md) |
+| Open findings | **none**. All eight A01 findings are verified_closed by Codex (no waivers) | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
 
 | Item | State |
 |---|---|
 | Phase | A01: architecture and research charter |
-| Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)); the first independent review requested changes |
-| Next permissible actions | the owner assigns Codex verification of T-0008 at its submission head (see the latest handoff); the owner accepts or returns T-0006 |
+| Current gate | **G1: owner decisions pending.** See the [G1 decision package](docs/decisions/G1-decision-package.md) (approval target revision `a82aa0d`) |
+| Next permissible actions | the owner works through the [G1 package §8](docs/decisions/G1-decision-package.md#8-owner-decisions-required-in-order) (T-0008, T-0006, the G1 items, T-0002/T-0003). Agents: none beyond reading and drafting; **S1 is not authorised** |
 | Next implementation slice | **HIO-S1 walking skeleton**: recommended, **not authorised** ([implementation plan](docs/implementation-plan.md#hio-s1-walking-skeleton-recommended)) |
 
 ## Work cards
@@ -53,7 +53,7 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | proposed; **not authorised** |
 | Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | submitted_for_review; **not accepted** (authorised by OD-0001/OD-0002) |
 | Review branch and worktree protocol (harness-0.5) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | **accepted at `b48f83c`** (OD-0004), after Codex T0007-PILOT READY. The protocol remains provisional while HIO-ADR-0008 is proposed |
-| A01 correction slice (8 findings) | [T-0008](registers/tasks/T-0008-a01-correction-slice.md) | submitted_for_review (OD-0005); remediation **claimed**, findings **still open** pending Codex verification at the submission head |
+| A01 correction slice (8 findings) | [T-0008](registers/tasks/T-0008-a01-correction-slice.md) | submitted_for_review at `0c74686` (OD-0005); all 8 findings **verified_closed** by Codex; **not accepted** |
 
 ## Verified
 
