@@ -41,7 +41,7 @@ review_record: null
    - **No member data, TFNs, names or balances.**
    - Produced by an additive, read-only `macsmsf` exporter, run outside `local_refresh`.
    - Delivered as an artefact file. HIO never connects to SMSF databases.
-2. **HIO → consumer: pinned artefacts.** A consumer references `artefact_id` + `content_hash`
+2. **HIO → consumer: pinned artefacts.** A consumer references `artefact_id` + `content_sha256`
    and never "latest". The SMSF stores the pin with any pack that uses it, so a pack regenerated
    later reproduces the same numbers.
 3. **No shared** database, credentials, storage bucket, code library or runtime.

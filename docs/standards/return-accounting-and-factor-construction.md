@@ -3,12 +3,12 @@ id: HIO-STD-RA
 title: Return accounting and factor construction standard
 status: proposed
 owner: HIO architecture lead (owner); quantitative researcher (maintainer)
-version: 0.1
+version: 0.2
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0007
 ---
 
-# Return accounting and factor construction standard (v0.1)
+# Return accounting and factor construction standard (v0.2)
 
 **Normative language.** MUST, MUST NOT and SHOULD are requirements. Worked examples use
 illustrative numbers, not market data. Statements about specific vendors, indices or market
@@ -112,19 +112,57 @@ The identity **TR_t = PR_t + IR_t** holds exactly (RA-INV-001).
 The two differ by the return on the asset between ex-date and pay-date, applied to the
 receivable. They MUST NOT be mixed in one series.
 
-### 3.2 Cash return
+### 3.2 Cash return (overnight benchmark accrual)
+
+An overnight cash leg is defined by an **accrual window**, the **rate applicable to each day in
+the window**, and a **compounding convention**. Knowability is recorded separately. It never
+selects the rate.
+
+**1. Window.** For a period `(t−1, t]` on the series calendar, the window is the calendar days
+`d` with `t−1 ≤ d < t`. Each day is one overnight, starting on `d`. For a foreign leg on another
+calendar, the spec declares how its calendar dates map to the window (§4.4).
+
+**2. Applicable rate.** For each day `d`, use the rate **fixed for the overnight starting on
+the latest business day `b ≤ d`** of that rate's market. A weekend or holiday therefore carries
+the preceding business day's rate. No rate fixed after the window's last overnight starts is
+ever used.
+
+**3. Compounding** (overnight-index convention, compounded in arrears):
 
 ```
-r^c_t = rate_{t−1} × τ(t−1, t)
+r^c_t = Π_b (1 + rate_b × n_b / B) − 1
 ```
 
-Here `rate_{t−1}` is the rate fixed for the period starting at `t−1`, and `τ` follows the
-declared day-count:
-- **ACT/365F** for AUD money markets;
-- **ACT/360** for USD money markets [EXT].
+- `b` runs over the rate-business days whose overnight lies in the window;
+- `n_b` is the number of window days that use `rate_b`;
+- `B` is 365 for AUD (ACT/365F) and 360 for USD (ACT/360) [EXT].
 
-Accrual over non-business days is carried into the next calendar period end. That is:
-`τ(t−1, t)` spans calendar days, and the rate is the last fixing at or before `t−1`.
+This is exact by definition, so no compounding-approximation bound applies.
+
+**4. Two different rate regimes.** The spec MUST state which applies:
+
+| Regime | When the rate is known | Example | Label |
+|---|---|---|---|
+| **ex-ante** | before the overnight starts (the fixing is published by the window start) | a deposit with a rate set at placement | `investable` |
+| **in arrears** | after the overnight, e.g. the next business-day morning | SOFR | `replicable_with_basis` |
+
+An in-arrears benchmark has **no look-ahead in the return**: each day earns the rate fixed for
+that day's overnight. Its index level becomes **knowable later**, so the observation's
+`knowable_at` is the publication instant of the last rate used. An investor cannot lock an
+in-arrears period rate at the period start.
+
+**5. Fixtures** (synthetic rates; window days by date):
+
+| Case | Window | Rates applied | `r^c_t` |
+|---|---|---|---|
+| USD, Fri → Mon | NY Fri, Sat, Sun | Fri 4.30% × 3 | `3 × 0.043/360` = **0.000358333333** |
+| USD, Fri → Tue, Monday holiday | Fri, Sat, Sun, Mon | Fri 4.30% × 4 | `4 × 0.043/360` = **0.000477777778** |
+| USD, Thu → Mon | Thu; Fri, Sat, Sun | Thu 4.30% × 1; Fri 4.40% × 3 | `(1 + 0.043/360)(1 + 0.044 × 3/360) − 1` = **0.000486154907** |
+| USD, Fri → Mon, look-ahead trap | NY Fri, Sat, Sun | **Monday's SOFR is NOT used** (its overnight starts after the window) | as row 1 |
+| AUD, Fri → Mon | Fri, Sat, Sun | Fri 3.60% × 3 | `3 × 0.036/365` = **0.000295890411** |
+
+Daily compounding *within* a weekend would give `(1 + 0.043/360)^3 − 1 = 0.000358376136`. That
+is a different convention, and it is not used.
 
 ### 3.3 Excess return
 
@@ -164,13 +202,28 @@ foreign-currency asset (cash, a deposit, a bill) or a forward or futures positio
            = s_t + (r^{c,f}_t − r^{c,h}_t) + r^{c,f}_t s_t       (spot + carry + cross)
   ```
 
-- **Forward-based equivalent.** Long one unit of foreign currency forward at `F_{t,T}` (home per
-  foreign). The P&L at `T` is `S_T − F_{t,T}`. Per unit of home notional `F_{t,T}`, the excess
-  return is `S_T / F_{t,T} − 1`.
-  - Under covered interest parity (CIP), `F_{t,T} = S_t (1 + r^h τ)/(1 + r^f τ)`, and the two
-    constructions agree up to compounding and timing.
-  - Their difference is the **CIP basis plus the fixing and timing basis**. It is a
-    triangulation, never an identity.
+- **Forward-based equivalent, on the same capital.** Compare the two constructions on the
+  **same initial home capital `K`**, with settlement at `T`.
+  - **Funded cash** (period rates `r^h`, `r^f`): convert `K` at `S_0`, earn `r^f`, convert back
+    at `S_T`, and repay funding `K(1 + r^h)`. The excess per unit of `K` is
+    `(1 + r^f) S_T/S_0 − (1 + r^h)`.
+  - **Forward:** buy `N = K(1 + r^f)/S_0` units of foreign currency forward at `F`. That is the
+    foreign amount the cash position delivers at `T`. The excess per unit of `K` is
+    `(1 + r^f)(S_T − F)/S_0`.
+  - **Under covered interest parity (CIP),** `F = S_0 (1 + r^h)/(1 + r^f)`, and the two are
+    **identical**: both equal `(1 + r^h)(S_T/F − 1)`.
+  - **`S_T/F − 1` is a return per unit of forward notional `F`, not per unit of capital.** It
+    differs from the capital-normalised excess by the certain factor `(1 + r^h)`. This is a
+    normalisation, not market basis.
+  - **After normalising** to the same capital and cash flows, the only remaining differences are
+    the **CIP basis and the fixing and timing basis**. Those are triangulation terms, never part
+    of the identity (RA-INV-021).
+  - **Fixtures:**
+
+    | Case | Inputs | Cash excess | `S_T/F − 1` | `(1 + r^h)(S_T/F − 1)` |
+    |---|---|---|---|---|
+    | (a) | `S_0 = S_T = 1`, `r^h = 10%`, `r^f = 0`, so `F = 1.1` | −10.000000% | −9.090909% | −10.000000% |
+    | (b) | `S_0 = 1.5385`, `S_T = 1.5000`, `r^h = 0.036 × 30/365`, `r^f = 0.043 × 30/360`, so `F = 1.5375427458` | −2.4489615842% | −2.4417367194% | −2.4489615842% |
 
 ### 4.3 Hedged foreign return
 
@@ -250,7 +303,19 @@ The spec MUST declare:
      priced at par.
   2. At `t`, revalue the same bond, now with remaining maturity `M − τ`, on the curve at `t`
      interpolated at `M − τ`. Include the accrued coupon.
-  3. `R_t = P^{dirty}_t / P^{dirty}_{t−1} − 1`. Re-strike a new par bond at `t`.
+  3. `R_t = (P^{dirty}_t + C_{(t−1,t]}) / P^{dirty}_{t−1} − 1`, where `C_{(t−1,t]}` is all coupon
+     cash the bond pays in the period. **Convention:** coupon cash is held, without interest,
+     to the period end and reinvested at the re-strike. The re-strike uses total wealth
+     `P^{dirty}_t + C`, so no coupon is lost. Then re-strike a new par bond at `t`.
+
+     **Fixtures (RA-INV-013):**
+
+     | Case | Calculation | Return |
+     |---|---|---|
+     | coupon date | `P^{dirty}_{t−1} = 102`, coupon `C = 2` paid, `P^{dirty}_t = 100` (ex-coupon) | `(100 + 2)/102 − 1` = **0** |
+     | non-coupon date | `101.00 → 101.05`, `C = 0` | **0.000495049505** |
+
+     Omitting `C` would report −1.9607843137% on the coupon date, which is wrong.
 
   The spec MUST declare:
   - the curve source and type (par, zero or yield-to-maturity of benchmark lines; treating a
@@ -345,8 +410,8 @@ The spec MUST declare:
 
   | Currency | Default | Basis |
   |---|---|---|
-  | AUD | overnight accrual at the RBA cash rate (interbank overnight rate), ACT/365F | `replicable_with_basis` |
-  | USD | overnight accrual at SOFR, ACT/360, from its first publication date; any earlier splice (EFFR, bills) declared as a separate segment | `replicable_with_basis` |
+  | AUD | overnight accrual at the RBA cash rate (interbank overnight rate), ACT/365F, per §3.2; regime (ex-ante or in arrears) per its publication timing [EXT, T-0002] | `replicable_with_basis` |
+  | USD | SOFR compounded in arrears, ACT/360, per §3.2, from its first publication date; any earlier splice (EFFR, bills) declared as a separate segment | `replicable_with_basis` |
 
   The rate definitions and history are [EXT].
 - **No omission or double-counting of cash.** A portfolio combines factors either as:
@@ -415,7 +480,7 @@ These are identities unless marked *(bound)*. The tolerance is 1e-12 relative, u
 |---|---|
 | RA-INV-001 | `TR_t = PR_t + IR_t` per period (same `w`) |
 | RA-INV-002 | a series uses one valuation basis (market price, NAV or index), never mixed |
-| RA-INV-003 | cash accrual equals `rate × τ` under the declared day-count; the index is the product of `(1 + r^c)` |
+| RA-INV-003 | cash accrual follows §3.2: window `t−1 ≤ d < t`, the rate applicable to each day's overnight, and `Π(1 + rate_b n_b / B) − 1`; the §3.2 fixtures reproduce exactly; the index is the product of `(1 + r^c)` |
 | RA-INV-004 | `X_t = R_t − r^c_t`, same currency and period, with the cash-leg id recorded |
 | RA-INV-005 | the funded TR reconstructs from cash + excess exactly |
 | RA-INV-006 | `(1 + R^h) = (1 + R^f)(1 + s)`; the cross term reported |
@@ -425,7 +490,7 @@ These are identities unless marked *(bound)*. The tolerance is 1e-12 relative, u
 | RA-INV-010 | the futures excess return uses same-contract settlement changes only; no cross-contract difference on a roll date |
 | RA-INV-011 | futures TR = collateral + excess, exactly, under the declared notional rule |
 | RA-INV-012 | no return is computed from continuous or back-adjusted futures levels |
-| RA-INV-013 | bond TR from full dirty-price revaluation plus coupon; decomposition residual reported *(bound declared per spec)* |
+| RA-INV-013 | bond TR = `(P^{dirty}_t + C_{(t−1,t]})/P^{dirty}_{t−1} − 1`, including in CMT step 3; the coupon-date and non-coupon-date fixtures (§6) reproduce; decomposition residual reported *(bound declared per spec)* |
 | RA-INV-014 | credit excess declares its reference (government duration-matched, or cash); distinct series ids |
 | RA-INV-015 | portfolio combination uses excess form or funded form, never mixed; cash counted once |
 | RA-INV-016 | cumulative comparisons compound the per-period identity; never single-period identities across independently compounded indices |
@@ -433,6 +498,7 @@ These are identities unless marked *(bound)*. The tolerance is 1e-12 relative, u
 | RA-INV-018 | multi-currency series use a declared joint calendar and alignment rule; accrual carried across non-business days |
 | RA-INV-019 | `price_only` and `state_indicator` series are never referenced as returns (CI) |
 | RA-INV-020 | corporate-action adjustments produce no spurious return on the action date |
+| RA-INV-021 | cash-versus-forward FX comparisons are normalised to the same capital and cash flows before any difference is attributed to basis; the §4.2 fixtures reproduce |
 
 ## 14. Worked examples
 
@@ -525,3 +591,4 @@ residual.
 ## Changelog
 
 - 0.1 (2026-10-18): initial proposed version.
+- 0.2 (2026-10-18): §3.2 overnight accrual (window, applicable rate, in-arrears compounding, ex-ante versus in-arrears, fixtures); §4.2 same-capital forward identity; §6 CMT coupon cash; RA-INV-003/013 revised; RA-INV-021 added (T-0008, F-REVIEW-2026-10-18-a01-2, -4, -7, -8).

@@ -3,12 +3,12 @@ id: HIO-STD-RIGHTS
 title: Data rights and licensing
 status: proposed
 owner: HIO architecture lead (owner)
-version: 0.1
+version: 0.2
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0005
 ---
 
-# Data rights and licensing (v0.1)
+# Data rights and licensing (v0.2)
 
 ## 1. Rights record (per source; per dataset where terms differ)
 
@@ -17,6 +17,7 @@ means deny.**
 
 | Permission | Question it answers |
 |---|---|
+| `automated_retrieval` | may we fetch the data by scheduled, automated access (API, file download, scraping)? |
 | `raw_retention` | may we store the raw receipts, and for how long? |
 | `internal_compute` | may we compute on the data internally? |
 | `derivation` | may we create derived series (factors, models) from it? |
@@ -42,15 +43,32 @@ Verification fields:
   rights. The override records the clause.
 - **Conditional values** carry their conditions forward, concatenated.
 
-## 3. Gates
+## 3. Gates: operation-to-permission matrix (fail closed)
 
-| Gate | Requires |
-|---|---|
-| Publication to consumer class C | `distribution.C = allow` (or `conditional`, with conditions satisfied and recorded); verification is `owner_verified` or `contract` for every input |
-| Inclusion of values in a document | additionally, `quotation_in_documents = allow` |
-| Agent context | `agent_context = allow`. Otherwise agents use schemas, metadata, synthetic data, or aggregate statistics the terms permit |
-| CI runners or cloud hosting | `external_processing = allow` |
-| Vendor termination | a runbook step applies `post_termination_*` (delete or retain) |
+Every job checks, **before** it performs an operation, that **every input source** grants
+**every** permission the operation requires.
+- `unknown` and `deny` both refuse.
+- `conditional(<c>)` refuses unless condition `c` is recorded as satisfied, with evidence.
+- Verification must be `owner_verified` or `contract`. `unverified` and `vendor_asserted` refuse
+  every operation except a one-off manual sample made for T-0002.
+
+| Operation | Performed by | Requires |
+|---|---|---|
+| **fetch** (scheduled capture) | capture job | `automated_retrieval`; plus `external_processing` if it runs on a CI runner or cloud host |
+| **store raw** (receipt to the bucket) | capture job | `raw_retention` (and its duration); plus `external_processing` for a cloud bucket |
+| **build** (observations → releases → factors) | build job | `internal_compute`, `derivation`; plus `external_processing` on CI or cloud |
+| **store derived** (release or artefact bytes) | build and publish jobs | `derived_storage`; plus `external_processing` for a cloud bucket |
+| **rebuild** (reproducibility check) | CI | as **build** and **store derived**, plus `raw_retention` still valid |
+| **publish to class C** | publish job | `distribution.C`; plus `quotation_in_documents` if values will be printed |
+| **agent use** | any agent session | `agent_context`. Otherwise agents use metadata, schemas or synthetic data only |
+| **terminate** (end of rights) | runbook | apply `post_termination_raw` / `post_termination_derived`: delete, or retain as allowed |
+| **audit retain** | runbook | `audit_retention` |
+
+**S1 fixtures (fail closed), one per operation S1 performs:** fetch, store raw, build, store
+derived, rebuild, publish to `hio_internal`.
+- A synthetic source whose required permission is `deny`, `unknown` or an unsatisfied
+  `conditional` makes that operation **refuse**, with no partial output written.
+- The same source with `allow` and `owner_verified` proceeds.
 
 ## 4. Agent rules (procedural in S1)
 
@@ -68,4 +86,10 @@ Every source in [`registers/sources.yaml`](../../registers/sources.yaml) starts 
 
 That includes official, public sources: central banks, treasuries, statistical agencies.
 Their terms are commonly permissive (for example Creative Commons licences or public-domain
-status) [EXT], but they are verified case by case in T-0002 before S1 publishes anything.
+status) [EXT], but they are verified case by case in T-0002 **before S1 performs any operation on them, live
+fetch included**, not only before publication.
+
+## Changelog
+
+- 0.1 (2026-10-18): initial.
+- 0.2 (2026-10-18): `automated_retrieval` permission; operation-to-permission matrix covering fetch, store, build, rebuild, publish, agent, terminate and audit; fail-closed S1 fixtures (T-0008, F-REVIEW-2026-10-18-a01-5).

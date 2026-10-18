@@ -3,7 +3,7 @@
 # Default rights: every permission `unknown` (= deny).
 defaults: &unverified
   verification: unverified
-  rights: {raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown,
+  rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown,
            post_termination_raw: unknown, post_termination_derived: unknown,
            distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown},
            quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown,

@@ -40,7 +40,8 @@ Read-only web access to public terms pages. **An agent may propose `allow`; only
 | ID | Test | Evidence |
 |---|---|---|
 | R1 | every rights dimension for the 4 sources is `allow`, `deny` or `conditional`, with evidence; none is `unknown` | sources.yaml diff |
-| R2 | the publication timing per series is stated, with its basis (`documented_schedule` or stronger) | sources.yaml; spec patch PRs |
+| R5 | the permissions each S1 operation requires (rights standard §3: fetch, store raw, build, store derived, rebuild, publish) are verified **before live capture**, not only before publication; `automated_retrieval` is included | sources.yaml; a mapping table |
+| R2 | the publication timing per series is stated, and how vintage evidence will be obtained (`captured_on_schedule` for captured vintages; whether any `publisher_timestamp`, `publisher_vintage` or `archived_receipt` evidence exists for history) | sources.yaml; spec patch PRs |
 | R3 | `agent_context` and `external_processing` (CI runners) are explicitly resolved | sources.yaml |
 | R4 | the spec `availability` fields are updated by versioned patch | spec changelogs |
 

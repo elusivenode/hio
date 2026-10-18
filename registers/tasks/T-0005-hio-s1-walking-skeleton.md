@@ -9,7 +9,7 @@ authorised_by: null       # no owner instruction to execute is recorded, so not 
 base_revision: null
 links:
   adrs: [HIO-ADR-0001, HIO-ADR-0004, HIO-ADR-0005, HIO-ADR-0006, HIO-ADR-0007, HIO-ADR-0008, HIO-ADR-0009, HIO-ADR-0010]
-  specs: [cash.aud.overnight@0.1.0, cash.usd.overnight@0.1.0, fx.usd_cash_vs_aud.excess@0.1.0]
+  specs: [cash.aud.overnight@0.2.0, cash.usd.overnight@0.2.0, fx.usd_cash_vs_aud.excess@0.2.0]
   depends_on: [T-0001, T-0002]
   blocks: [S2]
 ---

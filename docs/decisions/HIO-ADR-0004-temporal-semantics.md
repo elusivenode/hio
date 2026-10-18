@@ -28,18 +28,22 @@ Every observation carries:
 | Attribute | Meaning | Nature |
 |---|---|---|
 | `valid_time` | what the value refers to: a trade date, settlement date, month or tenor date, in the **market-local calendar** | a fact about the series |
-| `knowable_at` + `knowable_basis` | the earliest instant (UTC) the value was **publicly knowable**, with how we know it: `publisher_timestamp` \| `publisher_vintage` \| `documented_schedule` \| `rule_inferred` | a claim, with an evidence grade |
+| `knowable_at` + `knowable_basis` | the earliest instant (UTC) **this vintage's value** was publicly knowable, with the evidence for that vintage: `publisher_timestamp` \| `publisher_vintage` \| `archived_receipt` \| `captured_on_schedule`, or the non-evidential `schedule_only` \| `rule_inferred` | a claim, with an evidence grade, specific to the vintage |
 | `captured_at` | the instant (UTC) HIO's receipt was fetched | a fact, proven by the receipt |
 | `vintage_seq` | the order of distinct values for the same key | a fact |
 
-Two query modes, never mixed implicitly:
-- **`as_known_by_market(T)`:** the latest vintage with `knowable_at ≤ T`. Results inherit the
-  weakest `knowable_basis` used.
+Query modes, never mixed implicitly:
+- **`as_known_by_market(T)`:** the latest vintage with `knowable_at ≤ T` **whose basis is
+  vintage evidence**. A key with no such vintage is absent, not filled from a later revision.
 - **`as_captured_by_hio(T)`:** the latest vintage with `captured_at ≤ T`. This is **provable**.
+- **`reconstructed(T)`:** may use `schedule_only` or `rule_inferred` vintages. It is always
+  labelled "reconstructed availability", and is never described as point-in-time evidence.
+
+**A release schedule is not evidence for a value.** A current-only backfill cannot serve an
+earlier `as_known_by_market(T)` (fixture in observations standard §4.1).
 
 **Promotion rule.** A predictive or TAA result promoted beyond `exploratory` must declare its
-mode and its weakest basis. A result relying on `rule_inferred` knowability is labelled
-"reconstructed availability", and cannot be described as point-in-time evidence.
+mode and its weakest basis.
 
 Full rules, timezone and session semantics: the
 [observations standard](../standards/observations-and-point-in-time.md).
@@ -54,6 +58,11 @@ Full rules, timezone and session semantics: the
 
 - Not reversible for data already captured without these fields. That is why it is decided
   before S1.
+
+## Changelog
+
+- 2026-10-18: created (85ef0fa).
+- 2026-10-18: vintage-specific knowability and the `reconstructed` mode (T-0008, F-REVIEW-2026-10-18-a01-1). Status unchanged: proposed.
 
 ## Approval
 

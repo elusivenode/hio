@@ -3,12 +3,12 @@ id: HIO-STD-OBS
 title: Observations, point-in-time knowledge and vintages
 status: proposed
 owner: HIO architecture lead (owner); market-data maintainer
-version: 0.1
+version: 0.2
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0004
 ---
 
-# Observations, point-in-time knowledge and vintages (v0.1)
+# Observations, point-in-time knowledge and vintages (v0.2)
 
 ## 1. Entities
 
@@ -34,25 +34,33 @@ A `key` is the observation's coordinate: a date; a (date, tenor); a (contract, t
 | `source_timezone` | IANA tz | the publisher's local zone | recorded for audit |
 | `quality_status` | enum | `pending`, `valid`, `quarantined`, `superseded` | only `valid` is used by releases |
 
-## 3. `knowable_basis`: an evidence grade, strongest first
+## 3. `knowable_basis`: evidence for **this value's vintage**, strongest first
 
-| Value | Meaning | Example |
+Knowability is a property of a **specific vintage** (a specific value for a key). It is not a
+property of the series or its release schedule. Every basis below must be evidence that *this
+value* was public at `knowable_at`.
+
+| Value | Meaning | May support `as_known_by_market`? |
 |---|---|---|
-| `publisher_timestamp` | the publisher's own release timestamp, carried in the payload or headers | an API field giving publication time |
-| `publisher_vintage` | the publisher maintains real-time vintages | ALFRED real-time periods [EXT] |
-| `documented_schedule` | the publisher's documented release calendar or time of day, applied to the valid date | "published daily at about 4pm Sydney" [EXT, per source] |
-| `rule_inferred` | an assumed lag, declared in the series spec | "settlement + 1 business day, 07:00 exchange time" |
+| `publisher_timestamp` | the payload or headers carry this vintage's own publication timestamp | yes |
+| `publisher_vintage` | the publisher's real-time vintage archive dates this value (e.g. ALFRED real-time periods [EXT]) | yes |
+| `archived_receipt` | an independently dated archive of the earlier publication (an archived file or page) contains this value | yes, once the archive's date and integrity are recorded |
+| `captured_on_schedule` | HIO captured this value itself, and `knowable_at` is the documented release time preceding that capture | yes, for HIO-captured vintages only |
+| `schedule_only` | only the series' release schedule is known; nothing shows that this value (rather than a later revision) was what was published | **no** |
+| `rule_inferred` | an assumed lag declared in the series spec | **no** |
 
-**For a backfill:** `captured_at` is the backfill time. `knowable_at` comes from the strongest
-basis available, and is usually `documented_schedule` or `rule_inferred`. **A backfill never
-has `knowable_basis` stronger than its evidence, and it is never treated as captured history.**
+**A schedule is not vintage evidence.** For a backfill, HIO usually receives only the *current*
+value of each key. That value may be a revision. It gets `schedule_only` or `rule_inferred`
+unless the source supplies vintage evidence. A backfill never has a basis stronger than its
+evidence, and is never treated as captured history.
 
 ## 4. Query modes
 
 | Mode | Returns | Claim it supports |
 |---|---|---|
 | `as_captured_by_hio(T)` | per key, the latest `valid` vintage with `captured_at ≤ T` | "HIO actually held this at T" (provable) |
-| `as_known_by_market(T)` | per key, the latest `valid` vintage with `knowable_at ≤ T` | "the market could have known this at T", only as strong as the weakest `knowable_basis` used |
+| `as_known_by_market(T)` | per key, the latest `valid` vintage with `knowable_at ≤ T` **and** a basis from the "yes" rows of §3. If no vintage of the key qualifies, the key is **absent** (unknown), not filled | "this value was publicly knowable at T", with vintage evidence |
+| `reconstructed(T)` | per key, the latest `valid` vintage with `knowable_at ≤ T` under any basis, including `schedule_only` and `rule_inferred` | **reconstructed availability only.** Results carry the label, and may not be described as point-in-time evidence |
 | `latest()` | the latest `valid` vintage | descriptive work only; MUST NOT feed predictive or TAA evaluation |
 
 Every release and model result records:
@@ -60,10 +68,36 @@ Every release and model result records:
 - its `knowledge_cutoff` T;
 - `weakest_knowable_basis`.
 
-Predictive work labelled point-in-time requires `as_captured_by_hio`, or `as_known_by_market`
-with a basis no weaker than `documented_schedule`. Results built on `rule_inferred` availability
-are labelled **"reconstructed availability"**.
+Predictive work labelled point-in-time requires `as_captured_by_hio` or `as_known_by_market`.
 
+### 4.1 Fixture: original, revision, current-only backfill (F-REVIEW-2026-10-18-a01-1)
+
+Series X, key 2020-02, synthetic:
+
+| Event | Value | Instant | Evidence |
+|---|---|---|---|
+| original release | 100 | 2020-03-15T00:30Z | (not held by HIO) |
+| revision | 110 | 2025-06-01T00:30Z | (not held by HIO) |
+| HIO backfill | 110 | captured 2026-01-10 | the current file only; the schedule says release ≈ mid-March |
+
+Case A: the backfill alone. The vintage stored is 110, with `knowable_basis: schedule_only`.
+
+| Query | Result |
+|---|---|
+| `as_known_by_market(2021-01-01)` | **absent** (no qualifying vintage) |
+| `reconstructed(2021-01-01)` | 110, labelled reconstructed |
+| `as_captured_by_hio(2021-01-01)` | absent |
+| `as_captured_by_hio(2026-02-01)` | 110 |
+
+Case B: the publisher's vintage archive is also ingested. That gives vintages 100
+(`publisher_vintage`, 2020-03-15) and 110 (`publisher_vintage`, 2025-06-01).
+
+| Query | Result |
+|---|---|
+| `as_known_by_market(2021-01-01)` | **100** |
+| `as_known_by_market(2025-07-01)` | **110** |
+
+## 5. Capture clock
 ## 5. Capture clock
 
 - Each source records `capture_started_at`, the first scheduled capture.
@@ -91,7 +125,13 @@ the gate's rules or the owner can release it.
 |---|---|
 | OBS-INV-001 | an identical re-fetch creates no new vintage; a changed value creates `vintage_seq + 1`, and earlier vintages remain retrievable |
 | OBS-INV-002 | `as_captured_by_hio(T)` never returns `captured_at > T` |
-| OBS-INV-003 | `as_known_by_market(T)` never returns `knowable_at > T` |
+| OBS-INV-003 | `as_known_by_market(T)` never returns `knowable_at > T`, and never returns a vintage whose basis is `schedule_only` or `rule_inferred` |
 | OBS-INV-004 | every observation references an existing receipt whose hash verifies |
 | OBS-INV-005 | `valid_time` is never derived by converting a UTC instant to a date |
-| OBS-INV-006 | a backfilled observation's `knowable_basis` is not `publisher_timestamp` unless the backfilled payload carries the timestamp |
+| OBS-INV-006 | a backfilled observation's `knowable_basis` is `publisher_timestamp`, `publisher_vintage` or `archived_receipt` only with that vintage-specific evidence; otherwise it is `schedule_only` or `rule_inferred` |
+| OBS-INV-007 | the §4.1 fixture: Case A gives `as_known_by_market(2021-01-01)` absent and `reconstructed` 110; Case B gives 100 at 2021-01-01 and 110 at 2025-07-01 |
+
+## Changelog
+
+- 0.1 (2026-10-18): initial.
+- 0.2 (2026-10-18): knowability is vintage-specific; `schedule_only` cannot support `as_known_by_market`; new `reconstructed(T)` mode; §4.1 fixture; OBS-INV-003/006/007 (F-REVIEW-2026-10-18-a01-1).

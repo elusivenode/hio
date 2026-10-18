@@ -23,7 +23,7 @@ recommendation to start S1 would not have done this; the owner's instruction doe
 
 The card links:
 - HIO-ADR-0004, 0005, 0006, 0007, 0009 and 0010;
-- the spec `fx.usd_cash_vs_aud.excess@0.1.0`;
+- the spec `fx.usd_cash_vs_aud.excess@0.2.0`;
 - RA-INV-004…007 and RA-INV-016.
 
 ## 2. The implementation engineer bootstraps (fresh session)
@@ -46,7 +46,7 @@ Records `start_revision`. Invokes skill `hio-return-accounting`.
 - Writes tests FXC-INV-1/2/3 and OBS-INV-001…006.
 - Runs capture on dev storage.
 - Produces release `EXAMPLE-rel-9f3c…` with status `exploratory`. Its manifest shows
-  `knowledge_mode: as_known_by_market` and `weakest_knowable_basis: documented_schedule`.
+  `knowledge_mode: as_known_by_market` and `weakest_knowable_basis: captured_on_schedule`.
 - Notices a conflict: the spec says "RBA fixing about 4pm Sydney", but the source page states
   a different time. Following AGENTS.md precedence, it does **not** edit the spec, which is the
   higher-precedence document. It records the conflict and opens a draft spec patch for owner

@@ -27,7 +27,7 @@
     negatively correlated with global equity returns in equity drawdowns, so unhedged foreign
     currency lowers drawdowns for an AUD investor.
   prediction: {direction: "-", magnitude: "negative conditional correlation in the worst equity decile", horizon: monthly}
-  data: {factors: ["fx.usd_cash_vs_aud.excess@0.1.0", "equity.global.* (S2+)"], states: [], knowledge_mode: as_known_by_market, min_knowable_basis: documented_schedule}
+  data: {factors: ["fx.usd_cash_vs_aud.excess@0.2.0", "equity.global.* (S2+)"], states: [], knowledge_mode: as_known_by_market, min_knowable_basis: captured_on_schedule}
   competing_explanations: [commodity-price channel, rate-differential channel, sample dominated by 2008]
   falsification: conditional correlation not distinguishable from zero, or positive
   experiments: []
@@ -62,7 +62,7 @@
     commodity exposures) rises sharply in liquidity stress. Covariance estimated in normal
     periods therefore overstates diversification when it matters.
   prediction: {direction: "+ tail dependence", magnitude: "conditional correlations well above unconditional", horizon: "daily and weekly, in stress windows"}
-  data: {factors: ["multi-family (Y2)"], states: ["financial conditions (planned)"], knowledge_mode: as_known_by_market, min_knowable_basis: documented_schedule}
+  data: {factors: ["multi-family (Y2)"], states: ["financial conditions (planned)"], knowledge_mode: as_known_by_market, min_knowable_basis: captured_on_schedule}
   competing_explanations: [the correlation-conditioning bias of selecting on extreme returns]
   falsification: no tail dependence beyond what a conditioning-bias-corrected model implies
   experiments: []

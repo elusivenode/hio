@@ -80,12 +80,12 @@ card (an OD record) before work starts.
 | RBA cash rate (overnight) | RBA statistical tables | `cash.aud.overnight` | unverified → T-0002 |
 | RBA AUD/USD 4pm | RBA statistical tables | `fx.usd_cash_vs_aud.excess` | unverified → T-0002 |
 | SOFR | NY Fed | `cash.usd.overnight` | unverified → T-0002 |
-| T-bill rates (4w, 13w) | US Treasury | USD cash triangulation | unverified → T-0002 |
+| T-bill rates (4w, 13w) | US Treasury | USD cash **rate** triangulation: levels and horizon-aligned, `state_indicator`; no bill return is claimed | unverified → T-0002 |
 | AUD/USD noon NY (H.10) | Federal Reserve Board | FX triangulation | unverified → T-0002. If it is reachable only via FRED with a key, the owner decides whether to add a secret or drop it |
-| RBA bank-bill rate (1m) | RBA | AUD cash triangulation | unverified → T-0002 |
+| RBA bank-bill rate (1m) | RBA | AUD cash **rate** triangulation: levels and horizon-aligned, `state_indicator`; no bill return is claimed | unverified → T-0002 |
 
-**Total-return methodology:** the three specs in `specs/factors/` and return standard §3.2,
-§4.2, §9 and §10. No equity, no bonds, no futures.
+**Total-return methodology:** the three specs in `specs/factors/` (v0.2.0) and return standard
+(v0.2) §3.2, §4.2, §9 and §10. No equity, no bonds, no futures.
 
 ### Minimum infrastructure and workload distribution
 
@@ -111,14 +111,14 @@ card (an OD record) before work starts.
 | S1-A2 | import rules (architecture §1) enforced; a deliberate violation fails CI | boundary |
 | S1-A3 | receipts are write-once: the content hash verifies on read; a second write to an existing key is refused by code; bucket versioning is on | immutability |
 | S1-A4 | OBS-INV-001: an identical re-fetch makes no new vintage; a changed fixture value makes vintage 2; both retrievable | vintages |
-| S1-A5 | OBS-INV-002/003: property-based tests for both query modes | PIT |
+| S1-A5 | OBS-INV-002/003 property-based tests for `as_captured_by_hio`, `as_known_by_market` and `reconstructed`; **OBS-INV-007** (the original/revision/current-only-backfill fixture, observations standard §4.1) passes: a schedule-only backfill is absent from `as_known_by_market` | PIT |
 | S1-A6 | OBS-INV-005: no `valid_time` is derived from a UTC instant (test + lint rule) | PIT |
-| S1-A7 | cash legs: RA-INV-003 and the spec invariants exact; the CASH-USD-INV-2 bound holds | math |
-| S1-A8 | FX: FXC-INV-1/2 exact over the full history; RA-INV-007 tested for rising and falling `q`; RA-INV-016 cumulative test compounds per-period identities | math |
+| S1-A7 | cash legs: RA-INV-003 and the spec invariants exact, including the RA §3.2 fixtures (Fri→Mon, a four-day holiday, Thu→Mon, the AUD weekend) and the CASH-USD-INV-3 look-ahead trap (Monday's SOFR is not used for the Fri→Mon period); the period `knowable_at` equals the last rate's publication | math |
+| S1-A8 | FX: FXC-INV-1/2 exact over the full history; the FXC-INV-4 weekend fixture; RA-INV-007 for rising and falling `q`; RA-INV-016 cumulative test compounds per-period identities | math |
 | S1-A9 | decomposition release (spot, carry, cross) published alongside the excess release | math |
-| S1-A10 | three triangulation reports (FX RBA vs H.10; USD cash vs bills; AUD cash vs bills), each with the pre-registered expected-difference model and an outcome classification; **no pass/fail on agreement** | validation |
-| S1-A11 | every release rebuilt from a clean CI checkout reproduces its `content_hash` | repeatability |
-| S1-A12 | the rights gate refuses a synthetic restricted artefact; a real artefact reaches `approved_for_consumer(hio_internal)` only with T-0002 `owner_verified` records | licensing |
+| S1-A10 | three triangulation reports, each with the pre-registered expected-difference model and an outcome classification, and **no pass/fail on agreement**: FX RBA vs H.10 (spot); USD cash vs bills; AUD cash vs bills. The cash reports compare **rates**: levels, and horizon-aligned realised overnight compounding against the bill yield, after the declared conversions. They are not return comparisons | validation |
+| S1-A11 | every release rebuilt from a clean CI checkout reproduces its `content_sha256`; the releases standard §6.1 fixtures pass (determinism; status events do not change identity; a withdrawn artefact is refused by a pinned consumer while its bytes verify; no self-reference) | repeatability |
+| S1-A12 | **fail-closed rights fixtures for every operation S1 performs** (rights standard §3): fetch, store raw, build, store derived, rebuild, publish to `hio_internal`. Each refuses with no partial output on `deny`, `unknown`, an unsatisfied `conditional`, or unverified evidence. A real source is used only once T-0002 records `owner_verified` for every permission that operation requires | licensing |
 | S1-A13 | **soak:** ≥10 consecutive Sydney business days of unattended capture; the punctuality distribution recorded; gaps recorded as capture gaps; a deliberately failed run raises an alert | operations |
 | S1-A14 | quality gates: a malformed receipt is quarantined; staleness detection fires in a test | quality |
 | S1-A15 | harness CI checks pass (links, front matter, YAML schemas, STATUS ≤150 lines, secret patterns); a session handoff is written | harness |
@@ -129,8 +129,9 @@ card (an OD record) before work starts.
 1. **T-0001 (G1).** This also authorises the owner to create the repository and bucket.
 2. **Repository + bucket + keys** (owner). The `macsmsf/hio/` migration commit.
 3. **Build on fixtures.** Starts at G1; it does not wait for T-0002.
-4. **T-0002 rights verification.** Required for S1-A12 and for live capture, if any terms
-   restrict automated retrieval.
+4. **T-0002 rights verification.** Required **before any live operation on a real source**:
+   fetch, store, build, rebuild or publish (rights standard §3). Fixture work on synthetic
+   sources does not wait for it.
 5. **Soak** (S1-A13), in parallel with review preparation.
 6. **Independent review → G2.**
 

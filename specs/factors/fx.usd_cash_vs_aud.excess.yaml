@@ -1,7 +1,7 @@
 # Worked example spec (HIO-S1 primary factor). External facts are marked [EXT] and are unverified.
 identity:
   factor_id: fx.usd_cash_vs_aud.excess
-  version: 0.1.0
+  version: 0.2.0
   status: draft
   owner: quantitative researcher
   family: fx
@@ -25,24 +25,24 @@ return_convention:
   compounding: chain simple period returns
   numeraire: AUD
   hedging: unhedged (the exposure is the currency itself)
-  cash_leg: cash.aud.overnight@0.1.0
+  cash_leg: cash.aud.overnight@0.2.0
   excess_definition: arithmetic per period (RA §1)
 observations:
   - series_id: rba.fx.audusd_4pm      # quoted USD per AUD (q)
     source_id: rba_statistical_tables
     unit: USD per AUD
-    knowledge_mode_required: as_known_by_market
+    knowledge_mode_required: "as_captured_by_hio or as_known_by_market for point-in-time releases; reconstructed(T) for labelled descriptive history"
   - series_id: nyfed.sofr
     source_id: nyfed_reference_rates
     unit: percent per annum
-    knowledge_mode_required: as_known_by_market
+    knowledge_mode_required: "as_captured_by_hio or as_known_by_market for point-in-time releases; reconstructed(T) for labelled descriptive history"
   - series_id: rba.cash_rate.overnight
     source_id: rba_statistical_tables
     unit: percent per annum
-    knowledge_mode_required: as_known_by_market
+    knowledge_mode_required: "as_captured_by_hio or as_known_by_market for point-in-time releases; reconstructed(T) for labelled descriptive history"
 availability:
-  knowable_rule: "RBA FX fixing: documented_schedule, at about 4pm Sydney on the valid date [EXT]; SOFR and cash rate per their specs"
-  earliest_history: "limited by SOFR (2018) in v0.1"
+  knowable_rule: "Per vintage (observations standard §3). RBA FX fixing: captured_on_schedule for captured vintages, at about 4pm Sydney on the valid date [EXT]; backfill without vintage evidence is schedule_only. Period knowable_at(X_t) = max(knowable_at(q_t), knowable_at of the cash.usd and cash.aud periods). The USD leg is in arrears, so X_t is knowable after the Sydney fixing."
+  earliest_history: "limited by SOFR (2018) in v0.2"
   capture_clock_dependency: captured vintages from S1 start; RBA FX revisions are expected to be rare [EXT], and any observed are logged
 construction:
   calendar: Sydney business days with an RBA fixing (joint calendar J); USD accrual per cash.usd.overnight on J
@@ -50,8 +50,8 @@ construction:
   algorithm: |
     For each period (t-1, t] on J:
       s_t        = q_{t-1} / q_t - 1                            # RA-INV-007 (quote inversion)
-      r_usd_t    = cash.usd.overnight return over (t-1, t]
-      r_aud_t    = cash.aud.overnight return over (t-1, t]
+      r_usd_t    = cash.usd.overnight@0.2.0 return over (t-1, t]   # window t-1 <= d < t, in arrears (RA §3.2)
+      r_aud_t    = cash.aud.overnight@0.2.0 return over (t-1, t]
       R_t        = (1 + r_usd_t) * (1 + s_t) - 1                # AUD return of holding USD cash
       X_t        = R_t - r_aud_t                                # excess over AUD cash (arithmetic)
       carry_t    = r_usd_t - r_aud_t
@@ -60,7 +60,7 @@ construction:
   rebalancing_and_rolls: n/a (the cash balance is notionally reset each period)
   costs: none in v0.1 (FX conversion spread excluded; declared limitation)
 invariants:
-  standard: [RA-INV-004, RA-INV-005, RA-INV-006, RA-INV-007, RA-INV-008, RA-INV-016, RA-INV-018, OBS-INV-002, OBS-INV-003]
+  standard: [RA-INV-003, RA-INV-004, RA-INV-005, RA-INV-006, RA-INV-007, RA-INV-008, RA-INV-016, RA-INV-018, RA-INV-021, OBS-INV-002, OBS-INV-003, OBS-INV-007]
   spec_specific:
     - id: FXC-INV-1
       statement: "X_t == s_t + carry_t + cross_t exactly, every period"
@@ -68,6 +68,11 @@ invariants:
       statement: "R_t == r_aud_t + X_t exactly, every period"
     - id: FXC-INV-3
       statement: "cumulative tests compound the per-period identity (RA-INV-016); no comparison of independently compounded spot, carry and excess indices"
+    - id: FXC-INV-4
+      statement: >-
+        Fri→Mon fixture: s = 0.005, r_usd = 3 x 0.043/360, r_aud = 3 x 0.036/365 give
+        R = 0.005360125000 and X = 0.005064234589 = s + carry (0.000062442922) + cross
+        (0.000001791667)."
 triangulation:
   - reference: Federal Reserve H.10 AUD/USD noon New York rate [EXT] (spot-only triangulation of the fixing input)
     why_comparable: the same currency pair, an independent publisher and fixing time
@@ -81,8 +86,13 @@ triangulation:
     metrics: [weekly_diff_correlation, max_cumulative_gap, annualised_tracking_difference]
   - reference: forward-implied construction, once forward data exists (later slice)
     why_comparable: an investable alternative for the same exposure
+    normalisation: >-
+      Before any comparison, express the forward excess per unit of the same initial AUD capital,
+      (1 + r_usd)(S_T − F)/S_0 = (1 + r_aud)(S_T/F − 1) under CIP. That is not S_T/F − 1, the
+      return per unit of forward notional (RA §4.2, RA-INV-021). The (1 + r_aud) factor is an
+      identity, not a difference to explain.
     expected_differences:
-      - mechanism: the CIP basis
+      - mechanism: the CIP basis (after normalisation)
         predicted_sign: either
         predicted_magnitude: "bp to tens of bp p.a."
     metrics: [annualised_tracking_difference]
@@ -90,9 +100,14 @@ limitations:
   - overnight rates are replicable with a basis (see the cash-leg specs)
   - asynchronous timing between the RBA fixing and US rate days; daily statistics carry timing noise, so prefer weekly or monthly sampling for estimation
   - no FX transaction costs in v0.1
-rights_required:
+rights_required:   # per operation (rights standard §3); every input source must allow these before the operation runs
+  automated_retrieval: allow
+  raw_retention: allow
+  external_processing: allow     # CI runners and the object store
   internal_compute: allow
   derivation: allow
+  derived_storage: allow
   distribution: {hio_internal: allow}
 changelog:
   - 0.1.0 (2026-10-18): draft worked example
+  - "0.2.0 (2026-10-18): cash legs @0.2.0 (in-arrears USD; window t-1 <= d < t); period knowable_at; vintage-specific basis; weekend fixture FXC-INV-4; forward comparison normalised to capital; per-operation rights (T-0008: F-REVIEW-2026-10-18-a01-1, -2, -5, -8)"

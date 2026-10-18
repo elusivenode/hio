@@ -21,6 +21,7 @@ supersedes_proposal: "18 Oct proposal AD-6 (single ordered licence_class)"
 ## Decision (proposed)
 
 Each source and each dataset carries a **rights record** with independent permissions:
+- `automated_retrieval`;
 - `raw_retention`;
 - `internal_compute`;
 - `derivation`;
@@ -42,20 +43,27 @@ The record also carries `verification` ∈ {`unverified`, `vendor_asserted`,
 1. `unknown` behaves as `deny`.
 2. A derived dataset's permission, per dimension, is the most restrictive of its inputs, unless
    an input's terms explicitly grant derived rights. Such a grant is recorded with evidence.
-3. The publication gate refuses an artefact unless, for the target consumer class,
-   `distribution` and (if numbers are quoted) `quotation_in_documents` are `allow`, and
-   verification is `owner_verified` or `contract`.
+3. **Every operation is gated, not only publication.** Fetch, store raw, build, store derived,
+   rebuild, publish, agent use, terminate and audit-retain each require specific permissions
+   (the rights standard §3 matrix). Each job checks them before acting, for every input, and
+   fails closed. Verification must be `owner_verified` or `contract`.
 4. Agent and external-service use requires `agent_context` / `external_processing` = `allow`.
    Otherwise agents work on metadata, schemas and synthetic samples only.
+5. S1 carries a fail-closed fixture for each operation it performs.
 
 Full model: the [rights standard](../standards/rights-and-licensing.md).
 
 ## Consequences
 
 - Even public official sources (RBA, US Treasury, NY Fed) start as `unverified` and are
-  verified in T-0002 before S1 publication.
+  verified in T-0002 before any S1 operation on them (live fetch included).
 - Agent use is procedurally enforced in S1. Technical enforcement (a dataset-access tool that
   checks rights) is deferred.
+
+## Changelog
+
+- 2026-10-18: created (85ef0fa).
+- 2026-10-18: `automated_retrieval` added; every operation is gated (T-0008, F-REVIEW-2026-10-18-a01-5). Status unchanged: proposed.
 
 ## Approval
 
