@@ -32,11 +32,19 @@ actions are evidenced by the reviewer's own output, committed verbatim and hashe
 |---|---|---|---|---|---|
 | A01 independent review | `macsmsf`, branch `docs/hio-a01-baseline` | `1502ab8` (`macsmsf` main) | **the commit that adds the latest `hio/handoffs/*t0006-final-correction*` handoff**, resolved as `git log -n1 --format=%H -- <that file>`; the SHA is stated in the owner-facing completion report | ADRs 0001–0010; the standards (especially return accounting v0.1); the S1 draft specs; harness-0.3 (T-0006); the four `macsmsf` pointer edits in `85ef0fa` | Claude (candidate only) |
 
+Historical candidate: the owner subsequently assigned the A01 review directly at the fixed
+head `35c9821`. The completed review is indexed below; this candidate is not a pending task.
+
 ## Reviewed revisions and review records
 
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
-| — | **none yet.** No independent review of HIO has taken place | — | — | — | — |
+| REVIEW-2026-10-18-a01 | A01 architecture, mathematics, S1 specs and harness-0.3 | `1502ab8..35c9821` | Codex, on the owner's direct 2026-10-18 request | **REQUEST CHANGES** | [record](records/REVIEW-2026-10-18-a01.md) |
+
+The owner assigned this fixed review directly in the Codex session. The *Assigned reviews*
+table above was not updated beforehand; it is not evidence that the candidate row authorised
+the review. The reviewed base/head and assignment source are in the record. The review record
+does not accept or approve the A01 baseline.
 
 **Other reviewer inputs (not reviews; no findings opened):**
 - A **Codex focused analysis** (`hio-harness-refinement-codex-analysis-for-chatgpt-2026-10-18.md`,
@@ -50,7 +58,14 @@ actions are evidenced by the reviewer's own output, committed verbatim and hashe
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
-| — | — | — | **no findings recorded** | — | — | — |
+| F-REVIEW-2026-10-18-a01-1 | REVIEW-2026-10-18-a01 | critical | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-2 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-3 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-4 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-5 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-6 | REVIEW-2026-10-18-a01 | high | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-7 | REVIEW-2026-10-18-a01 | medium | **open** | — | — | — |
+| F-REVIEW-2026-10-18-a01-8 | REVIEW-2026-10-18-a01 | medium | **open** | — | — | — |
 
 States: `open`, `remediation_claimed` (still open), `verified_closed`, `waived`. A waiver
 preserves the finding. It is not a verification.

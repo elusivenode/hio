@@ -30,16 +30,16 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 | Working protocol | `AGENTS.md` and the operating model operate **provisionally** (HIO-ADR-0008 is proposed) | operating model §1.1 |
 | HIO-ADR-0001 to 0010 | all `proposed` | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Standards and specs | all `proposed` or `draft` | front matter |
-| Independent reviews | **no review target has been assigned**; the A01 review exists as a candidate only | [`reviews/README.md`](reviews/README.md) |
-| Open findings | none recorded | [`reviews/README.md`](reviews/README.md) |
+| Independent reviews | A01 at `1502ab8..35c9821`: **REQUEST CHANGES** on the owner's direct assignment; no A01 approval | [`reviews/README.md`](reviews/README.md) |
+| Open findings | eight (one critical, five high, two medium) | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
 
 | Item | State |
 |---|---|
 | Phase | A01: architecture and research charter |
-| Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)), after an owner-assigned Codex A01 review |
-| Next permissible actions | the owner: accept or return T-0006; assign (or not) the A01 review. Agents: none beyond reading and drafting |
+| Current gate | **G1: owner approval of the A01 baseline** ([roadmap](docs/roadmap.md#4-decision-gates)); the first independent review requested changes |
+| Next permissible actions | owner considers the [A01 findings](reviews/records/REVIEW-2026-10-18-a01.md) and directs a correction slice; T-0006 acceptance remains separate |
 | Next implementation slice | **HIO-S1 walking skeleton**: recommended, **not authorised** ([implementation plan](docs/implementation-plan.md#hio-s1-walking-skeleton-recommended)) |
 
 ## Work cards
@@ -55,7 +55,8 @@ of its own, no storage, no data and no credentials. The planning baseline is sta
 
 ## Verified
 
-Nothing in HIO has been verified by an independent reviewer.
+The A01 planning baseline has received an independent design review at `35c9821`; its verdict
+is **REQUEST CHANGES**. No HIO implementation, release or source claim has been validated.
 
 The `macsmsf` repository facts relied on (HIO-001 state, registry scope, loader coupling) were
 checked by the author on 2026-10-18 at `1502ab8`. See
