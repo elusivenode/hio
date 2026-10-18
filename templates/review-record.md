@@ -1,28 +1,44 @@
 ---
-id: REVIEW-<subject>-<n>
+id: REVIEW-<yyyy-mm-dd>-<subject>
 subject: <task, ADR, spec or release id>
-reviewer: <role> (<agent/model or person>)
-revision_reviewed: <git sha>
-date: YYYY-MM-DD
+reviewer: codex/reviewer      # or a human reviewer; never the author
+reviewed_base: <git sha>
+reviewed_head: <git sha>      # the exact revision examined
+created_at: YYYY-MM-DD
+updated_at: YYYY-MM-DD
 verdict: <APPROVE | APPROVE WITH CONDITIONS | REQUEST CHANGES | REJECT>
 ---
 
 # Review: <subject>
 
-## Scope and bundle
-What was reviewed (diff range, specs, releases) and what was out of scope.
+> Immutable once committed, apart from appending to the **Verification log**. The reviewer
+> writes this file. The author never edits it. Commits carry `HIO-Actor: codex/reviewer`.
 
-## Method
-Commands run, tests, reproductions, triangulation checks.
+## Scope and inputs
+What was reviewed (diff range, specs, releases) and what was out of scope. Which governing
+documents were treated as **approved** (with OD ids), and which as proposed context.
+
+## Independent method
+The test plan, written **before** reading the author's report. Commands run, reproductions,
+triangulation checks.
+
+## Author claims checked
+| Claim (from the author's handoff or report) | Checked how | Result |
+|---|---|---|
 
 ## Findings
-| ID | Severity | Finding | Required disposition |
-|---|---|---|---|
+| ID | Severity | Finding | Evidence (paths, commands) | Required to close |
+|---|---|---|---|---|
+| F-<review id>-1 | | | | |
 
-## Evidence
-Ids and hashes only. No licensed values unless rights allow.
+Finding states are tracked in `reviews/README.md`: `open → remediation_claimed →
+verified_closed`, or `open → waived` (owner OD only).
+
+## Verification log (append-only)
+| Date | Finding | Remediation commit (from the author) | Reviewer check | Outcome (`verified_closed` / back to `open`) |
+|---|---|---|---|---|
 
 ## Verdict and conditions
 
 ## Owner disposition
-_Pending._
+_Pending._ (OD-NNNN for acceptance or waivers.)

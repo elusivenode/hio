@@ -10,8 +10,8 @@ decisions: [HIO-ADR-0010]
 
 # HIO implementation plan
 
-No slice is approved. **S1 is the recommended next slice.** Each slice needs an approved task
-card before work starts.
+No slice is approved. **S1 is the recommended next slice.** Each slice needs an **authorised** task
+card (an OD record) before work starts.
 
 ## Slices
 

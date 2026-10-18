@@ -5,7 +5,8 @@ status: proposed
 owner: owner
 assignee_role: implementation engineer (+ quantitative researcher for specs; independent reviewer)
 created: 2026-10-18
-approved: null
+authorised_by: null       # OD record id; none exists, so this card is not authorised
+base_revision: null
 links:
   adrs: [HIO-ADR-0001, HIO-ADR-0004, HIO-ADR-0005, HIO-ADR-0006, HIO-ADR-0007, HIO-ADR-0008, HIO-ADR-0009, HIO-ADR-0010]
   specs: [cash.aud.overnight@0.1.0, cash.usd.overnight@0.1.0, fx.usd_cash_vs_aud.excess@0.1.0]
@@ -22,4 +23,4 @@ This card does not repeat it. The acceptance tests are S1-A1 to S1-A16 there.
 Listed in the implementation plan, under S1 exclusions.
 
 ## Review status
-_Not approved; do not start._
+_Not authorised (no OD record); do not start._

@@ -1,37 +1,48 @@
 ---
 id: T-NNNN
 title: <imperative, one line>
-status: proposed          # proposed | approved | in_progress | in_review | done | rejected | blocked
-owner: <role or person who approves>
-assignee_role: <implementation engineer | quantitative researcher | architecture agent | ...>
-created: YYYY-MM-DD
-approved: null            # owner sets: date + revision
-links: {adrs: [], specs: [], standards: [], depends_on: [], blocks: []}
+status: proposed          # proposed | authorised | in_progress | submitted_for_review | accepted | changes_required
+owner: <who authorises and accepts: the owner>
+assignee_role: <implementation engineer | quantitative researcher | documentation agent | ...>
+created_at: YYYY-MM-DD
+updated_at: YYYY-MM-DD
+authorised_by: null       # OD-NNNN (owner decision record); required before work starts
+base_revision: null       # exact starting commit, set in the authorising OD
+accepted_by: null         # OD-NNNN, after the required review gates
+review_required: <independent (Codex) | owner only>
+links: {adrs_governing_approved: [], adrs_context_proposed: [], specs: [], standards: [], findings: [], depends_on: [], blocks: []}
 ---
 
 # T-NNNN: <title>
 
-## Objective
-One paragraph: the outcome, in investment-research or architectural terms.
+## Purpose and rationale
+The investment-research or architecture outcome, and why it is needed now.
 
-## Approved scope
+## Owner-authorised scope
 - …
 
-## Non-goals (explicitly out of scope)
+## Exclusions (explicitly out of scope)
 - …
+
+## Governing documents
+Only *approved* ADRs and standards govern, with versions. List proposed ones separately, as
+context.
 
 ## Environment and rights constraints
 Credentials allowed; data sources allowed and their rights status; no `macsmsf` access unless stated.
 
-## Acceptance tests
+## Acceptance evidence
 | ID | Test | Evidence expected |
 |---|---|---|
 
-## Evidence to attach on completion
-Revision; release and artefact ids; test output; review record.
-
-## Open issues
+## Decision dependencies, open questions, blockers
 - …
 
-## Review status
-_Not reviewed._
+## Intended outputs and next approval gate
+- …
+
+## Submission (filled by the implementer)
+Base..head revisions; changed files; evidence paths; handoff id.
+
+## Review and acceptance
+Review record ids; findings and their states (from `reviews/README.md`); the acceptance OD id.

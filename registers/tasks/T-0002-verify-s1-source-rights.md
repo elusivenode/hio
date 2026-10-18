@@ -5,7 +5,8 @@ status: proposed
 owner: owner
 assignee_role: architecture agent (research) + owner (verification)
 created: 2026-10-18
-approved: null
+authorised_by: null       # OD record id; none exists, so this card is not authorised
+base_revision: null
 links: {adrs: [HIO-ADR-0004, HIO-ADR-0005], standards: [rights-and-licensing, observations-and-point-in-time], depends_on: [], blocks: [T-0005 publication criteria]}
 ---
 

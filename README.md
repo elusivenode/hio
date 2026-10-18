@@ -25,7 +25,8 @@ last_reviewed: 2026-10-18
 | Question | Canonical document |
 |---|---|
 | What is HIO for? | [`docs/charter.md`](docs/charter.md) |
-| What has been decided, and what is only proposed? | [`docs/decisions/README.md`](docs/decisions/README.md) |
+| What has the owner actually decided? (the only authority) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| What has been proposed as architecture decisions? | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | How is HIO built, and what may run where? | [`docs/architecture.md`](docs/architecture.md) |
 | Which return mathematics is authoritative? | [`docs/standards/return-accounting-and-factor-construction.md`](docs/standards/return-accounting-and-factor-construction.md) |
 | How are observations, point-in-time knowledge and vintages represented? | [`docs/standards/observations-and-point-in-time.md`](docs/standards/observations-and-point-in-time.md) |
@@ -38,7 +39,8 @@ last_reviewed: 2026-10-18
 | What is the next implementation slice? | [`docs/implementation-plan.md`](docs/implementation-plan.md) |
 | What is open, risky, unverified or blocked? | [`docs/risks-and-open-decisions.md`](docs/risks-and-open-decisions.md) |
 | What is under construction, and what is verified? | [`STATUS.md`](STATUS.md) |
-| What work is approved, and what is queued? | [`registers/tasks/`](registers/tasks/) |
+| What work is authorised, and what is queued? | [`registers/tasks/`](registers/tasks/) |
+| What has been reviewed, and which findings are open? | [`reviews/README.md`](reviews/README.md) |
 | What research has been proposed, tried or rejected? | [`registers/hypotheses.yaml`](registers/hypotheses.yaml), [`registers/experiments.yaml`](registers/experiments.yaml) |
 | Which data sources are under consideration, and with what verified rights? | [`registers/sources.yaml`](registers/sources.yaml) |
 | What happened in past sessions? | [`handoffs/`](handoffs/) |
@@ -49,16 +51,17 @@ last_reviewed: 2026-10-18
 | `macsmsf` artefact | Status relative to HIO |
 |---|---|
 | `CLAUDE.md`, `.claude/skills/*` | SMSF harness. **Not loaded for HIO work**, except where a HIO document links to it as evidence |
-| `docs/investment-process-roadmap.md` | **SMSF operating roadmap** (trustee programme). Independent of HIO; integration points are listed in [`docs/roadmap.md`](docs/roadmap.md#smsf-integration-points) |
+| `docs/investment-process-roadmap.md` | **SMSF operating roadmap** (trustee programme). Independent of HIO; integration points are listed in [`docs/roadmap.md`](docs/roadmap.md#5-smsf-integration-points) |
 | `docs/adr/0003-*` (HIO-001 instrument master) | SMSF-owned, code-complete, not activated. Its boundary with HIO reference data is assessed in [HIO-ADR-0003](docs/decisions/HIO-ADR-0003-instrument-identity-boundary.md). **No HIO-001 change is approved** |
 | A17 backup and promotion work, reconciliation, the quarterly pack | SMSF programme; not absorbed into HIO |
 
 ## Migration
 
-When the owner approves creation of the `hio` repository (decision [HIO-ADR-0001](docs/decisions/HIO-ADR-0001-separate-system-modular-monolith.md)):
-
-1. Create the repository, then copy this directory's contents to its root, preserving history
-   if wanted (`git subtree split --prefix=hio`).
-2. In `macsmsf`, replace this directory with a one-file pointer to the new repository, in a
-   separate commit.
-3. Record the migration commit in both repositories' handoffs.
+**Not performed.** Migration happens only through an owner decision record under
+[HIO-ADR-0001](docs/decisions/HIO-ADR-0001-separate-system-modular-monolith.md). It must follow
+the continuity checklist in
+[operating model §8.1](docs/harness/operating-model.md#81-migration-continuity-macsmsfhio--the-standalone-hio-repository):
+- history preserved;
+- an old→new path map;
+- ids, approval states and open or waived findings unchanged;
+- the migration is rejected if anything is stranded.

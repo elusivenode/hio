@@ -37,6 +37,11 @@ review_record: null
 - **Work happens through task cards; sessions end with handoffs.** Both are templated.
 - **Research memory is a versioned register** (hypotheses, experiments), including failures and
   variant counts.
+- **Owner decision records** (`docs/decisions/owner/`) are the only durable owner authority.
+  Git state is not approval. Chat decisions are pending transcription. Findings follow
+  `open → remediation_claimed → verified_closed | waived`: reviewer-closed, owner-waived only.
+  There is one review index (`reviews/README.md`). See operating model §1.1, §3 and §6.1
+  (harness-0.2).
 - **Roles have separated duties.** No agent sets an approved or validated status, or certifies
   its own work.
 - **The minimum viable harness** is defined in [operating model §9](../harness/operating-model.md#9-minimum-viable-harness-and-deferred-behaviours).
@@ -49,3 +54,8 @@ review_record: null
 ## Approval
 
 _Unapproved._
+
+## Changelog
+
+- 2026-10-18: created (85ef0fa).
+- 2026-10-18: added OD records, finding lifecycle and the review index (T-0006). Status unchanged: proposed.

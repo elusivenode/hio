@@ -5,7 +5,8 @@ status: proposed
 owner: owner
 assignee_role: architecture agent (drafting) + owner (decision)
 created: 2026-10-18
-approved: null
+authorised_by: null       # OD record id; none exists, so this card is not authorised
+base_revision: null
 links: {adrs: [HIO-ADR-0003], depends_on: [], blocks: [HIO-001 activation (SMSF programme), HIO reference context design]}
 ---
 

@@ -143,4 +143,4 @@ A new collaborator, human or agent, can answer from the repository alone:
 - what can safely change next.
 
 The harness tests this in every slice
-([operating model §10](harness/operating-model.md#10-fresh-agent-reproduction-test)).
+([operating model §10](harness/operating-model.md#10-cold-start-fresh-agent-tests)).

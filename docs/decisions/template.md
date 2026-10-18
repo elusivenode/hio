@@ -32,7 +32,8 @@ How to undo it, and what would trigger reconsidering it.
 Tests, verifications or reviews.
 
 ## Approval
-_Unapproved._ (Owner: `approved | rejected` — date — revision — notes.)
+_Unapproved._ (Set only by reference to an owner decision record: `OD-NNNN`, which approves
+or rejects this file at commit `<sha>`.)
 
 ## Changelog
 - YYYY-MM-DD: created.
