@@ -3,7 +3,7 @@ id: HIO-AGENTS
 title: Agent and collaborator onboarding
 status: current
 owner: HIO architecture lead (owner)
-version: harness-0.3
+version: harness-0.5
 last_reviewed: 2026-10-18
 ---
 
@@ -98,5 +98,11 @@ Record `git rev-parse HEAD`.
 
 ## Ending a session
 
-Write a handoff from [`templates/handoff.md`](templates/handoff.md) into `handoffs/`. It must
-state what was **not** approved. **The latest handoff is not a decision.**
+- **Claude and other non-reviewer agents:** write a handoff from
+  [`templates/handoff.md`](templates/handoff.md) into `handoffs/`, and update `STATUS.md` if
+  the current state changed.
+- **Reviewer (Codex), on a review branch:** write your handoff into `reviews/handoffs/`. **Do
+  not** touch `handoffs/` or `STATUS.md`. The owner or Claude updates STATUS after receipt
+  (operating model §6.2).
+
+Every handoff states what was **not** approved. **The latest handoff is not a decision.**

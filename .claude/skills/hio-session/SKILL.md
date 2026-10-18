@@ -17,5 +17,8 @@ A checklist that points to the canonical rules: `hio/AGENTS.md` (short) and
 4. Read only what the card or assignment links. Budget about 25k tokens.
 
 ## End
-Write a handoff from `hio/templates/handoff.md`, including what was **not** approved. Update
-`hio/STATUS.md` if the current state changed (150 lines or fewer).
+Write a handoff from `hio/templates/handoff.md`, including what was **not** approved.
+- **Non-reviewers:** put it in `hio/handoffs/`; update `hio/STATUS.md` if the state changed (150
+  lines or fewer).
+- **Reviewer on a review branch:** put it in `hio/reviews/handoffs/`; never touch
+  `hio/handoffs/` or `STATUS.md` (operating model §6.2).

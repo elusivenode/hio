@@ -3,11 +3,12 @@ id: HIO-HARNESS
 title: Agentic operating model and harness specification
 status: proposed
 owner: HIO architecture lead (owner)
-version: harness-0.4
+version: harness-0.5
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
+  - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
   - "harness-0.4 (2026-10-18): review branch and worktree protocol §6.2; immutable findings with separate response and verification records; scope-check script (T-0007, OD-0003)"
   - "harness-0.3 (2026-10-18): authorise vs accept vs approve vs waive; advice and adoption; trailers as metadata only; provisional protocol; state-aware reviewer test (T-0006 final correction, docs/history/2026-10-18-directive-t0006-final-correction.md)"
   - "harness-0.2 (2026-10-18): owner decision records; record lifecycles; review index and findings; role-specific bootstrap; advice→authorisation chain; migration continuity; role-specific cold-start test (per docs/history/2026-10-18-directive-harness-refinement.md)"
@@ -189,7 +190,7 @@ You may critique the harness itself. You do not inherit any authority claim the 
 | **Owner decision** (`docs/decisions/owner/OD-*`) | the owner, or an agent transcribing an explicit owner statement | `draft → recorded`; `recorded → corrected \| superseded`. `draft` means the text awaits an owner statement and has no authority | the owner's explicit statement (cited source); the record only evidences it |
 | **Work card** (`registers/tasks/T-*`) | Claude drafts; the owner instructs | `proposed → authorised → in_progress → submitted_for_review → accepted \| changes_required` (`changes_required → in_progress`) | the owner accepts, only after the card's required review gates pass |
 | **Codex finding** (in a review record; listed in `reviews/README.md`) | Codex opens | `open → remediation_claimed → verified_closed`; `remediation_claimed → open` (failed verification); `open → waived` | Codex verifies closure; **only the owner waives** |
-| **Handoff** (`handoffs/*`) | Claude or Codex | none: a dated snapshot | never authoritative over ADRs, OD records or findings |
+| **Handoff** (`handoffs/*`; reviewers: `reviews/handoffs/*`) | Claude or Codex | none: a dated snapshot | never authoritative over ADRs, OD records or findings |
 
 **Rules:**
 - **A `remediation_claimed` finding is still open.** Only Codex, after independently checking the
@@ -240,7 +241,8 @@ There is no tracking database: these are Markdown and YAML files under git.
 - **Task card** ([`../../templates/task-card.md`](../../templates/task-card.md)). See also §5.1
   for what an authorised card must capture. **Implementation requires an `authorised` card.**
 - **Handoff** ([`../../templates/handoff.md`](../../templates/handoff.md)), written at the end
-  of every session that changed anything:
+  of every session that changed anything. Non-reviewers write to `handoffs/`; a reviewer on a
+  review branch writes to `reviews/handoffs/` (§6.2). It contains:
   - base and head revisions. `head_revision: self` means the commit that adds the handoff,
     resolved with `git log -n1 --format=%H -- <handoff path>`. Earlier commits are listed by id;
   - changed files;
@@ -403,12 +405,16 @@ HIO-ADR-0008 is still proposed.
    The reviewer never edits `STATUS.md`, `hio/handoffs/`, the work under review or any
    submitted record. There are no merge commits on the review branch.
 4. **Scope check** (owner, before merging). Run **the staging branch's copy** of
-   `hio/tools/check_review_branch.sh <head> review/<id>-codex`. It fails on:
+   `hio/tools/check_review_branch.sh <head> review/<id>-codex`. It checks **every commit** in
+   the range, not just the final diff, so a disallowed file that is committed and then reverted
+   still fails. It fails on:
+   - an empty branch, or a branch that adds no `records/REVIEW-*.md` or `records/VERIFY-*.md`;
    - paths outside `hio/reviews/`;
    - non-`.md` files;
    - symlinks, executables or submodules;
    - deletions or renames;
-   - modified submitted records;
+   - modified submitted records: a record is immutable from its first commit, so finish or
+     amend it before committing;
    - merge commits.
 
    **A pass is a content-scope constraint, not reviewer authentication.** The owner also reads
@@ -418,13 +424,15 @@ HIO-ADR-0008 is still proposed.
    the conclusions are accepted, defects are fixed, an ADR is approved, a slice is authorised,
    or the work is accepted. Those remain separate owner actions (§1.1). After receipt, the owner
    or Claude updates `STATUS.md`.
-6. **Remediation** (Claude, on the staging branch):
-   - commit the fix;
-   - add a remediation response (`reviews/responses/`);
-   - set the finding's *Remediation claim* cell;
-   - record the new head SHA.
-7. **Verification** (reviewer). A fresh worktree and branch, at the **remediation head the owner
-   assigns**. Add a verification record. Steps 3–5 apply again.
+6. **Remediation** (Claude, on the staging branch). There are two SHAs:
+   - commit the fix: these are the **fix commit(s)**;
+   - then commit the remediation response (`reviews/responses/`) and the *Remediation claim*
+     cell: this is the **submission head**. The response names the fix commits; the index cell
+     and the handoff name the submission head, because a file cannot name the commit that adds
+     it.
+7. **Verification** (reviewer). The owner assigns the **submission head**, so the fix and
+   Claude's evidence are seen at one fixed revision. The reviewer uses a fresh worktree and
+   branch there, and adds a verification record. Steps 3–5 apply again.
 
 **Index.** The records are the source of truth. `reviews/README.md` is a manually maintained
 navigation summary. If the two disagree, the record wins. Generating the index from record
