@@ -1,0 +1,98 @@
+# Worked example spec (HIO-S1 primary factor). External facts are marked [EXT] and are unverified.
+identity:
+  factor_id: fx.usd_cash_vs_aud.excess
+  version: 0.1.0
+  status: draft
+  owner: quantitative researcher
+  family: fx
+economics:
+  exposure: >-
+    an AUD-numeraire investor holding USD overnight cash, in excess of AUD overnight cash.
+    It is long USD and short AUD, including the interest differential (carry).
+  rationale: >-
+    currency exposure is the largest unmanaged exposure in many AUD portfolios. This is the
+    investable form of USD exposure, and the building block for unhedged and hedged
+    foreign-asset returns.
+  is_not: >-
+    the spot AUD/USD change (price_only); a forward or futures return (a related construction
+    differing by the CIP basis); the currency effect inside any particular fund.
+classification:
+  series_class: excess_return
+  investability: replicable_with_basis
+return_convention:
+  return_type: simple
+  period: Sydney business day on which an RBA AUD/USD fixing exists
+  compounding: chain simple period returns
+  numeraire: AUD
+  hedging: unhedged (the exposure is the currency itself)
+  cash_leg: cash.aud.overnight@0.1.0
+  excess_definition: arithmetic per period (RA §1)
+observations:
+  - series_id: rba.fx.audusd_4pm      # quoted USD per AUD (q)
+    source_id: rba_statistical_tables
+    unit: USD per AUD
+    knowledge_mode_required: as_known_by_market
+  - series_id: nyfed.sofr
+    source_id: nyfed_reference_rates
+    unit: percent per annum
+    knowledge_mode_required: as_known_by_market
+  - series_id: rba.cash_rate.overnight
+    source_id: rba_statistical_tables
+    unit: percent per annum
+    knowledge_mode_required: as_known_by_market
+availability:
+  knowable_rule: "RBA FX fixing: documented_schedule, at about 4pm Sydney on the valid date [EXT]; SOFR and cash rate per their specs"
+  earliest_history: "limited by SOFR (2018) in v0.1"
+  capture_clock_dependency: captured vintages from S1 start; RBA FX revisions are expected to be rare [EXT], and any observed are logged
+construction:
+  calendar: Sydney business days with an RBA fixing (joint calendar J); USD accrual per cash.usd.overnight on J
+  day_count: per the cash-leg specs
+  algorithm: |
+    For each period (t-1, t] on J:
+      s_t        = q_{t-1} / q_t - 1                            # RA-INV-007 (quote inversion)
+      r_usd_t    = cash.usd.overnight return over (t-1, t]
+      r_aud_t    = cash.aud.overnight return over (t-1, t]
+      R_t        = (1 + r_usd_t) * (1 + s_t) - 1                # AUD return of holding USD cash
+      X_t        = R_t - r_aud_t                                # excess over AUD cash (arithmetic)
+      carry_t    = r_usd_t - r_aud_t
+      cross_t    = r_usd_t * s_t
+    Publish X_t (primary) and the decomposition (s_t, carry_t, cross_t) as a companion release.
+  rebalancing_and_rolls: n/a (the cash balance is notionally reset each period)
+  costs: none in v0.1 (FX conversion spread excluded; declared limitation)
+invariants:
+  standard: [RA-INV-004, RA-INV-005, RA-INV-006, RA-INV-007, RA-INV-008, RA-INV-016, RA-INV-018, OBS-INV-002, OBS-INV-003]
+  spec_specific:
+    - id: FXC-INV-1
+      statement: "X_t == s_t + carry_t + cross_t exactly, every period"
+    - id: FXC-INV-2
+      statement: "R_t == r_aud_t + X_t exactly, every period"
+    - id: FXC-INV-3
+      statement: "cumulative tests compound the per-period identity (RA-INV-016); no comparison of independently compounded spot, carry and excess indices"
+triangulation:
+  - reference: Federal Reserve H.10 AUD/USD noon New York rate [EXT] (spot-only triangulation of the fixing input)
+    why_comparable: the same currency pair, an independent publisher and fixing time
+    expected_differences:
+      - mechanism: fixing time (about 4pm Sydney versus noon New York; several hours apart)
+        predicted_sign: ~0 mean
+        predicted_magnitude: "large daily differences; small weekly cumulative differences; no drift"
+      - mechanism: holiday calendars differ
+        predicted_sign: ~0
+        predicted_magnitude: "missing-day patterns; no level bias"
+    metrics: [weekly_diff_correlation, max_cumulative_gap, annualised_tracking_difference]
+  - reference: forward-implied construction, once forward data exists (later slice)
+    why_comparable: an investable alternative for the same exposure
+    expected_differences:
+      - mechanism: the CIP basis
+        predicted_sign: either
+        predicted_magnitude: "bp to tens of bp p.a."
+    metrics: [annualised_tracking_difference]
+limitations:
+  - overnight rates are replicable with a basis (see the cash-leg specs)
+  - asynchronous timing between the RBA fixing and US rate days; daily statistics carry timing noise, so prefer weekly or monthly sampling for estimation
+  - no FX transaction costs in v0.1
+rights_required:
+  internal_compute: allow
+  derivation: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - 0.1.0 (2026-10-18): draft worked example

@@ -1,0 +1,65 @@
+# Draft for HIO-S1. External facts are marked [EXT] and are unverified (see registers/sources.yaml).
+identity:
+  factor_id: cash.usd.overnight
+  version: 0.1.0
+  status: draft
+  owner: quantitative researcher
+  family: cash
+economics:
+  exposure: return on USD overnight secured cash; the USD cash leg and the foreign leg of USD currency positions
+  rationale: the financing reference for USD excess returns, and the carry leg of AUD-investor USD exposure
+  is_not: a T-bill return, a money-market fund return or an unsecured deposit rate
+classification:
+  series_class: total_return
+  investability: replicable_with_basis
+return_convention:
+  return_type: simple
+  period: Sydney business day          # aligned to the joint calendar used by fx specs; see construction
+  compounding: chain simple period returns
+  numeraire: USD
+  hedging: n/a
+  cash_leg: n/a
+  excess_definition: n/a
+observations:
+  - series_id: nyfed.sofr
+    source_id: nyfed_reference_rates
+    unit: percent per annum
+    knowledge_mode_required: as_known_by_market
+availability:
+  knowable_rule: "documented_schedule: NY Fed publishes SOFR for business day d on the following NY business day morning [EXT, verify in T-0002]"
+  earliest_history: "SOFR from its first publication date in 2018 [EXT]; no pre-SOFR splice in v0.1"
+  capture_clock_dependency: none for v0.1
+construction:
+  calendar: XSYD business days (period ends), with accrual over calendar days; NY business days for rate lookups
+  day_count: ACT/360
+  algorithm: |
+    For each period (t-1, t] on the Sydney calendar:
+      r_t = sum over calendar days d in (t-1, t] of SOFR(d') / 360 / 100,
+      where d' is the most recent NY business day <= d-1 whose SOFR was knowable at the period end.
+    Index: I_t = I_{t-1} * (1 + r_t).
+    Note: simple accrual within a period (at most a few days) instead of daily compounding; the difference is declared and bounded in tests.
+  rebalancing_and_rolls: n/a
+  costs: none
+invariants:
+  standard: [RA-INV-003, RA-INV-018, OBS-INV-001, OBS-INV-002, OBS-INV-003]
+  spec_specific:
+    - id: CASH-USD-INV-1
+      statement: "the index ratio equals r_t exactly"
+    - id: CASH-USD-INV-2
+      statement: "(bound) within-period simple versus daily-compounded accrual differs by < 1e-8 per period"
+triangulation:
+  - reference: 4-week and 13-week T-bill returns from US Treasury daily bill rates [EXT]
+    why_comparable: USD risk-free short-term return
+    expected_differences:
+      - mechanism: repo versus bill spread (collateral demand, bill supply)
+        predicted_sign: either; often SOFR above bills in recent years [EXT, check]
+        predicted_magnitude: "a few to tens of bp p.a."
+      - mechanism: bill term premium and expected policy path
+        predicted_sign: either
+        predicted_magnitude: depends on the policy path
+    metrics: [annualised_tracking_difference, max_cumulative_gap]
+limitations:
+  - SOFR is a secured overnight repo rate; the investable equivalent is approximate
+  - history starts 2018; earlier USD cash needs a separate, declared segment
+changelog:
+  - 0.1.0 (2026-10-18): draft

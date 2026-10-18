@@ -1,0 +1,19 @@
+# One entry for registers/experiments.yaml. The pre_registration block MUST be committed before results exist.
+- id: E-NNNN
+  hypothesis: H-NNNN
+  status: pre_registered   # pre_registered | running | complete | abandoned
+  pre_registration:
+    committed_revision: <git sha>
+    sample: {start: YYYY-MM-DD, end: YYYY-MM-DD, frequency: <...>, knowledge_mode: <...>, cutoff_rule: <...>}
+    test: <estimator, specification, walk-forward design>
+    metrics: [<...>]
+    costs: "<transaction-cost and tax assumptions, or n/a (explanatory)>"
+    decision_rule: <what result supports or rejects>
+  variants: []             # each: {id, change, reason, revision}
+  inputs: {releases: [<release_id>], specs: [<factor_id@version>]}
+  runs: [<run_id>]
+  results: {estimates: <...>, uncertainty: <...>, diagnostics: <...>}
+  negative_findings: <...>
+  outcome: <supported | not_supported | inconclusive | abandoned(reason)>
+  follow_up: <...>
+  reviewed_by: <review record id or null>

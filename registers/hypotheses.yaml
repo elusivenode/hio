@@ -1,0 +1,71 @@
+# HIO hypothesis register. Schema: templates/hypothesis.yaml. Governance: docs/harness/operating-model.md §4.
+# All entries are `proposed`: none is registered for testing, and no data exists yet.
+- id: H-0001
+  title: Duration diversifies equity only in some inflation regimes
+  status: proposed
+  pillar: diversification
+  model_kind: risk
+  thesis: >-
+    The correlation between equity excess returns and government-duration excess returns
+    depends on the inflation and policy regime. When inflation is high or uncertain,
+    duration's diversification of equity weakens or reverses.
+  prediction: {direction: conditional, magnitude: "correlation sign difference across regimes", horizon: "monthly returns, multi-decade sample"}
+  data: {factors: ["rates.us.cmt_10y.excess (planned)", "rates.au.cmt_10y.excess (planned)", "equity.* (S2+)"], states: ["inflation state series (planned)"], knowledge_mode: as_known_by_market, min_knowable_basis: publisher_vintage}
+  competing_explanations: [term-premium regime shifts, policy-reaction-function change, sample-specific episodes]
+  falsification: no material regime difference after accounting for estimation uncertainty
+  experiments: []
+  variants_tried: 0
+  created: 2026-10-18
+  owner: quantitative researcher
+- id: H-0002
+  title: Unhedged USD exposure is defensive for an AUD investor
+  status: proposed
+  pillar: diversification
+  model_kind: risk
+  thesis: >-
+    The AUD is pro-cyclical. The excess return of holding USD cash against AUD cash is
+    negatively correlated with global equity returns in equity drawdowns, so unhedged foreign
+    currency lowers drawdowns for an AUD investor.
+  prediction: {direction: "-", magnitude: "negative conditional correlation in the worst equity decile", horizon: monthly}
+  data: {factors: ["fx.usd_cash_vs_aud.excess@0.1.0", "equity.global.* (S2+)"], states: [], knowledge_mode: as_known_by_market, min_knowable_basis: documented_schedule}
+  competing_explanations: [commodity-price channel, rate-differential channel, sample dominated by 2008]
+  falsification: conditional correlation not distinguishable from zero, or positive
+  experiments: []
+  variants_tried: 0
+  created: 2026-10-18
+  owner: quantitative researcher
+- id: H-0003
+  title: Factor valuation spreads mean-revert and predict multi-year factor returns
+  status: proposed
+  pillar: factor_dynamics
+  model_kind: predictive
+  thesis: >-
+    Valuation measures of factors (for example currency real-exchange-rate deviations, or the
+    term spread against its history) mean-revert. They predict subsequent 3–5 year factor
+    excess returns, beyond what momentum and carry explain.
+  prediction: {direction: "+ (cheap predicts higher)", magnitude: "small, noisy; economically meaningful only at long horizons", horizon: "36–60 months"}
+  data: {factors: ["fx.* (S1+)", "rates.* (S3+)"], states: ["valuation state series (planned)"], knowledge_mode: as_captured_by_hio, min_knowable_basis: publisher_vintage}
+  competing_explanations: [structural change (no stable mean), momentum, carry, overlapping-observation inference bias]
+  falsification: no out-of-sample predictive power, after overlapping-observation-corrected inference and multiple-testing haircuts
+  experiments: []
+  variants_tried: 0
+  created: 2026-10-18
+  owner: quantitative researcher
+  notes: Year-4 track. Its evidence quality depends on captured vintages starting in S1.
+- id: H-0004
+  title: Diversifiers fail together in liquidity stress
+  status: proposed
+  pillar: diversification
+  model_kind: risk
+  thesis: >-
+    Tail dependence between nominally independent factors (credit, equity, carry, some
+    commodity exposures) rises sharply in liquidity stress. Covariance estimated in normal
+    periods therefore overstates diversification when it matters.
+  prediction: {direction: "+ tail dependence", magnitude: "conditional correlations well above unconditional", horizon: "daily and weekly, in stress windows"}
+  data: {factors: ["multi-family (Y2)"], states: ["financial conditions (planned)"], knowledge_mode: as_known_by_market, min_knowable_basis: documented_schedule}
+  competing_explanations: [the correlation-conditioning bias of selecting on extreme returns]
+  falsification: no tail dependence beyond what a conditioning-bias-corrected model implies
+  experiments: []
+  variants_tried: 0
+  created: 2026-10-18
+  owner: quantitative researcher

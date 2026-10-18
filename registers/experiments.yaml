@@ -1,0 +1,4 @@
+# HIO experiment register. Schema: templates/experiment.yaml.
+# No experiments yet. Rules: pre-register before results; never delete failed or abandoned
+# entries; keep the variant count honest (docs/harness/operating-model.md §4).
+[]

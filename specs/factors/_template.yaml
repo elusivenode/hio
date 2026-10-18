@@ -1,0 +1,60 @@
+# HIO factor specification template, conforming to docs/standards/factor-specification.md v0.1.
+# Every key is required. Use "n/a: <reason>" where a key genuinely does not apply.
+identity:
+  factor_id: <family>.<name>            # stable; never reused
+  version: 0.1.0
+  status: draft                         # draft | proposed | validated | approved | deprecated
+  owner: <role>
+  family: <cash | fx | rates | credit | equity | commodity | strategy | state>
+economics:
+  exposure: <plain statement of the economic exposure>
+  rationale: <why this is a distinct risk or premium>
+  is_not: <what it must not be mistaken for>
+classification:
+  series_class: <total_return | excess_return | strategy_return | price_only | state_indicator | reference_academic>
+  investability: <investable | investable_with_costs | replicable_with_basis | non_investable>
+return_convention:
+  return_type: simple
+  period: <business day of calendar X | month-end | ...>
+  compounding: <chain simple period returns>
+  numeraire: <AUD | USD | ...>
+  hedging: <unhedged | hedged(h, reset, forward_source) | n/a>
+  cash_leg: <factor_id@version | n/a>
+  excess_definition: <arithmetic per period (RA §1) | n/a>
+observations:
+  - series_id: <id>
+    source_id: <id>
+    unit: <...>
+    knowledge_mode_required: <as_captured_by_hio | as_known_by_market | latest>
+availability:
+  knowable_rule: "<per input, basis + rule>"
+  earliest_history: <date and why>
+  capture_clock_dependency: <what needs captured vintages and from when>
+construction:
+  calendar: <calendar id and alignment rule>
+  day_count: <...>
+  algorithm: |
+    <precise steps>
+  rebalancing_and_rolls: <...>
+  costs: <none | model>
+invariants:
+  standard: [RA-INV-..., OBS-INV-...]
+  spec_specific:
+    - id: <SPEC-INV-1>
+      statement: <identity that must hold exactly>
+triangulation:
+  - reference: <series or source>
+    why_comparable: <...>
+    expected_differences:
+      - mechanism: <...>
+        predicted_sign: <+ | - | ~0 | either>
+        predicted_magnitude: <...>
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - <...>
+rights_required:
+  internal_compute: allow
+  derivation: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - <version> (<date>): <change>

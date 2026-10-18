@@ -1,0 +1,16 @@
+# One entry for registers/hypotheses.yaml
+- id: H-NNNN
+  title: <short>
+  status: proposed        # proposed | registered | testing | supported | not_supported | inconclusive | retired
+  pillar: <diversification | factor_dynamics | other>
+  model_kind: <explanatory | risk | expected_return | predictive>
+  thesis: <economic mechanism, in words>
+  prediction: {direction: <+/-/conditional>, magnitude: <expected size>, horizon: <...>}
+  data: {factors: [<factor_id@version>], states: [<series_id>], knowledge_mode: <as_captured_by_hio | as_known_by_market>, min_knowable_basis: <...>}
+  competing_explanations: [<momentum, carry, structural change, ...>]
+  falsification: <what result would count against it>
+  experiments: []          # experiment ids
+  variants_tried: 0        # running count across experiments (multiple-testing input)
+  created: YYYY-MM-DD
+  owner: <role>
+  notes: <...>

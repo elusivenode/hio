@@ -1,0 +1,122 @@
+# HIO source register. Rights model: docs/standards/rights-and-licensing.md.
+# EVERY entry is unverified. Coverage, timing, terms and prices are hypotheses until owner-verified.
+# Default rights: every permission `unknown` (= deny).
+defaults: &unverified
+  verification: unverified
+  rights: {raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown,
+           post_termination_raw: unknown, post_termination_derived: unknown,
+           distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown},
+           quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown,
+           audit_retention: unknown, attribution_required: unknown}
+  evidence: null
+
+sources:
+  # --- S1 candidates (official, keyless, as hypothesised) ---
+  - id: rba_statistical_tables
+    name: Reserve Bank of Australia statistical tables (e.g. F1 money market, F11 exchange rates, F2 government yields)
+    home: https://www.rba.gov.au/statistics/
+    intended_use: [S1 AUD cash rate, S1 AUD/USD 4pm fixing, S3 AU government yields]
+    hypotheses: "public; terms commonly stated as a Creative Commons licence; daily tables [EXT]"
+    task: T-0002
+    <<: *unverified
+  - id: nyfed_reference_rates
+    name: Federal Reserve Bank of New York reference rates (SOFR)
+    home: https://www.newyorkfed.org/markets/reference-rates
+    intended_use: [S1 USD cash leg]
+    hypotheses: "public, with terms of use and attribution requirements [EXT]"
+    task: T-0002
+    <<: *unverified
+  - id: us_treasury_rates
+    name: US Treasury daily bill rates and par yield curve
+    home: https://home.treasury.gov/
+    intended_use: [S1 USD cash triangulation (bills), S3 US CMT returns]
+    hypotheses: "US government publication; likely public domain [EXT]"
+    task: T-0002
+    <<: *unverified
+  - id: frb_h10
+    name: Federal Reserve Board H.10 foreign exchange rates (noon New York)
+    home: https://www.federalreserve.gov/releases/h10/
+    intended_use: [S1 FX fixing triangulation]
+    hypotheses: "public [EXT]; also distributed via FRED, which needs an API key and has series-specific terms"
+    task: T-0002
+    <<: *unverified
+  # --- Later candidates ---
+  - id: alfred_fred
+    name: St. Louis Fed FRED / ALFRED (vintages)
+    home: https://fred.stlouisfed.org/
+    intended_use: [publisher vintages for US macro; reference series]
+    hypotheses: "API key required; some third-party series restricted [EXT]"
+    <<: *unverified
+  - id: abs
+    name: Australian Bureau of Statistics (CPI, national accounts)
+    home: https://www.abs.gov.au/
+    intended_use: [inflation and growth state variables; captured vintages]
+    hypotheses: "Creative Commons licence commonly stated [EXT]"
+    <<: *unverified
+  - id: french_data_library
+    name: Kenneth R. French Data Library
+    home: https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html
+    intended_use: [reference_academic equity factors; US market TR reference (not the S&P 500)]
+    hypotheses: "freely downloadable; built from licensed CRSP/Compustat inputs; terms unclear [EXT]"
+    <<: *unverified
+  - id: aqr_datasets
+    name: AQR data sets
+    home: https://www.aqr.com/Insights/Datasets
+    intended_use: [reference_academic TSMOM, value/momentum, BAB, QMJ; replication targets]
+    hypotheses: "terms of use apply [EXT]"
+    <<: *unverified
+  - id: cme_datamine
+    name: CME DataMine (historical futures settlements)
+    home: https://www.cmegroup.com/market-data/datamine-historical-data.html
+    intended_use: [futures PoC (ZN or GC), later broad futures]
+    hypotheses: "paid; derived-data and storage terms to be checked [EXT]"
+    task: T-0003 (shortlist only) / futures PoC procurement
+    <<: *unverified
+  - id: databento
+    name: Databento (CME and other venues)
+    home: https://databento.com/
+    intended_use: [futures PoC alternative]
+    hypotheses: "usage-priced; exchange licence pass-through to be checked [EXT]"
+    <<: *unverified
+  - id: norgate
+    name: Norgate Data
+    home: https://norgatedata.com/
+    intended_use: [survivorship-aware equities; individual futures contracts]
+    hypotheses: "subscription; redistribution restricted [EXT]"
+    <<: *unverified
+  - id: eodhd
+    name: EODHD (end-of-day prices, dividends, splits)
+    home: https://eodhd.com/
+    intended_use: [S2 equity market-price TR candidate]
+    hypotheses: "subscription; storage and derivation terms to be checked [EXT]"
+    task: T-0003
+    <<: *unverified
+  - id: barchart
+    name: Barchart OnDemand
+    home: https://www.barchart.com/ondemand
+    intended_use: [futures or EOD alternative]
+    <<: *unverified
+  - id: nasdaq_data_link
+    name: Nasdaq Data Link
+    home: https://data.nasdaq.com/
+    intended_use: [case by case]
+    <<: *unverified
+  - id: spdji
+    name: S&P Dow Jones Indices (index levels, TR and net TR)
+    home: https://www.spglobal.com/spdji/
+    intended_use: [S2 equity index TR candidate]
+    hypotheses: "licensed [EXT]"
+    task: T-0003
+    <<: *unverified
+  - id: ishares_issuer_files
+    name: Issuer NAV and distribution history files (e.g. US-listed S&P 500 ETF)
+    home: https://www.ishares.com/
+    intended_use: [S2 equity NAV TR candidate, and triangulation]
+    hypotheses: "website terms unknown; retrieval may be scraping [EXT]"
+    task: T-0003
+    <<: *unverified
+  - id: ecb_bis_cftc
+    name: ECB data portal, BIS statistics, CFTC Commitments of Traders
+    home: [https://data.ecb.europa.eu/, https://data.bis.org/, https://www.cftc.gov/]
+    intended_use: [later state variables; positioning (low priority)]
+    <<: *unverified
