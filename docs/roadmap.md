@@ -14,31 +14,41 @@ supersedes: "the 90-day and five-year sections of docs/history/2026-10-18-five-y
 `docs/investment-process-roadmap.md`, which is independent and owned by the trustee programme.
 This document lists the **integration points** between the two. It does not merge them.
 
-Dates count from **G1** (owner approval of the A01 baseline), written as `G1 + n weeks`.
-Calendar estimates assumed G1 in early November 2026, and include the December–January holiday
-period. **G1 completed on 2026-10-18** (OD-0008, OD-0011), so `G1 + n weeks` counts from then.
+Dates count from **G1**, written as `G1 + n weeks`. **G1 completed on 2026-10-18** (OD-0008,
+which approved the A01 baseline, and OD-0011, which approved HIO-ADR-0010 rev 3). The estimates
+originally assumed G1 in early November 2026; they now count from 2026-10-18:
+- week 4 ≈ 15 Nov 2026;
+- week 8 ≈ 13 Dec;
+- week 13 ≈ 17 Jan 2027.
 
-## 1. The next 90 days (G1 → G1 + 13 weeks)
+The December–January holiday period therefore falls at about **weeks 9–12**.
+
+_Corrected 2026-10-24 (OD-0018): dates re-anchored; S2/S3 moved behind G2, their entry gate; G1
+evidence corrected. No architectural substance changed. This roadmap remains a recommendation._
+
+## 1. The next 90 days (G1 → G1 + 13 weeks, i.e. 2026-10-18 → about 2027-01-17)
 
 | Weeks | Deliverable | Research outcome | Task / slice |
 |---|---|---|---|
-| 0 (now) | A01 baseline (this directory) | a binding vocabulary and mathematics for every later result | T-0001 |
+| 0 (done) | A01 baseline: **G1 complete 2026-10-18** (OD-0008, OD-0011) | a binding vocabulary and mathematics for every later result | T-0001 (its acceptance is not recorded) |
 | 0–4 | S1 source rights and timing verified (in parallel with S1a; gates S1b only) | knowability claims for S1b have evidence | T-0002 |
 | 0–4 | equity TR source scorecard and decision | knowing whether, and how, an investable equity TR can be built | T-0003 → HIO-ADR-0011 |
 | 0–4 | HIO-001 boundary decision (SMSF documentation only) | no dual instrument master | T-0004 |
-| 1–4 | **S1a: synthetic-fixture foundation** (repository + history-preserving migration, harness MVH, contracts, cash legs + investable FX excess on fixtures; no network or real data) | every A01 contract executable and tested before real data touches it | T-0005 (S1a) |
-| 4–8 | **S1b: live official observations** (real sources behind the rights gate, bucket, scheduled capture, soak, triangulations) | the first validated factor: AUD-investor USD exposure, decomposed exactly; the **PIT capture clock starts** | T-0005 (S1b) |
-| 4–8 | futures data procurement for the PoC (vendor terms, a sample) | the rights to build our own futures returns are known | task to be raised at G1 |
-| 6–9 | **S2 equity TR** (if T-0003 resolves) or **S3 rates CMT** (if not) | investable equity in AUD, unhedged and hedged; or AU and US duration factors | S2 / S3 |
-| 9–12 | the other of S2/S3 | a four-family factor set: cash, FX, rates, equity | S3 / S2 |
+| 1–4 (authorised week 1, OD-0017) | **S1a: synthetic-fixture foundation** (repository + history-preserving migration, harness MVH, contracts, cash legs + investable FX excess on fixtures; no network or real data) | every A01 contract executable and tested before real data touches it | T-0005 (S1a) |
+| 4–8 (after S1a acceptance, T-0002 and its own authorisation; G2 follows) | **S1b: live official observations** (real sources behind the rights gate, bucket, scheduled capture, soak, triangulations) | the first validated factor: AUD-investor USD exposure, decomposed exactly; the **PIT capture clock starts** | T-0005 (S1b) |
+| 4–8 | futures data procurement for the PoC (vendor terms, a sample) | the rights to build our own futures returns are known | task to be raised; **not yet raised** although G1 has passed (vendor contact needs owner authorisation) |
+| 9–12 (after G2; overlaps the holiday period) | **S2 equity TR** (if T-0003 resolves) or **S3 rates CMT** (if not) | investable equity in AUD, unhedged and hedged; or AU and US duration factors | S2 / S3 |
+| 12–16 | the other of S2/S3 | a four-family factor set: cash, FX, rates, equity | S3 / S2 |
 | 8–11 | consumer contract specification (schemas + contract tests; **no `macsmsf` code**) | the SMSF can later consume HIO without coupling | A05 |
-| 12–13 | **D1 demonstration**: a hypothetical-mandate risk report published as an artefact, consumed by two contract-only clients | proof that HIO is independent and produces a research result | S5 (part) |
+| 13–15 (needs S1 and at least one of S2/S3) | **D1 demonstration**: a hypothetical-mandate risk report published as an artefact, consumed by two contract-only clients | proof that HIO is independent and produces a research result | S5 (part) |
 
 **Moved out of the 90 days, compared with the 18 October proposal:**
 - **The futures PoC build (S4)** moves to about G1 + 14–18 weeks. Procurement lead time and the
   holiday period make it the most likely item to slip. Procurement still starts in the 90 days.
-- **The factor covariance experiment** in D1 uses only the series that exist by week 12, so
-  D1 does not wait for futures.
+- **The factor covariance experiment** in D1 uses only the series that exist by then, so D1
+  does not wait for futures.
+- **The second of S2/S3, and D1**, now end after week 13 (corrected 2026-10-24). S2/S3 cannot
+  start before G2, which follows S1b.
 
 ## 2. 12–18 month research outcomes
 
@@ -64,8 +74,8 @@ by design. Its evidence quality depends on captured vintages that start in S1.
 
 | Gate | Decision | Evidence required |
 |---|---|---|
-| **G1** | approve the A01 baseline (ADRs 0001–0010, the standards, the harness) | T-0001 complete |
-| **G2** | promote S1 (after S1b) and start S2/S3 | the S1 verification evidence (implementation plan) |
+| **G1** | approve the A01 baseline (ADRs 0001–0010, the standards, the harness) | **complete 2026-10-18**: OD-0008 (A01 baseline, ADRs 0001–0009) and OD-0011 (ADR-0010 rev 3) |
+| **G2** | promote S1 and start S2/S3 | the S1 verification evidence (implementation plan), after S1b. S1a acceptance and the S1b authorisation are owner actions before it (ADR-0010), not numbered gates |
 | **G3** | equity TR source (HIO-ADR-0011) | T-0003 scorecard |
 | **G4** | futures data contract beyond the PoC | the PoC results; rights verified |
 | **G5** | first consumer integration (SMSF exporter and reader slices, in `macsmsf`) | A05 contract; SMSF preservation evidence plan; trustee interest |
