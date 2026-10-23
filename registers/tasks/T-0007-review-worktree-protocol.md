@@ -5,7 +5,7 @@ status: accepted
 owner: owner
 assignee_role: documentation agent (Claude)
 created_at: 2026-10-18
-updated_at: 2026-10-18
+updated_at: 2026-10-24
 authorised_by: OD-0003
 base_revision: bada9526342d62fc2776e8f71aedf26097ab65ac
 accepted_by: OD-0004    # accepted at b48f83cdca6f272d76730346372f6b939855e092
@@ -57,10 +57,19 @@ Brief: [`../../docs/history/2026-10-18-directive-review-worktree-protocol.md`](.
 
 | # | Criterion | Where / evidence |
 |---|---|---|
-| 1–2 | A fresh Codex session finds an assignment, or reports that there is none | AGENTS.md; operating model §2.2; the review index *Assigned reviews*. A **fresh-session test is pending** |
+| 1–2 | A fresh Codex session finds an assignment, or reports that there is none | AGENTS.md; operating model §2.2; the review index *Assigned reviews*. A **fresh-session test is still pending**: T0007-PILOT and VERIFY-2026-10-18-a01-1 were assigned directly in the Codex chat, not found from the index. REVIEW-2026-10-18-t0004 (OD-0010) is the first index-assigned review, so the first opportunity to run it. _(Later edit, OD-0014; see below)_ |
 | 3 | separate worktree; review-only commit | §6.2 steps 2–3. Not yet exercised by Codex |
 | 4 | a repeatable check fails on non-review paths and unexpected file types, **in any commit**, and fails on empty branches | `hio/tools/check_review_branch.sh`; synthetic-branch results in the T-0007 handoffs |
 | 5 | merge documented as receipt | §6.2 step 5 |
 | 6 | original findings immutable; separate response and verification records with SHAs | §3; templates |
 | 7 | waivers and acceptance remain explicit owner actions tied to revisions | §1.1 (unchanged) |
 | 8 | no new heavyweight ritual or duplicate authority | §6.2 is one section; the index is a summary; records are the source of truth |
+
+## Later edits (after acceptance)
+
+Acceptance (OD-0004) applies to this card as it stood at `b48f83c`. These edits are not part of
+the accepted version.
+
+| Date | Authority | Edit | Accepted text |
+|---|---|---|---|
+| 2026-10-24 | OD-0014 | Criteria 1–2: the fresh-session test is still pending; the line now says why, and names REVIEW-2026-10-18-t0004 as the first index-assigned review | "A **fresh-session test is pending**" |

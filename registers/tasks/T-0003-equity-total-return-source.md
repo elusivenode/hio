@@ -5,7 +5,7 @@ status: in_progress
 owner: owner
 assignee_role: architecture agent (research) + owner (procurement decision)
 created: 2026-10-18
-authorised_by: OD-0009   # research task; execution not yet started
+authorised_by: OD-0009   # research task; begun under OD-0010; held by OD-0013 (stale comment corrected, OD-0014)
 base_revision: f7a9ec90bb2f0cbd58272c5bd0f0da07948a4ecb
 links: {adrs: [HIO-ADR-0005, HIO-ADR-0007, HIO-ADR-0010], depends_on: [], blocks: [S2]}
 ---
