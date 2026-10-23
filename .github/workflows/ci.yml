@@ -1,0 +1,38 @@
+# HIO CI (S1a, OD-0017/OD-0020). Minimum permissions, no secrets, no schedules.
+# Network: the install steps reach the package index only; the test step blocks all
+# non-loopback sockets (tests/conftest.py), and src/ may not import a network client
+# (tools/check_repo.py imports). No step fetches source data.
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  harness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
+        with:
+          version: "0.11.19"
+          enable-cache: false
+      - name: Repository checks (links, front matter, YAML schemas, STATUS, public safety, imports, OBS-INV-005)
+        run: uv run --no-project --python 3.13 --with pyyaml==6.0.2 python tools/check_repo.py
+      - name: HIO-Actor trailers on new commits
+        env:
+          BEFORE: ${{ github.event.before }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          base="${BASE:-$BEFORE}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "no comparable base; skipping trailer check"; exit 0
+          fi
+          uv run --no-project --python 3.13 --with pyyaml==6.0.2 python tools/check_repo.py trailers "$base" "$GITHUB_SHA"
