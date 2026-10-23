@@ -9,7 +9,7 @@ last_reviewed: 2026-10-24
 
 # HIO: Home Investment Office
 
-> **This is HIO's own repository** (`elusivenode/hio`, private). HIO is a separate system from
+> **This is HIO's own repository** (`elusivenode/hio`, public since 2026-10-24, OD-0019). HIO is a separate system from
 > the MacDonald Family SMSF application (`macsmsf`). The planning baseline was staged in
 > `macsmsf/hio/` and migrated here **with its history** on 2026-10-24 (OD-0017; see
 > [`MIGRATION-MAP.md`](MIGRATION-MAP.md)).

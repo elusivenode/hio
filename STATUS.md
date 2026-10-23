@@ -19,7 +19,7 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 ## One-line state
 
 **G1 is complete** (OD-0008, OD-0011). **S1a is authorised** (OD-0017): synthetic-fixture-only,
-in this repository, `elusivenode/hio` (private), migrated with history from
+in this repository, `elusivenode/hio` (**public** since 2026-10-24, OD-0019), migrated with history from
 `macsmsf@dc4fd02` on 2026-10-24. **No S1a code exists yet.** S1b is not authorised. HIO has no
 storage, no data and no credentials. The `macsmsf` staging branch `docs/hio-a01-baseline` is
 frozen at `dc4fd02` and stays unmerged.
@@ -28,7 +28,7 @@ frozen at `dc4fd02` and stays unmerged.
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0018; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) and OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | OD-0001…0019; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) and OD-0019 (repository public) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model harness-0.6 at `f2275e2` (OD-0012). All of these are `macsmsf` commit ids | per-file blobs in the OD records |
 | Authorised, not accepted | **S1a** (OD-0017) | [OD-0017](docs/decisions/owner/OD-0017-authorise-s1a.md) |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1b**; all T-0002 source permissions **unverified and blocked** (OD-0013); the ETF diagnostic workstream; any `macsmsf` pointer change or merge | [`docs/decisions/README.md`](docs/decisions/README.md) |
@@ -85,4 +85,5 @@ claims, not reviewed evidence.
 - start S1b, fetch any real source, or create any bucket, credential or schedule;
 - change HIO-001, or `macsmsf` (a pointer change needs a separate reviewed change);
 - contract or contact a vendor;
-- treat a branch, a merge or a handoff as approval.
+- treat a branch, a merge or a handoff as approval;
+- commit secrets, or any source data whose rights do not allow public redistribution (the repository is public, OD-0019).

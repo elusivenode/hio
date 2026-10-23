@@ -15,7 +15,7 @@ Operating model §8.1. **Migration changes no approval, acceptance, finding or r
 
 | Field | Value |
 |---|---|
-| Source repository | `elusivenode/MACSMSF` (`macsmsf`), private |
+| Source repository | `elusivenode/MACSMSF` (`macsmsf`), private. This repository was created private and made public on 2026-10-24 (OD-0019) |
 | Source branch | `docs/hio-a01-baseline` (left **unmerged** in `macsmsf`, per OD-0017) |
 | Source commit | `dc4fd0241fe039fd2e8361cb82604a59a0458413` |
 | Method | `git subtree split --prefix=hio dc4fd02`, run in a scratch clone (the `macsmsf` repository was not modified) |

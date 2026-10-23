@@ -33,6 +33,7 @@ are in operating model §1.1; the template is
 | [OD-0016](OD-0016-s1a-preparation.md) | authorise_work | adopt the S1a-preparation advice: align roadmap, plan, T-0005, §8.1 and README to ADR-0010 rev 3; draft (not grant) S1a; push the staging branch | `hio/` from `81793f7` | recorded |
 | [OD-0017](OD-0017-authorise-s1a.md) | authorise_work | **S1a authorised** (synthetic-fixture-only); create `elusivenode/hio` and migrate the verified history; stack and CI set | `macsmsf@dc4fd02` (`hio/`) | recorded (draft of the same id superseded) |
 | [OD-0018](OD-0018-t0004-mechanics-parallel-work.md) | authorise_work | T-0004 review mechanics confirmed (no merge); T-0002/T-0003 continue; propose an SMSF-owned ETF diagnostic card; correct roadmap dates and gates | roadmap at `e32d282` | recorded |
+| [OD-0019](OD-0019-repository-public.md) | authorise_work | make `elusivenode/hio` **public** (amends OD-0017's "private"), so ChatGPT can review | repository at `f10ad70` | recorded |
 
 **Current position:**
 - **Approved:**
