@@ -9,7 +9,7 @@ last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
-  - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only. 2026-10-24: §8.1 status sentence updated (status only, OD-0016)"
+  - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only. 2026-10-24: §8.1 status sentence updated (status only, OD-0016; migration performed, OD-0017). Paths written hio/<p> mean <p> after migration (MIGRATION-MAP.md)"
   - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
   - "harness-0.4 (2026-10-18): review branch and worktree protocol §6.2; immutable findings with separate response and verification records; scope-check script (T-0007, OD-0003)"
   - "harness-0.3 (2026-10-18): authorise vs accept vs approve vs waive; advice and adoption; trailers as metadata only; provisional protocol; state-aware reviewer test (T-0006 final correction, docs/history/2026-10-18-directive-t0006-final-correction.md)"
@@ -490,7 +490,7 @@ acceptance and waiver records.
 
 ### 8.1 Migration continuity (`macsmsf/hio/` → the standalone `hio` repository)
 
-**Status: not performed.** The A01 ADRs, standards and this harness are approved (OD-0008, OD-0011, OD-0012); migration changes no approval state (item 5). This is
+**Status: performed 2026-10-24** (OD-0017; evidence in `MIGRATION-MAP.md`). The A01 ADRs, standards and this harness are approved (OD-0008, OD-0011, OD-0012); migration changes no approval state (item 5). This is
 the checklist for when migration is authorised (an OD record under HIO-ADR-0001).
 
 1. **Preserve provenance.** Migrate with history, using `git subtree split --prefix=hio` or an

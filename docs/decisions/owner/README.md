@@ -31,7 +31,8 @@ are in operating model §1.1; the template is
 | [OD-0014](OD-0014-fix-stale-lines.md) | authorise_work | fix the stale lines (STATUS authority row; T-0002/T-0003 front matter; T-0007 line 60 as a later edit) | `hio/` from `4a994d3` | recorded |
 | [OD-0015](OD-0015-fix-further-stale-lines.md) | authorise_work | fix the further stale lines in the accepted T-0006 and T-0007 cards (later edits); commit the OD-0014 work | `hio/` from `73512cf` | recorded |
 | [OD-0016](OD-0016-s1a-preparation.md) | authorise_work | adopt the S1a-preparation advice: align roadmap, plan, T-0005, §8.1 and README to ADR-0010 rev 3; draft (not grant) S1a; push the staging branch | `hio/` from `81793f7` | recorded |
-| [OD-0017](OD-0017-authorise-s1a-DRAFT.md) | authorise_work | **DRAFT** S1a authorisation, awaiting the owner's decision | — | **draft (no authority)** |
+| [OD-0017](OD-0017-authorise-s1a.md) | authorise_work | **S1a authorised** (synthetic-fixture-only); create `elusivenode/hio` and migrate the verified history; stack and CI set | `macsmsf@dc4fd02` (`hio/`) | recorded (draft of the same id superseded) |
+| [OD-0018](OD-0018-t0004-mechanics-parallel-work.md) | authorise_work | T-0004 review mechanics confirmed (no merge); T-0002/T-0003 continue; propose an SMSF-owned ETF diagnostic card; correct roadmap dates and gates | roadmap at `e32d282` | recorded |
 
 **Current position:**
 - **Approved:**
@@ -41,6 +42,7 @@ are in operating model §1.1; the template is
   - the operating model, harness-0.6, at `f2275e2` (OD-0012).
 - **G1 is complete.**
 - **Not approved:** the factor specs (drafts); the roadmap and plan (recommendations).
-- **Not authorised:** S1a; S1b.
+- **Authorised:** S1a (OD-0017), not accepted.
+- **Not authorised:** S1b.
 - **Accepted:** T-0006, T-0007 and T-0008.
 - **No finding is waived.**

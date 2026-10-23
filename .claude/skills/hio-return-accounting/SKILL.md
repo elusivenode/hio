@@ -5,7 +5,7 @@ description: "Any HIO work that computes, constructs, compares or validates a re
 
 # HIO return accounting
 
-The authority is `hio/docs/standards/return-accounting-and-factor-construction.md` (check its
+The authority is `docs/standards/return-accounting-and-factor-construction.md` (check its
 version). Read the sections your task needs: §1 notation, §2 series classes, the section for
 your asset class, §10 and §13.
 

@@ -28,6 +28,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-stale-line-fixes.md` | the owner's instruction to fix the stale lines, verbatim, with the list it refers to | authority for OD-0014 | — |
 | `2026-10-24-owner-further-stale-lines.md` | the owner's instruction to fix the further stale lines, verbatim | authority for OD-0015 | — |
 | `2026-10-24-owner-s1a-preparation.md` | pasted collaborator advice on S1a preparation, plus the owner's own words, verbatim | authority for OD-0016 (the advice itself is advice; see OD-0016 for the reading) | — |
+| `2026-10-24-owner-s1a-authorisation.md` | the owner's S1a authorisation, T-0004 confirmation and parallel-work instructions, verbatim | authority for OD-0017 and OD-0018 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is

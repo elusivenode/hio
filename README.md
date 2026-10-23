@@ -7,16 +7,16 @@ version: 0.1
 last_reviewed: 2026-10-24
 ---
 
-# HIO: Home Investment Office (staged planning baseline)
+# HIO: Home Investment Office
 
-> **Staging notice.** HIO is a separate system from the MacDonald Family SMSF application
-> (`macsmsf`), and the target `hio` repository **does not exist yet**. This directory stages
-> HIO's canonical planning documents so that they are version-controlled now. Its layout mirrors
-> the future repository root. Migration moves this directory **with its history** into the new
-> repository (operating model §8.1), not as a plain copy or `git mv` (see [Migration](#migration)).
+> **This is HIO's own repository** (`elusivenode/hio`, private). HIO is a separate system from
+> the MacDonald Family SMSF application (`macsmsf`). The planning baseline was staged in
+> `macsmsf/hio/` and migrated here **with its history** on 2026-10-24 (OD-0017; see
+> [`MIGRATION-MAP.md`](MIGRATION-MAP.md)).
 >
-> Nothing in this directory is part of `macsmsf`. No `macsmsf` code, test, pipeline or
-> deployment reads it. **`macsmsf` is not the permanent system of record for HIO.**
+> **Reading older documents:** a path written `hio/<p>` means `<p>` in this repository. A commit
+> id dated before the migration refers to `macsmsf` history (`macsmsf@<sha>`). No `macsmsf`
+> code, test, pipeline or deployment reads HIO.
 
 **Start here:** read [`AGENTS.md`](AGENTS.md), then [`STATUS.md`](STATUS.md).
 
@@ -58,11 +58,13 @@ last_reviewed: 2026-10-24
 
 ## Migration
 
-**Not performed.** Migration happens only through an owner decision record under
-[HIO-ADR-0001](docs/decisions/HIO-ADR-0001-separate-system-modular-monolith.md). It must follow
-the continuity checklist in
+**Performed 2026-10-24** (OD-0017), from `macsmsf@dc4fd02`. It followed the continuity
+checklist in
 [operating model §8.1](docs/harness/operating-model.md#81-migration-continuity-macsmsfhio--the-standalone-hio-repository):
 - history preserved;
-- an old→new path map;
-- ids, approval states and open or waived findings unchanged;
-- the migration is rejected if anything is stranded.
+- an old→new path and commit map;
+- ids, approval states and findings unchanged;
+- links verified.
+
+The evidence is in [`MIGRATION-MAP.md`](MIGRATION-MAP.md). The `macsmsf` pointer file (§8.1
+item 6) needs a separate reviewed `macsmsf` change (OD-0017); it has not been made.

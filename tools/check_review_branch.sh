@@ -1,6 +1,10 @@
 #!/bin/sh
 # HIO review-branch scope check (operating model §6.2).
-# Usage: hio/tools/check_review_branch.sh <assigned_head_sha> <review_branch>
+# Usage: tools/check_review_branch.sh <assigned_head_sha> <review_branch>
+#
+# Layout: paths below are written relative to the HIO root. In the standalone hio repository
+# the root is the repository root; in the macsmsf staging layout it is hio/. The prefix is
+# detected from the assigned head (post-migration change, OD-0017; MIGRATION-MAP.md).
 #
 # Run the copy of this script from the STAGING branch, never the copy on the review branch.
 # Passing establishes a content-scope constraint only. It does not authenticate the reviewer
@@ -21,6 +25,7 @@ set -eu
 head=$(git rev-parse --verify "$1^{commit}")
 branch=$(git rev-parse --verify "$2^{commit}")
 fail=0
+if git cat-file -e "$head:hio/AGENTS.md" 2>/dev/null; then P="hio/"; else P=""; fi
 err() { echo "FAIL: $*" >&2; fail=1; }
 
 [ "$(git merge-base "$head" "$branch")" = "$head" ] || err "branch does not descend from the assigned head $head"
@@ -36,12 +41,12 @@ scan_commit() {
     newmode=$(echo "$meta" | awk '{print $2}')
     status=$(echo "$meta" | awk '{print $5}')
     short=$(git rev-parse --short "$c")
-    case "$path" in hio/reviews/*) ;; *) echo "$short: path outside hio/reviews/: $path" ;; esac
+    case "$path" in "${P}reviews/"*) ;; *) echo "$short: path outside ${P}reviews/: $path" ;; esac
     case "$status" in
       A|M)
         [ "$newmode" = "100644" ] || echo "$short: mode $newmode (only regular non-executable files): $path"
         case "$path" in *.md) ;; *) echo "$short: not a .md file: $path" ;; esac
-        case "$status:$path" in M:hio/reviews/records/*) echo "$short: submitted record modified: $path" ;; esac
+        case "$status:$path" in "M:${P}reviews/records/"*) echo "$short: submitted record modified: $path" ;; esac
         ;;
       *) echo "$short: status $status not allowed (only add or modify): $path" ;;
     esac
@@ -60,8 +65,8 @@ fi
 
 # The branch must add at least one review or verification record.
 if [ -n "$commits" ] && ! git diff --name-only --diff-filter=A --no-renames "$head" "$branch" \
-     | grep -Eq '^hio/reviews/records/(REVIEW|VERIFY)-[^/]*\.md$'; then
-  err "no review or verification record added (hio/reviews/records/REVIEW-*.md or VERIFY-*.md)"
+     | grep -Eq "^${P}reviews/records/(REVIEW|VERIFY)-[^/]*\\.md\$"; then
+  err "no review or verification record added (${P}reviews/records/REVIEW-*.md or VERIFY-*.md)"
 fi
 
 if [ "$fail" -eq 0 ]; then
