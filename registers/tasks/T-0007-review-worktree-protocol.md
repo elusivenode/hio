@@ -57,7 +57,7 @@ Brief: [`../../docs/history/2026-10-18-directive-review-worktree-protocol.md`](.
 
 | # | Criterion | Where / evidence |
 |---|---|---|
-| 1–2 | A fresh Codex session finds an assignment, or reports that there is none | AGENTS.md; operating model §2.2; the review index *Assigned reviews*. A **fresh-session test is still pending**: T0007-PILOT and VERIFY-2026-10-18-a01-1 were assigned directly in the Codex chat, not found from the index. REVIEW-2026-10-18-t0004 (OD-0010) is the first index-assigned review, so the first opportunity to run it. _(Later edit, OD-0014; see below)_ |
+| 1–2 | A fresh Codex session finds an assignment, or reports that there is none | AGENTS.md; operating model §2.2; the review index *Assigned reviews*. A **fresh-session test is still pending**: T0007-PILOT and VERIFY-2026-10-18-a01-1 were assigned directly in the Codex chat, not found from the index. REVIEW-2026-10-18-t0004 (OD-0010) is the first index-assigned review. It counts as the test only if run in a session with no prior chat history and the neutral §10 prompt. _(Later edits, OD-0014, OD-0016; see below)_ |
 | 3 | separate worktree; review-only commit | §6.2 steps 2–3. Exercised by Codex in T0007-PILOT (`e36dd08`, received at `385389d`) and VERIFY-2026-10-18-a01-1 (received at `a82aa0d`) _(Later edit, OD-0015)_ |
 | 4 | a repeatable check fails on non-review paths and unexpected file types, **in any commit**, and fails on empty branches | `hio/tools/check_review_branch.sh`; synthetic-branch results in the T-0007 handoffs |
 | 5 | merge documented as receipt | §6.2 step 5 |
@@ -76,3 +76,4 @@ the accepted version.
 | 2026-10-24 | OD-0015 | Line 29: records that HIO-ADR-0008 and the protocol were approved after acceptance | "HIO-ADR-0008 remains proposed, and the protocol stays provisional." |
 | 2026-10-24 | OD-0015 | Criterion 3: Codex has exercised the worktree and review-branch protocol | "Not yet exercised by Codex" |
 | 2026-10-24 | OD-0015 | Front matter `links`: HIO-ADR-0008 moved from `adrs_context_proposed` to `adrs_context_approved` | `adrs_context_proposed: [HIO-ADR-0008]` |
+| 2026-10-24 | OD-0016 | Criteria 1–2: a review run in a continuing chat is not the §10 fresh-session test | (as edited under OD-0014) |

@@ -4,7 +4,7 @@ title: HIO planning index and staging notice
 status: current
 owner: HIO architecture lead (owner)
 version: 0.1
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-24
 ---
 
 # HIO: Home Investment Office (staged planning baseline)
@@ -12,8 +12,8 @@ last_reviewed: 2026-10-18
 > **Staging notice.** HIO is a separate system from the MacDonald Family SMSF application
 > (`macsmsf`), and the target `hio` repository **does not exist yet**. This directory stages
 > HIO's canonical planning documents so that they are version-controlled now. Its layout mirrors
-> the future repository root, so migration is a `git mv` of this directory's contents (see
-> [Migration](#migration)).
+> the future repository root. Migration moves this directory **with its history** into the new
+> repository (operating model §8.1), not as a plain copy or `git mv` (see [Migration](#migration)).
 >
 > Nothing in this directory is part of `macsmsf`. No `macsmsf` code, test, pipeline or
 > deployment reads it. **`macsmsf` is not the permanent system of record for HIO.**

@@ -30,6 +30,8 @@ are in operating model §1.1; the template is
 | [OD-0013](OD-0013-t0002-hold-t0003-drafts.md) | authorise_work | keep T-0002 permissions unverified and blocked; draft (do not send) vendor questions | `hio/` from `8e11581` | recorded |
 | [OD-0014](OD-0014-fix-stale-lines.md) | authorise_work | fix the stale lines (STATUS authority row; T-0002/T-0003 front matter; T-0007 line 60 as a later edit) | `hio/` from `4a994d3` | recorded |
 | [OD-0015](OD-0015-fix-further-stale-lines.md) | authorise_work | fix the further stale lines in the accepted T-0006 and T-0007 cards (later edits); commit the OD-0014 work | `hio/` from `73512cf` | recorded |
+| [OD-0016](OD-0016-s1a-preparation.md) | authorise_work | adopt the S1a-preparation advice: align roadmap, plan, T-0005, §8.1 and README to ADR-0010 rev 3; draft (not grant) S1a; push the staging branch | `hio/` from `81793f7` | recorded |
+| [OD-0017](OD-0017-authorise-s1a-DRAFT.md) | authorise_work | **DRAFT** S1a authorisation, awaiting the owner's decision | — | **draft (no authority)** |
 
 **Current position:**
 - **Approved:**

@@ -27,7 +27,7 @@ the unmerged branch `docs/hio-a01-baseline`.
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0015; the latest are OD-0011 (ADR-0010 rev 3; G1 complete), OD-0012 (harness-0.6), OD-0013 (T-0002 held; vendor drafts not sent) and OD-0014/0015 (stale-line fixes) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | OD-0001…0016 (OD-0017 is a **draft**, no authority); the latest are OD-0011 (ADR-0010 rev 3; G1 complete), OD-0012 (harness-0.6), OD-0013 (T-0002 held; vendor drafts not sent), OD-0014/0015 (stale-line fixes) and OD-0016 (S1a preparation; documents aligned to the S1a/S1b split) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model harness-0.6 at `f2275e2` (OD-0012) | per-file blobs in the OD records |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1a and S1b not authorised**; all T-0002 source permissions **unverified and blocked** (OD-0013) | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Independent reviews | REVIEW-2026-10-18-a01 (REQUEST CHANGES), then VERIFY-2026-10-18-a01-1: **8/8 verified_closed** (received at `a82aa0d`). T0007-PILOT READY (received at `385389d`) | [`reviews/README.md`](reviews/README.md) |
@@ -39,8 +39,8 @@ the unmerged branch `docs/hio-a01-baseline`.
 |---|---|
 | Phase | A01 → G1 |
 | Current gate | **G1 complete.** Next: the owner's separate decision whether, and in what scope, to authorise S1a |
-| Next permissible actions | **Owner:** consider S1a authorisation; answer the T-0002 open questions (evidence); review the [vendor question drafts](docs/research/T-0003-vendor-questions-draft.md) (**not sent**); run Codex REVIEW-2026-10-18-t0004. **Agents:** T-0002 evidence-gathering from published pages; no S1a; no live data; no vendor contact |
-| Next implementation slice | S1a (synthetic-fixture-only), per approved HIO-ADR-0010 rev 3: **not authorised** |
+| Next permissible actions | **Owner:** decide on the [draft S1a authorisation](docs/decisions/owner/OD-0017-authorise-s1a-DRAFT.md) (OD-0017); confirm OD-0010's cross-lineage review mechanics before Codex commits a T-0004 record; answer the T-0002 open questions (evidence); review the [vendor question drafts](docs/research/T-0003-vendor-questions-draft.md) (**not sent**); run Codex REVIEW-2026-10-18-t0004 (in a fresh session with the neutral §10 prompt, if it is also to count as the fresh-session test). **Agents:** T-0002 evidence-gathering from published pages; no S1a; no live data; no vendor contact |
+| Next implementation slice | S1a (synthetic-fixture-only), per approved HIO-ADR-0010 rev 3: **not authorised**; draft authorisation OD-0017 awaits the owner. T-0002 gates S1b only |
 
 ## Work cards
 

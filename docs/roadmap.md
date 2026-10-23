@@ -4,7 +4,7 @@ title: HIO integrated programme roadmap
 status: proposed
 owner: HIO architecture lead (owner)
 version: 0.1
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-24
 supersedes: "the 90-day and five-year sections of docs/history/2026-10-18-five-year-architecture-proposal.md"
 ---
 
@@ -15,18 +15,19 @@ supersedes: "the 90-day and five-year sections of docs/history/2026-10-18-five-y
 This document lists the **integration points** between the two. It does not merge them.
 
 Dates count from **G1** (owner approval of the A01 baseline), written as `G1 + n weeks`.
-Calendar estimates assume G1 in early November 2026, and include the December–January holiday
-period.
+Calendar estimates assumed G1 in early November 2026, and include the December–January holiday
+period. **G1 completed on 2026-10-18** (OD-0008, OD-0011), so `G1 + n weeks` counts from then.
 
 ## 1. The next 90 days (G1 → G1 + 13 weeks)
 
 | Weeks | Deliverable | Research outcome | Task / slice |
 |---|---|---|---|
 | 0 (now) | A01 baseline (this directory) | a binding vocabulary and mathematics for every later result | T-0001 |
-| 0–2 | S1 source rights and timing verified | knowability claims for S1 have evidence | T-0002 |
+| 0–4 | S1 source rights and timing verified (in parallel with S1a; gates S1b only) | knowability claims for S1b have evidence | T-0002 |
 | 0–4 | equity TR source scorecard and decision | knowing whether, and how, an investable equity TR can be built | T-0003 → HIO-ADR-0011 |
 | 0–4 | HIO-001 boundary decision (SMSF documentation only) | no dual instrument master | T-0004 |
-| 1–6 | **S1 walking skeleton** (cash legs + investable FX excess + harness MVH + scheduled capture) | the first validated factor: AUD-investor USD exposure, decomposed exactly; the **PIT capture clock starts** | T-0005 |
+| 1–4 | **S1a: synthetic-fixture foundation** (repository + history-preserving migration, harness MVH, contracts, cash legs + investable FX excess on fixtures; no network or real data) | every A01 contract executable and tested before real data touches it | T-0005 (S1a) |
+| 4–8 | **S1b: live official observations** (real sources behind the rights gate, bucket, scheduled capture, soak, triangulations) | the first validated factor: AUD-investor USD exposure, decomposed exactly; the **PIT capture clock starts** | T-0005 (S1b) |
 | 4–8 | futures data procurement for the PoC (vendor terms, a sample) | the rights to build our own futures returns are known | task to be raised at G1 |
 | 6–9 | **S2 equity TR** (if T-0003 resolves) or **S3 rates CMT** (if not) | investable equity in AUD, unhedged and hedged; or AU and US duration factors | S2 / S3 |
 | 9–12 | the other of S2/S3 | a four-family factor set: cash, FX, rates, equity | S3 / S2 |
@@ -64,7 +65,7 @@ by design. Its evidence quality depends on captured vintages that start in S1.
 | Gate | Decision | Evidence required |
 |---|---|---|
 | **G1** | approve the A01 baseline (ADRs 0001–0010, the standards, the harness) | T-0001 complete |
-| **G2** | promote S1 and start S2/S3 | the S1 verification evidence (implementation plan) |
+| **G2** | promote S1 (after S1b) and start S2/S3 | the S1 verification evidence (implementation plan) |
 | **G3** | equity TR source (HIO-ADR-0011) | T-0003 scorecard |
 | **G4** | futures data contract beyond the PoC | the PoC results; rights verified |
 | **G5** | first consumer integration (SMSF exporter and reader slices, in `macsmsf`) | A05 contract; SMSF preservation evidence plan; trustee interest |

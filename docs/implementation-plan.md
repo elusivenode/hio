@@ -4,7 +4,7 @@ title: HIO current implementation plan
 status: proposed
 owner: HIO architecture lead (owner)
 version: 0.1
-last_reviewed: 2026-10-18
+last_reviewed: 2026-10-24
 decisions: [HIO-ADR-0010]
 ---
 
@@ -16,15 +16,18 @@ decisions: [HIO-ADR-0010]
 > (S1-A10, S1-A13, and real-source parts of S1-A12) belong to S1b; the ADR lists S1a's
 > acceptance.
 
-No slice is approved. **S1 is the recommended next slice.** Each slice needs an **authorised** task
-card (an OD record) before work starts.
+No slice is authorised. **S1a is the recommended next slice.** Each slice needs an **authorised**
+task card (an OD record) before work starts. **T-0002 gates S1b, not S1a:** S1a uses synthetic
+sources and fixtures only, so it does not wait for source rights (aligned with ADR-0010 rev 3 by
+OD-0016).
 
 ## Slices
 
 | Slice | Capability | Prerequisites | Status |
 |---|---|---|---|
-| **S1** | independent repository and harness MVH; scheduled capture of official observations; AUD and USD cash legs; investable USD-cash-versus-AUD excess return with exact decomposition; publication gate | G1, T-0002 (for publication), owner creates the repository and bucket | recommended, awaiting approval |
-| S2 | equity total return (USD) → AUD unhedged and hedged, per HIO-ADR-0011 | T-0003 → G3; S1 | planned |
+| **S1a** | independent repository (history-preserving migration, §8.1) and harness MVH; contracts; local-filesystem object-store adapter; observation, vintage and knowability model; AUD and USD cash legs and the investable USD-cash-versus-AUD excess return with exact decomposition, **on synthetic sources and fixtures only**; rights and publication gates exercised on fixtures | G1 (complete, OD-0011); a separate owner authorisation of S1a's scope. **Not** T-0002 | recommended; not authorised |
+| **S1b** | real-source adapters behind the rights gate; bucket with scoped keys; scheduled capture; soak; triangulation reports | S1a accepted; T-0002 `owner_verified` rights per operation, per source; timing, calendars and the AUD rate regime evidenced; a separate S1b authorisation | planned; not authorised |
+| S2 | equity total return (USD) → AUD unhedged and hedged, per HIO-ADR-0011 | T-0003 → G3; S1b | planned |
 | S3 | AU and US government CMT total and excess returns (2/5/10y), with decomposition | S1; rights for RBA F2 and the Treasury par curve (T-0002 extension) | planned |
 | S4 | futures PoC: one root (ZN recommended, GC alternative), individual-contract settlements → rolled excess + collateral TR | procurement (G4-lite: PoC data only); S1 collateral leg; S3 for the ZN triangulation | planned |
 | S5 | library v0 release + covariance with uncertainty + hypothetical mandate R1 risk report + D1 demonstration | S1 + at least one of S2/S3 | planned |
@@ -69,8 +72,8 @@ card (an OD record) before work starts.
 
 ### Capabilities and repository boundary
 
-- **A new private repository `hio`.** The contents of `macsmsf/hio/` are migrated per
-  `hio/README.md`, and `macsmsf` gets a pointer commit.
+- **A new private repository `hio`** (S1a). The contents of `macsmsf/hio/` are migrated with
+  history, per operating model §8.1, and `macsmsf` gets a pointer commit.
   - **S1 code never imports, connects to or holds credentials for `macsmsf`.**
 - **Packages:**
   - `contracts`: observation, manifest, rights, spec and envelope schemas;
@@ -98,8 +101,8 @@ card (an OD record) before work starts.
 | Resource | Rationale | Not chosen |
 |---|---|---|
 | Private GitHub repository `hio` | independent release, CI and access | a monorepo inside `macsmsf` (HIO-ADR-0001) |
-| GitHub Actions: CI + scheduled capture (cron) | no new vendor; jobs run off the operator's machine from day one | Fly scheduled machines or cloud schedulers, held as a trigger-based fallback (punctuality trigger, `architecture.md` §5) |
-| One object-storage bucket (Tigris, separate from `macsmsf`'s, with versioning) and two bucket-scoped keys (write: CI capture/publish environment; read: review) | a durable, off-machine system of record for receipts and releases | a hosted database (HIO-ADR-0009) |
+| GitHub Actions: CI (S1a) + scheduled capture (cron, S1b) | no new vendor; jobs run off the operator's machine from day one | Fly scheduled machines or cloud schedulers, held as a trigger-based fallback (punctuality trigger, `architecture.md` §5) |
+| (S1b) One object-storage bucket (Tigris, separate from `macsmsf`'s, with versioning) and two bucket-scoped keys (write: CI capture/publish environment; read: review) | a durable, off-machine system of record for receipts and releases | a hosted database (HIO-ADR-0009) |
 | Local and CI DuckDB index | catalogue queries | — |
 
 **Workloads:**
@@ -130,16 +133,25 @@ card (an OD record) before work starts.
 | S1-A15 | harness CI checks pass (links, front matter, YAML schemas, STATUS ≤150 lines, secret patterns); a session handoff is written | harness |
 | S1-A16 | **fresh-agent reproduction test** (operating model §10) passes: a new session answers the seven questions with file references and reproduces a release hash | handoff |
 
+**Stage mapping (ADR-0010 rev 3; ADR-0010's own S1a acceptance list governs if they differ).**
+- **S1a**, on synthetic sources and fixtures: S1-A1, A2, A4–A9, A11, A14–A16; A3 against the
+  local-filesystem adapter; A12 as fail-closed fixtures for every operation.
+- **S1b**, on real sources: A3's bucket versioning; A10; A12 with real sources and
+  `owner_verified` rights; A13 (soak); then the G2 evidence below.
+
 ### Dependencies and blocker resolution
 
-1. **T-0001 (G1).** This also authorises the owner to create the repository and bucket.
-2. **Repository + bucket + keys** (owner). The `macsmsf/hio/` migration commit.
-3. **Build on fixtures.** Starts at G1; it does not wait for T-0002.
-4. **T-0002 rights verification.** Required **before any live operation on a real source**:
-   fetch, store, build, rebuild or publish (rights standard §3). Fixture work on synthetic
-   sources does not wait for it.
-5. **Soak** (S1-A13), in parallel with review preparation.
-6. **Independent review → G2.**
+1. **G1** (complete: OD-0008, OD-0011). G1 does **not** itself authorise the repository, the
+   bucket or any S1 work.
+2. **S1a authorisation** (owner, its own OD record). It covers the repository and the
+   history-preserving `macsmsf/hio/` migration (§8.1).
+3. **S1a build on fixtures**, then a fixed-head Codex review and owner acceptance. It does not
+   wait for T-0002.
+4. **T-0002 rights verification**, in parallel with S1a. Required **before any live operation on
+   a real source**: fetch, store, build, rebuild or publish (rights standard §3).
+5. **S1b authorisation** (owner), after S1a acceptance and T-0002. It covers the bucket and keys.
+6. **Soak** (S1-A13), in parallel with review preparation.
+7. **Independent review → G2.**
 
 Off the S1 path:
 - **S&P 500 TR:** resolved by T-0003 in parallel. It decides S2 and does not block S1.
@@ -155,6 +167,10 @@ Off the S1 path:
 | Paid data | none |
 
 ### Scope exclusions (S1)
+
+S1a also excludes any network fetch or live data operation, real sources, credentials, buckets
+and schedules (ADR-0010 rev 3).
+
 
 - equity, bonds, credit, futures and commodity series;
 - FRED/ALFRED, unless T-0002 decides on H.10 via FRED;
