@@ -29,6 +29,7 @@ are in operating model §1.1; the template is
 | [OD-0012](OD-0012-approve-harness-0.6.md) | approve | harness-0.6, including the `reviews/reports/` rule | operating model at `f2275e2` (blob `e3114bd188ad`) | recorded |
 | [OD-0013](OD-0013-t0002-hold-t0003-drafts.md) | authorise_work | keep T-0002 permissions unverified and blocked; draft (do not send) vendor questions | `hio/` from `8e11581` | recorded |
 | [OD-0014](OD-0014-fix-stale-lines.md) | authorise_work | fix the stale lines (STATUS authority row; T-0002/T-0003 front matter; T-0007 line 60 as a later edit) | `hio/` from `4a994d3` | recorded |
+| [OD-0015](OD-0015-fix-further-stale-lines.md) | authorise_work | fix the further stale lines in the accepted T-0006 and T-0007 cards (later edits); commit the OD-0014 work | `hio/` from `73512cf` | recorded |
 
 **Current position:**
 - **Approved:**

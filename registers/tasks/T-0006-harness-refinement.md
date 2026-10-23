@@ -5,12 +5,12 @@ status: accepted
 owner: owner
 assignee_role: documentation agent (Claude)
 created_at: 2026-10-18
-updated_at: 2026-10-18
+updated_at: 2026-10-24
 authorised_by: [OD-0001, OD-0002]   # owner instructions: the original (ambiguity recorded) and the final correction
 base_revision: 85ef0fa8821e5f538b739c5fe000f3f63d3bfac1
 accepted_by: OD-0007                 # accepted as completed work at 35c9821f805955914b05991c1c075b8cb3e082b5
 review_required: independent (Codex), within the A01 review, once the owner assigns it
-links: {adrs_governing_approved: [], adrs_context_proposed: [HIO-ADR-0008], specs: [], standards: [], findings: [], depends_on: [], blocks: [Codex A01 review assignment]}
+links: {adrs_governing_approved: [], adrs_context_proposed: [], adrs_context_approved: [HIO-ADR-0008], specs: [], standards: [], findings: [], depends_on: [], blocks: [Codex A01 review assignment]}
 ---
 
 # T-0006: harness refinement
@@ -58,8 +58,8 @@ within `hio/`.
 - claims of Codex endorsement.
 
 ## Governing documents
-**None is approved.** The provisional working protocol (operating model §1.1) applies.
-HIO-ADR-0008 is context only.
+At acceptance, none was approved: the provisional working protocol (operating model §1.1)
+applied, and HIO-ADR-0008 was context only. HIO-ADR-0008 and the protocol have since been approved (OD-0008 at `a82aa0d`; harness-0.6 by OD-0012). _(Later edit, OD-0015; see below)_
 
 ## Acceptance evidence (for the owner and the reviewer, not self-certified)
 
@@ -77,3 +77,13 @@ HIO-ADR-0008 is context only.
 
 ## Submission
 See the latest handoff in `hio/handoffs/` for this task.
+
+## Later edits (after acceptance)
+
+Acceptance (OD-0007) applies to this card as it stood at `35c9821`. These edits are not part of
+the accepted version.
+
+| Date | Authority | Edit | Accepted text |
+|---|---|---|---|
+| 2026-10-24 | OD-0015 | *Governing documents*: records that HIO-ADR-0008 and the protocol were approved after acceptance | "**None is approved.** The provisional working protocol (operating model §1.1) applies. HIO-ADR-0008 is context only." |
+| 2026-10-24 | OD-0015 | Front matter `links`: HIO-ADR-0008 moved from `adrs_context_proposed` to `adrs_context_approved` | `adrs_context_proposed: [HIO-ADR-0008]` |

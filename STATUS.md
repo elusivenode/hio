@@ -27,7 +27,7 @@ the unmerged branch `docs/hio-a01-baseline`.
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0014; the latest are OD-0011 (ADR-0010 rev 3; G1 complete), OD-0012 (harness-0.6), OD-0013 (T-0002 held; vendor drafts not sent) and OD-0014 (stale-line fixes) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | OD-0001…0015; the latest are OD-0011 (ADR-0010 rev 3; G1 complete), OD-0012 (harness-0.6), OD-0013 (T-0002 held; vendor drafts not sent) and OD-0014/0015 (stale-line fixes) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model harness-0.6 at `f2275e2` (OD-0012) | per-file blobs in the OD records |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1a and S1b not authorised**; all T-0002 source permissions **unverified and blocked** (OD-0013) | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Independent reviews | REVIEW-2026-10-18-a01 (REQUEST CHANGES), then VERIFY-2026-10-18-a01-1: **8/8 verified_closed** (received at `a82aa0d`). T0007-PILOT READY (received at `385389d`) | [`reviews/README.md`](reviews/README.md) |
