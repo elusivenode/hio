@@ -53,6 +53,7 @@ are in operating model §1.1; the template is
 | [OD-0036](OD-0036-f7-verify-10-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-10 (`586b35e`, sha256 `35685f04…`, checked); loaded quality-event clock validation | `21e4a07` | recorded |
 | [OD-0037](OD-0037-integrate-pr2-receive-s1a-verification.md) | authorise_work | integrate PR #2 at reviewed head `084154c`, then receive VERIFY-2026-10-24-s1a-1-1…-11; **not** S1a acceptance | `084154c` | recorded |
 | [OD-0038](OD-0038-s1a-remaining-decisions.md) | approve | Q-007 ratified (`pyyaml`, `hatchling`, as used); Q-008 accepted for **S1a only** (no CI egress firewall; S1b needs a network and credential-control decision); Q-005a confirmed; capture-clock archive question deferred to S1b design (Q-010); **not** S1a acceptance | `3fd129e` (implementation as at `084154c`) | recorded |
+| [OD-0039](OD-0039-s1a16-run1-assessment.md) | authorise_work | record S1-A16 run 1 (transcripts, preliminary owner assessment) and prepare the smallest correction; T-0004 found active, reviewed (READY, `db305a3`, local only), not received; **S1-A16 pending** | run 1 at `3fd129e` | recorded |
 
 **Current position:**
 - **Approved:**
