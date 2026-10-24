@@ -1,28 +1,43 @@
-"""The vintage store: append-on-change recording, quality gates and quality events
-(observations standard §1, §6, §7).
+"""The vintage store: append-on-change recording, quality gates, quality decisions and owner
+conflict resolutions (observations standard §1, §6, §7; OBS-AMEND-Q001 revision 4 and
+OBS-AMEND-Q002 revision 5, approved by OD-0029 and OD-0030).
 
 Records are append-only JSON objects in the object store:
     catalogue/vintages/<series_id>/<valid_time>/<vintage_seq>.json
     catalogue/quality/<series_id>/<valid_time>/<vintage_seq>/<event_seq>.json
+    catalogue/resolutions/<series_id>/<conflict_id>/<decided_at>-<sha256>.json
     catalogue/quarantine/receipts/<receipt_id>.json
-The in-memory state is rebuilt from those records, so a reload gives identical query results.
+Conflicts are derived from the evidence on every query and never stored. The in-memory state is
+rebuilt from the records, so a reload gives identical query results.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
-from hio.contracts.canonical import canonical_json
-from hio.contracts.observation import Receipt, Vintage
+from hio.contracts.canonical import canonical_json, instant_str, sha256_hex
+from hio.contracts.layout import CAPTURES_PREFIX
+from hio.contracts.observation import Receipt, Vintage, parse_instant
 from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
-from hio.marketdata.capture import capture_record_key, load_receipt, receipt_bytes
+from hio.marketdata.capture import capture_record_key, load_receipt, load_receipt_record, receipt_bytes
 from hio.marketdata.knowability import determine
 from hio.marketdata.parse import MalformedReceipt, parse_receipt
-from hio.marketdata.queries import View, select
+from hio.marketdata.queries import (
+    Conflict,
+    Resolution,
+    View,
+    canonical_value,
+    conflict_chain,
+    derive_conflicts,
+    effective_quality_cutoff,
+    resolutions_in_force,
+    select,
+    status_at,
+)
 from hio.marketdata.series import CaptureMode, SeriesDef
 from hio.storage.objectstore import IntegrityError, LocalObjectStore, StagedWrites
 
@@ -32,9 +47,22 @@ class ReceiptIntegrityError(Exception):
     The view fails closed: nothing built on it can be produced (F-REVIEW-2026-10-24-s1a-1-3)."""
 
 
+class IncompleteProcessing(Exception):
+    """Some captured evidence dated <= Q is not reflected in the processed vintages, so no result
+    or resolution at Q can be established (OBS-INV-019). Nothing partial is returned."""
+
+
+class DecisionRefused(ValueError):
+    """A quality decision or resolution that the decision-clock rules forbid (OBS-INV-012 and the
+    Q-002 refusals). The store is unchanged."""
+
+
 # Only the gate's own rules or the owner may release a quarantined vintage (§6). An agent may
 # propose; it may not decide.
 RELEASE_ACTORS = frozenset({"owner", "gate"})
+# Only the owner may resolve a conflict in S1a (OBS-AMEND-Q002 §3).
+RESOLUTION_ACTORS = frozenset({"owner"})
+RESOLUTIONS_PREFIX = "catalogue/resolutions/"
 
 
 @dataclass
@@ -49,12 +77,21 @@ class IngestResult:
 
 
 class VintageStore:
-    def __init__(self, store: LocalObjectStore, series: Mapping[str, SeriesDef]) -> None:
+    def __init__(
+        self,
+        store: LocalObjectStore,
+        series: Mapping[str, SeriesDef],
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        """clock is the recording clock for decisions (OBS-INV-012: no decision is dated before
+        the moment it is recorded). Tests inject one; the default is the system clock."""
         self.store = store
         self.series = dict(series)
+        self._clock = clock or (lambda: datetime.now(UTC))
         self._vintages: dict[tuple[str, date], list[Vintage]] = {}
-        self._quality: dict[tuple[str, date, int], QualityStatus] = {}
-        self._quality_seq: dict[tuple[str, date, int], int] = {}
+        # (series_id, valid_time, vintage_seq) -> [(decided_at, status)], strictly increasing
+        self._decisions: dict[tuple[str, date, int], list[tuple[datetime, QualityStatus]]] = {}
+        self._resolutions: dict[str, list[Resolution]] = {}
         self._load()
 
     # --- persistence ---------------------------------------------------------------------------
@@ -67,13 +104,36 @@ class VintageStore:
             vs.sort(key=lambda v: v.vintage_seq)
             if [v.vintage_seq for v in vs] != list(range(1, len(vs) + 1)):
                 raise ValueError(f"vintage seq gap for {vs[0].series_id} {vs[0].valid_time}")
+        seqs: dict[tuple[str, date, int], int] = {}
         for key in self.store.list("catalogue/quality/"):
             e = json.loads(self.store.get(key))
             k = (e["series_id"], date.fromisoformat(e["valid_time"]), e["vintage_seq"])
-            if e["event_seq"] != self._quality_seq.get(k, 0) + 1:
+            if e["event_seq"] != seqs.get(k, 0) + 1:
                 raise ValueError(f"quality event seq gap for {k}")
-            self._quality_seq[k] = e["event_seq"]
-            self._quality[k] = QualityStatus(e["status"])
+            if "decided_at" not in e:
+                raise ValueError(f"quality event {key} has no decided_at; it predates the decision clock")
+            seqs[k] = e["event_seq"]
+            decided = parse_instant(e["decided_at"])
+            previous = self._decisions.get(k, [])
+            if previous and decided <= previous[-1][0]:
+                raise ValueError(f"quality events for {k} are not strictly increasing in decided_at")
+            self._decisions.setdefault(k, []).append((decided, QualityStatus(e["status"])))
+        for key in self.store.list(RESOLUTIONS_PREFIX):
+            r = json.loads(self.store.get(key))
+            res = Resolution(
+                series_id=r["series_id"],
+                conflict_id=r["conflict_id"],
+                outcome=r["outcome"],
+                member=tuple(r["member"]) if r["member"] else None,
+                reason=r["reason"],
+                actor=r["actor"],
+                evidence=r["evidence"],
+                decided_at=parse_instant(r["decided_at"]),
+                recorded_at=parse_instant(r["recorded_at"]),
+            )
+            if key != _resolution_key(res):
+                raise ValueError(f"resolution {key} is not stored under its content key")
+            self._resolutions.setdefault(res.series_id, []).append(res)
 
     def all_vintages(self) -> list[Vintage]:
         return [v for key in sorted(self._vintages) for v in self._vintages[key]]
@@ -118,7 +178,7 @@ class VintageStore:
                 continue
             if existing and existing[-1].value != row.value:
                 result.revisions.append((row.series_id, row.valid_time, existing[-1].value, row.value))
-            reasons = self._jump_reasons(series, row.valid_time, row.value, pending)
+            reasons = self._jump_reasons(series, row.valid_time, row.value, pending, receipt.captured_at)
             v = Vintage(
                 series_id=row.series_id,
                 valid_time=row.valid_time,
@@ -149,15 +209,22 @@ class VintageStore:
         valid_time: date,
         value: Decimal,
         pending: dict[tuple[str, date], list[Vintage]],
+        captured_at: datetime,
     ) -> list[str]:
         """Jump detection against the latest valid value of the nearest earlier key (§6),
-        counting vintages already decided in the same receipt's transaction."""
+        counting vintages already decided in the same receipt's transaction. Quality is taken as
+        decided at the receipt's capture (Q = captured_at), so a replay decides identically."""
         if series.jump_threshold is None:
             return []
         known = {k: self._vintages.get(k, []) + pending.get(k, []) for k in {*self._vintages, *pending}}
         earlier = [vt for (sid, vt) in known if sid == series.series_id and vt < valid_time]
         for vt in sorted(earlier, reverse=True):
-            valid = [v for v in known[(series.series_id, vt)] if self._effective(v) is QualityStatus.VALID]
+            valid = [
+                v
+                for v in known[(series.series_id, vt)]
+                if v.captured_at <= captured_at
+                and status_at(v, self._decisions, captured_at)[0] is QualityStatus.VALID
+            ]
             if valid:
                 change = abs(value - valid[-1].value)
                 if change > series.jump_threshold:
@@ -168,7 +235,9 @@ class VintageStore:
     # --- quality events --------------------------------------------------------------------------
 
     def _effective(self, v: Vintage) -> QualityStatus:
-        return self._quality.get((v.series_id, v.valid_time, v.vintage_seq), v.quality_status)
+        """The current status (the latest decision): for monitoring gates, which ask about now."""
+        events = self._decisions.get((v.series_id, v.valid_time, v.vintage_seq))
+        return events[-1][1] if events else v.quality_status
 
     def set_quality(
         self,
@@ -178,16 +247,33 @@ class VintageStore:
         status: QualityStatus,
         actor: str,
         evidence: str,
-        at: datetime,
+        decided_at: datetime,
     ) -> None:
-        """Append a quality event. Releasing from quarantine needs the owner or the gate's rules."""
-        require_utc_instant("at", at)
+        """Append a quality decision (OBS-AMEND-Q001 §3). Releasing from quarantine needs the
+        owner or the gate's rules. Refused (DecisionRefused, store unchanged) if decided_at is
+        earlier than the vintage's capture, not later than its previous decision, or earlier than
+        the moment it is recorded (OBS-INV-012)."""
+        require_utc_instant("decided_at", decided_at)
         if actor not in RELEASE_ACTORS:
             raise PermissionError(f"{actor!r} may propose a quality change but not make it (§6)")
         k = (series_id, valid_time, vintage_seq)
-        if not any(v.vintage_seq == vintage_seq for v in self._vintages.get((series_id, valid_time), [])):
+        vintage = next(
+            (v for v in self._vintages.get((series_id, valid_time), []) if v.vintage_seq == vintage_seq), None
+        )
+        if vintage is None:
             raise KeyError(k)
-        seq = self._quality_seq.get(k, 0) + 1
+        recorded_at = self._clock()
+        previous = self._decisions.get(k, [])
+        last = previous[-1][0] if previous else vintage.captured_at
+        if decided_at < recorded_at:
+            raise DecisionRefused(
+                f"decided_at {decided_at} is backdated: it precedes its recording {recorded_at}"
+            )
+        if decided_at <= last:
+            raise DecisionRefused(
+                f"decided_at {decided_at} is not after the vintage's previous decision {last}"
+            )
+        seq = len(previous) + 1
         record = {
             "series_id": series_id,
             "valid_time": valid_time,
@@ -196,22 +282,162 @@ class VintageStore:
             "status": status.value,
             "actor": actor,
             "evidence": evidence,
-            "at": at,
+            "decided_at": decided_at,
+            "recorded_at": recorded_at,
         }
         self.store.put(
             f"catalogue/quality/{series_id}/{valid_time.isoformat()}/{vintage_seq}/{seq:06d}.json",
             canonical_json(record),
         )
-        self._quality_seq[k] = seq
-        self._quality[k] = status
+        self._decisions.setdefault(k, []).append((decided_at, status))
+
+    # --- conflicts and owner resolutions (OBS-AMEND-Q002 revision 5) ------------------------------
+
+    def conflicts(self, series_id: str, quality_as_of: datetime) -> dict[str, object]:
+        """Diagnostics: per slot, the derived chain up to Q, the conflict in force and its
+        resolution in force. Independent of any mode. Refused if completeness fails."""
+        self._require_complete(series_id, quality_as_of)
+        held = [v for v in self.all_vintages() if v.series_id == series_id and v.captured_at <= quality_as_of]
+        in_force = resolutions_in_force(self._resolutions.get(series_id, []), quality_as_of)
+        chains = conflict_chain(series_id, held)
+        return {
+            chain[-1].conflict_id: {
+                "conflict": chain[-1],
+                "chain": [c.conflict_id for c in chain],
+                "resolution": in_force.get(chain[-1].conflict_id),
+            }
+            for chain in chains.values()
+        }
+
+    def resolve_conflict(
+        self,
+        series_id: str,
+        conflict_id: str,
+        outcome: str,
+        member: tuple[str, str] | None,
+        reason: str,
+        actor: str,
+        evidence: str,
+        decided_at: datetime,
+    ) -> Resolution:
+        """Append an owner resolution. It must name the exact conflict in force at decided_at,
+        derived from complete evidence; the store is unchanged on any refusal."""
+        require_utc_instant("decided_at", decided_at)
+        if actor not in RESOLUTION_ACTORS:
+            raise PermissionError(f"{actor!r} may propose a resolution but not make it (S1a: owner only)")
+        if outcome not in {"select", "reject_all"} or (outcome == "select") != (member is not None):
+            raise DecisionRefused("outcome must be select(member) or reject_all")
+        recorded_at = self._clock()
+        if decided_at < recorded_at:
+            raise DecisionRefused(
+                f"decided_at {decided_at} is backdated: it precedes its recording {recorded_at}"
+            )
+        self._require_complete(series_id, decided_at)
+        held = [v for v in self.all_vintages() if v.series_id == series_id and v.captured_at <= decided_at]
+        target: Conflict | None = next(
+            (c for c in derive_conflicts(series_id, held).values() if c.conflict_id == conflict_id), None
+        )
+        if target is None:
+            raise DecisionRefused(f"{conflict_id} is not a conflict in force at {decided_at}")
+        if member is not None and (member[0], canonical_value(_decimal(member[1]))) not in target.members:
+            raise DecisionRefused(f"{member} is not a member of conflict {conflict_id}")
+        earlier = [r for r in self._resolutions.get(series_id, []) if r.conflict_id == conflict_id]
+        if earlier and decided_at <= max(r.decided_at for r in earlier):
+            raise DecisionRefused("a resolution must be later than the conflict's previous resolution")
+        res = Resolution(
+            series_id,
+            conflict_id,
+            outcome,
+            (member[0], canonical_value(_decimal(member[1]))) if member else None,
+            reason,
+            actor,
+            evidence,
+            decided_at,
+            recorded_at,
+        )
+        self.store.put(_resolution_key(res), canonical_json(res.as_record()))
+        self._resolutions.setdefault(series_id, []).append(res)
+        return res
+
+    # --- completeness and evidence pins ---------------------------------------------------------
+
+    def _captures(self, source_id: str, upto: datetime) -> list[Receipt]:
+        out = []
+        for key in self.store.list(f"{CAPTURES_PREFIX}{source_id}/"):
+            receipt = load_receipt_record(self.store, key)
+            if receipt.captured_at <= upto:
+                out.append(receipt)
+        return sorted(out, key=lambda r: (r.captured_at, r.receipt_id))
+
+    def evidence_digest(self, series_id: str, quality_as_of: datetime) -> str:
+        source_id = self.series[series_id].source_id
+        pins = [[r.source_id, r.captured_at, r.receipt_id] for r in self._captures(source_id, quality_as_of)]
+        return sha256_hex(canonical_json(pins))
+
+    def _require_complete(self, series_id: str, quality_as_of: datetime) -> str:
+        """OBS-INV-019. Every receipt of the series' source captured by Q (bytes verified) is
+        either quarantined whole, or every one of its rows for this series is represented by the
+        processed vintages, compared by observation identity and content: a vintage from that
+        receipt with that value, or an append-on-change no-op (the key's latest vintage captured
+        before it holds the same value). Otherwise IncompleteProcessing. Returns the evidence
+        digest."""
+        source_id = self.series[series_id].source_id
+        for receipt in self._captures(source_id, quality_as_of):
+            if self.store.exists(f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"):
+                continue
+            try:
+                raw = receipt_bytes(self.store, receipt)  # verifies existence and the content hash
+            except (IntegrityError, OSError, ValueError) as exc:
+                # Captured evidence that cannot be verified fails closed as an integrity failure,
+                # the same contract as a selected vintage's receipt (F-REVIEW-2026-10-24-s1a-1-3).
+                raise ReceiptIntegrityError(
+                    f"captured receipt {receipt.receipt_id} is missing or corrupt: {exc}"
+                ) from exc
+            try:
+                rows = parse_receipt(raw)
+            except MalformedReceipt as exc:
+                raise IncompleteProcessing(
+                    f"receipt {receipt.receipt_id} is malformed but not quarantined: {exc}"
+                ) from exc
+            for row in rows:
+                if row.series_id != series_id:
+                    continue
+                vs = self._vintages.get((series_id, row.valid_time), [])
+                own = any(v.receipt_id == receipt.receipt_id and v.value == row.value for v in vs)
+                prior = [v for v in vs if v.captured_at < receipt.captured_at]
+                no_op = bool(prior) and max(prior, key=lambda v: v.vintage_seq).value == row.value
+                if not (own or no_op):
+                    raise IncompleteProcessing(
+                        f"{series_id} {row.valid_time}: receipt {receipt.receipt_id} captured "
+                        f"{instant_str(receipt.captured_at)} is not reflected in the processed vintages"
+                    )
+        return self.evidence_digest(series_id, quality_as_of)
 
     # --- queries ---------------------------------------------------------------------------------
 
-    def view(self, series_id: str, mode: KnowledgeMode, cutoff: datetime | None = None) -> View:
-        """Select per the mode, then verify every selected vintage's receipt before it can be
-        used: the capture record exists and names this receipt and source, and the raw bytes
-        exist and match their hash. Any failure raises ReceiptIntegrityError (OBS-INV-004)."""
-        selected = select(self.all_vintages(), self._quality, series_id, mode, cutoff)
+    def view(
+        self,
+        series_id: str,
+        mode: KnowledgeMode,
+        cutoff: datetime | None = None,
+        quality_as_of: datetime | None = None,
+    ) -> View:
+        """Select per the mode at (T, Q), after establishing completeness at Q (OBS-INV-019),
+        then verify every selected vintage's receipt before it can be used: the capture record
+        exists and names this receipt and source, and the raw bytes exist and match their hash.
+        Any failure raises ReceiptIntegrityError (OBS-INV-004)."""
+        q = effective_quality_cutoff(mode, cutoff, quality_as_of)
+        digest = self._require_complete(series_id, q)
+        selected = select(
+            self.all_vintages(),
+            self._decisions,
+            series_id,
+            mode,
+            cutoff,
+            quality_as_of,
+            self._resolutions.get(series_id, []),
+            digest,
+        )
         for v in selected.values.values():
             self._verify_receipt(v)
         return selected
@@ -250,16 +476,17 @@ class VintageStore:
             ) from exc
 
     def as_captured_by_hio(self, series_id: str, cutoff: datetime) -> View:
+        """Q = T, fixed."""
         return self.view(series_id, KnowledgeMode.AS_CAPTURED_BY_HIO, cutoff)
 
-    def as_known_by_market(self, series_id: str, cutoff: datetime) -> View:
-        return self.view(series_id, KnowledgeMode.AS_KNOWN_BY_MARKET, cutoff)
+    def as_known_by_market(self, series_id: str, cutoff: datetime, quality_as_of: datetime) -> View:
+        return self.view(series_id, KnowledgeMode.AS_KNOWN_BY_MARKET, cutoff, quality_as_of)
 
-    def reconstructed(self, series_id: str, cutoff: datetime) -> View:
-        return self.view(series_id, KnowledgeMode.RECONSTRUCTED, cutoff)
+    def reconstructed(self, series_id: str, cutoff: datetime, quality_as_of: datetime) -> View:
+        return self.view(series_id, KnowledgeMode.RECONSTRUCTED, cutoff, quality_as_of)
 
-    def latest(self, series_id: str) -> View:
-        return self.view(series_id, KnowledgeMode.LATEST)
+    def latest(self, series_id: str, quality_as_of: datetime) -> View:
+        return self.view(series_id, KnowledgeMode.LATEST, None, quality_as_of)
 
     # --- monitoring gates ------------------------------------------------------------------------
 
@@ -312,3 +539,17 @@ def _row_order(r) -> tuple:
 
 def _vintage_key(v: Vintage) -> str:
     return f"catalogue/vintages/{v.series_id}/{v.valid_time.isoformat()}/{v.vintage_seq:06d}.json"
+
+
+def _resolution_key(r: Resolution) -> str:
+    """Content-keyed: the same resolution always has the same key and bytes."""
+    stamp = r.decided_at.astimezone(UTC).strftime("%Y%m%d-%H%M%S%f")
+    digest = sha256_hex(canonical_json(r.as_record()))
+    return f"{RESOLUTIONS_PREFIX}{r.series_id}/{r.conflict_id}/{stamp}-{digest}.json"
+
+
+def _decimal(text: str) -> Decimal:
+    value = Decimal(text)
+    if not value.is_finite():
+        raise DecisionRefused(f"not a finite value: {text!r}")
+    return value

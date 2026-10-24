@@ -33,13 +33,20 @@ DATASETS = {
 }
 
 
-def run(tmp_path, name, cutoff=CUTOFF, mode=KnowledgeMode.AS_CAPTURED_BY_HIO, published_at=CUTOFF):
+def run(
+    tmp_path,
+    name,
+    cutoff=CUTOFF,
+    mode=KnowledgeMode.AS_CAPTURED_BY_HIO,
+    published_at=CUTOFF,
+    quality_as_of=None,
+):
     world = s1a.load_world(WORLD)
     store = LocalObjectStore(tmp_path / name)
     vs = VintageStore(store, world.series)
     gate = RightsGate(RIGHTS)
     s1a.run_captures(world, vs, gate, s1a.capture_instants(date(2026, 1, 5), cutoff))
-    releases = s1a.build_releases(world, vs, gate, RIGHTS, mode, cutoff, CODE)
+    releases = s1a.build_releases(world, vs, gate, RIGHTS, mode, cutoff, CODE, quality_as_of)
     s1a.publish_releases(vs, gate, releases, published_at)
     return world, store, vs, releases
 
@@ -91,7 +98,14 @@ def test_fx_period_waits_for_the_in_arrears_usd_leg_under_market_knowledge(tmp_p
     world, _, vs, _ = run(tmp_path, "a")
     gate = RightsGate(RIGHTS)
     at = lambda h: s1a.build_releases(  # noqa: E731
-        world, vs, gate, RIGHTS, KnowledgeMode.AS_KNOWN_BY_MARKET, datetime(2026, 1, 12, h, tzinfo=UTC), CODE
+        world,
+        vs,
+        gate,
+        RIGHTS,
+        KnowledgeMode.AS_KNOWN_BY_MARKET,
+        datetime(2026, 1, 12, h, tzinfo=UTC),
+        CODE,
+        CUTOFF,  # Q: the store's state, so this tests knowable_at placement (labelled, not admissible)
     )
     early, late = at(12), at(13)
     gaps = early["fx.usd_cash_vs_aud.excess"].core["quality_summary"]["absent_periods"]
@@ -108,7 +122,7 @@ def test_as_known_by_market_matches_as_captured_for_on_schedule_captures(tmp_pat
     """Every vintage was captured on schedule, so both point-in-time modes hold the same values;
     the releases differ only in the mode recorded in the manifest."""
     _, _, _, captured = run(tmp_path, "c")
-    _, _, _, known = run(tmp_path, "k", mode=KnowledgeMode.AS_KNOWN_BY_MARKET)
+    _, _, _, known = run(tmp_path, "k", mode=KnowledgeMode.AS_KNOWN_BY_MARKET, quality_as_of=CUTOFF)
     for d in DATASETS:
         assert captured[d].files == known[d].files
         assert captured[d].content_sha256 != known[d].content_sha256

@@ -118,6 +118,11 @@ def load_receipt(store: LocalObjectStore, source_id: str, captured_at: datetime,
     return _load(store, capture_record_key(source_id, captured_at, receipt_id))
 
 
+def load_receipt_record(store: LocalObjectStore, key: str) -> Receipt:
+    """Load a capture record by its key (for enumerating a source's captured evidence)."""
+    return _load(store, key)
+
+
 def _load(store: LocalObjectStore, key: str) -> Receipt:
     r = json.loads(store.get(key))
     return Receipt(

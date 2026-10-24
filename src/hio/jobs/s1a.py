@@ -145,13 +145,21 @@ def quotes(view: View) -> dict[date, FxQuote]:
 
 
 def input_record(view: View) -> dict[str, Any]:
+    """The view's provenance in the manifest's inputs (OBS-AMEND-Q001 §7, OBS-AMEND-Q002 §3): both
+    cutoffs, admissibility, the reproducibility pins and every conflict with its effect."""
     cut = [[d.isoformat(), v.vintage_seq, decimal_str(v.value), v.receipt_id] for d, v in view.values.items()]
     return {
         "series_id": view.series_id,
         "knowledge_mode": view.mode.value,
         "knowledge_cutoff": instant_str(view.cutoff) if view.cutoff else None,
+        "quality_as_of": instant_str(view.quality_as_of) if view.quality_as_of else None,
+        "predictive_pit_admissible": view.predictive_pit_admissible,
         "receipts": sorted({v.receipt_id for v in view.values.values()}),
         "vintage_cut_sha256": sha256_hex(canonical_json(cut)),
+        "evidence_digest": view.evidence_digest,
+        "resolution_digest": view.resolution_digest,
+        "algorithm_revision": view.algorithm_revision,
+        "conflicts": sorted([r.conflict.conflict_id, r.effect] for r in view.conflicts),
     }
 
 
@@ -175,10 +183,13 @@ def build_releases(
     mode: KnowledgeMode,
     cutoff: datetime,
     code_ref: dict[str, str],
+    quality_as_of: datetime | None = None,
 ) -> dict[str, Release]:
+    """quality_as_of is HIO's decision cutoff Q: fixed to cutoff for as_captured_by_hio, and
+    required for the other modes (OBS-AMEND-Q001 §4)."""
     if not mode.point_in_time and mode is not KnowledgeMode.RECONSTRUCTED:
         raise ValueError("releases are built from a point-in-time view or a labelled reconstruction")
-    v_cash, v_fx, v_sofr = (vs.view(s, mode, cutoff) for s in (CASH_RATE, AUDUSD, SOFR))
+    v_cash, v_fx, v_sofr = (vs.view(s, mode, cutoff, quality_as_of) for s in (CASH_RATE, AUDUSD, SOFR))
     # Rights are checked against the sources of the vintages actually selected, from their
     # verified capture records, before any computation (F-REVIEW-2026-10-24-s1a-1-1).
     gate.authorise(Operation.BUILD, vs.sources_of(v_cash) | vs.sources_of(v_fx) | vs.sources_of(v_sofr))
@@ -353,6 +364,7 @@ def rebuild_report(
     mode: KnowledgeMode,
     cutoff: datetime,
     code_ref: dict[str, str],
+    quality_as_of: datetime | None = None,
 ) -> dict[str, str]:
     """S1-A11: rebuild every release from the stored receipts' vintages (reloaded from the
     store), then compare with the pinned stored release. A dataset is "reproduced" only if the
@@ -362,9 +374,11 @@ def rebuild_report(
     vs = VintageStore(store, world.series)
     gate.authorise(
         Operation.REBUILD,
-        frozenset().union(*(vs.sources_of(vs.view(s, mode, cutoff)) for s in (CASH_RATE, AUDUSD, SOFR))),
+        frozenset().union(
+            *(vs.sources_of(vs.view(s, mode, cutoff, quality_as_of)) for s in (CASH_RATE, AUDUSD, SOFR))
+        ),
     )
-    rebuilt = build_releases(world, vs, gate, rights, mode, cutoff, code_ref)
+    rebuilt = build_releases(world, vs, gate, rights, mode, cutoff, code_ref, quality_as_of)
     report = {}
     for dataset_id, release in sorted(rebuilt.items()):
         if not store.exists(f"{release.prefix}/manifest.json"):
@@ -392,9 +406,10 @@ def rebuild_check(
     mode: KnowledgeMode,
     cutoff: datetime,
     code_ref: dict[str, str],
+    quality_as_of: datetime | None = None,
 ) -> dict[str, bool]:
     """True per dataset only when rebuild_report says "reproduced"."""
-    report = rebuild_report(world, store, gate, rights, mode, cutoff, code_ref)
+    report = rebuild_report(world, store, gate, rights, mode, cutoff, code_ref, quality_as_of)
     return {d: status == "reproduced" for d, status in report.items()}
 
 
@@ -452,6 +467,10 @@ def main(argv: list[str] | None = None) -> int:
         default=KnowledgeMode.AS_CAPTURED_BY_HIO.value,
         choices=[m.value for m in KnowledgeMode if m is not KnowledgeMode.LATEST],
     )
+    ap.add_argument(
+        "--quality-as-of",
+        help="HIO decision cutoff Q (UTC, Z suffix): required for as_known_by_market and reconstructed",
+    )
     args = ap.parse_args(argv)
 
     started = datetime.now(UTC)
@@ -463,7 +482,10 @@ def main(argv: list[str] | None = None) -> int:
     cutoff = parse_instant(args.cutoff)
     code_ref = current_code_ref()
     counts = run_captures(world, vs, gate, capture_instants(date(2026, 1, 5), cutoff))
-    releases = build_releases(world, vs, gate, rights, KnowledgeMode(args.mode), cutoff, code_ref)
+    quality_as_of = parse_instant(args.quality_as_of) if args.quality_as_of else None
+    releases = build_releases(
+        world, vs, gate, rights, KnowledgeMode(args.mode), cutoff, code_ref, quality_as_of
+    )
     published = publish_releases(vs, gate, releases, datetime.now(UTC))
     write_run_record(
         store,
