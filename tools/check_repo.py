@@ -41,7 +41,10 @@ def fail(check: str, msg: str) -> None:
 def tracked_files() -> list[str]:
     out = subprocess.run(
         ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
-        cwd=ROOT, capture_output=True, text=True, check=True,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout
     return sorted(p for p in out.splitlines() if p and (ROOT / p).is_file())
 
@@ -58,6 +61,7 @@ def front_matter(text: str) -> dict | None:
 
 
 # --- links -------------------------------------------------------------------------------------
+
 
 def check_links(files: list[str]) -> None:
     present = set(files)
@@ -85,16 +89,16 @@ def check_links(files: list[str]) -> None:
 # Required keys per record type, matching each type's template. Verbatim owner messages and
 # superseded inputs in docs/history/ carry no front matter by design and are exempt.
 FM_RULES: list[tuple[str, tuple[str, ...]]] = [
-    (r"^docs/history/(?!README\.md$)", ()),                     # exempt
-    (r"^CLAUDE\.md$", ()),                                        # an @import shim
+    (r"^docs/history/(?!README\.md$)", ()),  # exempt
+    (r"^CLAUDE\.md$", ()),  # an @import shim
     (r"^\.claude/skills/.+/SKILL\.md$", ("name", "description")),
     (r"^docs/decisions/owner/OD-\d{4}-.+\.md$", ("id", "title", "decision", "record_status")),
-    (r"^handoffs/.+\.md$", ("id", "date")),          # the first handoff predates the template
+    (r"^handoffs/.+\.md$", ("id", "date")),  # the first handoff predates the template
     (r"^reviews/handoffs/.+\.md$", ("id",)),
     (r"^reviews/(records|responses|reports)/(?!README\.md$).+\.md$", ("id",)),
     (r"^registers/tasks/T-\d{4}-.+\.md$", ("id", "title", "status")),
-    (r"^templates/", ()),                                         # templates hold placeholders
-    (r".*\.md$", ("id", "status", "owner")),                      # canonical documents
+    (r"^templates/", ()),  # templates hold placeholders
+    (r".*\.md$", ("id", "status", "owner")),  # canonical documents
 ]
 
 
@@ -119,11 +123,28 @@ def check_frontmatter(files: list[str]) -> None:
 
 # --- YAML schemas ----------------------------------------------------------------------------------
 
-SPEC_SECTIONS = ("identity", "economics", "classification", "return_convention", "observations",
-                 "availability", "construction", "invariants", "triangulation", "limitations",
-                 "rights_required", "changelog")
-SERIES_CLASSES = {"total_return", "excess_return", "strategy_return", "price_only", "state_indicator",
-                  "reference_academic"}
+SPEC_SECTIONS = (
+    "identity",
+    "economics",
+    "classification",
+    "return_convention",
+    "observations",
+    "availability",
+    "construction",
+    "invariants",
+    "triangulation",
+    "limitations",
+    "rights_required",
+    "changelog",
+)
+SERIES_CLASSES = {
+    "total_return",
+    "excess_return",
+    "strategy_return",
+    "price_only",
+    "state_indicator",
+    "reference_academic",
+}
 PERMISSION_VALUE = re.compile(r"^(allow|deny|unknown|conditional\(.+\))$")
 VERIFICATIONS = {"unverified", "vendor_asserted", "owner_verified", "contract"}
 
@@ -157,7 +178,8 @@ def check_yaml(files: list[str]) -> None:
         ver = src.get("verification")
         if ver not in VERIFICATIONS:
             fail("yaml", f"registers/sources.yaml: {sid}: verification {ver!r} not allowed")
-        if ver in {"owner_verified", "contract"} and not re.match(r"^OD-\d{4}$", str(src.get("verified_by", ""))):
+        recorded = re.match(r"^OD-\d{4}$", str(src.get("verified_by", "")))
+        if ver in {"owner_verified", "contract"} and not recorded:
             fail("yaml", f"registers/sources.yaml: {sid}: {ver} needs verified_by: OD-NNNN (owner action)")
         for key, value in _flatten(src.get("rights") or {}):
             if key.endswith("attribution_required"):
@@ -184,6 +206,7 @@ def _flatten(d: dict, prefix: str = ""):
 
 
 # --- STATUS length ------------------------------------------------------------------------------------
+
 
 def check_status(files: list[str]) -> None:  # noqa: ARG001 (uniform signature)
     n = len((ROOT / "STATUS.md").read_text().splitlines())
@@ -255,8 +278,8 @@ ALLOWED_IMPORTS = {
     "storage": {"contracts"},
     "rights": {"contracts"},
     "marketdata": {"contracts", "reference", "storage", "rights"},
-    "library": {"contracts", "reference"},                 # pure compute: no storage, no writes
-    "publish": {"contracts", "storage", "rights"},          # the only writer of releases and artefacts
+    "library": {"contracts", "reference"},  # pure compute: no storage, no writes
+    "publish": {"contracts", "storage", "rights"},  # the only writer of releases and artefacts
     "models": {"contracts"},
     "portfolio": {"contracts"},
     "taa": {"contracts"},
@@ -264,8 +287,19 @@ ALLOWED_IMPORTS = {
     "jobs": {"contracts", "reference", "storage", "rights", "marketdata", "library", "publish"},
 }
 # Network clients are forbidden in src/: S1a has no source-data network access (OD-0017).
-FORBIDDEN_MODULES = {"socket", "ssl", "http", "urllib", "requests", "httpx", "aiohttp", "urllib3",
-                     "ftplib", "smtplib", "macsmsf"}
+FORBIDDEN_MODULES = {
+    "socket",
+    "ssl",
+    "http",
+    "urllib",
+    "requests",
+    "httpx",
+    "aiohttp",
+    "urllib3",
+    "ftplib",
+    "smtplib",
+    "macsmsf",
+}
 
 
 def check_imports(files: list[str]) -> None:
@@ -295,6 +329,7 @@ def check_imports(files: list[str]) -> None:
 
 # --- OBS-INV-005 lint ----------------------------------------------------------------------------------
 
+
 def check_valid_time(files: list[str]) -> None:
     """valid_time is never derived from a UTC instant: no `.date()` on a datetime, no
     `date.fromtimestamp`/`utcfromtimestamp` in src/. Market-local dates are parsed from source
@@ -304,19 +339,27 @@ def check_valid_time(files: list[str]) -> None:
         for node in ast.walk(tree):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
                 if node.func.attr == "date" and not node.args:
-                    fail("valid_time", f"{f}:{getattr(node, 'lineno', 0)}: .date() on an instant (OBS-INV-005)")
+                    line = getattr(node, "lineno", 0)
+                    fail("valid_time", f"{f}:{line}: .date() on an instant (OBS-INV-005)")
                 if node.func.attr in {"fromtimestamp", "utcfromtimestamp"}:
                     fail("valid_time", f"{f}:{getattr(node, 'lineno', 0)}: {node.func.attr} (OBS-INV-005)")
 
 
 # --- commit trailers ---------------------------------------------------------------------------------
 
+
 def check_trailers(base: str, head: str) -> None:
-    out = subprocess.run(["git", "rev-list", "--no-merges", f"{base}..{head}"], cwd=ROOT,
-                         capture_output=True, text=True, check=True).stdout.split()
+    out = subprocess.run(
+        ["git", "rev-list", "--no-merges", f"{base}..{head}"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
     for sha in out:
-        msg = subprocess.run(["git", "log", "-1", "--format=%B", sha], cwd=ROOT,
-                             capture_output=True, text=True, check=True).stdout
+        msg = subprocess.run(
+            ["git", "log", "-1", "--format=%B", sha], cwd=ROOT, capture_output=True, text=True, check=True
+        ).stdout
         if not re.search(r"^HIO-Actor: \S", msg, re.M):
             fail("trailers", f"{sha[:7]}: no HIO-Actor trailer (metadata hygiene, operating model §8)")
 
