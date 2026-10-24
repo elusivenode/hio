@@ -49,6 +49,8 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-approve-q002-r1-authorise-implementation.md` | the owner's approval of Q-002-R1, the VERIFY-…-9 exception and implementation authorisation, verbatim (its review commit was mistranscribed) | authority for OD-0035, with its correction | corrected in part by the next file |
 | `2026-10-25-owner-approve-q002-r1-correction.md` | the owner's correction of that review commit, verbatim | authority for OD-0035 | — |
 | `2026-10-25-owner-f7-verify-10-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-10, verbatim | authority for OD-0036 | — |
+| `2026-10-25-owner-receive-verify-11-acceptance-prep.md` | the owner's authorisation to receive VERIFY-2026-10-24-s1a-1-11 and prepare the S1a acceptance package, verbatim | authority for OD-0037 | — |
+| `2026-10-25-owner-integrate-pr2-receive-evidence.md` | the owner's integration-first authorisation (PR #2, then receipt), verbatim | authority for OD-0037 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
