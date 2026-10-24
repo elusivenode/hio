@@ -513,7 +513,8 @@ def test_at_q2_7_results_carry_pins_and_reproduce_from_them(tmp_path):
     t = utc(2026, 1, 13)
     view = vs.as_known_by_market(RATE, t, t)
     assert view.evidence_digest == vs.evidence_digest(RATE, t)
-    assert view.algorithm_revision == "hio-obs-select/2" and len(view.resolution_digest) == 64
+    # hio-obs-select/3 since OBS-AMEND-Q002-R1 (OD-0035) added quality_digest to every result.
+    assert view.algorithm_revision == "hio-obs-select/3" and len(view.resolution_digest) == 64
     # Recompute from the pinned evidence in a fresh store (same receipts, same order): identical.
     again = store_at(tmp_path / "s")
     assert again.as_known_by_market(RATE, t, t) == view

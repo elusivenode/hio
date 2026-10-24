@@ -13,6 +13,7 @@ rebuilt from the records, so a reload gives identical query results.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -52,6 +53,12 @@ class IncompleteProcessing(Exception):
     or resolution at Q can be established (OBS-INV-019). Nothing partial is returned."""
 
 
+class PinMismatch(Exception):
+    """A recorded reproducibility pin, or a recorded input reference, differs from the inputs
+    reconstructed independently from the store (OBS-INV-018, OBS-AMEND-Q002-R1). Refused; the
+    recorded result is never silently replaced."""
+
+
 class DecisionRefused(ValueError):
     """A quality decision or resolution that the decision-clock rules forbid (OBS-INV-012 and the
     Q-002 refusals). The store is unchanged."""
@@ -64,6 +71,7 @@ RELEASE_ACTORS = frozenset({"owner", "gate"})
 RESOLUTION_ACTORS = frozenset({"owner"})
 RESOLUTIONS_PREFIX = "catalogue/resolutions/"
 PROCESSED_PREFIX = "catalogue/processed/"
+QUALITY_DIGEST_SCHEMA = "hio-quality-digest/1"
 
 
 @dataclass
@@ -93,6 +101,8 @@ class VintageStore:
         # (series_id, valid_time, vintage_seq) -> [(decided_at, status)], strictly increasing
         self._decisions: dict[tuple[str, date, int], list[tuple[datetime, QualityStatus]]] = {}
         self._resolutions: dict[str, list[Resolution]] = {}
+        # every quality event as stored, with its key: the input to quality_digest (OBS-AMEND-Q002-R1)
+        self._quality_events: list[dict] = []
         self._load()
 
     # --- persistence ---------------------------------------------------------------------------
@@ -119,6 +129,7 @@ class VintageStore:
             if previous and decided <= previous[-1][0]:
                 raise ValueError(f"quality events for {k} are not strictly increasing in decided_at")
             self._decisions.setdefault(k, []).append((decided, QualityStatus(e["status"])))
+            self._quality_events.append(_quality_event(key, e))
         for key in self.store.list(RESOLUTIONS_PREFIX):
             r = json.loads(self.store.get(key))
             res = Resolution(
@@ -331,11 +342,10 @@ class VintageStore:
             "decided_at": decided_at,
             "recorded_at": recorded_at,
         }
-        self.store.put(
-            f"catalogue/quality/{series_id}/{valid_time.isoformat()}/{vintage_seq}/{seq:06d}.json",
-            canonical_json(record),
-        )
+        key = f"catalogue/quality/{series_id}/{valid_time.isoformat()}/{vintage_seq}/{seq:06d}.json"
+        self.store.put(key, canonical_json(record))
         self._decisions.setdefault(k, []).append((decided_at, status))
+        self._quality_events.append(_quality_event(key, json.loads(canonical_json(record))))
 
     # --- conflicts and owner resolutions (OBS-AMEND-Q002 revision 5) ------------------------------
 
@@ -422,9 +432,13 @@ class VintageStore:
         return self._require_complete(series_id, quality_as_of)
 
     def _require_complete(self, series_id: str, quality_as_of: datetime) -> str:
+        """OBS-INV-019, returning the evidence digest (the SHA-256 of the verified E(Q) refs)."""
+        return sha256_hex(canonical_json(self._evidence_refs(series_id, quality_as_of)))
+
+    def _evidence_refs(self, series_id: str, quality_as_of: datetime) -> list[list]:
         """OBS-INV-019: every receipt of the series' source captured by Q is verified (see
-        _check_processed), else IncompleteProcessing or ReceiptIntegrityError. Returns the
-        evidence digest of the verified dispositions."""
+        _check_processed), else IncompleteProcessing or ReceiptIntegrityError. Returns E(Q) as
+        [source_id, captured_at, receipt_id, verified disposition], in capture order."""
         receipts = self._captures(self.series[series_id].source_id, quality_as_of)
         dispositions = self._check_processed(receipts, {series_id})
         # No held vintage without verified evidence: a vintage whose capture event is not in the
@@ -440,8 +454,100 @@ class VintageStore:
                     raise IncompleteProcessing(
                         f"{sid} {v.valid_time} #{v.vintage_seq} has no verified capture event in E(Q)"
                     )
-        pins = [[r.source_id, r.captured_at, r.receipt_id, d] for r, d in dispositions]
-        return sha256_hex(canonical_json(pins))
+        return [[r.source_id, r.captured_at, r.receipt_id, d] for r, d in dispositions]
+
+    # --- quality decisions pin (OBS-AMEND-Q002-R1, approved OD-0035) -----------------------------
+
+    def quality_digest(self, series_id: str, quality_as_of: datetime) -> str:
+        """SHA-256 of the canonical JSON {"schema": "hio-quality-digest/1", "series_id", "events"}
+        over the series' quality decision events with decided_at <= Q. Each event carries the
+        decided vintage by its evidence (series_id, valid_time, receipt_id, captured_at) and the
+        decision (status, decided_at, actor, evidence); vintage_seq, event_seq and recorded_at
+        are excluded. Ordered by (series_id, valid_time, receipt_id, captured_at, decided_at).
+        No events gives "events": [], a fixed value per series. An event naming a vintage that
+        is not stored refuses (IncompleteProcessing)."""
+        events = []
+        for e in self._quality_events:
+            if e["series_id"] != series_id or e["decided_at"] > quality_as_of:
+                continue
+            vintage = next(
+                (
+                    v
+                    for v in self._vintages.get((series_id, e["valid_time"]), [])
+                    if v.vintage_seq == e["vintage_seq"]
+                ),
+                None,
+            )
+            if vintage is None:
+                raise IncompleteProcessing(f"quality event {e['key']} names a vintage that is not stored")
+            events.append(
+                {
+                    "series_id": series_id,
+                    "valid_time": e["valid_time"],
+                    "receipt_id": vintage.receipt_id,
+                    "captured_at": vintage.captured_at,
+                    "status": e["status"],
+                    "decided_at": e["decided_at"],
+                    "actor": e["actor"],
+                    "evidence": e["evidence"],
+                }
+            )
+        events.sort(
+            key=lambda x: (
+                x["series_id"],
+                x["valid_time"],
+                x["receipt_id"],
+                x["captured_at"],
+                x["decided_at"],
+            )
+        )
+        return sha256_hex(
+            canonical_json({"schema": QUALITY_DIGEST_SCHEMA, "series_id": series_id, "events": events})
+        )
+
+    def _object_refs(self, keys: list[str]) -> tuple:
+        return tuple((k, sha256_hex(self.store.get(k))) for k in sorted(keys))
+
+    def _quality_event_refs(self, series_id: str, quality_as_of: datetime) -> tuple:
+        return self._object_refs(
+            [
+                e["key"]
+                for e in self._quality_events
+                if e["series_id"] == series_id and e["decided_at"] <= quality_as_of
+            ]
+        )
+
+    def _resolution_refs(self, series_id: str, quality_as_of: datetime) -> tuple:
+        return self._object_refs(
+            [
+                _resolution_key(r)
+                for r in self._resolutions.get(series_id, [])
+                if r.decided_at <= quality_as_of
+            ]
+        )
+
+    def verify_pins(
+        self,
+        series_id: str,
+        mode: KnowledgeMode,
+        cutoff: datetime | None,
+        quality_as_of: datetime | None,
+        recorded: tuple[str, str, str, str],
+    ) -> View:
+        """Reconstruct the view at (mode, T, Q) from the store and refuse (PinMismatch) unless its
+        four pins (evidence_digest, resolution_digest, quality_digest, algorithm_revision) equal
+        the recorded ones."""
+        view = self.view(series_id, mode, cutoff, quality_as_of)
+        names = ("evidence_digest", "resolution_digest", "quality_digest", "algorithm_revision")
+        rebuilt = (view.evidence_digest, view.resolution_digest, view.quality_digest, view.algorithm_revision)
+        diffs = [
+            f"{n}: recorded {r}, reconstructed {b}"
+            for n, r, b in zip(names, recorded, rebuilt, strict=True)
+            if r != b
+        ]
+        if diffs:
+            raise PinMismatch(f"{series_id}: " + "; ".join(diffs))
+        return view
 
     def _require_processed_before(self, receipt: Receipt) -> None:
         """Processing follows capture order (OBS-AMEND-Q002 §2: knowledge is E(Q) processed in
@@ -574,7 +680,9 @@ class VintageStore:
         exists and names this receipt and source, and the raw bytes exist and match their hash.
         Any failure raises ReceiptIntegrityError (OBS-INV-004)."""
         q = effective_quality_cutoff(mode, cutoff, quality_as_of)
-        digest = self._require_complete(series_id, q)
+        evidence_refs = self._evidence_refs(series_id, q)
+        digest = sha256_hex(canonical_json(evidence_refs))
+        quality = self.quality_digest(series_id, q)
         selected = select(
             self.all_vintages(),
             self._decisions,
@@ -584,10 +692,16 @@ class VintageStore:
             quality_as_of,
             self._resolutions.get(series_id, []),
             digest,
+            quality,
         )
         for v in selected.values.values():
             self._verify_receipt(v)
-        return selected
+        return dataclasses.replace(
+            selected,
+            evidence_refs=tuple(tuple(r) for r in evidence_refs),
+            quality_event_refs=self._quality_event_refs(series_id, q),
+            resolution_refs=self._resolution_refs(series_id, q),
+        )
 
     def sources_of(self, view: View) -> frozenset[str]:
         """The sources behind a view's selected vintages, read from their verified capture
@@ -686,6 +800,21 @@ def _row_order(r) -> tuple:
 
 def _vintage_key(v: Vintage) -> str:
     return f"catalogue/vintages/{v.series_id}/{v.valid_time.isoformat()}/{v.vintage_seq:06d}.json"
+
+
+def _quality_event(key: str, e: dict) -> dict:
+    return {
+        "key": key,
+        "series_id": e["series_id"],
+        "valid_time": date.fromisoformat(e["valid_time"])
+        if isinstance(e["valid_time"], str)
+        else e["valid_time"],
+        "vintage_seq": e["vintage_seq"],
+        "status": e["status"],
+        "actor": e["actor"],
+        "evidence": e["evidence"],
+        "decided_at": parse_instant(e["decided_at"]) if isinstance(e["decided_at"], str) else e["decided_at"],
+    }
 
 
 def _quarantine_key(receipt: Receipt) -> str:

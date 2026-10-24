@@ -38,7 +38,7 @@ from hio.library.numeric import check_identity
 from hio.marketdata.capture import SyntheticWorldSource, capture
 from hio.marketdata.queries import View, require_predictive_pit
 from hio.marketdata.series import CaptureMode, ReleaseSchedule, SeriesDef
-from hio.marketdata.vintages import VintageStore
+from hio.marketdata.vintages import PinMismatch, VintageStore
 from hio.publish.release import Release, make_release, render_csv, verify_release, write_release
 from hio.publish.status import append_status
 from hio.reference.calendar import BusinessCalendar, load_calendars
@@ -158,9 +158,32 @@ def input_record(view: View) -> dict[str, Any]:
         "vintage_cut_sha256": sha256_hex(canonical_json(cut)),
         "evidence_digest": view.evidence_digest,
         "resolution_digest": view.resolution_digest,
+        "quality_digest": view.quality_digest,
         "algorithm_revision": view.algorithm_revision,
         "conflicts": sorted([r.conflict.conflict_id, r.effect] for r in view.conflicts),
+        # Immutable references sufficient to reproduce the pinned inputs (OBS-AMEND-Q002-R1).
+        "evidence_refs": json.loads(canonical_json([list(r) for r in view.evidence_refs])),
+        "quality_event_refs": [list(r) for r in view.quality_event_refs],
+        "resolution_refs": [list(r) for r in view.resolution_refs],
     }
+
+
+def verify_release_inputs(vs: VintageStore, core: dict[str, Any]) -> None:
+    """Reconstruct every view input of a release from the store at its recorded (mode, T, Q)
+    and refuse (PinMismatch) unless the reconstructed input record, including all four pins and
+    every immutable reference, equals the recorded one. Missing or altered evidence refuses too
+    (ReceiptIntegrityError or IncompleteProcessing from the view)."""
+    for record in core["inputs"]:
+        if "series_id" not in record:
+            continue
+        mode = KnowledgeMode(record["knowledge_mode"])
+        cutoff = parse_instant(record["knowledge_cutoff"]) if record["knowledge_cutoff"] else None
+        q = None if mode is KnowledgeMode.AS_CAPTURED_BY_HIO else parse_instant(record["quality_as_of"])
+        recorded = json.loads(canonical_json(record))
+        rebuilt = json.loads(canonical_json(input_record(vs.view(record["series_id"], mode, cutoff, q))))
+        diffs = sorted(k for k in recorded.keys() | rebuilt.keys() if recorded.get(k) != rebuilt.get(k))
+        if diffs:
+            raise PinMismatch(f"{record['series_id']}: recorded inputs differ from the store in {diffs}")
 
 
 # --- build -------------------------------------------------------------------------------------------

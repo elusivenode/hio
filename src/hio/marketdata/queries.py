@@ -27,8 +27,9 @@ from hio.contracts.canonical import canonical_json, decimal_str, sha256_hex
 from hio.contracts.observation import Vintage
 from hio.contracts.temporal import KnowableBasis, KnowledgeMode, QualityStatus, require_utc_instant, weakest
 
-# Changed whenever the derivation or selection rules change (OBS-AMEND-Q002 §3, reproducibility).
-ALGORITHM_REVISION = "hio-obs-select/2"
+# Changed whenever the derivation or selection rules change, including what a result records
+# (OBS-AMEND-Q002 §3; /3 adds quality_digest, OBS-AMEND-Q002-R1, OD-0035).
+ALGORITHM_REVISION = "hio-obs-select/3"
 
 CAPTURE_CLOCK, KNOWABILITY_CLOCK = "captured_at", "knowable_at"
 SUPPRESSES_KEY, RESOLVED, OUTRANKED, NOT_ELIGIBLE_IN_MODE = (
@@ -112,6 +113,15 @@ class View:
     evidence_digest: str = ""
     resolution_digest: str = ""
     algorithm_revision: str = ALGORITHM_REVISION
+    quality_digest: str = ""  # OBS-AMEND-Q002-R1: the quality decisions in force at Q
+    # Immutable references to the inputs behind the pins, so they can be reproduced independently:
+    # E(Q) as (source_id, captured_at, receipt_id, disposition); quality and resolution events as
+    # (storage key, SHA-256 of the stored bytes).
+    # They identify the exact stored objects, so they take no part in result equality: a faithful
+    # copy recorded at another time is the same result with the same four pins.
+    evidence_refs: tuple = field(default=(), compare=False)
+    quality_event_refs: tuple = field(default=(), compare=False)
+    resolution_refs: tuple = field(default=(), compare=False)
 
     @property
     def weakest_basis(self) -> KnowableBasis | None:
@@ -297,6 +307,7 @@ def select(
     quality_as_of: datetime | None = None,
     resolutions: Iterable[Resolution] = (),
     evidence_digest: str = "",
+    quality_digest: str = "",
 ) -> View:
     q = effective_quality_cutoff(mode, cutoff, quality_as_of)
     resolutions = [r for r in resolutions if r.series_id == series_id]
@@ -357,6 +368,7 @@ def select(
         conflicts=tuple(reports),
         evidence_digest=evidence_digest,
         resolution_digest=resolution_digest(series_id, resolutions, q),
+        quality_digest=quality_digest,
     )
 
 
