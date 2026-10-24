@@ -109,3 +109,64 @@ def test_f6_a_failing_row_leaves_no_partial_catalogue_transaction(tmp_path):
     assert not any(k.startswith("catalogue/vintages/") for k in vs.store.list())
     assert vs.all_vintages() == []
     assert VintageStore(vs.store, SERIES).all_vintages() == []
+
+
+# --- F-REVIEW-2026-10-24-s1a-1-3: receipt integrity before selection or use ---------------------------
+
+from datetime import UTC, date, datetime  # noqa: E402
+
+from hio.contracts.temporal import KnowledgeMode  # noqa: E402
+from hio.jobs import s1a  # noqa: E402
+from hio.marketdata.capture import receipt_key  # noqa: E402
+from hio.marketdata.vintages import ReceiptIntegrityError, VintageStore  # noqa: E402
+from hio.rights.gate import RightsGate  # noqa: E402
+from hio.rights.register import load_synthetic  # noqa: E402
+from tests.helpers import FIXTURES  # noqa: E402
+
+WORLD = FIXTURES / "s1a_world"
+RIGHTS = dict(load_synthetic(FIXTURES / "rights.yaml"))
+CUTOFF = datetime(2026, 1, 29, tzinfo=UTC)
+CODE = {"commit": "0" * 40, "lock_sha256": "1" * 64}
+
+
+def world_store(root):
+    world = s1a.load_world(WORLD)
+    store = LocalObjectStore(root)
+    vs = VintageStore(store, world.series)
+    s1a.run_captures(world, vs, RightsGate(RIGHTS), s1a.capture_instants(date(2026, 1, 5), CUTOFF))
+    return world, store, vs
+
+
+def damage_receipt_of(vs, store, series_id, how):
+    v = next(v for v in vs.all_vintages() if v.series_id == series_id)
+    path = store.root / receipt_key(vs.series[series_id].source_id, v.captured_at, v.receipt_id)
+    path.chmod(0o644)
+    if how == "delete":
+        path.unlink()
+    else:
+        path.write_bytes(b"# SYNTHETIC tampered\n")
+    return v
+
+
+@pytest.mark.parametrize("how", ["delete", "corrupt"])
+def test_f3_codex_counterexample_a_missing_or_corrupt_receipt_blocks_selection_and_build(tmp_path, how):
+    """Codex: after deleting the raw receipt of a valid AUD vintage, a new VintageStore returned
+    it in as_captured_by_hio and build_releases produced an AUD release."""
+    world, store, vs = world_store(tmp_path / "s")
+    damage_receipt_of(vs, store, s1a.CASH_RATE, how)
+    reopened = VintageStore(store, world.series)
+    with pytest.raises(ReceiptIntegrityError):
+        reopened.as_captured_by_hio(s1a.CASH_RATE, CUTOFF)
+    with pytest.raises(ReceiptIntegrityError):
+        s1a.build_releases(
+            world, reopened, RightsGate(RIGHTS), RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
+        )
+
+
+def test_f3_intact_receipts_still_select_and_build(tmp_path):
+    world, store, _ = world_store(tmp_path / "s")
+    reopened = VintageStore(store, world.series)
+    assert reopened.as_captured_by_hio(s1a.CASH_RATE, CUTOFF).values
+    s1a.build_releases(
+        world, reopened, RightsGate(RIGHTS), RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
+    )

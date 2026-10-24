@@ -19,12 +19,18 @@ from decimal import Decimal
 from hio.contracts.canonical import canonical_json
 from hio.contracts.observation import Receipt, Vintage
 from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
-from hio.marketdata.capture import receipt_bytes
+from hio.marketdata.capture import capture_record_key, load_receipt, receipt_bytes
 from hio.marketdata.knowability import determine
 from hio.marketdata.parse import MalformedReceipt, parse_receipt
 from hio.marketdata.queries import View, select
 from hio.marketdata.series import CaptureMode, SeriesDef
-from hio.storage.objectstore import LocalObjectStore, StagedWrites
+from hio.storage.objectstore import IntegrityError, LocalObjectStore, StagedWrites
+
+
+class ReceiptIntegrityError(Exception):
+    """A selected vintage's receipt is missing, or its bytes do not match their hash (OBS-INV-004).
+    The view fails closed: nothing built on it can be produced (F-REVIEW-2026-10-24-s1a-1-3)."""
+
 
 # Only the gate's own rules or the owner may release a quarantined vintage (§6). An agent may
 # propose; it may not decide.
@@ -202,7 +208,33 @@ class VintageStore:
     # --- queries ---------------------------------------------------------------------------------
 
     def view(self, series_id: str, mode: KnowledgeMode, cutoff: datetime | None = None) -> View:
-        return select(self.all_vintages(), self._quality, series_id, mode, cutoff)
+        """Select per the mode, then verify every selected vintage's receipt before it can be
+        used: the capture record exists and names this receipt and source, and the raw bytes
+        exist and match their hash. Any failure raises ReceiptIntegrityError (OBS-INV-004)."""
+        selected = select(self.all_vintages(), self._quality, series_id, mode, cutoff)
+        for v in selected.values.values():
+            self._verify_receipt(v)
+        return selected
+
+    def _verify_receipt(self, v: Vintage) -> None:
+        source_id = self.series[v.series_id].source_id
+        try:
+            if not self.store.exists(capture_record_key(source_id, v.captured_at, v.receipt_id)):
+                raise ReceiptIntegrityError(
+                    f"no capture record for {v.series_id} {v.valid_time} receipt {v.receipt_id}"
+                )
+            receipt = load_receipt(self.store, source_id, v.captured_at, v.receipt_id)
+            if receipt.receipt_id != v.receipt_id or receipt.source_id != source_id:
+                raise ReceiptIntegrityError(
+                    f"capture record does not match vintage {v.series_id} {v.valid_time}"
+                )
+            receipt_bytes(self.store, receipt)  # verifies existence and the content hash
+        except ReceiptIntegrityError:
+            raise
+        except (OSError, IntegrityError, ValueError) as exc:
+            raise ReceiptIntegrityError(
+                f"receipt {v.receipt_id} for {v.series_id} {v.valid_time} is missing or corrupt: {exc}"
+            ) from exc
 
     def as_captured_by_hio(self, series_id: str, cutoff: datetime) -> View:
         return self.view(series_id, KnowledgeMode.AS_CAPTURED_BY_HIO, cutoff)
