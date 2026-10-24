@@ -141,6 +141,7 @@ class VintageStore:
     # --- ingest ------------------------------------------------------------------------------------
 
     def ingest(self, receipt: Receipt, mode: CaptureMode) -> IngestResult:
+        self._require_processed_before(receipt)
         result = IngestResult()
         try:
             rows = parse_receipt(receipt_bytes(self.store, receipt))
@@ -381,8 +382,24 @@ class VintageStore:
         receipt with that value, or an append-on-change no-op (the key's latest vintage captured
         before it holds the same value). Otherwise IncompleteProcessing. Returns the evidence
         digest."""
-        source_id = self.series[series_id].source_id
-        for receipt in self._captures(source_id, quality_as_of):
+        self._check_processed(self._captures(self.series[series_id].source_id, quality_as_of), {series_id})
+        return self.evidence_digest(series_id, quality_as_of)
+
+    def _require_processed_before(self, receipt: Receipt) -> None:
+        """Processing follows capture order (OBS-AMEND-Q002 §2: knowledge is E(Q) processed in
+        capture order). A receipt is processed only once every earlier-captured receipt of its
+        source is reflected, so append-on-change decisions, and therefore results, cannot depend
+        on processing order (OBS-INV-011). Otherwise IncompleteProcessing; nothing is written."""
+        earlier = [
+            r
+            for r in self._captures(receipt.source_id, receipt.captured_at)
+            if r.captured_at < receipt.captured_at
+        ]
+        series = {s for s, d in self.series.items() if d.source_id == receipt.source_id}
+        self._check_processed(earlier, series)
+
+    def _check_processed(self, receipts: list[Receipt], series_ids: set[str]) -> None:
+        for receipt in receipts:
             if self.store.exists(f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"):
                 continue
             try:
@@ -400,18 +417,17 @@ class VintageStore:
                     f"receipt {receipt.receipt_id} is malformed but not quarantined: {exc}"
                 ) from exc
             for row in rows:
-                if row.series_id != series_id:
+                if row.series_id not in series_ids:
                     continue
-                vs = self._vintages.get((series_id, row.valid_time), [])
+                vs = self._vintages.get((row.series_id, row.valid_time), [])
                 own = any(v.receipt_id == receipt.receipt_id and v.value == row.value for v in vs)
                 prior = [v for v in vs if v.captured_at < receipt.captured_at]
                 no_op = bool(prior) and max(prior, key=lambda v: v.vintage_seq).value == row.value
                 if not (own or no_op):
                     raise IncompleteProcessing(
-                        f"{series_id} {row.valid_time}: receipt {receipt.receipt_id} captured "
+                        f"{row.series_id} {row.valid_time}: receipt {receipt.receipt_id} captured "
                         f"{instant_str(receipt.captured_at)} is not reflected in the processed vintages"
                     )
-        return self.evidence_digest(series_id, quality_as_of)
 
     # --- queries ---------------------------------------------------------------------------------
 
