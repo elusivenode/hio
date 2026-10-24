@@ -22,7 +22,7 @@ from decimal import Decimal
 from hio.contracts.canonical import canonical_json, instant_str, sha256_hex
 from hio.contracts.layout import CAPTURES_PREFIX
 from hio.contracts.observation import Receipt, Vintage, parse_instant
-from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
+from hio.contracts.temporal import KnowableBasis, KnowledgeMode, QualityStatus, require_utc_instant
 from hio.marketdata.capture import capture_record_key, load_receipt, load_receipt_record, receipt_bytes
 from hio.marketdata.knowability import determine
 from hio.marketdata.parse import MalformedReceipt, parse_receipt
@@ -63,6 +63,7 @@ RELEASE_ACTORS = frozenset({"owner", "gate"})
 # Only the owner may resolve a conflict in S1a (OBS-AMEND-Q002 §3).
 RESOLUTION_ACTORS = frozenset({"owner"})
 RESOLUTIONS_PREFIX = "catalogue/resolutions/"
+PROCESSED_PREFIX = "catalogue/processed/"
 
 
 @dataclass
@@ -159,9 +160,15 @@ class VintageStore:
             return result
 
         # One catalogue transaction per receipt: every vintage is decided first, then all are
-        # committed together, so a refused row leaves nothing behind (F-REVIEW-2026-10-24-s1a-1-6).
+        # committed together with the receipt's processing outcome, so a refused row leaves
+        # nothing behind (F-REVIEW-2026-10-24-s1a-1-6) and every processed receipt is accounted
+        # for (OBS-INV-019; VERIFY-2026-10-24-s1a-1-6).
+        outcome_key = _processed_key(receipt)
+        if self.store.exists(outcome_key):
+            raise IncompleteProcessing(f"receipt {receipt.receipt_id} is already processed")
         staged = StagedWrites(self.store)
         pending: dict[tuple[str, date], list[Vintage]] = {}
+        outcome_rows: list[dict] = []
         for row in sorted(rows, key=_row_order):
             series = self.series[row.series_id]
             existing = self._vintages.get((row.series_id, row.valid_time), []) + pending.get(
@@ -176,6 +183,7 @@ class VintageStore:
             )
             if existing and _redundant(existing, row.value, k.knowable_at, k.basis.strength):
                 result.redundant += 1
+                outcome_rows.append(_outcome_row(row, k.knowable_at, k.basis, "redundant", None))
                 continue
             if existing and existing[-1].value != row.value:
                 result.revisions.append((row.series_id, row.valid_time, existing[-1].value, row.value))
@@ -195,11 +203,25 @@ class VintageStore:
             )
             staged.add(_vintage_key(v), canonical_json(v.as_record()))
             pending.setdefault((v.series_id, v.valid_time), []).append(v)
+            outcome_rows.append(_outcome_row(row, k.knowable_at, k.basis, "vintage", v.vintage_seq))
             result.new_vintages.append(v)
             if reasons:
                 result.quarantined.append(v)
-        if result.new_vintages:
-            staged.commit()
+        # The processing outcome is distinct from the capture evidence (the receipt and its
+        # capture record) and records the capture mode, which the receipt bytes do not determine.
+        staged.add(
+            outcome_key,
+            canonical_json(
+                {
+                    "receipt_id": receipt.receipt_id,
+                    "source_id": receipt.source_id,
+                    "captured_at": receipt.captured_at,
+                    "capture_mode": mode.value,
+                    "rows": outcome_rows,
+                }
+            ),
+        )
+        staged.commit()
         for key, vs in pending.items():
             self._vintages.setdefault(key, []).extend(vs)
         return result
@@ -371,17 +393,29 @@ class VintageStore:
         return sorted(out, key=lambda r: (r.captured_at, r.receipt_id))
 
     def evidence_digest(self, series_id: str, quality_as_of: datetime) -> str:
+        """OBS-INV-018 pin over E(Q): each receipt's (source_id, captured_at, receipt_id) and how
+        it was processed (its capture mode, "quarantined", or "unprocessed"). The capture mode is
+        pinned because the receipt bytes alone do not determine the derived vintages."""
         source_id = self.series[series_id].source_id
-        pins = [[r.source_id, r.captured_at, r.receipt_id] for r in self._captures(source_id, quality_as_of)]
+        pins = [
+            [r.source_id, r.captured_at, r.receipt_id, self._processing_of(r)]
+            for r in self._captures(source_id, quality_as_of)
+        ]
         return sha256_hex(canonical_json(pins))
 
+    def _processing_of(self, receipt: Receipt) -> str:
+        if self.store.exists(f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"):
+            return "quarantined"
+        key = _processed_key(receipt)
+        if not self.store.exists(key):
+            return "unprocessed"
+        return json.loads(self.store.get(key))["capture_mode"]
+
     def _require_complete(self, series_id: str, quality_as_of: datetime) -> str:
-        """OBS-INV-019. Every receipt of the series' source captured by Q (bytes verified) is
-        either quarantined whole, or every one of its rows for this series is represented by the
-        processed vintages, compared by observation identity and content: a vintage from that
-        receipt with that value, or an append-on-change no-op (the key's latest vintage captured
-        before it holds the same value). Otherwise IncompleteProcessing. Returns the evidence
-        digest."""
+        """OBS-INV-019. Every receipt of the series' source captured by Q (bytes verified) must be
+        accounted for by its own processing outcome (or its quarantine record), verified against
+        the receipt's rows and the stored vintages (see _check_processed). Otherwise
+        IncompleteProcessing. Returns the evidence digest."""
         self._check_processed(self._captures(self.series[series_id].source_id, quality_as_of), {series_id})
         return self.evidence_digest(series_id, quality_as_of)
 
@@ -399,9 +433,21 @@ class VintageStore:
         self._check_processed(earlier, series)
 
     def _check_processed(self, receipts: list[Receipt], series_ids: set[str]) -> None:
+        """For each receipt: a quarantine record, or a processing outcome whose rows equal the
+        receipt's rows (series, key, value; identity and content, not counts), where every
+        "vintage" row names a stored vintage from this receipt with exactly the recorded content,
+        and every "redundant" row is re-derived from the recorded capture mode and justified by an
+        earlier-or-same capture with equal or stronger evidence knowable no later (the
+        append-on-change rule). Value equality alone never proves a no-op."""
         for receipt in receipts:
             if self.store.exists(f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"):
                 continue
+            key = _processed_key(receipt)
+            if not self.store.exists(key):
+                raise IncompleteProcessing(
+                    f"receipt {receipt.receipt_id} captured {instant_str(receipt.captured_at)} has no "
+                    "processing outcome"
+                )
             try:
                 raw = receipt_bytes(self.store, receipt)  # verifies existence and the content hash
             except (IntegrityError, OSError, ValueError) as exc:
@@ -416,18 +462,84 @@ class VintageStore:
                 raise IncompleteProcessing(
                     f"receipt {receipt.receipt_id} is malformed but not quarantined: {exc}"
                 ) from exc
-            for row in rows:
-                if row.series_id not in series_ids:
-                    continue
-                vs = self._vintages.get((row.series_id, row.valid_time), [])
-                own = any(v.receipt_id == receipt.receipt_id and v.value == row.value for v in vs)
-                prior = [v for v in vs if v.captured_at < receipt.captured_at]
-                no_op = bool(prior) and max(prior, key=lambda v: v.vintage_seq).value == row.value
-                if not (own or no_op):
-                    raise IncompleteProcessing(
-                        f"{row.series_id} {row.valid_time}: receipt {receipt.receipt_id} captured "
-                        f"{instant_str(receipt.captured_at)} is not reflected in the processed vintages"
+            outcome = json.loads(self.store.get(key))
+            try:
+                self._verify_outcome(receipt, rows, outcome, series_ids)
+            except (KeyError, TypeError, ValueError) as exc:
+                raise IncompleteProcessing(
+                    f"receipt {receipt.receipt_id}: unreadable processing outcome: {exc}"
+                ) from exc
+
+    def _verify_outcome(self, receipt: Receipt, rows, outcome: dict, series_ids: set[str]) -> None:
+        def bad(why: str) -> IncompleteProcessing:
+            return IncompleteProcessing(f"receipt {receipt.receipt_id}: processing outcome {why}")
+
+        if (outcome["receipt_id"], parse_instant(outcome["captured_at"])) != (
+            receipt.receipt_id,
+            receipt.captured_at,
+        ):
+            raise bad("names another receipt")
+        mode = CaptureMode(outcome["capture_mode"])
+        recorded = [r for r in outcome["rows"] if r["series_id"] in series_ids]
+        expected = sorted(
+            (r.series_id, r.valid_time.isoformat(), canonical_value(r.value))
+            for r in rows
+            if r.series_id in series_ids
+        )
+        if sorted((r["series_id"], r["valid_time"], r["value"]) for r in recorded) != expected:
+            raise bad("does not match the receipt's rows")
+        by_row = {(r.series_id, r.valid_time.isoformat(), canonical_value(r.value)): r for r in rows}
+        named = {
+            (r["series_id"], r["valid_time"], r["vintage_seq"])
+            for r in recorded
+            if r["disposition"] == "vintage"
+        }
+        # A capture event is (receipt_id, captured_at): identical bytes captured again later (a
+        # revert) are a separate event with their own outcome.
+        for (sid, vt_), stored_vs in self._vintages.items():
+            for v in stored_vs:
+                own = (v.receipt_id, v.captured_at) == (receipt.receipt_id, receipt.captured_at)
+                if sid in series_ids and own and (sid, vt_.isoformat(), v.vintage_seq) not in named:
+                    raise bad(f"does not account for stored vintage {sid} {vt_} #{v.vintage_seq}")
+        for r in recorded:
+            vt = date.fromisoformat(r["valid_time"])
+            knowable, basis = parse_instant(r["knowable_at"]), KnowableBasis(r["knowable_basis"])
+            stored = self._vintages.get((r["series_id"], vt), [])
+            if r["disposition"] == "vintage":
+                if not any(
+                    v.vintage_seq == r["vintage_seq"]
+                    and v.receipt_id == receipt.receipt_id
+                    and v.captured_at == receipt.captured_at
+                    and canonical_value(v.value) == r["value"]
+                    and (v.knowable_at, v.knowable_basis) == (knowable, basis)
+                    for v in stored
+                ):
+                    raise bad(f"names a vintage that is not stored as recorded: {r}")
+            elif r["disposition"] == "redundant":
+                row = by_row[(r["series_id"], r["valid_time"], r["value"])]
+                derived = determine(
+                    row, self.series[r["series_id"]], receipt.captured_at, mode, revision=False
+                )
+                if (derived.knowable_at, derived.basis) != (knowable, basis):
+                    raise bad(f"records evidence its capture mode does not derive: {r}")
+                # Justified only by an earlier capture, or by a vintage this outcome records itself
+                # (one decided earlier in the same receipt's transaction).
+                if not any(
+                    canonical_value(v.value) == r["value"]
+                    and (
+                        v.captured_at < receipt.captured_at
+                        or (
+                            (v.receipt_id, v.captured_at) == (receipt.receipt_id, receipt.captured_at)
+                            and (r["series_id"], r["valid_time"], v.vintage_seq) in named
+                        )
                     )
+                    and v.knowable_basis.strength >= basis.strength
+                    and v.knowable_at <= knowable
+                    for v in stored
+                ):
+                    raise bad(f"claims a no-op that no earlier vintage justifies: {r}")
+            else:
+                raise bad(f"has an unknown disposition: {r['disposition']!r}")
 
     # --- queries ---------------------------------------------------------------------------------
 
@@ -555,6 +667,24 @@ def _row_order(r) -> tuple:
 
 def _vintage_key(v: Vintage) -> str:
     return f"catalogue/vintages/{v.series_id}/{v.valid_time.isoformat()}/{v.vintage_seq:06d}.json"
+
+
+def _processed_key(receipt: Receipt) -> str:
+    """The receipt's processing outcome, beside its capture record (one per receipt)."""
+    stamp = receipt.captured_at.astimezone(UTC).strftime("%Y%m%d-%H%M%S%f")
+    return f"{PROCESSED_PREFIX}{receipt.source_id}/{stamp}-{receipt.receipt_id}.json"
+
+
+def _outcome_row(row, knowable_at: datetime, basis, disposition: str, vintage_seq: int | None) -> dict:
+    return {
+        "series_id": row.series_id,
+        "valid_time": row.valid_time.isoformat(),
+        "value": canonical_value(row.value),
+        "knowable_at": knowable_at,
+        "knowable_basis": basis.value,
+        "disposition": disposition,
+        "vintage_seq": vintage_seq,
+    }
 
 
 def _resolution_key(r: Resolution) -> str:
