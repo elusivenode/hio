@@ -212,3 +212,86 @@ def test_f5_an_intact_store_still_reproduces(tmp_path):
         world, store, RightsGate(RIGHTS), RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
     )
     assert set(result.values()) == {True}
+
+
+# --- F-REVIEW-2026-10-24-s1a-1-2: approval is specific to its consumer class ---------------------
+
+from hio.contracts.status import Status  # noqa: E402
+from hio.publish.status import RefusedUse, append_status, resolve_for_use  # noqa: E402
+from hio.rights.model import ALL_PERMISSIONS, Permission, RightsRecord, Verification  # noqa: E402
+
+PERMISSIVE = {
+    sid: RightsRecord(
+        sid, Verification.OWNER_VERIFIED, {p: Permission.parse("allow") for p in ALL_PERMISSIONS}
+    )
+    for sid in ("synthetic.rba", "synthetic.nyfed")
+}
+AUD = "cash.aud.overnight"
+
+
+def approve(store, sha, cls):
+    append_status(
+        store,
+        sha,
+        Status.APPROVED_FOR_CONSUMER,
+        "owner",
+        "fixture",
+        CUTOFF,
+        gate=RightsGate(PERMISSIVE),
+        source_ids=("synthetic.rba",),
+        consumer_class=cls,
+    )
+
+
+def withdraw(store, sha, cls=None):
+    append_status(store, sha, Status.WITHDRAWN, "owner", "fixture", CUTOFF, consumer_class=cls)
+
+
+def use(store, sha, cls):
+    return resolve_for_use(
+        store,
+        AUD,
+        sha,
+        required=Status.APPROVED_FOR_CONSUMER,
+        consumer_class=cls,
+        gate=RightsGate(PERMISSIVE),
+        source_ids=("synthetic.rba",),
+    )
+
+
+def test_f2_codex_counterexample_hio_internal_approval_does_not_authorise_smsf_app(tmp_path):
+    """Codex: after an owner approved_for_consumer(hio_internal), resolving with
+    required=APPROVED_FOR_CONSUMER and consumer_class='smsf_app' returned the core."""
+    _, store, releases = published_store(tmp_path / "s")
+    sha = releases[AUD].content_sha256
+    approve(store, sha, "hio_internal")
+    use(store, sha, "hio_internal")
+    with pytest.raises(RefusedUse):
+        use(store, sha, "smsf_app")
+
+
+def test_f2_independent_approvals_and_class_scoped_withdrawal(tmp_path):
+    _, store, releases = published_store(tmp_path / "s")
+    sha = releases[AUD].content_sha256
+    approve(store, sha, "hio_internal")
+    approve(store, sha, "smsf_app")
+    use(store, sha, "hio_internal")
+    use(store, sha, "smsf_app")
+    withdraw(store, sha, "smsf_app")  # withdraws the smsf_app approval only
+    with pytest.raises(RefusedUse):
+        use(store, sha, "smsf_app")
+    use(store, sha, "hio_internal")  # the other class's approval stands
+    approve(store, sha, "smsf_app")  # a class may be approved again after its own withdrawal
+    use(store, sha, "smsf_app")
+
+
+def test_f2_a_global_withdrawal_refuses_every_class_and_is_terminal(tmp_path):
+    _, store, releases = published_store(tmp_path / "s")
+    sha = releases[AUD].content_sha256
+    approve(store, sha, "hio_internal")
+    withdraw(store, sha)
+    for cls in ("hio_internal", "smsf_app"):
+        with pytest.raises(RefusedUse, match="withdrawn"):
+            use(store, sha, cls)
+    with pytest.raises(Exception, match="terminal"):
+        approve(store, sha, "hio_internal")

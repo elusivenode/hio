@@ -13,7 +13,14 @@ from datetime import datetime
 from hio.contracts.canonical import canonical_json
 from hio.contracts.observation import parse_instant
 from hio.contracts.rights import Operation, RightsGate
-from hio.contracts.status import LEVEL, Status, StatusError, StatusEvent, effective_status
+from hio.contracts.status import (
+    LEVEL,
+    Status,
+    StatusError,
+    StatusEvent,
+    effective_status,
+    effective_status_for,
+)
 from hio.publish.release import verify_release
 from hio.storage.objectstore import LocalObjectStore
 
@@ -86,11 +93,14 @@ def resolve_for_use(
     """A pinned consumer's check at each use (§7): bytes verify; the effective status is not
     withdrawn and is at least `required`; the CURRENT rights allow the class."""
     core = verify_release(store, dataset_id, sha)
-    current = effective_status(events(store, sha))
+    current = effective_status_for(events(store, sha), consumer_class)
     if current is None:
         raise RefusedUse("no status")
     if current.status is Status.WITHDRAWN:
-        raise RefusedUse("withdrawn")
+        scope = f"for {consumer_class}" if current.consumer_class else "globally"
+        raise RefusedUse(f"withdrawn {scope}")
+    if required is Status.APPROVED_FOR_CONSUMER and current.status is not Status.APPROVED_FOR_CONSUMER:
+        raise RefusedUse(f"not approved for {consumer_class} (effective status {current.status.value})")
     if LEVEL[current.status] < LEVEL[required]:
         raise RefusedUse(f"status {current.status.value} is below {required.value}")
     gate.authorise(Operation.PUBLISH, source_ids, consumer_class)
