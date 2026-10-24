@@ -54,6 +54,7 @@ are in operating model §1.1; the template is
 | [OD-0037](OD-0037-integrate-pr2-receive-s1a-verification.md) | authorise_work | integrate PR #2 at reviewed head `084154c`, then receive VERIFY-2026-10-24-s1a-1-1…-11; **not** S1a acceptance | `084154c` | recorded |
 | [OD-0038](OD-0038-s1a-remaining-decisions.md) | approve | Q-007 ratified (`pyyaml`, `hatchling`, as used); Q-008 accepted for **S1a only** (no CI egress firewall; S1b needs a network and credential-control decision); Q-005a confirmed; capture-clock archive question deferred to S1b design (Q-010); **not** S1a acceptance | `3fd129e` (implementation as at `084154c`) | recorded |
 | [OD-0039](OD-0039-s1a16-run1-assessment.md) | authorise_work | record S1-A16 run 1 (transcripts, preliminary owner assessment) and prepare the smallest correction; T-0004 found active, reviewed (READY, `db305a3`, local only), not received; **S1-A16 pending** | run 1 at `3fd129e` | recorded |
+| [OD-0040](OD-0040-t0004-cross-lineage-receipt.md) | approve | Q-011: REVIEW-2026-10-18-t0004 received by byte-identical cross-lineage copy from `macsmsf@db305a3` (exception to §6.2 step 5; descent check inapplicable to this review only, failure preserved); S1-A16 two-revision basis; documentation-only integration; **not** T-0004 or S1a acceptance | record and handoff from `macsmsf@db305a3` | recorded |
 
 **Current position:**
 - **Approved:**

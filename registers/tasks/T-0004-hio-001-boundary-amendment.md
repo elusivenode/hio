@@ -38,4 +38,5 @@ conventions.
 - **Diff:** `docs/adr/0003-instrument-identity-and-economic-classification.md` (+16) and `docs/hio-001-review-record.md` (+3). Documentation only (B1).
 - **The activation prerequisites read the same** (B2); the amendment says so explicitly.
 - **Next:** separate review, then an owner decision to merge to `main` with `--no-ff` (SMSF convention).
+- **Review received (2026-10-25, OD-0040):** REVIEW-2026-10-18-t0004, verdict **READY**, no finding, copied byte-for-byte from `macsmsf@db305a3` into [`reviews/records/`](../../reviews/records/REVIEW-2026-10-18-t0004.md). **Not accepted; not merged** into `macsmsf` `main`. That needs a separate owner decision.
 - **Note:** the informational note at the top of ADR 0003 on the HIO staging branch (`85ef0fa`) still says "awaiting owner decision". It is reconciled when the two branches meet.
