@@ -57,6 +57,8 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-s1a16-run1-codex-transcript.md` | the S1-A16 run 1 Codex session as saved by the owner, byte-identical (sha256 `6f989c20…febe7c`) | evidence for HARNESS-2026-10-25-s1a16-1 | — |
 | `2026-10-25-owner-approve-q011-s1a16-basis.md` | the owner's approval of Q-011 (cross-lineage receipt), the S1-A16 two-revision basis and the integration, verbatim | authority for OD-0040 | — |
 | `2026-10-25-owner-t0004-cross-lineage-receipt.md` | the owner's confirmation that the descent check is inapplicable to the T-0004 review, with the receipt conditions, verbatim | authority for OD-0040 | — |
+| `2026-10-25-owner-s1a16-run2-grading.md` | the owner's run-2 grade and conditional acceptance of the combined S1-A16 result, verbatim | authority for OD-0041 | — |
+| `2026-10-25-s1a16-run2-codex-transcript.md` | the S1-A16 run 2 Codex session as saved by the owner, byte-identical (sha256 `a3f818e5…15d5`) | evidence for HARNESS-2026-10-25-s1a16-2 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
