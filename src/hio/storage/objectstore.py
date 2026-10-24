@@ -10,12 +10,15 @@ all-or-nothing (F-REVIEW-2026-10-24-s1a-1-6):
 - a group of objects under one new directory (a release) is built in a hidden staging area and
   appears with a single atomic directory rename;
 - any other set is written under an intent journal: a failure rolls back the objects this
-  commit wrote, and a journal left by a crash is rolled back when the store is next opened.
+  commit wrote, including one that became visible before its write failed, and a journal left
+  by a crash, or by a rollback that could not finish, is rolled back when the store is next
+  opened (round 2, VERIFY-2026-10-24-s1a-1-1).
 Hidden staging and journal directories are never listed as objects.
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import posixpath
@@ -66,9 +69,14 @@ class LocalObjectStore:
         (self._journal_dir / f"{txn}.json").unlink(missing_ok=True)
 
     def _remove(self, key: str) -> None:
-        """Remove an object written by an unfinished commit (never used on committed objects)."""
+        """Remove an object written by an unfinished commit (never used on committed objects).
+        Raises if the object cannot be removed, so the caller keeps its journal."""
         path = self._path(key)
-        if path.is_file():
+        if not path.is_file():
+            return
+        try:
+            path.unlink()  # POSIX needs no write permission on the file itself
+        except PermissionError:
             path.chmod(0o644)
             path.unlink()
 
@@ -91,11 +99,13 @@ class LocalObjectStore:
         return self._path(key).is_file()
 
     def put(self, key: str, data: bytes) -> str:
-        """Write once. Refuses any second write to the same key, identical bytes included."""
+        """Write once. Refuses any second write to the same key, identical bytes included.
+        A failure after the object became visible removes it again before re-raising."""
         path = self._path(key)
         _verify_content_addressed(key, data)
         path.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
+        linked = False
         try:
             with os.fdopen(fd, "wb") as fh:
                 fh.write(data)
@@ -105,9 +115,16 @@ class LocalObjectStore:
                 os.link(tmp, path)  # atomic, and fails if the key exists
             except FileExistsError:
                 raise WriteOnceViolation(f"object already exists: {key}") from None
+            linked = True
             os.chmod(path, 0o444)
-        finally:
             os.unlink(tmp)
+        except BaseException:
+            if linked:
+                with contextlib.suppress(OSError):  # a journalled caller retries and keeps its journal
+                    self._remove(key)
+            with contextlib.suppress(OSError):
+                os.unlink(tmp)
+            raise
         return key
 
     def put_if_absent(self, key: str, data: bytes) -> bool:
@@ -215,14 +232,23 @@ class StagedWrites:
         txn = uuid.uuid4().hex
         self.store._journal_begin(txn, keys)
         written: list[str] = []
+        key = None
         try:
             for key in keys:
                 self.store.put(key, self._pending[key])
                 written.append(key)
-        except BaseException:
-            for key in written:
-                self.store._remove(key)
-            self.store._journal_end(txn)
+        except BaseException as exc:
+            # The key in flight may already be visible (a failure after os.link), so it is rolled
+            # back too, unless it failed because another writer's object holds that key.
+            undo = written if isinstance(exc, WriteOnceViolation) or key is None else [*written, key]
+            complete = True
+            for k in undo:
+                try:
+                    self.store._remove(k)
+                except OSError:
+                    complete = False
+            if complete:
+                self.store._journal_end(txn)  # else the journal stays, and the next open rolls back
             raise
         self.store._journal_end(txn)
 
