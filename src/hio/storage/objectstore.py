@@ -19,6 +19,11 @@ all-or-nothing (F-REVIEW-2026-10-24-s1a-1-6):
     cannot finish, opening fails.
 
   A single writer is assumed; this is not general concurrent-transaction support.
+
+Publication point (round 5, VERIFY-2026-10-24-s1a-1-4): a journalled object is committed when its
+journal is removed after a successful commit. Reads (get, exists, list, snapshot) open the object
+first and then, holding it open, confirm that no unresolved journal claims that file and that
+the key still names it, so a concurrent reader never returns an uncommitted or rolled-back object.
 Hidden staging and journal directories are never listed as objects.
 """
 
@@ -31,6 +36,7 @@ import os
 import posixpath
 import re
 import shutil
+import stat
 import tempfile
 import uuid
 from collections.abc import Callable, Iterator
@@ -148,14 +154,62 @@ class LocalObjectStore:
             return False
         return (st.st_dev, st.st_ino) == (dev, ino)
 
-    def _unresolved(self) -> set[str]:
-        """Keys whose objects belong to a transaction that has not resolved: not observable."""
+    def _claimed(self, key: str, dev: int, ino: int) -> bool:
+        """True if an unresolved journal claims this exact file at key."""
         if not self._journal_dir.is_dir():
-            return set()
-        hidden: set[str] = set()
+            return False
         for journal in self._journal_dir.glob("*.json"):
-            hidden.update(k for k, dev, ino in self._claims(journal) if self._owned(k, dev, ino))
-        return hidden
+            try:
+                claims = self._claims(journal)
+            except FileNotFoundError:
+                continue  # resolved meanwhile; the caller's identity check decides
+            if (key, dev, ino) in claims:
+                return True
+        return False
+
+    def _is_committed(self, key: str, st: os.stat_result) -> bool:
+        """The publication point for reads. The caller holds the file open (so its inode cannot
+        be freed and reused) and calls this only afterwards. A writer claims a file before
+        linking it and removes a rolled-back file before deleting its journal, so: if no
+        unresolved journal claims this file now and the key still names it, its transaction
+        committed (or it never belonged to one)."""
+        if self._claimed(key, st.st_dev, st.st_ino):
+            return False
+        try:
+            now = os.lstat(self._path(key))
+        except FileNotFoundError:
+            return False
+        return (now.st_dev, now.st_ino) == (st.st_dev, st.st_ino)
+
+    def _open_committed(self, key: str) -> tuple[int, os.stat_result] | None:
+        """Open key's object and validate it; the caller closes the descriptor."""
+        try:
+            fd = os.open(self._path(key), os.O_RDONLY)
+        except (FileNotFoundError, NotADirectoryError):
+            return None
+        try:
+            st = os.fstat(fd)
+            if stat.S_ISREG(st.st_mode) and self._is_committed(key, st):
+                return fd, st
+        except BaseException:
+            os.close(fd)
+            raise
+        os.close(fd)
+        return None
+
+    def _read_committed(self, key: str) -> bytes:
+        """Read key's object, then validate it while still holding it open."""
+        fd = os.open(self._path(key), os.O_RDONLY)
+        try:
+            st = os.fstat(fd)
+            chunks = []
+            while chunk := os.read(fd, 1 << 20):
+                chunks.append(chunk)
+            if not stat.S_ISREG(st.st_mode) or not self._is_committed(key, st):
+                raise FileNotFoundError(f"object not committed: {key}")
+            return b"".join(chunks)
+        finally:
+            os.close(fd)
 
     def _rollback(self, journal: Path) -> None:
         """Remove the objects this journal's transaction created, then the journal. Raises if
@@ -203,7 +257,11 @@ class LocalObjectStore:
         return self.root / key
 
     def exists(self, key: str) -> bool:
-        return self._path(key).is_file() and key not in self._unresolved()
+        opened = self._open_committed(key)
+        if opened is None:
+            return False
+        os.close(opened[0])
+        return True
 
     def put(self, key: str, data: bytes, *, claim: Callable[[os.stat_result], None] | None = None) -> str:
         """Write once. Refuses any second write to the same key, identical bytes included.
@@ -260,9 +318,7 @@ class LocalObjectStore:
         return True
 
     def get(self, key: str, sha256: str | None = None) -> bytes:
-        if key in self._unresolved():
-            raise FileNotFoundError(f"object not committed: {key}")
-        data = self._path(key).read_bytes()
+        data = self._read_committed(key)
         _verify_content_addressed(key, data)
         if sha256 is not None and sha256_hex(data) != sha256:
             raise IntegrityError(f"hash mismatch for {key}")
@@ -270,17 +326,22 @@ class LocalObjectStore:
 
     def list(self, prefix: str = "") -> Iterator[str]:
         base = self.root
-        hidden = self._unresolved()
         for path in sorted(base.rglob("*")):
             rel = path.relative_to(base)
             if path.is_file() and not any(part.startswith(".") for part in rel.parts):
                 key = rel.as_posix()
-                if key.startswith(prefix) and key not in hidden:
+                if key.startswith(prefix) and self.exists(key):  # validated per object
                     yield key
 
     def snapshot(self) -> dict[str, str]:
         """key -> sha256 of every object; used to prove that refused operations write nothing."""
-        return {k: sha256_hex(self._path(k).read_bytes()) for k in self.list()}
+        out = {}
+        for k in self.list():
+            try:
+                out[k] = sha256_hex(self._read_committed(k))
+            except FileNotFoundError:
+                continue  # rolled back after it was listed
+        return out
 
 
 def _verify_content_addressed(key: str, data: bytes) -> None:
