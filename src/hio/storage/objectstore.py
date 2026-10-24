@@ -40,7 +40,7 @@ from hio.contracts.canonical import sha256_hex
 
 _KEY = re.compile(r"^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*$")
 _HASH_SEGMENT = re.compile(r"^[0-9a-f]{64}$")
-_JOURNAL_FORMAT = "hio-objectstore-journal/2"  # JSON lines: a header, then one claim per created object
+_JOURNAL_FORMAT = "hio-objectstore-journal/3"  # JSON lines: a header with the intended keys, then claims
 
 
 class WriteOnceViolation(Exception):
@@ -67,13 +67,15 @@ class LocalObjectStore:
     def _staging_dir(self) -> Path:
         return self.root / ".staging"
 
-    def _journal_begin(self, txn: str) -> Path:
-        """Create a durable, empty journal for one transaction, after resolving any earlier one."""
+    def _journal_begin(self, txn: str, keys: list[str]) -> Path:
+        """Create a durable journal for one transaction, after resolving any earlier one. The
+        header names the intended keys, so a truncated claim can be checked against them."""
         self._resolve_before_write()
         self._journal_dir.mkdir(exist_ok=True)
         path = self._journal_dir / f"{txn}.json"
+        header = {"format": _JOURNAL_FORMAT, "txn": txn, "keys": sorted(keys)}
         with open(path, "x") as fh:
-            fh.write(json.dumps({"format": _JOURNAL_FORMAT, "txn": txn}) + "\n")
+            fh.write(json.dumps(header) + "\n")
             fh.flush()
             os.fsync(fh.fileno())
         _fsync_path(self._journal_dir)
@@ -82,11 +84,16 @@ class LocalObjectStore:
     def _journal_claim(self, journal: Path, key: str, st: os.stat_result) -> None:
         """Durably record, before the link, the identity of the file about to be placed at key.
         The link places that same inode, so an object at key belongs to this transaction only
-        if its (device, inode) matches; another writer's object never does."""
-        line = (json.dumps({"key": key, "dev": st.st_dev, "ino": st.st_ino}) + "\n").encode()
+        if its (device, inode) matches; another writer's object never does. The whole line is
+        written (short writes are continued) and fsynced, or this raises and no link follows."""
+        line = memoryview((json.dumps({"key": key, "dev": st.st_dev, "ino": st.st_ino}) + "\n").encode())
         fd = os.open(journal, os.O_WRONLY | os.O_APPEND)  # never re-creates a vanished journal
         try:
-            os.write(fd, line)
+            while line:
+                written = os.write(fd, line)
+                if written <= 0:
+                    raise OSError(f"journal claim for {key} made no progress")
+                line = line[written:]
             os.fsync(fd)
         finally:
             os.close(fd)
@@ -111,14 +118,27 @@ class LocalObjectStore:
                 "object; the store will not open until it is inspected"
             )
         claims = []
+        torn = False
         for n, line in enumerate(lines[1:], start=2):
             try:
                 c = json.loads(line)
             except json.JSONDecodeError:
                 if n == len(lines):
-                    break  # torn final claim: claims are durable before their link, so no link
+                    torn = True  # a crash while the final claim was being written
+                    break
                 raise
             claims.append((c["key"], c["dev"], c["ino"]))
+        if torn:
+            # A claim is complete and durable before its link, so a torn claim's object was never
+            # linked. Trust that only when it is checkable: no intended key may hold an object
+            # this journal does not claim. Otherwise nothing proves whose object it is.
+            claimed = {k for k, _, _ in claims}
+            unclaimed = [k for k in header["keys"] if k not in claimed and self._path(k).exists()]
+            if unclaimed:
+                raise RuntimeError(
+                    f"journal {journal} ends in a truncated claim and intended keys {unclaimed} "
+                    "hold unclaimed objects; the store fails closed until it is inspected"
+                )
         return claims
 
     def _owned(self, key: str, dev: int, ino: int) -> bool:
@@ -325,7 +345,7 @@ class StagedWrites:
 
     def _commit_journalled(self, keys: list[str]) -> None:
         store = self.store
-        journal = store._journal_begin(uuid.uuid4().hex)
+        journal = store._journal_begin(uuid.uuid4().hex, keys)
         try:
             for key in keys:
                 claim = functools.partial(store._journal_claim, journal, key)

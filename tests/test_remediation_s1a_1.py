@@ -62,7 +62,7 @@ def test_f6_an_interrupted_journalled_commit_is_rolled_back_when_the_store_is_re
     store = LocalObjectStore(tmp_path / "s")
     # Round 3 (OD-0025): a journal claims each object it creates, so the crash is simulated on
     # the claimed write path; an intent-only journal is refused (test_remediation_s1a_1_f6_round3).
-    journal = store._journal_begin("txn1")
+    journal = store._journal_begin("txn1", ["catalogue/x/1.json", "catalogue/y/2.json"])
     store.put(
         "catalogue/x/1.json",
         b"partial",
