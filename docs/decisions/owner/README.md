@@ -56,6 +56,7 @@ are in operating model §1.1; the template is
 | [OD-0039](OD-0039-s1a16-run1-assessment.md) | authorise_work | record S1-A16 run 1 (transcripts, preliminary owner assessment) and prepare the smallest correction; T-0004 found active, reviewed (READY, `db305a3`, local only), not received; **S1-A16 pending** | run 1 at `3fd129e` | recorded |
 | [OD-0040](OD-0040-t0004-cross-lineage-receipt.md) | approve | Q-011: REVIEW-2026-10-18-t0004 received by byte-identical cross-lineage copy from `macsmsf@db305a3` (exception to §6.2 step 5; descent check inapplicable to this review only, failure preserved); S1-A16 two-revision basis; documentation-only integration; **not** T-0004 or S1a acceptance | record and handoff from `macsmsf@db305a3` | recorded |
 | [OD-0041](OD-0041-s1a16-result-pass.md) | accept_work | S1-A16 run 2 graded PASS; the combined S1-A16 result accepted as PASS on the two-revision basis, its conditions verified; **S1-A16 satisfied**; **not** S1a acceptance | HARNESS-…-1 at `3fd129e`, HARNESS-…-2 at `df3af48` | recorded |
+| [OD-0042](OD-0042-accept-s1a.md) | accept_work | **S1a accepted** as complete (HIO-ADR-0010 rev 3; OD-0017, OD-0020), with the package's limitations; S1b **not** authorised | implementation `084154c` (integrated `773a557`); package at `edc80d3` | recorded |
 
 **Current position:**
 - **Approved:**
@@ -65,7 +66,7 @@ are in operating model §1.1; the template is
   - the operating model, harness-0.6, at `f2275e2` (OD-0012).
 - **G1 is complete.**
 - **Not approved:** the factor specs (drafts); the roadmap and plan (recommendations).
-- **Authorised:** S1a (OD-0017), not accepted.
+- **Authorised and accepted:** S1a (OD-0017; accepted by OD-0042).
 - **Not authorised:** S1b.
-- **Accepted:** T-0006, T-0007 and T-0008.
+- **Accepted:** T-0006, T-0007 and T-0008; the S1a stage of T-0005 (OD-0042).
 - **No finding is waived.**

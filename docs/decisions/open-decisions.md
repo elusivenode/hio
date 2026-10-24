@@ -14,6 +14,10 @@ last_reviewed: 2026-10-25
 > solution architect where named) and recorded in an OD, whose id is then added here. Resolved
 > G1 decisions stay in [`pending-owner-decisions.md`](pending-owner-decisions.md) as history.
 
+**2026-10-25:** S1a is accepted (OD-0042). Every question that blocked S1a acceptance (Q-001,
+Q-002, Q-007, Q-008) is decided. Still open: Q-003, Q-004, Q-005b, Q-006 and Q-010, none of which
+OD-0042 resolves.
+
 | ID | Question | Source (holds the options) | Who decides | Blocks | Decided by |
 |---|---|---|---|---|---|
 | Q-001 | Does a later quality adjudication change an earlier point-in-time view? | F-REVIEW-2026-10-24-s1a-1-4; draft [OBS-AMEND-Q001](../standards/drafts/OBS-AMEND-Q001-quality-event-time.md) | owner + solution architect | S1a acceptance | [OD-0029](owner/OD-0029-approve-q001-select-q002-a-prime.md) (revision 4, blob `419992f2`) |
