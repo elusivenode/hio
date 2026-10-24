@@ -144,19 +144,13 @@ class VintageStore:
     def ingest(self, receipt: Receipt, mode: CaptureMode) -> IngestResult:
         self._require_processed_before(receipt)
         result = IngestResult()
-        try:
-            rows = parse_receipt(receipt_bytes(self.store, receipt))
-            unknown = sorted({r.series_id for r in rows} - set(self.series))
-            if unknown:
-                raise MalformedReceipt(f"unknown series {unknown}")
-            if any(self.series[r.series_id].source_id != receipt.source_id for r in rows):
-                raise MalformedReceipt("a row's series belongs to another source")
-        except MalformedReceipt as exc:
+        rows, reason = self._validate(receipt, receipt_bytes(self.store, receipt))
+        if reason is not None:
             # The whole receipt is quarantined; no observation is created from it (S1-A14).
-            key = f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"
+            key = _quarantine_key(receipt)
             if not self.store.exists(key):
-                self.store.put(key, canonical_json({"receipt_id": receipt.receipt_id, "reason": str(exc)}))
-            result.receipt_quarantined = str(exc)
+                self.store.put(key, canonical_json(_quarantine_record(receipt, reason)))
+            result.receipt_quarantined = reason
             return result
 
         # One catalogue transaction per receipt: every vintage is decided first, then all are
@@ -190,6 +184,20 @@ class VintageStore:
         for v in result.new_vintages:
             self._vintages.setdefault((v.series_id, v.valid_time), []).append(v)
         return result
+
+    def _validate(self, receipt: Receipt, raw: bytes) -> tuple[list, str | None]:
+        """The ingest validation, shared by ingest (to quarantine) and completeness (to verify a
+        quarantine): (rows, None) for a valid receipt, or ([], reason) for one quarantined whole."""
+        try:
+            rows = parse_receipt(raw)
+            unknown = sorted({r.series_id for r in rows} - set(self.series))
+            if unknown:
+                raise MalformedReceipt(f"unknown series {unknown}")
+            if any(self.series[r.series_id].source_id != receipt.source_id for r in rows):
+                raise MalformedReceipt("a row's series belongs to another source")
+        except MalformedReceipt as exc:
+            return [], str(exc)
+        return rows, None
 
     def _derive(self, receipt: Receipt, rows, mode: CaptureMode) -> tuple[list[dict], IngestResult]:
         """The capture-order processing of one receipt: the single rule set used both by ingest
@@ -408,37 +416,38 @@ class VintageStore:
         return sorted(out, key=lambda r: (r.captured_at, r.receipt_id))
 
     def evidence_digest(self, series_id: str, quality_as_of: datetime) -> str:
-        """OBS-INV-018 pin over E(Q): each receipt's (source_id, captured_at, receipt_id) and how
-        it was processed (its capture mode, "quarantined", or "unprocessed"). The capture mode is
-        pinned because the receipt bytes alone do not determine the derived vintages."""
-        source_id = self.series[series_id].source_id
-        pins = [
-            [r.source_id, r.captured_at, r.receipt_id, self._processing_of(r)]
-            for r in self._captures(source_id, quality_as_of)
-        ]
-        return sha256_hex(canonical_json(pins))
-
-    def _processing_of(self, receipt: Receipt) -> str:
-        if self.store.exists(f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"):
-            return "quarantined"
-        key = _processed_key(receipt)
-        if not self.store.exists(key):
-            return "unprocessed"
-        return json.loads(self.store.get(key))["capture_mode"]
+        """OBS-INV-018 pin over E(Q): each receipt's (source_id, captured_at, receipt_id) and its
+        verified disposition (its capture mode, or "quarantined"). Computed only from evidence
+        that completeness has verified, so it refuses exactly when a query would."""
+        return self._require_complete(series_id, quality_as_of)
 
     def _require_complete(self, series_id: str, quality_as_of: datetime) -> str:
-        """OBS-INV-019. Every receipt of the series' source captured by Q (bytes verified) must be
-        accounted for by its own processing outcome (or its quarantine record), verified against
-        the receipt's rows and the stored vintages (see _check_processed). Otherwise
-        IncompleteProcessing. Returns the evidence digest."""
-        self._check_processed(self._captures(self.series[series_id].source_id, quality_as_of), {series_id})
-        return self.evidence_digest(series_id, quality_as_of)
+        """OBS-INV-019: every receipt of the series' source captured by Q is verified (see
+        _check_processed), else IncompleteProcessing or ReceiptIntegrityError. Returns the
+        evidence digest of the verified dispositions."""
+        receipts = self._captures(self.series[series_id].source_id, quality_as_of)
+        dispositions = self._check_processed(receipts, {series_id})
+        # No held vintage without verified evidence: a vintage whose capture event is not in the
+        # verified E(Q) (for example its capture record was removed) refuses.
+        verified = {(r.receipt_id, r.captured_at) for r, _ in dispositions}
+        for (sid, _), vs in self._vintages.items():
+            for v in vs:
+                if (
+                    sid == series_id
+                    and v.captured_at <= quality_as_of
+                    and (v.receipt_id, v.captured_at) not in verified
+                ):
+                    raise IncompleteProcessing(
+                        f"{sid} {v.valid_time} #{v.vintage_seq} has no verified capture event in E(Q)"
+                    )
+        pins = [[r.source_id, r.captured_at, r.receipt_id, d] for r, d in dispositions]
+        return sha256_hex(canonical_json(pins))
 
     def _require_processed_before(self, receipt: Receipt) -> None:
         """Processing follows capture order (OBS-AMEND-Q002 §2: knowledge is E(Q) processed in
         capture order). A receipt is processed only once every earlier-captured receipt of its
-        source is reflected, so append-on-change decisions, and therefore results, cannot depend
-        on processing order (OBS-INV-011). Otherwise IncompleteProcessing; nothing is written."""
+        source is verified, so append-on-change decisions, and therefore results, cannot depend
+        on processing order (OBS-INV-011). Otherwise a refusal; nothing is written."""
         earlier = [
             r
             for r in self._captures(receipt.source_id, receipt.captured_at)
@@ -447,43 +456,74 @@ class VintageStore:
         series = {s for s, d in self.series.items() if d.source_id == receipt.source_id}
         self._check_processed(earlier, series)
 
-    def _check_processed(self, receipts: list[Receipt], series_ids: set[str]) -> None:
-        """For each receipt: a quarantine record, or a processing outcome whose rows equal the
-        receipt's rows (series, key, value; identity and content, not counts), where every
-        "vintage" row names a stored vintage from this receipt with exactly the recorded content,
-        and every "redundant" row is re-derived from the recorded capture mode and justified by an
-        earlier-or-same capture with equal or stronger evidence knowable no later (the
-        append-on-change rule). Value equality alone never proves a no-op."""
+    def _check_processed(self, receipts: list[Receipt], series_ids: set[str]) -> list[tuple[Receipt, str]]:
+        """The completeness trust boundary (VERIFY-2026-10-24-s1a-1-8). For each captured receipt,
+        in capture order:
+        1. its raw bytes are read and verified against the receipt id first, whatever else the
+           store says (ReceiptIntegrityError otherwise);
+        2. its disposition is re-derived with ingest's own rules (_validate), never taken from a
+           marker or an outcome: a receipt the rules quarantine must have exactly the quarantine
+           record ingest writes, and no processing outcome or vintage; a valid receipt must have
+           no quarantine record and a processing outcome equal to its capture-order derivation
+           (_verify_outcome).
+        Anything the evidence does not warrant refuses (IncompleteProcessing). Returns
+        (receipt, disposition) for the evidence pin."""
+        out = []
         for receipt in receipts:
-            if self.store.exists(f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"):
-                continue
-            key = _processed_key(receipt)
-            if not self.store.exists(key):
-                raise IncompleteProcessing(
-                    f"receipt {receipt.receipt_id} captured {instant_str(receipt.captured_at)} has no "
-                    "processing outcome"
-                )
             try:
                 raw = receipt_bytes(self.store, receipt)  # verifies existence and the content hash
             except (IntegrityError, OSError, ValueError) as exc:
-                # Captured evidence that cannot be verified fails closed as an integrity failure,
-                # the same contract as a selected vintage's receipt (F-REVIEW-2026-10-24-s1a-1-3).
+                # The same contract as a selected vintage's receipt (F-REVIEW-2026-10-24-s1a-1-3).
                 raise ReceiptIntegrityError(
                     f"captured receipt {receipt.receipt_id} is missing or corrupt: {exc}"
                 ) from exc
-            try:
-                rows = parse_receipt(raw)
-            except MalformedReceipt as exc:
+            rows, reason = self._validate(receipt, raw)
+            marker, outcome_key = _quarantine_key(receipt), _processed_key(receipt)
+            has_marker, has_outcome = self.store.exists(marker), self.store.exists(outcome_key)
+            if reason is not None:
+                if not has_marker:
+                    raise IncompleteProcessing(
+                        f"receipt {receipt.receipt_id} must be quarantined ({reason}) but is not"
+                    )
+                if json.loads(self.store.get(marker)) != json.loads(
+                    canonical_json(_quarantine_record(receipt, reason))
+                ):
+                    raise IncompleteProcessing(
+                        f"receipt {receipt.receipt_id}: its quarantine record differs from the derived one"
+                    )
+                if has_outcome or self._vintages_of(receipt):
+                    raise IncompleteProcessing(
+                        f"receipt {receipt.receipt_id} is quarantined but has processing state"
+                    )
+                out.append((receipt, "quarantined"))
+                continue
+            if has_marker:
                 raise IncompleteProcessing(
-                    f"receipt {receipt.receipt_id} is malformed but not quarantined: {exc}"
-                ) from exc
-            outcome = json.loads(self.store.get(key))
+                    f"receipt {receipt.receipt_id} is valid; its quarantine record is not warranted"
+                )
+            if not has_outcome:
+                raise IncompleteProcessing(
+                    f"receipt {receipt.receipt_id} captured {instant_str(receipt.captured_at)} "
+                    "has no processing outcome"
+                )
+            outcome = json.loads(self.store.get(outcome_key))
             try:
                 self._verify_outcome(receipt, rows, outcome, series_ids)
             except (KeyError, TypeError, ValueError) as exc:
                 raise IncompleteProcessing(
                     f"receipt {receipt.receipt_id}: unreadable processing outcome: {exc}"
                 ) from exc
+            out.append((receipt, outcome["capture_mode"]))
+        return out
+
+    def _vintages_of(self, receipt: Receipt) -> list[Vintage]:
+        """The stored vintages of one capture event (receipt_id, captured_at)."""
+        return [
+            v
+            for vs in self._vintages.values()
+            for v in vs
+            if (v.receipt_id, v.captured_at) == (receipt.receipt_id, receipt.captured_at)
+        ]
 
     def _verify_outcome(self, receipt: Receipt, rows, outcome: dict, series_ids: set[str]) -> None:
         """Re-derive the receipt's outcome with the same capture-order rules ingest used
@@ -646,6 +686,14 @@ def _row_order(r) -> tuple:
 
 def _vintage_key(v: Vintage) -> str:
     return f"catalogue/vintages/{v.series_id}/{v.valid_time.isoformat()}/{v.vintage_seq:06d}.json"
+
+
+def _quarantine_key(receipt: Receipt) -> str:
+    return f"catalogue/quarantine/receipts/{receipt.receipt_id}.json"
+
+
+def _quarantine_record(receipt: Receipt, reason: str) -> dict:
+    return {"receipt_id": receipt.receipt_id, "reason": reason}
 
 
 def _processed_key(receipt: Receipt) -> str:
