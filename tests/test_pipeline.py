@@ -11,6 +11,7 @@ from hio.contracts.rights import RightsRefused
 from hio.contracts.status import Status
 from hio.contracts.temporal import KnowledgeMode
 from hio.jobs import s1a
+from hio.marketdata.queries import InadmissibleForPredictivePointInTime
 from hio.marketdata.vintages import VintageStore
 from hio.publish.release import verify_release, write_release
 from hio.publish.status import RefusedUse, append_status, resolve_for_use
@@ -93,29 +94,34 @@ def test_ny_holiday_period_accrues_fridays_rate_and_is_knowable_on_tuesday(tmp_p
 
 def test_fx_period_waits_for_the_in_arrears_usd_leg_under_market_knowledge(tmp_path):
     """Monday's Sydney fixing is public at 06:00Z; Friday's SOFR only at 13:00Z (Monday, NY).
-    At 12:00Z the Fri→Mon FX period is on the joint calendar but absent, and recorded as such;
-    at 13:00Z it is present. Nothing is filled."""
+
+    Changed by OBS-AMEND-Q001 and VERIFY-2026-10-24-s1a-1-6 (OD-0031). This test built
+    point-in-time market releases at 12:00Z and 13:00Z with Q at the store's cutoff (HIO's later
+    captures), and expected a recorded gap at 12:00Z and the period at 13:00Z. A Q > T market
+    release is not admissible and is now refused before anything is built. The knowability
+    placement is asserted on views (labelled, not admissible); the releases use Q = T."""
     world, _, vs, _ = run(tmp_path, "a")
     gate = RightsGate(RIGHTS)
+    monday = lambda h: datetime(2026, 1, 12, h, tzinfo=UTC)  # noqa: E731
+    with pytest.raises(InadmissibleForPredictivePointInTime):
+        s1a.build_releases(
+            world, vs, gate, RIGHTS, KnowledgeMode.AS_KNOWN_BY_MARKET, monday(13), CODE, CUTOFF
+        )
+    # Knowability placement, judged with HIO's later captures (views only).
+    friday = date(2026, 1, 9)
+    sofr_12 = vs.as_known_by_market(s1a.SOFR, monday(12), CUTOFF)
+    assert friday not in sofr_12.values and not sofr_12.predictive_pit_admissible
+    assert friday in vs.as_known_by_market(s1a.SOFR, monday(13), CUTOFF).values
+    # The AUD leg of the Fri→Mon period needs only Friday's rate, already knowable by then.
+    assert friday in vs.as_known_by_market(s1a.CASH_RATE, monday(12), CUTOFF).values
+    # Admissible releases (Q = T): the period appears once HIO has captured its inputs (14:00Z).
     at = lambda h: s1a.build_releases(  # noqa: E731
-        world,
-        vs,
-        gate,
-        RIGHTS,
-        KnowledgeMode.AS_KNOWN_BY_MARKET,
-        datetime(2026, 1, 12, h, tzinfo=UTC),
-        CODE,
-        CUTOFF,  # Q: the store's state, so this tests knowable_at placement (labelled, not admissible)
+        world, vs, gate, RIGHTS, KnowledgeMode.AS_KNOWN_BY_MARKET, monday(h), CODE, monday(h)
     )
-    early, late = at(12), at(13)
-    gaps = early["fx.usd_cash_vs_aud.excess"].core["quality_summary"]["absent_periods"]
-    assert [g[:2] for g in gaps] == [["2026-01-09", "2026-01-12"]]
-    assert "2026-01-09" in gaps[0][2]  # the missing input is Friday's SOFR
     periods = lambda r: {(x["period_start"], x["period_end"]) for x in csv_rows(r.files["data.csv"])}  # noqa: E731
-    assert ("2026-01-09", "2026-01-12") not in periods(early["fx.usd_cash_vs_aud.excess"])
-    assert ("2026-01-09", "2026-01-12") in periods(late["fx.usd_cash_vs_aud.excess"])
-    # The AUD leg for the same period was knowable earlier (09:20 Sydney Monday = 22:20Z Sunday).
-    assert ("2026-01-09", "2026-01-12") in periods(early["cash.aud.overnight"])
+    assert ("2026-01-09", "2026-01-12") not in periods(at(12)["fx.usd_cash_vs_aud.excess"])
+    assert ("2026-01-09", "2026-01-12") in periods(at(14)["fx.usd_cash_vs_aud.excess"])
+    assert ("2026-01-09", "2026-01-12") in periods(at(14)["cash.aud.overnight"])
 
 
 def test_as_known_by_market_matches_as_captured_for_on_schedule_captures(tmp_path):

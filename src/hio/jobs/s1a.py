@@ -36,7 +36,7 @@ from hio.library.cash import ACT_360, ACT_365F, CashPeriod, RateFixing, chain_in
 from hio.library.fx import FxQuote, fx_series, joint_calendar
 from hio.library.numeric import check_identity
 from hio.marketdata.capture import SyntheticWorldSource, capture
-from hio.marketdata.queries import View
+from hio.marketdata.queries import View, require_predictive_pit
 from hio.marketdata.series import CaptureMode, ReleaseSchedule, SeriesDef
 from hio.marketdata.vintages import VintageStore
 from hio.publish.release import Release, make_release, render_csv, verify_release, write_release
@@ -190,6 +190,12 @@ def build_releases(
     if not mode.point_in_time and mode is not KnowledgeMode.RECONSTRUCTED:
         raise ValueError("releases are built from a point-in-time view or a labelled reconstruction")
     v_cash, v_fx, v_sofr = (vs.view(s, mode, cutoff, quality_as_of) for s in (CASH_RATE, AUDUSD, SOFR))
+    if mode.point_in_time:
+        # The point-in-time release boundary (OBS-INV-014; VERIFY-2026-10-24-s1a-1-6): every input
+        # view must be admissible to predictive point-in-time work, before rights, computation or
+        # any release exists. There is no override.
+        for view in (v_cash, v_fx, v_sofr):
+            require_predictive_pit(view)
     # Rights are checked against the sources of the vintages actually selected, from their
     # verified capture records, before any computation (F-REVIEW-2026-10-24-s1a-1-1).
     gate.authorise(Operation.BUILD, vs.sources_of(v_cash) | vs.sources_of(v_fx) | vs.sources_of(v_sofr))
