@@ -11,6 +11,7 @@ from hio.contracts.rights import RightsRefused
 from hio.contracts.status import Status
 from hio.contracts.temporal import KnowledgeMode
 from hio.jobs import s1a
+from hio.marketdata.queries import InadmissibleForPredictivePointInTime
 from hio.marketdata.vintages import VintageStore
 from hio.publish.release import verify_release, write_release
 from hio.publish.status import RefusedUse, append_status, resolve_for_use
@@ -25,7 +26,6 @@ WORLD = FIXTURES / "s1a_world"
 RIGHTS = dict(load_synthetic(FIXTURES / "rights.yaml"))
 CUTOFF = datetime(2026, 1, 29, tzinfo=UTC)
 CODE = {"commit": "0" * 40, "lock_sha256": "1" * 64}
-SOURCES = ("synthetic.rba", "synthetic.nyfed")
 DATASETS = {
     "cash.aud.overnight",
     "cash.usd.overnight",
@@ -34,13 +34,20 @@ DATASETS = {
 }
 
 
-def run(tmp_path, name, cutoff=CUTOFF, mode=KnowledgeMode.AS_CAPTURED_BY_HIO, published_at=CUTOFF):
+def run(
+    tmp_path,
+    name,
+    cutoff=CUTOFF,
+    mode=KnowledgeMode.AS_CAPTURED_BY_HIO,
+    published_at=CUTOFF,
+    quality_as_of=None,
+):
     world = s1a.load_world(WORLD)
     store = LocalObjectStore(tmp_path / name)
     vs = VintageStore(store, world.series)
     gate = RightsGate(RIGHTS)
     s1a.run_captures(world, vs, gate, s1a.capture_instants(date(2026, 1, 5), cutoff))
-    releases = s1a.build_releases(world, vs, gate, RIGHTS, mode, cutoff, CODE)
+    releases = s1a.build_releases(world, vs, gate, RIGHTS, mode, cutoff, CODE, quality_as_of)
     s1a.publish_releases(vs, gate, releases, published_at)
     return world, store, vs, releases
 
@@ -87,29 +94,41 @@ def test_ny_holiday_period_accrues_fridays_rate_and_is_knowable_on_tuesday(tmp_p
 
 def test_fx_period_waits_for_the_in_arrears_usd_leg_under_market_knowledge(tmp_path):
     """Monday's Sydney fixing is public at 06:00Z; Friday's SOFR only at 13:00Z (Monday, NY).
-    At 12:00Z the Fri→Mon FX period is on the joint calendar but absent, and recorded as such;
-    at 13:00Z it is present. Nothing is filled."""
+
+    Changed by OBS-AMEND-Q001 and VERIFY-2026-10-24-s1a-1-6 (OD-0031). This test built
+    point-in-time market releases at 12:00Z and 13:00Z with Q at the store's cutoff (HIO's later
+    captures), and expected a recorded gap at 12:00Z and the period at 13:00Z. A Q > T market
+    release is not admissible and is now refused before anything is built. The knowability
+    placement is asserted on views (labelled, not admissible); the releases use Q = T."""
     world, _, vs, _ = run(tmp_path, "a")
     gate = RightsGate(RIGHTS)
+    monday = lambda h: datetime(2026, 1, 12, h, tzinfo=UTC)  # noqa: E731
+    with pytest.raises(InadmissibleForPredictivePointInTime):
+        s1a.build_releases(
+            world, vs, gate, RIGHTS, KnowledgeMode.AS_KNOWN_BY_MARKET, monday(13), CODE, CUTOFF
+        )
+    # Knowability placement, judged with HIO's later captures (views only).
+    friday = date(2026, 1, 9)
+    sofr_12 = vs.as_known_by_market(s1a.SOFR, monday(12), CUTOFF)
+    assert friday not in sofr_12.values and not sofr_12.predictive_pit_admissible
+    assert friday in vs.as_known_by_market(s1a.SOFR, monday(13), CUTOFF).values
+    # The AUD leg of the Fri→Mon period needs only Friday's rate, already knowable by then.
+    assert friday in vs.as_known_by_market(s1a.CASH_RATE, monday(12), CUTOFF).values
+    # Admissible releases (Q = T): the period appears once HIO has captured its inputs (14:00Z).
     at = lambda h: s1a.build_releases(  # noqa: E731
-        world, vs, gate, RIGHTS, KnowledgeMode.AS_KNOWN_BY_MARKET, datetime(2026, 1, 12, h, tzinfo=UTC), CODE
+        world, vs, gate, RIGHTS, KnowledgeMode.AS_KNOWN_BY_MARKET, monday(h), CODE, monday(h)
     )
-    early, late = at(12), at(13)
-    gaps = early["fx.usd_cash_vs_aud.excess"].core["quality_summary"]["absent_periods"]
-    assert [g[:2] for g in gaps] == [["2026-01-09", "2026-01-12"]]
-    assert "2026-01-09" in gaps[0][2]  # the missing input is Friday's SOFR
     periods = lambda r: {(x["period_start"], x["period_end"]) for x in csv_rows(r.files["data.csv"])}  # noqa: E731
-    assert ("2026-01-09", "2026-01-12") not in periods(early["fx.usd_cash_vs_aud.excess"])
-    assert ("2026-01-09", "2026-01-12") in periods(late["fx.usd_cash_vs_aud.excess"])
-    # The AUD leg for the same period was knowable earlier (09:20 Sydney Monday = 22:20Z Sunday).
-    assert ("2026-01-09", "2026-01-12") in periods(early["cash.aud.overnight"])
+    assert ("2026-01-09", "2026-01-12") not in periods(at(12)["fx.usd_cash_vs_aud.excess"])
+    assert ("2026-01-09", "2026-01-12") in periods(at(14)["fx.usd_cash_vs_aud.excess"])
+    assert ("2026-01-09", "2026-01-12") in periods(at(14)["cash.aud.overnight"])
 
 
 def test_as_known_by_market_matches_as_captured_for_on_schedule_captures(tmp_path):
     """Every vintage was captured on schedule, so both point-in-time modes hold the same values;
     the releases differ only in the mode recorded in the manifest."""
     _, _, _, captured = run(tmp_path, "c")
-    _, _, _, known = run(tmp_path, "k", mode=KnowledgeMode.AS_KNOWN_BY_MARKET)
+    _, _, _, known = run(tmp_path, "k", mode=KnowledgeMode.AS_KNOWN_BY_MARKET, quality_as_of=CUTOFF)
     for d in DATASETS:
         assert captured[d].files == known[d].files
         assert captured[d].content_sha256 != known[d].content_sha256
@@ -146,7 +165,7 @@ def test_rebuild_from_stored_receipts_reproduces_every_release(tmp_path):
         CUTOFF,
         CODE,
     ).values():
-        assert write_release(store, RightsGate(RIGHTS), r, SOURCES) is False
+        assert write_release(store, RightsGate(RIGHTS), r) is False
 
 
 def test_a_different_code_ref_or_cutoff_is_a_different_release(tmp_path):
@@ -184,7 +203,6 @@ def test_fixture_3_withdrawal_reaches_a_pinned_consumer(tmp_path):
         required=Status.EXPLORATORY,
         consumer_class="hio_internal",
         gate=RightsGate(RIGHTS),
-        source_ids=("synthetic.rba",),
     )
     resolve_for_use(store, "cash.aud.overnight", r.content_sha256, **use)
     append_status(store, r.content_sha256, Status.WITHDRAWN, "owner", "fixture", CUTOFF)
@@ -206,7 +224,6 @@ def test_consumers_check_level_and_current_rights_not_the_snapshot(tmp_path):
             required=Status.VALIDATED,
             consumer_class="hio_internal",
             gate=RightsGate(RIGHTS),
-            source_ids=("synthetic.rba",),
         )
     perms = {p: Permission.parse("allow") for p in ALL_PERMISSIONS} | {
         "distribution.hio_internal": Permission.parse("deny")
@@ -221,7 +238,6 @@ def test_consumers_check_level_and_current_rights_not_the_snapshot(tmp_path):
             required=Status.EXPLORATORY,
             consumer_class="hio_internal",
             gate=revoked,
-            source_ids=("synthetic.rba",),
         )
 
 

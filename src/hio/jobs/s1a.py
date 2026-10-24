@@ -36,14 +36,14 @@ from hio.library.cash import ACT_360, ACT_365F, CashPeriod, RateFixing, chain_in
 from hio.library.fx import FxQuote, fx_series, joint_calendar
 from hio.library.numeric import check_identity
 from hio.marketdata.capture import SyntheticWorldSource, capture
-from hio.marketdata.queries import View
+from hio.marketdata.queries import View, require_predictive_pit
 from hio.marketdata.series import CaptureMode, ReleaseSchedule, SeriesDef
-from hio.marketdata.vintages import VintageStore
-from hio.publish.release import Release, make_release, render_csv, write_release
+from hio.marketdata.vintages import PinMismatch, VintageStore
+from hio.publish.release import Release, make_release, render_csv, verify_release, write_release
 from hio.publish.status import append_status
 from hio.reference.calendar import BusinessCalendar, load_calendars
 from hio.rights.model import RightsRecord, propagate
-from hio.storage.objectstore import LocalObjectStore
+from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
 REPO = Path(__file__).resolve().parents[3]
 CASH_RATE, AUDUSD, SOFR = "synthetic.rba.cash_rate", "synthetic.rba.audusd_4pm", "synthetic.nyfed.sofr"
@@ -145,14 +145,45 @@ def quotes(view: View) -> dict[date, FxQuote]:
 
 
 def input_record(view: View) -> dict[str, Any]:
+    """The view's provenance in the manifest's inputs (OBS-AMEND-Q001 §7, OBS-AMEND-Q002 §3): both
+    cutoffs, admissibility, the reproducibility pins and every conflict with its effect."""
     cut = [[d.isoformat(), v.vintage_seq, decimal_str(v.value), v.receipt_id] for d, v in view.values.items()]
     return {
         "series_id": view.series_id,
         "knowledge_mode": view.mode.value,
         "knowledge_cutoff": instant_str(view.cutoff) if view.cutoff else None,
+        "quality_as_of": instant_str(view.quality_as_of) if view.quality_as_of else None,
+        "predictive_pit_admissible": view.predictive_pit_admissible,
         "receipts": sorted({v.receipt_id for v in view.values.values()}),
         "vintage_cut_sha256": sha256_hex(canonical_json(cut)),
+        "evidence_digest": view.evidence_digest,
+        "resolution_digest": view.resolution_digest,
+        "quality_digest": view.quality_digest,
+        "algorithm_revision": view.algorithm_revision,
+        "conflicts": sorted([r.conflict.conflict_id, r.effect] for r in view.conflicts),
+        # Immutable references sufficient to reproduce the pinned inputs (OBS-AMEND-Q002-R1).
+        "evidence_refs": json.loads(canonical_json([list(r) for r in view.evidence_refs])),
+        "quality_event_refs": [list(r) for r in view.quality_event_refs],
+        "resolution_refs": [list(r) for r in view.resolution_refs],
     }
+
+
+def verify_release_inputs(vs: VintageStore, core: dict[str, Any]) -> None:
+    """Reconstruct every view input of a release from the store at its recorded (mode, T, Q)
+    and refuse (PinMismatch) unless the reconstructed input record, including all four pins and
+    every immutable reference, equals the recorded one. Missing or altered evidence refuses too
+    (ReceiptIntegrityError or IncompleteProcessing from the view)."""
+    for record in core["inputs"]:
+        if "series_id" not in record:
+            continue
+        mode = KnowledgeMode(record["knowledge_mode"])
+        cutoff = parse_instant(record["knowledge_cutoff"]) if record["knowledge_cutoff"] else None
+        q = None if mode is KnowledgeMode.AS_CAPTURED_BY_HIO else parse_instant(record["quality_as_of"])
+        recorded = json.loads(canonical_json(record))
+        rebuilt = json.loads(canonical_json(input_record(vs.view(record["series_id"], mode, cutoff, q))))
+        diffs = sorted(k for k in recorded.keys() | rebuilt.keys() if recorded.get(k) != rebuilt.get(k))
+        if diffs:
+            raise PinMismatch(f"{record['series_id']}: recorded inputs differ from the store in {diffs}")
 
 
 # --- build -------------------------------------------------------------------------------------------
@@ -175,11 +206,22 @@ def build_releases(
     mode: KnowledgeMode,
     cutoff: datetime,
     code_ref: dict[str, str],
+    quality_as_of: datetime | None = None,
 ) -> dict[str, Release]:
+    """quality_as_of is HIO's decision cutoff Q: fixed to cutoff for as_captured_by_hio, and
+    required for the other modes (OBS-AMEND-Q001 §4)."""
     if not mode.point_in_time and mode is not KnowledgeMode.RECONSTRUCTED:
         raise ValueError("releases are built from a point-in-time view or a labelled reconstruction")
-    gate.authorise(Operation.BUILD, [RBA, NYFED])
-    v_cash, v_fx, v_sofr = (vs.view(s, mode, cutoff) for s in (CASH_RATE, AUDUSD, SOFR))
+    v_cash, v_fx, v_sofr = (vs.view(s, mode, cutoff, quality_as_of) for s in (CASH_RATE, AUDUSD, SOFR))
+    if mode.point_in_time:
+        # The point-in-time release boundary (OBS-INV-014; VERIFY-2026-10-24-s1a-1-6): every input
+        # view must be admissible to predictive point-in-time work, before rights, computation or
+        # any release exists. There is no override.
+        for view in (v_cash, v_fx, v_sofr):
+            require_predictive_pit(view)
+    # Rights are checked against the sources of the vintages actually selected, from their
+    # verified capture records, before any computation (F-REVIEW-2026-10-24-s1a-1-1).
+    gate.authorise(Operation.BUILD, vs.sources_of(v_cash) | vs.sources_of(v_fx) | vs.sources_of(v_sofr))
     aud_fix, usd_fix, fx_q = fixings(v_cash), fixings(v_sofr), quotes(v_fx)
     common = {
         "version": "s1a",
@@ -325,8 +367,7 @@ def publish_releases(
     construction, so the producing job may (releases standard §5)."""
     out = {}
     for dataset_id, release in sorted(releases.items()):
-        sources = [RBA, NYFED] if dataset_id.startswith("fx.") else [RBA if "aud" in dataset_id else NYFED]
-        written = write_release(vs.store, gate, release, sources)
+        written = write_release(vs.store, gate, release)  # lineage-derived sources
         if written:
             append_status(
                 vs.store,
@@ -344,6 +385,48 @@ def publish_releases(
     return out
 
 
+def rebuild_report(
+    world: World,
+    store: LocalObjectStore,
+    gate: RightsGate,
+    rights: dict[str, RightsRecord],
+    mode: KnowledgeMode,
+    cutoff: datetime,
+    code_ref: dict[str, str],
+    quality_as_of: datetime | None = None,
+) -> dict[str, str]:
+    """S1-A11: rebuild every release from the stored receipts' vintages (reloaded from the
+    store), then compare with the pinned stored release. A dataset is "reproduced" only if the
+    stored release verifies against its content hash and its manifest and files equal the
+    rebuilt ones byte for byte (F-REVIEW-2026-10-24-s1a-1-5). Needs the rebuild rights and writes
+    nothing."""
+    vs = VintageStore(store, world.series)
+    gate.authorise(
+        Operation.REBUILD,
+        frozenset().union(
+            *(vs.sources_of(vs.view(s, mode, cutoff, quality_as_of)) for s in (CASH_RATE, AUDUSD, SOFR))
+        ),
+    )
+    rebuilt = build_releases(world, vs, gate, rights, mode, cutoff, code_ref, quality_as_of)
+    report = {}
+    for dataset_id, release in sorted(rebuilt.items()):
+        if not store.exists(f"{release.prefix}/manifest.json"):
+            report[dataset_id] = "absent: no stored release with the rebuilt content hash"
+            continue
+        try:
+            stored_core = verify_release(store, dataset_id, release.content_sha256)
+        except (IntegrityError, ValueError, OSError) as exc:
+            report[dataset_id] = f"corrupt: {exc}"
+            continue
+        if stored_core != release.core:
+            report[dataset_id] = "differs: the stored manifest differs from the rebuilt one"
+        elif any(store.get(f"{release.prefix}/{name}") != data for name, data in release.files.items()):
+            report[dataset_id] = "differs: stored file bytes differ from the rebuilt ones"
+        else:
+            report[dataset_id] = "reproduced"
+    return report
+
+
 def rebuild_check(
     world: World,
     store: LocalObjectStore,
@@ -352,14 +435,11 @@ def rebuild_check(
     mode: KnowledgeMode,
     cutoff: datetime,
     code_ref: dict[str, str],
+    quality_as_of: datetime | None = None,
 ) -> dict[str, bool]:
-    """S1-A11: rebuild every release from the stored receipts' vintages (reloaded from the
-    store) and report, per dataset, whether the rebuilt content hash is already stored. Needs
-    the rebuild rights (rights standard §3) and writes nothing."""
-    gate.authorise(Operation.REBUILD, [RBA, NYFED])
-    vs = VintageStore(store, world.series)
-    rebuilt = build_releases(world, vs, gate, rights, mode, cutoff, code_ref)
-    return {d: store.exists(f"{r.prefix}/manifest.json") for d, r in sorted(rebuilt.items())}
+    """True per dataset only when rebuild_report says "reproduced"."""
+    report = rebuild_report(world, store, gate, rights, mode, cutoff, code_ref, quality_as_of)
+    return {d: status == "reproduced" for d, status in report.items()}
 
 
 def write_run_record(
@@ -416,6 +496,10 @@ def main(argv: list[str] | None = None) -> int:
         default=KnowledgeMode.AS_CAPTURED_BY_HIO.value,
         choices=[m.value for m in KnowledgeMode if m is not KnowledgeMode.LATEST],
     )
+    ap.add_argument(
+        "--quality-as-of",
+        help="HIO decision cutoff Q (UTC, Z suffix): required for as_known_by_market and reconstructed",
+    )
     args = ap.parse_args(argv)
 
     started = datetime.now(UTC)
@@ -427,7 +511,10 @@ def main(argv: list[str] | None = None) -> int:
     cutoff = parse_instant(args.cutoff)
     code_ref = current_code_ref()
     counts = run_captures(world, vs, gate, capture_instants(date(2026, 1, 5), cutoff))
-    releases = build_releases(world, vs, gate, rights, KnowledgeMode(args.mode), cutoff, code_ref)
+    quality_as_of = parse_instant(args.quality_as_of) if args.quality_as_of else None
+    releases = build_releases(
+        world, vs, gate, rights, KnowledgeMode(args.mode), cutoff, code_ref, quality_as_of
+    )
     published = publish_releases(vs, gate, releases, datetime.now(UTC))
     write_run_record(
         store,

@@ -37,6 +37,20 @@ are in operating model §1.1; the template is
 | [OD-0020](OD-0020-s1a-proceed-implementation.md) | authorise_work | proceed with S1a implementation under OD-0017, with five implementation considerations | repository at `9370256` | recorded |
 | [OD-0021](OD-0021-approve-harness-0.7.md) | approve | harness-0.7 rev 3 approved (12 blobs); integration into `main` authorised; adoption condition on the CI gate | `9b58811` | recorded |
 | [OD-0022](OD-0022-receive-s1a-review.md) | authorise_work | receipt of REVIEW-2026-10-24-s1a-1 (PR #1) at `e55cc89`; assignment confirmed and indexed; harness-0.7 adoption condition met | `e55cc89` | recorded |
+| [OD-0023](OD-0023-authorise-s1a-remediation.md) | authorise_work | S1a remediation of findings 1, 2, 3, 5, 6; draft Q-001/Q-002 amendments | `6fe35cf` | recorded |
+| [OD-0024](OD-0024-f6-remediation-before-receipt.md) | authorise_work | F6 remediation on PR #2 under the remediation-before-receipt exception (VERIFY-2026-10-24-s1a-1-1 at `0255cb2`, sha256 checked); harness-0.8 stopped | `18c80f2` | recorded |
+| [OD-0025](OD-0025-f6-round3-disposition.md) | authorise_work | VERIFY-2026-10-24-s1a-1-1 and -2 disposed as preserved evidence (not received); F6 correction cycle on PR #2; hash transcription corrected by the owner | `759ddf7` | recorded |
+| [OD-0026](OD-0026-q001-q002-drafting.md) | authorise_work | refine the Q-001/Q-002 draft amendments (drafting only; Option A advised, not adopted); F6 verification (VERIFY-2026-10-24-s1a-1-5, READY) acknowledged | `d9fa276` | recorded |
+| [OD-0027](OD-0027-q001-q002-final-draft-amendment.md) | authorise_work | final narrow amendment of the Q-001/Q-002 drafts (revision 3: admissibility, distinguishability, conflict identity, diagnostics); refined Option A supported, not approved | `baa8e4e` | recorded |
+| [OD-0028](OD-0028-q001-q002-revision4.md) | authorise_work | drafts revision 4: Q-001 header fix; Q-002 processing order vs acquisition history; architectural direction approved, exact text not yet | `6f013a7` | recorded |
+| [OD-0029](OD-0029-approve-q001-select-q002-a-prime.md) | approve | **OBS-AMEND-Q001 revision 4 approved** (blob `419992f2`) as the governing two-cutoff contract; Q-002 Option A′ selected as direction (not approved); reproducibility and completeness required | `4e57fa1` | recorded |
+| [OD-0030](OD-0030-approve-q002-authorise-f4-f7.md) | approve | **OBS-AMEND-Q002 revision 5 approved** (blob `d0a25b3b`); bounded F4/F7 implementation authorised on PR #2; observations v0.3 to be prepared for separate approval | `b4c398d` | recorded |
+| [OD-0031](OD-0031-f4-f7-verify-6-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-6 (`3cb3dd0`, sha256 `87ff2b82…`, checked); F4/F7 correction on PR #2 | `191ac0f` | recorded |
+| [OD-0032](OD-0032-f7-verify-7-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-7 (`35526b5`, sha256 `5cfc9bc3…`, checked); F7 correction on PR #2 | `f00db8c` | recorded |
+| [OD-0033](OD-0033-f7-verify-8-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-8 (`db1722c`, sha256 `6776d92b…`, checked); F7 quarantine-related completeness correction | `6720a6c` | recorded |
+| [OD-0034](OD-0034-q002-quality-digest-drafting.md) | authorise_work | `quality_digest` pin selected as direction; draft the Q-002 reproducibility amendment; VERIFY-2026-10-24-s1a-1-9 (`63df7ff`, sha256 `e3211b18…`) verified, not disposed | `0e900e8` | recorded |
+| [OD-0035](OD-0035-approve-q002-r1-verify-9-exception.md) | approve | **OBS-AMEND-Q002-R1 revision 1 approved** (blob `cb7a937d`); remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-9 (`63df7ff`, sha256 `e3211b18…`); quality-digest implementation authorised; review commit corrected by the owner | `312de66` | recorded |
+| [OD-0036](OD-0036-f7-verify-10-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-10 (`586b35e`, sha256 `35685f04…`, checked); loaded quality-event clock validation | `21e4a07` | recorded |
 
 **Current position:**
 - **Approved:**

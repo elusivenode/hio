@@ -22,7 +22,7 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 in this repository, `elusivenode/hio` (**public** since 2026-10-24, OD-0019), migrated with history from
 `macsmsf@dc4fd02` on 2026-10-24. **S1a is implemented and submitted for review** (OD-0020;
 [evidence package](docs/evidence/S1A-evidence-package.md)): synthetic fixtures only, 150 tests,
-CI green. **Not accepted**; the Codex review awaits the owner's assignment. S1b is not
+CI green. **Not accepted**: reviewed (REQUEST CHANGES), remediated on PR #2, verification in progress (see below). S1b is not
 authorised. HIO has no cloud storage, no real data and no credentials. The `macsmsf` staging branch `docs/hio-a01-baseline` is
 frozen at `dc4fd02` and stays unmerged.
 
@@ -30,20 +30,20 @@ frozen at `dc4fd02` and stays unmerged.
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0022; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public), OD-0020 (proceed with S1a implementation) OD-0021 (harness-0.7 approved) and OD-0022 (S1a review received at `e55cc89`; harness-0.7 adoption condition met) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | OD-0001…0023; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public), OD-0020 (proceed with S1a implementation) OD-0021 (harness-0.7 approved) OD-0022 (S1a review received at `e55cc89`; harness-0.7 adoption condition met), OD-0023 (S1a remediation slice), OD-0024 (F6 round 2 before receipt; harness-0.8 stopped) and OD-0025 (VERIFY-…-1 and -2 disposed as preserved evidence; F6 correction cycle) OD-0026 (Q-001/Q-002 drafts refined), OD-0027/0028 (draft revisions), OD-0029 (**Q-001 revision 4 approved**; Q-002 A′ selected) OD-0030 (**Q-002 revision 5 approved**; F4/F7 implementation authorised) OD-0031, OD-0032 and OD-0033 (exceptions for VERIFY-2026-10-24-s1a-1-6, -7 and -8), OD-0034 and OD-0035 (**Q-002-R1 `quality_digest` approved**; exception for VERIFY-2026-10-24-s1a-1-9), OD-0036 (exception for VERIFY-2026-10-24-s1a-1-10) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model **harness-0.7** at `9b58811` (OD-0021; supersedes harness-0.6, OD-0012). All of these are `macsmsf` commit ids | per-file blobs in the OD records |
 | Authorised, not accepted | **S1a** (OD-0017, OD-0020): implemented, **submitted for review** | [evidence package](docs/evidence/S1A-evidence-package.md) |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1b**; all T-0002 source permissions **unverified and blocked** (OD-0013); the ETF diagnostic workstream; any `macsmsf` pointer change or merge | [`docs/decisions/README.md`](docs/decisions/README.md) |
-| Independent reviews | REVIEW-2026-10-18-a01 → VERIFY-2026-10-18-a01-1: 8/8 verified_closed. T0007-PILOT READY. **REVIEW-2026-10-24-s1a-1: REQUEST CHANGES** (Codex, at `98e6a8e`), **received** at `e55cc89` (PR #1, OD-0022) | [`reviews/README.md`](reviews/README.md) |
-| Open findings | **seven**: F-REVIEW-2026-10-24-s1a-1-1…7 (1–3 high; 4 high, awaiting Q-001; 5–6 medium; 7 medium, awaiting Q-002) | [`reviews/README.md`](reviews/README.md) |
+| Independent reviews | REVIEW-2026-10-18-a01 → VERIFY-2026-10-18-a01-1: 8/8 verified_closed. T0007-PILOT READY. **REVIEW-2026-10-24-s1a-1: REQUEST CHANGES** (Codex, at `98e6a8e`), **received** at `e55cc89` (PR #1, OD-0022). **VERIFY-2026-10-24-s1a-1-1** (Codex, at `18c80f2`; REQUEST CHANGES: F1, F2, F3, F5 verified_closed, F6 remediation_rejected) is committed at `0255cb2` (PR #3); **VERIFY-2026-10-24-s1a-1-2** (Codex, at `759ddf7`; REQUEST CHANGES: F6 round 2 rejected) at `9a94c3a`; **VERIFY-2026-10-24-s1a-1-3** (Codex, at `21c8167`; REQUEST CHANGES: F6 round 3 rejected) at `ff0dd81`; **VERIFY-2026-10-24-s1a-1-4** (Codex, at `4c1b565`; REQUEST CHANGES: F6 round 4 rejected) at `873fc69`; **VERIFY-2026-10-24-s1a-1-5** (Codex, at `d9fa276`; **READY: F6 verified_closed** within the S1a local single-writer storage contract) at `6d8b60d`. None is received; all are owner-disposed evidence for the F6 cycle (OD-0025) | [`reviews/README.md`](reviews/README.md) |
+| Open findings | **seven, all open in this index**: -1, -2, -3, -5 verified_closed by VERIFY-2026-10-24-s1a-1-1 (index states change at its receipt); -6 **verified_closed by VERIFY-2026-10-24-s1a-1-5** at `d9fa276` (index state changes at receipt; rounds 1–4 rejected); -4 **remediation_claimed** (round 2, response 7) and -7 **remediation_claimed, round 6** (fix `6b0c0b3`, RESPONSE-REVIEW-2026-10-24-s1a-1-11; earlier rounds rejected by VERIFY-2026-10-24-s1a-1-6…-10); not verified | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
 
 | Item | State |
 |---|---|
 | Phase | S1a (synthetic-fixture foundation) |
-| Current gate | Remediation of findings 1–3, 5–6 from receipt commit `e55cc89`; owner decisions Q-001/Q-002 for findings 4 and 7; then Codex verification at a submission head; S1a acceptance after verification and the §10 fresh-session test (S1-A16; **not run**) |
-| Next permissible actions | **Agents:** remediation only after a prompt naming receipt commit `e55cc89` (stop if absent); T-0002 evidence; T-0003 research (no vendor contact). **Owner:** issue that prompt; decide Q-001/Q-002; run the §10 test. |
+| Current gate | Codex verification of F4/F7 at PR #2's new submission head, with regression checks of F1, F2, F3, F5 and F6; owner approval of observations v0.3 (candidate); receipt or disposition of the preserved review records; the §10 fresh-session test (S1-A16; **not run**); then S1a acceptance |
+| Next permissible actions | **Codex:** verify PR #2's submission head (the commit adding RESPONSE-REVIEW-2026-10-24-s1a-1-11). **Owner:** decide the archive-on-capture-clock question (response 6); approve or amend the v0.3 candidate; decide receipt of the preserved review records; run the §10 test. **Agents:** no further S1a change until verification findings or decisions exist; T-0002 evidence; T-0003 research (no vendor contact). |
 | Next implementation slice | S1a: authorised. S1b: needs S1a accepted, T-0002 `owner_verified` rights, and its own authorisation |
 
 ## Work cards
