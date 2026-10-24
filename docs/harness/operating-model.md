@@ -384,7 +384,7 @@ part of this operating model by OD-0008 at `a82aa0d`. The `reports/` path was ad
 harness-0.6 (OD-0009). Harness-0.7 (approved, OD-0021) adds pull requests as the visible surface, CI
 checks on reviewer PRs, CI-run citations and the completion block.
 
-**Adoption condition (OD-0021; status: pending).** Until the first reviewer PR under harness-0.7
+**Adoption condition (OD-0021; status: met, OD-0022: runs 40047802547 failing deliberately and 40047873419 passing, PR #1).** Until the first reviewer PR under harness-0.7
 validates the `pull_request_target` workflow, including a deliberate failing case, and that
 evidence is recorded, a green reviewer-PR scope check is **not** an established automated
 control; steps 4 and 4a are performed locally regardless.

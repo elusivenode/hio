@@ -36,6 +36,7 @@ are in operating model §1.1; the template is
 | [OD-0019](OD-0019-repository-public.md) | authorise_work | make `elusivenode/hio` **public** (amends OD-0017's "private"), so ChatGPT can review | repository at `f10ad70` | recorded |
 | [OD-0020](OD-0020-s1a-proceed-implementation.md) | authorise_work | proceed with S1a implementation under OD-0017, with five implementation considerations | repository at `9370256` | recorded |
 | [OD-0021](OD-0021-approve-harness-0.7.md) | approve | harness-0.7 rev 3 approved (12 blobs); integration into `main` authorised; adoption condition on the CI gate | `9b58811` | recorded |
+| [OD-0022](OD-0022-receive-s1a-review.md) | authorise_work | receipt of REVIEW-2026-10-24-s1a-1 (PR #1) at `e55cc89`; assignment confirmed and indexed; harness-0.7 adoption condition met | `e55cc89` | recorded |
 
 **Current position:**
 - **Approved:**

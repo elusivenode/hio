@@ -1,6 +1,6 @@
 # Reviewer PR scope gate (harness-0.7, OD-0021; operating model §6.2 step 4).
-# Adoption condition (OD-0021): not an established control until the first reviewer PR validates
-# this workflow, including a deliberate failing case. Local steps 4 and 4a continue regardless.
+# Adoption condition (OD-0021): met (OD-0022; runs 40047802547 deliberate failure, 40047873419 pass).
+# Local steps 4 and 4a continue regardless.
 #
 # pull_request_target runs THIS workflow as it exists on the base branch, so a reviewer PR cannot
 # edit the workflow that checks it. The checking policy (tools/review_gate.py and
