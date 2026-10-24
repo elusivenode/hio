@@ -46,6 +46,7 @@ are in operating model §1.1; the template is
 | [OD-0029](OD-0029-approve-q001-select-q002-a-prime.md) | approve | **OBS-AMEND-Q001 revision 4 approved** (blob `419992f2`) as the governing two-cutoff contract; Q-002 Option A′ selected as direction (not approved); reproducibility and completeness required | `4e57fa1` | recorded |
 | [OD-0030](OD-0030-approve-q002-authorise-f4-f7.md) | approve | **OBS-AMEND-Q002 revision 5 approved** (blob `d0a25b3b`); bounded F4/F7 implementation authorised on PR #2; observations v0.3 to be prepared for separate approval | `b4c398d` | recorded |
 | [OD-0031](OD-0031-f4-f7-verify-6-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-6 (`3cb3dd0`, sha256 `87ff2b82…`, checked); F4/F7 correction on PR #2 | `191ac0f` | recorded |
+| [OD-0032](OD-0032-f7-verify-7-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-7 (`35526b5`, sha256 `5cfc9bc3…`, checked); F7 correction on PR #2 | `f00db8c` | recorded |
 
 **Current position:**
 - **Approved:**
