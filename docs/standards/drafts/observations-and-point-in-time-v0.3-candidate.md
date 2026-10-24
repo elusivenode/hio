@@ -7,14 +7,15 @@ version: 0.3-candidate
 last_reviewed: 2026-10-24
 decision: HIO-ADR-0004
 supersedes_on_approval: docs/standards/observations-and-point-in-time.md v0.2 (OD-0008; blob 341cd608604d)
-incorporates: [OBS-AMEND-Q001 revision 4 (OD-0029; blob 419992f2f0be008dd505a69ed58fb463197ff33c), OBS-AMEND-Q002 revision 5 (OD-0030; blob d0a25b3b981474bbe57304829aaf5379b04c9e91)]
+incorporates: [OBS-AMEND-Q001 revision 4 (OD-0029; blob 419992f2f0be008dd505a69ed58fb463197ff33c), OBS-AMEND-Q002 revision 5 (OD-0030; blob d0a25b3b981474bbe57304829aaf5379b04c9e91), OBS-AMEND-Q002-R1 revision 1 (OD-0035; blob cb7a937dc6e8cc20314e2ae33cd20ce1163fd584)]
 ---
 
 # Observations, point-in-time knowledge and vintages (v0.3 candidate)
 
 > **Candidate, not approved.** Until the owner approves this exact revision, observations v0.2
 > (OD-0008) and the two approved amendments, OBS-AMEND-Q001 revision 4 (OD-0029) and
-> OBS-AMEND-Q002 revision 5 (OD-0030), govern. This document consolidates them **without changing
+> OBS-AMEND-Q002 revision 5 (OD-0030) with its
+> amendment OBS-AMEND-Q002-R1 revision 1 (OD-0035), govern. This document consolidates them **without changing
 > their substance**. The editorial changes are listed in the changelog.
 
 ## 1. Entities
@@ -288,6 +289,69 @@ conflict in force, and its resolution state.
 Recomputing from the pinned receipts and resolution events under the pinned algorithm revision
 must reproduce the result byte for byte. A result whose pins cannot be verified is refused.
 
+#### Quality decisions pin (OBS-AMEND-Q002-R1)
+
+Every result records a fourth pin, **`quality_digest`**, alongside `evidence_digest`,
+`resolution_digest` and `algorithm_revision`. Their meanings are unchanged.
+
+**Events included.** Every append-only quality decision event (§2) for a vintage of the
+result's series with `decided_at ≤ Q`. Nothing else is included:
+- the ingest gate's first verdict at `captured_at` is **not** an event: it is re-derived from the
+  verified receipt by the completeness check (OBS-INV-019);
+- resolution events are pinned by `resolution_digest`.
+
+**Fields per event, and only these:**
+- the decided vintage, identified by its evidence: `series_id`, `valid_time`, `receipt_id`,
+  `captured_at`;
+- the decision: `status`, `decided_at`, `actor`, `evidence`.
+
+**Excluded:**
+- `vintage_seq`, because the vintage is identified by evidence, never by arrival order;
+- `event_seq` and the storage key, which are storage order only;
+- `recorded_at`. It serves the no-backdating check (OBS-INV-012) and does not affect the
+  result, so a faithful copy of the history gives the same pin.
+
+**Ordering and encoding.**
+- Events are sorted by (`series_id`, `valid_time`, `receipt_id`, `captured_at`, `decided_at`).
+  That order is total, because `decided_at` is strictly increasing per vintage (§2.1).
+- The pin is the SHA-256 of the repository's canonical JSON encoding of:
+
+  ```
+  {"schema": "hio-quality-digest/1", "series_id": <series_id>, "events": [<event>, ...]}
+  ```
+
+  In that encoding, keys are sorted, instants are UTC with a `Z` suffix and microseconds, and
+  strings are UTF-8 without insignificant whitespace.
+- The schema tag versions the encoding. A change to the event fields or ordering needs a new tag
+  and a new `algorithm_revision`.
+
+**Empty history.** No event with `decided_at ≤ Q` gives `"events": []`, and the pin is the
+SHA-256 of that encoding: a fixed, non-empty value per series. The pin is never absent or the
+empty string.
+
+**Exclusion after Q.** An event with `decided_at > Q` is not included, so a later decision never
+changes the pin, or the result, at Q (OBS-INV-008). No-backdating (OBS-INV-012) makes this
+stable over time: no event can be recorded later with `decided_at ≤` an earlier recording time.
+
+**Provenance.**
+- Every `View` records `quality_digest`.
+- Every release's input record for a view (in the manifest's existing `inputs` field) records it
+  beside the other pins. The manifest core field set is unchanged (releases standard §2).
+- Recomputing from the pinned receipts, resolution events and quality events, under the pinned
+  `algorithm_revision`, must reproduce the result byte for byte.
+- A recomputation, rebuild or reuse whose four pins do not all equal the recorded pins is
+  **refused** (a pin mismatch). It never silently replaces the recorded result.
+
+**Algorithm revision.** Adding this pin changes the content of every result, so implementing it
+moves `algorithm_revision` from `hio-obs-select/2` to `hio-obs-select/3`. The meaning of
+`algorithm_revision` is unchanged: it still identifies the derivation and selection rules,
+including what a result records.
+
+**Migration.** Release identities change, because each input record gains `quality_digest`.
+`data.csv` bytes do not change (no rule changes). A release built before the pin existed is not
+reinterpreted. Its rebuild under `hio-obs-select/3` is a new release, and the old one keeps its
+own recorded pins.
+
 **Completeness.** A result or resolution at Q is computed only when processing is complete at
 Q. That means the stored vintages with `captured_at ≤ Q` for the series equal the vintages
 derived from E(Q) processed in capture order (receipts quarantined at ingest are accounted for
@@ -366,8 +430,9 @@ never change it.
 | OBS-INV-015 | **Deterministic derived identity.** The chain is a function of the evidence only. A member set always has the same `conflict_id`; `vintage_seq` never enters it |
 | OBS-INV-016 | **No silent concealment.** Every conflict in force at Q on the result's series and keys appears in the result with exactly one effect. The result's list equals `conflicts(series_id, Q)` restricted to its keys |
 | OBS-INV-017 | **Acquisition-history semantics (case 2).** Stores with different capture histories may differ at intermediate Q. Each is stable over time. With the same evidence and no differing resolutions, their final conflict and their results are identical |
-| OBS-INV-018 | **Reproducibility.** Every result records `evidence_digest`, `resolution_digest` and `algorithm_revision`. Recomputing from the pinned receipts and events under that revision gives byte-identical output. A pin that does not verify (a missing or altered receipt or event, or an unknown revision) causes refusal |
+| OBS-INV-018 | the reproducibility pins are `evidence_digest`, `resolution_digest`, `quality_digest` and `algorithm_revision`. Recomputing from them is byte-identical, and a mismatch on any pin refuses |
 | OBS-INV-019 | **Completeness.** A query or resolution at Q is refused, with no partial output, unless the stored vintages with `captured_at ≤ Q` equal the capture-order derivation of E(Q) |
+| OBS-INV-020 | `quality_digest` is a function only of the quality events of the series with `decided_at ≤ Q`, through the fields and ordering above |
 | (append-only resolutions) | resolution events are only appended; none is edited or deleted; their storage key is a function of their content |
 | (refusals) | a resolution is refused if it names anything but the `conflict_id` in force at its `decided_at`, if it names a member outside that conflict, if `decided_at < detected_at`, if it is backdated, if completeness at `decided_at` cannot be established, or if the actor is not the owner. The store is unchanged after a refusal |
 
@@ -386,8 +451,9 @@ never change it.
 | OBS-INV-015 | permutation property over derived chains and ids; the §4(b) fixture |
 | OBS-INV-016 | computed both ways and compared (raise on disagreement); a fixture for each effect |
 | OBS-INV-017 | the stores X and Y fixture from §2 |
-| OBS-INV-018 | a round-trip test (compute, recompute from the pins, compare bytes); negative tests for each broken pin |
+| OBS-INV-018 | a round-trip test (compute, recompute from the pins, compare bytes); negative tests for each broken pin; amended: the round-trip test, extended to quality events |
 | OBS-INV-019 | a fixture that captures a receipt but leaves it unprocessed (the §4(b) midway state): refused. After processing: served |
+| OBS-INV-020 | the property and fixture tests of OBS-AMEND-Q002-R1 §4 (AT-Q2R1-1..7) |
 | (append-only resolutions) | store-level test: append, reopen, and compare the bytes of every existing event |
 | (refusals) | negative tests with snapshot equality |
 
@@ -396,3 +462,4 @@ never change it.
 - 0.1 (2026-10-18): initial.
 - 0.2 (2026-10-18): knowability is vintage-specific; `schedule_only` cannot support `as_known_by_market`; new `reconstructed(T)` mode; §4.1 fixture; OBS-INV-003/006/007 (F-REVIEW-2026-10-18-a01-1).
 - 0.3 (candidate, 2026-10-24; not approved): incorporates OBS-AMEND-Q001 revision 4 (OD-0029) and OBS-AMEND-Q002 revision 5 (OD-0030) without changing their substance. Editorial changes only: (1) the amendments' instructions became text in place (§2 `quality_status` rule, §2.1, §4.1 Case B, §4 predictive-work sentence, §4.2, §4.3, §6.1, §7, §7.1); (2) blockquote markers removed, and cross-references to the amendments replaced by section numbers; (3) in the clocks table, the `detected_at` row reads "derived conflict" instead of "conflict event (Q-002)", because Q-002 revision 5 (Option A′) derives conflicts and stores no conflict events; (4) the invariants' executable forms are listed in §7.1; (5) v0.2's duplicated "## 5. Capture clock" heading is removed. The worked examples, options, acceptance tests and implementation outlines remain in the amendments.
+- 0.3 (candidate, updated 2026-10-25; not approved): also incorporates OBS-AMEND-Q002-R1 revision 1 (OD-0035; the `quality_digest` pin) without changing its substance: its proposed text is in §4.3 ("Quality decisions pin"), OBS-INV-018 is amended and OBS-INV-020 added in §7 and §7.1. Editorial changes only: blockquote markers removed; cross-references to Q-001 sections replaced by this document's section numbers.
