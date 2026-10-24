@@ -7,7 +7,7 @@ owner: owner + solution architect (decide); drafted by claude/implementation-age
 last_reviewed: 2026-10-24
 amends: docs/standards/observations-and-point-in-time.md v0.2 (approved, OD-0008; blob 341cd608604d in this repository, bd9eff0893ea in macsmsf history)
 source: F-REVIEW-2026-10-24-s1a-1-7; open-decisions Q-002; OD-0026; OD-0027; OD-0028; OD-0029 (Option A′ selected)
-companion: OBS-AMEND-Q001 revision 4 (approved, OD-0029; blob 419992f2): the clocks and the HIO decision cutoff Q
+companion: "OBS-AMEND-Q001 revision 4 (approved, OD-0029; blob 419992f2) defines the clocks and the HIO decision cutoff Q"
 ---
 
 # Draft: equally evidenced contradictions (Q-002), Option A′
