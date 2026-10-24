@@ -1,0 +1,34 @@
+# Reviewer PR scope check (harness-0.7 proposed, operating model §6.2 step 4).
+# Runs the BASE branch's copy of tools/check_review_branch.sh against the head named in the PR
+# description as `Reviewed-Head: <40-hex sha>`. A pass constrains content only; it does not
+# authenticate the reviewer, and merging remains the owner's receipt (never acceptance).
+name: review-scope
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  scope:
+    if: startsWith(github.head_ref, 'review/')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read the pinned head from the PR description
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          head=$(printf '%s\n' "$BODY" | tr -d '\r' | sed -n 's/^Reviewed-Head: \([0-9a-f]\{40\}\)$/\1/p' | head -n 1)
+          if [ -z "$head" ]; then echo "PR description must contain 'Reviewed-Head: <40-hex sha>'"; exit 1; fi
+          echo "REVIEWED_HEAD=$head" >> "$GITHUB_ENV"
+      - name: Scope check with the base branch's script
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git show "origin/$BASE_REF:tools/check_review_branch.sh" > "$RUNNER_TEMP/check_review_branch.sh"
+          sh "$RUNNER_TEMP/check_review_branch.sh" "$REVIEWED_HEAD" "$PR_HEAD"

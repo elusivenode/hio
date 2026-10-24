@@ -62,13 +62,16 @@ Record `git rev-parse HEAD`.
 - **Claude:** identify your instructed scope, the files you may change, the blocking findings,
   the acceptance tests and the handoff you owe. A proposed ADR is not approved because you
   wrote it.
-- **Codex (independent reviewer):** check *Assigned reviews* in the review index.
+- **Codex (independent reviewer):** find your assignment in one owner-authored source: an
+  *Assigned reviews* row in the review index, an owner comment on the author's PR, or a direct
+  owner instruction (operating model §2.2; harness-0.7 proposed).
   - **If nothing is assigned, the answer is "No review target has been assigned."** Never infer
     a target from a candidate, a branch or the author's notes.
   - If something is assigned, fix your test plan from the assignment and the records **before**
     reading the author's handoff. Treat the handoff as unverified.
   - Work in your own worktree, on a review branch at the assigned head, and write only under
-    `hio/reviews/` (operating model §6.2). Never edit the work under review.
+    `reviews/` (operating model §6.2). Push the branch and open a PR stating `Reviewed-Head`.
+    Never edit the work under review.
 
 **Skills** (Claude Code; other agents read the files directly): `hio-session` and
 `hio-return-accounting`.
@@ -106,4 +109,6 @@ Record `git rev-parse HEAD`.
   not** touch `handoffs/` or `STATUS.md`. The owner or Claude updates STATUS after receipt
   (operating model §6.2).
 
-Every handoff states what was **not** approved. **The latest handoff is not a decision.**
+Every handoff states what was **not** approved, and ends with the completion block (operating
+model §6.2 step 9): branch and SHA, pushed or not, received into `main` or not, the next actor,
+and a prompt with explicit prerequisites. **The latest handoff is not a decision.**
