@@ -8,7 +8,7 @@ version: harness-0.7 (proposed)
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
-  - "harness-0.7 rev 2 (2026-10-24, PROPOSED, no effect until approved; rev 1 decf55c not approved): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
+  - "harness-0.7 rev 3 (2026-10-24, PROPOSED, no effect until approved): step 4a compares the record's assignment source with an owner-supplied expected source. Rev 2 (fcabd7f): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
   - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only. 2026-10-24: §8.1 status sentence updated (status only, OD-0016; migration performed, OD-0017). Paths written hio/<p> mean <p> after migration (MIGRATION-MAP.md)"
   - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
@@ -454,10 +454,11 @@ receipt, never acceptance.
 
 4a. **Assignment verification** (owner, before receipt). Confirm that the record matches the
    authoritative assignment: run `tools/check_review_assignment.py --review-id … --base …
-   --head … --branch … [--scope-terms …]` with the values **from the assignment source**, not
-   from the record or the PR, and read the record's scope statement against the assigned scope.
-   It fails if the record's id, base, head or branch differ, if the branch does not descend from
-   the assigned head, or if the record does not state its assignment source. A branch can pass
+   --head … --branch … --assignment-source "…" [--scope-terms …]` with the values **from the
+   assignment source**, not from the record or the PR, and read the record's scope statement
+   against the assigned scope. It fails if the record's id, base, head or branch differ, if its
+   `assignment` field is missing or differs from the expected source, or if the branch does not
+   descend from the assigned head. A branch can pass
    step 4 while reviewing the wrong head; only 4a catches that.
 5. **Receipt** (owner). Merge the reviewer PR with a merge commit (`--no-ff`) into `main`, never
    squash or rebase, so the reviewer's commits keep their ids. Delete the review branch and

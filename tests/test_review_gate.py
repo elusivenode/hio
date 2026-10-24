@@ -197,6 +197,7 @@ def verify(repo, **over):
         "base": repo.base,
         "head": repo.head,
         "branch": "review/t-1-codex",
+        "assignment_source": "owner direct assignment (test)",
         "scope_terms": ["T-0099"],
     } | over
     cwd = os.getcwd()
@@ -234,3 +235,91 @@ def test_a_scope_clean_branch_reviewing_the_wrong_head_fails_assignment_verifica
 def test_assignment_mismatches_fail(repo, override, fragment):
     add_record(repo)
     assert any(fragment in p for p in verify(repo, **override))
+
+
+# --- the assignment source is compared, not merely present ------------------------------------------
+
+
+def test_matching_assignment_source_passes_including_whitespace_differences(repo):
+    add_record(repo)
+    assert verify(repo, assignment_source="  owner   direct assignment\n(test) ") == []
+
+
+def test_correct_id_base_head_and_branch_but_wrong_assignment_source_fails(repo):
+    """Everything else matches the owner's assignment; only the cited source differs."""
+    add_record(repo)
+    problems = verify(repo, assignment_source="owner comment on PR #12")
+    assert len(problems) == 1 and "assignment is 'owner direct assignment (test)'" in problems[0], problems
+
+
+def test_an_empty_expected_source_fails(repo):
+    add_record(repo)
+    assert any("no expected assignment source" in p for p in verify(repo, assignment_source="   "))
+
+
+def test_a_record_without_an_assignment_field_fails(repo):
+    repo.write(
+        "reviews/records/REVIEW-T-1.md",
+        RECORD.format(base=repo.base, head=repo.head).replace(
+            "assignment: owner direct assignment (test)\n", ""
+        ),
+    )
+    repo.commit("reviewer: record without assignment")
+    assert any("lacks assignment" in p for p in verify(repo))
+
+
+def test_the_cli_requires_an_expected_source(repo, capsys):
+    add_record(repo)
+    cwd = os.getcwd()
+    os.chdir(repo.root)
+    try:
+        with pytest.raises(SystemExit):
+            assignment.main(
+                [
+                    "--review-id",
+                    "REVIEW-T-1",
+                    "--base",
+                    repo.base,
+                    "--head",
+                    repo.head,
+                    "--branch",
+                    "review/t-1-codex",
+                ]
+            )
+        assert (
+            assignment.main(
+                [
+                    "--review-id",
+                    "REVIEW-T-1",
+                    "--base",
+                    repo.base,
+                    "--head",
+                    repo.head,
+                    "--branch",
+                    "review/t-1-codex",
+                    "--assignment-source",
+                    "owner direct assignment (test)",
+                ]
+            )
+            == 0
+        )
+        assert (
+            assignment.main(
+                [
+                    "--review-id",
+                    "REVIEW-T-1",
+                    "--base",
+                    repo.base,
+                    "--head",
+                    repo.head,
+                    "--branch",
+                    "review/t-1-codex",
+                    "--assignment-source",
+                    "index row",
+                ]
+            )
+            == 1
+        )
+    finally:
+        os.chdir(cwd)
+    capsys.readouterr()
