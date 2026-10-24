@@ -30,20 +30,20 @@ frozen at `dc4fd02` and stays unmerged.
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0022; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public), OD-0020 (proceed with S1a implementation) OD-0021 (harness-0.7 approved) and OD-0022 (S1a review received at `e55cc89`; harness-0.7 adoption condition met) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | OD-0001…0023; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public), OD-0020 (proceed with S1a implementation) OD-0021 (harness-0.7 approved) OD-0022 (S1a review received at `e55cc89`; harness-0.7 adoption condition met) and OD-0023 (S1a remediation slice) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model **harness-0.7** at `9b58811` (OD-0021; supersedes harness-0.6, OD-0012). All of these are `macsmsf` commit ids | per-file blobs in the OD records |
 | Authorised, not accepted | **S1a** (OD-0017, OD-0020): implemented, **submitted for review** | [evidence package](docs/evidence/S1A-evidence-package.md) |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1b**; all T-0002 source permissions **unverified and blocked** (OD-0013); the ETF diagnostic workstream; any `macsmsf` pointer change or merge | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Independent reviews | REVIEW-2026-10-18-a01 → VERIFY-2026-10-18-a01-1: 8/8 verified_closed. T0007-PILOT READY. **REVIEW-2026-10-24-s1a-1: REQUEST CHANGES** (Codex, at `98e6a8e`), **received** at `e55cc89` (PR #1, OD-0022) | [`reviews/README.md`](reviews/README.md) |
-| Open findings | **seven**: F-REVIEW-2026-10-24-s1a-1-1…7 (1–3 high; 4 high, awaiting Q-001; 5–6 medium; 7 medium, awaiting Q-002) | [`reviews/README.md`](reviews/README.md) |
+| Open findings | **seven, all open**: F-REVIEW-2026-10-24-s1a-1-1, -2, -3, -5, -6 **remediation_claimed** (branch `remediation/s1a-1`, response RESPONSE-REVIEW-2026-10-24-s1a-1-1; not verified); -4 and -7 **policy questions** Q-001/Q-002 (drafts OBS-AMEND-Q001/Q002) | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
 
 | Item | State |
 |---|---|
 | Phase | S1a (synthetic-fixture foundation) |
-| Current gate | Remediation of findings 1–3, 5–6 from receipt commit `e55cc89`; owner decisions Q-001/Q-002 for findings 4 and 7; then Codex verification at a submission head; S1a acceptance after verification and the §10 fresh-session test (S1-A16; **not run**) |
-| Next permissible actions | **Agents:** remediation only after a prompt naming receipt commit `e55cc89` (stop if absent); T-0002 evidence; T-0003 research (no vendor contact). **Owner:** issue that prompt; decide Q-001/Q-002; run the §10 test. |
+| Current gate | Codex verification of the five remediation claims at the submission head (needs a separate owner assignment); owner decisions Q-001/Q-002 then their implementation; S1a acceptance after verification and the §10 fresh-session test (S1-A16; **not run**) |
+| Next permissible actions | **Owner:** assign the verification at the submission head of the author PR (`remediation/s1a-1`); decide Q-001/Q-002 (drafts in `docs/standards/drafts/`); run the §10 test. **Agents:** no further S1a change until verification findings or decisions exist; T-0002 evidence; T-0003 research (no vendor contact). |
 | Next implementation slice | S1a: authorised. S1b: needs S1a accepted, T-0002 `owner_verified` rights, and its own authorisation |
 
 ## Work cards
