@@ -45,6 +45,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-f4-f7-verify-6-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-6, verbatim | authority for OD-0031 | — |
 | `2026-10-24-owner-f7-verify-7-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-7, verbatim | authority for OD-0032 | — |
 | `2026-10-24-owner-f7-verify-8-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-8, verbatim | authority for OD-0033 | — |
+| `2026-10-24-owner-q002-quality-digest-drafting.md` | the owner's quality_digest direction and drafting instruction, verbatim | authority for OD-0034 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is

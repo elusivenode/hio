@@ -48,6 +48,7 @@ are in operating model §1.1; the template is
 | [OD-0031](OD-0031-f4-f7-verify-6-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-6 (`3cb3dd0`, sha256 `87ff2b82…`, checked); F4/F7 correction on PR #2 | `191ac0f` | recorded |
 | [OD-0032](OD-0032-f7-verify-7-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-7 (`35526b5`, sha256 `5cfc9bc3…`, checked); F7 correction on PR #2 | `f00db8c` | recorded |
 | [OD-0033](OD-0033-f7-verify-8-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-8 (`db1722c`, sha256 `6776d92b…`, checked); F7 quarantine-related completeness correction | `6720a6c` | recorded |
+| [OD-0034](OD-0034-q002-quality-digest-drafting.md) | authorise_work | `quality_digest` pin selected as direction; draft the Q-002 reproducibility amendment; VERIFY-2026-10-24-s1a-1-9 (`63df7ff`, sha256 `e3211b18…`) verified, not disposed | `0e900e8` | recorded |
 
 **Current position:**
 - **Approved:**
