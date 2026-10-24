@@ -2,9 +2,9 @@
 id: HIO-AGENTS
 title: Agent and collaborator onboarding
 status: current
-approved_by: OD-0008   # at a82aa0d, blob 4000ab1895ee
+approved_by: OD-0021   # harness-0.7 rev 3 at 9b58811, blob a2dc93d335105 (earlier: OD-0008 at a82aa0d, blob 4000ab1895ee)
 owner: HIO architecture lead (owner)
-version: harness-0.5
+version: harness-0.7
 last_reviewed: 2026-10-18
 ---
 
@@ -64,7 +64,7 @@ Record `git rev-parse HEAD`.
   wrote it.
 - **Codex (independent reviewer):** find your assignment in one owner-authored source: an
   *Assigned reviews* row in the review index, an owner comment on the author's PR, or a direct
-  owner instruction (operating model §2.2; harness-0.7 proposed).
+  owner instruction (operating model §2.2; harness-0.7).
   - **If nothing is assigned, the answer is "No review target has been assigned."** Never infer
     a target from a candidate, a branch or the author's notes.
   - If something is assigned, fix your test plan from the assignment and the records **before**

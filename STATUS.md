@@ -30,11 +30,11 @@ frozen at `dc4fd02` and stays unmerged.
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0020; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public) and OD-0020 (proceed with S1a implementation) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
-| Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model harness-0.6 at `f2275e2` (OD-0012). All of these are `macsmsf` commit ids | per-file blobs in the OD records |
+| Owner decision records | OD-0001…0021; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public), OD-0020 (proceed with S1a implementation) and OD-0021 (harness-0.7 approved; adoption condition on the CI gate pending) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model **harness-0.7** at `9b58811` (OD-0021; supersedes harness-0.6, OD-0012). All of these are `macsmsf` commit ids | per-file blobs in the OD records |
 | Authorised, not accepted | **S1a** (OD-0017, OD-0020): implemented, **submitted for review** | [evidence package](docs/evidence/S1A-evidence-package.md) |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1b**; all T-0002 source permissions **unverified and blocked** (OD-0013); the ETF diagnostic workstream; any `macsmsf` pointer change or merge | [`docs/decisions/README.md`](docs/decisions/README.md) |
-| Independent reviews | REVIEW-2026-10-18-a01 (REQUEST CHANGES), then VERIFY-2026-10-18-a01-1: **8/8 verified_closed**. T0007-PILOT READY. REVIEW-2026-10-18-t0004 **assigned, not received** | [`reviews/README.md`](reviews/README.md) |
+| Independent reviews | REVIEW-2026-10-18-a01 → VERIFY-2026-10-18-a01-1: 8/8 verified_closed. T0007-PILOT READY. **REVIEW-2026-10-24-s1a-1: REQUEST CHANGES** (Codex, at `98e6a8e`), on local branch `review/s1a-1-codex` @ `b4025dd`, **not yet received**; seven findings open (in the record; indexed on receipt) | [`reviews/README.md`](reviews/README.md) |
 | Open findings | **none** | [`reviews/README.md`](reviews/README.md) |
 
 ## Phase and gate
@@ -42,8 +42,8 @@ frozen at `dc4fd02` and stays unmerged.
 | Item | State |
 |---|---|
 | Phase | S1a (synthetic-fixture foundation) |
-| Current gate | S1a acceptance, after an independent Codex review at a fixed revision (candidate row in the review index; **not assigned**) and the §10 fresh-session test (S1-A16; **not run**) |
-| Next permissible actions | **Owner:** assign the S1a Codex review (the candidate row gives base and head); run the §10 fresh-session test; decide on the evidence package's interpretation 1 (OBS-INV-007 Case B `reconstructed`). **Agents:** S1a remediation only on review findings; T-0002 evidence from published pages; T-0003 research (no vendor contact). **Also owner:** run the Codex T-0004 review (a fresh session with the neutral §10 prompt, if it is also to count as the fresh-session test); decide how the T-0004 review record is received now that the staging branch is frozen; T-0002 evidence; the vendor drafts (**not sent**) |
+| Current gate | Receive REVIEW-2026-10-24-s1a-1 (harness-0.7 §6.2 steps 3–5), then remediation of findings 1–3, 5–6 and owner decisions Q-001/Q-002 (findings 4, 7); S1a acceptance after verification and the §10 fresh-session test (S1-A16; **not run**) |
+| Next permissible actions | **Owner:** receive the S1a review under harness-0.7: the review branch pushed with a PR stating `Reviewed-Head` (the first reviewer PR, which must also validate the CI gate with a deliberate failing case: OD-0021 adoption condition), local scope check (step 4) and assignment check (step 4a, expected source as the owner assigned it), then a `--no-ff` merge; decide Q-001/Q-002; run the §10 test. **Agents:** remediation only after a prompt naming the receipt commit; T-0002 evidence; T-0003 research (no vendor contact). |
 | Next implementation slice | S1a: authorised. S1b: needs S1a accepted, T-0002 `owner_verified` rights, and its own authorisation |
 
 ## Work cards

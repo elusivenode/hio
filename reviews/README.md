@@ -26,7 +26,7 @@ record, the record wins. Rules: [operating model §3, §6.1 and
 Commits carry `HIO-Actor` role trailers as **self-declared metadata, not proof**. Reviewer
 actions are evidenced by the reviewer's own output on a scope-checked review branch (§6.1–6.2).
 
-## Assigned reviews (owner-assigned; harness-0.7 proposed: one of three owner-authored sources, see operating model §6.2 step 1)
+## Assigned reviews (owner-assigned; harness-0.7: one of three owner-authored sources, see operating model §6.2 step 1)
 
 | Review | Repository | Base SHA | Head SHA | Task / scope | Assigned by (OD / source) | Status |
 |---|---|---|---|---|---|---|

@@ -1,7 +1,7 @@
 ---
 id: HIO-HARNESS-0.7-PROPOSAL
 title: "Decision package: harness-0.7 (integrated review flow), proposed, revision 3"
-status: proposed
+status: resolved   # approved by OD-0021 at 9b58811 (revision 3); kept as the record of what was presented
 owner: owner (decides); drafted by claude/documentation-agent
 last_reviewed: 2026-10-24
 source: "collaborator advice pasted by the owner on 2026-10-24 (stage 2: 'draft a small amendment'), plus the gaps Claude reported after REVIEW-2026-10-24-s1a-1"
@@ -9,7 +9,10 @@ source: "collaborator advice pasted by the owner on 2026-10-24 (stage 2: 'draft 
 
 # Decision package: harness-0.7
 
-> **No effect until the owner approves an exact revision.** The approved operating model is
+> **Resolved:** revision 3 was approved by [OD-0021](owner/OD-0021-approve-harness-0.7.md) at
+> `9b58811`, with an adoption condition on the CI gate. The text below is what was presented.
+>
+> (Original notice.) **No effect until the owner approves an exact revision.** The approved operating model is
 > harness-0.6 (OD-0012, `f2275e2`, blob `e3114bd188ad`). This proposal lives on branch
 > `proposal/harness-0.7` and is not merged.
 

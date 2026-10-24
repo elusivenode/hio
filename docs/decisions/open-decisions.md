@@ -1,7 +1,7 @@
 ---
 id: HIO-OPEN-DECISIONS
 title: Open decisions queue (navigation only; grants no authority)
-status: proposed   # part of harness-0.7 (proposed); becomes current only if the owner approves it
+status: current   # harness-0.7 §6.3 (OD-0021)
 owner: owner (decides); any agent may add an entry
 last_reviewed: 2026-10-24
 ---
@@ -25,4 +25,4 @@ last_reviewed: 2026-10-24
 | Q-006 | Do `superseded` and `deprecated` releases fail closed for consumers? | review item 9 | owner | consumer integration | — |
 | Q-007 | Ratify `pyyaml` (runtime) and `hatchling` (build backend)? | review item 10 | owner | S1a acceptance | — |
 | Q-008 | Accept the S1a network control level (no CI egress firewall)? | review item 8 | owner | S1a acceptance | — |
-| Q-009 | Adopt harness-0.7 at an exact revision? | [`harness-0.7-proposal.md`](harness-0.7-proposal.md) | owner | the next review round's mechanics | — |
+| Q-009 | Adopt harness-0.7 at an exact revision? | [`harness-0.7-proposal.md`](harness-0.7-proposal.md) | owner | the next review round's mechanics | [OD-0021](owner/OD-0021-approve-harness-0.7.md) (rev 3 at `9b58811`) |

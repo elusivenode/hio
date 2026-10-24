@@ -1,4 +1,4 @@
-"""Negative tests for the reviewer-PR gate and assignment verification (harness-0.7 proposed).
+"""Negative tests for the reviewer-PR gate and assignment verification (harness-0.7, OD-0021).
 
 Each test builds a throwaway git repository: a base commit holding the checking policy, an
 author's reviewed head, and a reviewer branch. Adversarial branches must fail; a mismatched

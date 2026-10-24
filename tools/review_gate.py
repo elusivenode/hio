@@ -1,4 +1,4 @@
-"""Reviewer-PR gate (harness-0.7 proposed; operating model §6.2 step 4).
+"""Reviewer-PR gate (harness-0.7, OD-0021; operating model §6.2 step 4).
 
 Checks the CONTENT SCOPE of a reviewer PR, using policy taken only from the trusted event base
 commit:

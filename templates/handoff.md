@@ -43,7 +43,7 @@ An explicit list: nothing an agent does approves, authorises, accepts, waives or
 The single next action, the record that authorises it (OD id), and its preconditions. If
 nothing is authorised, say so, and name the decision that is needed.
 
-## Completion block (harness-0.7 proposed, operating model §6.2 step 9)
+## Completion block (harness-0.7, operating model §6.2 step 9)
 | Field | Value |
 |---|---|
 | Branch and full SHA | |

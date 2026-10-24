@@ -1,4 +1,4 @@
-"""Assignment verification before receipt (harness-0.7 proposed; operating model §6.2 step 4a).
+"""Assignment verification before receipt (harness-0.7, OD-0021; operating model §6.2 step 4a).
 
 The owner supplies the values from the AUTHORITATIVE assignment (an Assigned reviews row, an
 owner PR comment, or the owner's direct instruction). This compares them with the review or

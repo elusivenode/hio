@@ -1,14 +1,14 @@
 ---
 id: HIO-HARNESS
 title: Agentic operating model and harness specification
-status: proposed      # harness-0.7 on branch proposal/harness-0.7; NOT approved. The approved operating model remains harness-0.6 (OD-0012, f2275e2, blob e3114bd188ad)
-approved_by: OD-0012   # applies to harness-0.6 only (earlier: OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
+status: approved
+approved_by: OD-0021   # harness-0.7 rev 3 at 9b58811, blob 90e2565fe814 (earlier: OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
 owner: HIO architecture lead (owner)
-version: harness-0.7 (proposed)
+version: harness-0.7
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
-  - "harness-0.7 rev 3 (2026-10-24, PROPOSED, no effect until approved): step 4a compares the record's assignment source with an owner-supplied expected source. Rev 2 (fcabd7f): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
+  - "harness-0.7 rev 3 (2026-10-24): APPROVED by OD-0021 at 9b58811 (blob 90e2565fe814); integrated by merge 910c5d5; later edits record status only. Adoption condition: the CI reviewer-PR gate is not an established control until the first reviewer PR validates it. Content: step 4a compares the record's assignment source with an owner-supplied expected source. Rev 2 (fcabd7f): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
   - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only. 2026-10-24: §8.1 status sentence updated (status only, OD-0016; migration performed, OD-0017). Paths written hio/<p> mean <p> after migration (MIGRATION-MAP.md)"
   - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
@@ -381,8 +381,13 @@ carry `exploratory` status and never reach a consumer.
 
 **Status:** adopted by owner instruction (OD-0003); accepted at `b48f83c` (OD-0004); approved as
 part of this operating model by OD-0008 at `a82aa0d`. The `reports/` path was added by
-harness-0.6 (OD-0009). Harness-0.7 (proposed) adds pull requests as the visible surface, CI
+harness-0.6 (OD-0009). Harness-0.7 (approved, OD-0021) adds pull requests as the visible surface, CI
 checks on reviewer PRs, CI-run citations and the completion block.
+
+**Adoption condition (OD-0021; status: pending).** Until the first reviewer PR under harness-0.7
+validates the `pull_request_target` workflow, including a deliberate failing case, and that
+evidence is recorded, a green reviewer-PR scope check is **not** an established automated
+control; steps 4 and 4a are performed locally regardless.
 
 **Pull requests are the visible surface, not the authority.** Records stay authoritative: the
 review record, the remediation response, the verification record and the OD records. A PR makes
@@ -512,11 +517,11 @@ branch, before this protocol existed. It also changed `hio/STATUS.md` and added
 `hio/handoffs/2026-10-18-a01-independent-review.md`. The scope check correctly fails on it. It
 is accepted as pre-protocol history, not as a precedent.
 
-**Hosted evolution** (harness-0.7 builds the first two): PRs at exact heads, and the scope check
+**Hosted evolution** (harness-0.7 built the first two; the CI gate is subject to the adoption condition): PRs at exact heads, and the scope check
 in CI. Still not built: authenticated reviewer accounts, branch protection with required checks,
 and signed owner acceptance and waiver records.
 
-### 6.3 Open-decisions queue (proposed in harness-0.7)
+### 6.3 Open-decisions queue (harness-0.7)
 
 [`docs/decisions/open-decisions.md`](../decisions/open-decisions.md) lists every question that
 needs an owner or solution-architect decision, whether it comes from a review finding, an

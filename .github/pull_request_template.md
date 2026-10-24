@@ -1,4 +1,4 @@
-<!-- harness-0.7 (proposed). Records stay authoritative; this PR is the visible surface. -->
+<!-- harness-0.7 (OD-0021). Records stay authoritative; this PR is the visible surface. -->
 
 **Kind:** author submission / reviewer evidence / harness or documentation
 
