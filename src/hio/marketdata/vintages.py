@@ -19,12 +19,18 @@ from decimal import Decimal
 from hio.contracts.canonical import canonical_json
 from hio.contracts.observation import Receipt, Vintage
 from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
-from hio.marketdata.capture import receipt_bytes
+from hio.marketdata.capture import capture_record_key, load_receipt, receipt_bytes
 from hio.marketdata.knowability import determine
 from hio.marketdata.parse import MalformedReceipt, parse_receipt
 from hio.marketdata.queries import View, select
 from hio.marketdata.series import CaptureMode, SeriesDef
-from hio.storage.objectstore import LocalObjectStore
+from hio.storage.objectstore import IntegrityError, LocalObjectStore, StagedWrites
+
+
+class ReceiptIntegrityError(Exception):
+    """A selected vintage's receipt is missing, or its bytes do not match their hash (OBS-INV-004).
+    The view fails closed: nothing built on it can be produced (F-REVIEW-2026-10-24-s1a-1-3)."""
+
 
 # Only the gate's own rules or the owner may release a quarantined vintage (§6). An agent may
 # propose; it may not decide.
@@ -91,9 +97,15 @@ class VintageStore:
             result.receipt_quarantined = str(exc)
             return result
 
+        # One catalogue transaction per receipt: every vintage is decided first, then all are
+        # committed together, so a refused row leaves nothing behind (F-REVIEW-2026-10-24-s1a-1-6).
+        staged = StagedWrites(self.store)
+        pending: dict[tuple[str, date], list[Vintage]] = {}
         for row in sorted(rows, key=_row_order):
             series = self.series[row.series_id]
-            existing = self._vintages.get((row.series_id, row.valid_time), [])
+            existing = self._vintages.get((row.series_id, row.valid_time), []) + pending.get(
+                (row.series_id, row.valid_time), []
+            )
             k = determine(
                 row,
                 series,
@@ -106,7 +118,7 @@ class VintageStore:
                 continue
             if existing and existing[-1].value != row.value:
                 result.revisions.append((row.series_id, row.valid_time, existing[-1].value, row.value))
-            reasons = self._jump_reasons(series, row.valid_time, row.value)
+            reasons = self._jump_reasons(series, row.valid_time, row.value, pending)
             v = Vintage(
                 series_id=row.series_id,
                 valid_time=row.valid_time,
@@ -120,22 +132,32 @@ class VintageStore:
                 quality_status=QualityStatus.QUARANTINED if reasons else QualityStatus.VALID,
                 quality_reasons=tuple(reasons),
             )
-            self.store.put(_vintage_key(v), canonical_json(v.as_record()))
-            self._vintages.setdefault((v.series_id, v.valid_time), []).append(v)
+            staged.add(_vintage_key(v), canonical_json(v.as_record()))
+            pending.setdefault((v.series_id, v.valid_time), []).append(v)
             result.new_vintages.append(v)
             if reasons:
                 result.quarantined.append(v)
+        if result.new_vintages:
+            staged.commit()
+        for key, vs in pending.items():
+            self._vintages.setdefault(key, []).extend(vs)
         return result
 
-    def _jump_reasons(self, series: SeriesDef, valid_time: date, value: Decimal) -> list[str]:
-        """Jump detection against the latest valid value of the nearest earlier key (§6)."""
+    def _jump_reasons(
+        self,
+        series: SeriesDef,
+        valid_time: date,
+        value: Decimal,
+        pending: dict[tuple[str, date], list[Vintage]],
+    ) -> list[str]:
+        """Jump detection against the latest valid value of the nearest earlier key (§6),
+        counting vintages already decided in the same receipt's transaction."""
         if series.jump_threshold is None:
             return []
-        earlier = [vt for (sid, vt) in self._vintages if sid == series.series_id and vt < valid_time]
+        known = {k: self._vintages.get(k, []) + pending.get(k, []) for k in {*self._vintages, *pending}}
+        earlier = [vt for (sid, vt) in known if sid == series.series_id and vt < valid_time]
         for vt in sorted(earlier, reverse=True):
-            valid = [
-                v for v in self._vintages[(series.series_id, vt)] if self._effective(v) is QualityStatus.VALID
-            ]
+            valid = [v for v in known[(series.series_id, vt)] if self._effective(v) is QualityStatus.VALID]
             if valid:
                 change = abs(value - valid[-1].value)
                 if change > series.jump_threshold:
@@ -186,7 +208,46 @@ class VintageStore:
     # --- queries ---------------------------------------------------------------------------------
 
     def view(self, series_id: str, mode: KnowledgeMode, cutoff: datetime | None = None) -> View:
-        return select(self.all_vintages(), self._quality, series_id, mode, cutoff)
+        """Select per the mode, then verify every selected vintage's receipt before it can be
+        used: the capture record exists and names this receipt and source, and the raw bytes
+        exist and match their hash. Any failure raises ReceiptIntegrityError (OBS-INV-004)."""
+        selected = select(self.all_vintages(), self._quality, series_id, mode, cutoff)
+        for v in selected.values.values():
+            self._verify_receipt(v)
+        return selected
+
+    def sources_of(self, view: View) -> frozenset[str]:
+        """The sources behind a view's selected vintages, read from their verified capture
+        records (F-REVIEW-2026-10-24-s1a-1-1): the input to rights checks before a build."""
+        out = set()
+        for v in view.values.values():
+            self._verify_receipt(v)
+            out.add(
+                load_receipt(
+                    self.store, self.series[v.series_id].source_id, v.captured_at, v.receipt_id
+                ).source_id
+            )
+        return frozenset(out)
+
+    def _verify_receipt(self, v: Vintage) -> None:
+        source_id = self.series[v.series_id].source_id
+        try:
+            if not self.store.exists(capture_record_key(source_id, v.captured_at, v.receipt_id)):
+                raise ReceiptIntegrityError(
+                    f"no capture record for {v.series_id} {v.valid_time} receipt {v.receipt_id}"
+                )
+            receipt = load_receipt(self.store, source_id, v.captured_at, v.receipt_id)
+            if receipt.receipt_id != v.receipt_id or receipt.source_id != source_id:
+                raise ReceiptIntegrityError(
+                    f"capture record does not match vintage {v.series_id} {v.valid_time}"
+                )
+            receipt_bytes(self.store, receipt)  # verifies existence and the content hash
+        except ReceiptIntegrityError:
+            raise
+        except (OSError, IntegrityError, ValueError) as exc:
+            raise ReceiptIntegrityError(
+                f"receipt {v.receipt_id} for {v.series_id} {v.valid_time} is missing or corrupt: {exc}"
+            ) from exc
 
     def as_captured_by_hio(self, series_id: str, cutoff: datetime) -> View:
         return self.view(series_id, KnowledgeMode.AS_CAPTURED_BY_HIO, cutoff)

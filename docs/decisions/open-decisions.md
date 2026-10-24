@@ -16,8 +16,8 @@ last_reviewed: 2026-10-24
 
 | ID | Question | Source (holds the options) | Who decides | Blocks | Decided by |
 |---|---|---|---|---|---|
-| Q-001 | Does a later quality adjudication change an earlier point-in-time view? | F-REVIEW-2026-10-24-s1a-1-4 | owner + solution architect | S1a acceptance | — |
-| Q-002 | How are contradictory same-time, same-strength values resolved? | F-REVIEW-2026-10-24-s1a-1-7 | owner + solution architect | S1a acceptance | — |
+| Q-001 | Does a later quality adjudication change an earlier point-in-time view? | F-REVIEW-2026-10-24-s1a-1-4; draft [OBS-AMEND-Q001](../standards/drafts/OBS-AMEND-Q001-quality-event-time.md) | owner + solution architect | S1a acceptance | — |
+| Q-002 | How are contradictory same-time, same-strength values resolved? | F-REVIEW-2026-10-24-s1a-1-7; draft [OBS-AMEND-Q002](../standards/drafts/OBS-AMEND-Q002-same-time-conflicts.md) | owner + solution architect | S1a acceptance | — |
 | Q-003 | Should `reconstructed(T)` prefer vintage evidence over a schedule-only placement? | S1a evidence package, interpretation 1; review item 1 | owner | research use of `reconstructed` | — |
 | Q-004 | Should a late first capture remain market evidence (e.g. a `captured_late` basis)? | interpretation 3; review item 3 | owner | S1b design | — |
 | Q-005a | Is **exploratory internal use** within HIO a consumer use that needs any owner event? | interpretation 7; review item 7 | owner | S1a consumer API semantics | — |

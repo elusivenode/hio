@@ -59,6 +59,7 @@ Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
 | Verification | Original review | Base..submission head | Fix commit | Reviewer outcome | Record |
 |---|---|---|---|---|---|
 | VERIFY-2026-10-18-a01-1 | REVIEW-2026-10-18-a01, findings 1–8 | `35c9821..0c74686` | `0e3de4b` | **Eight verified_closed** | [record](records/VERIFY-2026-10-18-a01-1.md) |
+| VERIFY-2026-10-24-s1a-1-1 | REVIEW-2026-10-24-s1a-1, findings 1, 2, 3, 5, 6 | `98e6a8e..18c80f2` | `39d37da`, `6bbf562`, `3185443`, `7076452`, `1c117e6` | **Four verified_closed; F6 remediation_rejected; REQUEST CHANGES** | [record](records/VERIFY-2026-10-24-s1a-1-1.md) |
 
 The owner assigned the A01 review directly in the Codex session. The *Assigned reviews* table
 above was not updated beforehand; it is not evidence that the candidate row authorised the
@@ -88,13 +89,13 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 | F-REVIEW-2026-10-18-a01-6 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
 | F-REVIEW-2026-10-18-a01-7 | REVIEW-2026-10-18-a01 | medium | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
 | F-REVIEW-2026-10-18-a01-8 | REVIEW-2026-10-18-a01 | medium | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
-| F-REVIEW-2026-10-24-s1a-1-1 | REVIEW-2026-10-24-s1a-1 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-24-s1a-1-2 | REVIEW-2026-10-24-s1a-1 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-24-s1a-1-3 | REVIEW-2026-10-24-s1a-1 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-24-s1a-1-4 | REVIEW-2026-10-24-s1a-1 | high | **open** | — | — | — |
-| F-REVIEW-2026-10-24-s1a-1-5 | REVIEW-2026-10-24-s1a-1 | medium | **open** | — | — | — |
-| F-REVIEW-2026-10-24-s1a-1-6 | REVIEW-2026-10-24-s1a-1 | medium | **open** | — | — | — |
-| F-REVIEW-2026-10-24-s1a-1-7 | REVIEW-2026-10-24-s1a-1 | medium | **open** | — | — | — |
+| F-REVIEW-2026-10-24-s1a-1-1 | REVIEW-2026-10-24-s1a-1 | high | **verified_closed** | remediation_claimed: fix `39d37da`; [response](responses/RESPONSE-REVIEW-2026-10-24-s1a-1-1.md) | [VERIFY-2026-10-24-s1a-1-1](records/VERIFY-2026-10-24-s1a-1-1.md) | — |
+| F-REVIEW-2026-10-24-s1a-1-2 | REVIEW-2026-10-24-s1a-1 | high | **verified_closed** | remediation_claimed: fix `6bbf562`; [response](responses/RESPONSE-REVIEW-2026-10-24-s1a-1-1.md) | [VERIFY-2026-10-24-s1a-1-1](records/VERIFY-2026-10-24-s1a-1-1.md) | — |
+| F-REVIEW-2026-10-24-s1a-1-3 | REVIEW-2026-10-24-s1a-1 | high | **verified_closed** | remediation_claimed: fix `3185443`; [response](responses/RESPONSE-REVIEW-2026-10-24-s1a-1-1.md) | [VERIFY-2026-10-24-s1a-1-1](records/VERIFY-2026-10-24-s1a-1-1.md) | — |
+| F-REVIEW-2026-10-24-s1a-1-4 | REVIEW-2026-10-24-s1a-1 | high | **open** | none claimed: policy question Q-001 (draft in [response](responses/RESPONSE-REVIEW-2026-10-24-s1a-1-1.md)) | — | — |
+| F-REVIEW-2026-10-24-s1a-1-5 | REVIEW-2026-10-24-s1a-1 | medium | **verified_closed** | remediation_claimed: fix `7076452`; [response](responses/RESPONSE-REVIEW-2026-10-24-s1a-1-1.md) | [VERIFY-2026-10-24-s1a-1-1](records/VERIFY-2026-10-24-s1a-1-1.md) | — |
+| F-REVIEW-2026-10-24-s1a-1-6 | REVIEW-2026-10-24-s1a-1 | medium | **open** | remediation_claimed: fix `1c117e6`; [response](responses/RESPONSE-REVIEW-2026-10-24-s1a-1-1.md) | **remediation_rejected**; [VERIFY-2026-10-24-s1a-1-1](records/VERIFY-2026-10-24-s1a-1-1.md) | — |
+| F-REVIEW-2026-10-24-s1a-1-7 | REVIEW-2026-10-24-s1a-1 | medium | **open** | none claimed: policy question Q-002 (draft in [response](responses/RESPONSE-REVIEW-2026-10-24-s1a-1-1.md)) | — | — |
 
 States: `open`, `remediation_claimed` (still open), `verified_closed`, `waived`. A waiver
 preserves the finding. It is not a verification.

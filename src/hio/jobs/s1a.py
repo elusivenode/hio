@@ -39,11 +39,11 @@ from hio.marketdata.capture import SyntheticWorldSource, capture
 from hio.marketdata.queries import View
 from hio.marketdata.series import CaptureMode, ReleaseSchedule, SeriesDef
 from hio.marketdata.vintages import VintageStore
-from hio.publish.release import Release, make_release, render_csv, write_release
+from hio.publish.release import Release, make_release, render_csv, verify_release, write_release
 from hio.publish.status import append_status
 from hio.reference.calendar import BusinessCalendar, load_calendars
 from hio.rights.model import RightsRecord, propagate
-from hio.storage.objectstore import LocalObjectStore
+from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
 REPO = Path(__file__).resolve().parents[3]
 CASH_RATE, AUDUSD, SOFR = "synthetic.rba.cash_rate", "synthetic.rba.audusd_4pm", "synthetic.nyfed.sofr"
@@ -178,8 +178,10 @@ def build_releases(
 ) -> dict[str, Release]:
     if not mode.point_in_time and mode is not KnowledgeMode.RECONSTRUCTED:
         raise ValueError("releases are built from a point-in-time view or a labelled reconstruction")
-    gate.authorise(Operation.BUILD, [RBA, NYFED])
     v_cash, v_fx, v_sofr = (vs.view(s, mode, cutoff) for s in (CASH_RATE, AUDUSD, SOFR))
+    # Rights are checked against the sources of the vintages actually selected, from their
+    # verified capture records, before any computation (F-REVIEW-2026-10-24-s1a-1-1).
+    gate.authorise(Operation.BUILD, vs.sources_of(v_cash) | vs.sources_of(v_fx) | vs.sources_of(v_sofr))
     aud_fix, usd_fix, fx_q = fixings(v_cash), fixings(v_sofr), quotes(v_fx)
     common = {
         "version": "s1a",
@@ -325,8 +327,7 @@ def publish_releases(
     construction, so the producing job may (releases standard §5)."""
     out = {}
     for dataset_id, release in sorted(releases.items()):
-        sources = [RBA, NYFED] if dataset_id.startswith("fx.") else [RBA if "aud" in dataset_id else NYFED]
-        written = write_release(vs.store, gate, release, sources)
+        written = write_release(vs.store, gate, release)  # lineage-derived sources
         if written:
             append_status(
                 vs.store,
@@ -344,6 +345,45 @@ def publish_releases(
     return out
 
 
+def rebuild_report(
+    world: World,
+    store: LocalObjectStore,
+    gate: RightsGate,
+    rights: dict[str, RightsRecord],
+    mode: KnowledgeMode,
+    cutoff: datetime,
+    code_ref: dict[str, str],
+) -> dict[str, str]:
+    """S1-A11: rebuild every release from the stored receipts' vintages (reloaded from the
+    store), then compare with the pinned stored release. A dataset is "reproduced" only if the
+    stored release verifies against its content hash and its manifest and files equal the
+    rebuilt ones byte for byte (F-REVIEW-2026-10-24-s1a-1-5). Needs the rebuild rights and writes
+    nothing."""
+    vs = VintageStore(store, world.series)
+    gate.authorise(
+        Operation.REBUILD,
+        frozenset().union(*(vs.sources_of(vs.view(s, mode, cutoff)) for s in (CASH_RATE, AUDUSD, SOFR))),
+    )
+    rebuilt = build_releases(world, vs, gate, rights, mode, cutoff, code_ref)
+    report = {}
+    for dataset_id, release in sorted(rebuilt.items()):
+        if not store.exists(f"{release.prefix}/manifest.json"):
+            report[dataset_id] = "absent: no stored release with the rebuilt content hash"
+            continue
+        try:
+            stored_core = verify_release(store, dataset_id, release.content_sha256)
+        except (IntegrityError, ValueError, OSError) as exc:
+            report[dataset_id] = f"corrupt: {exc}"
+            continue
+        if stored_core != release.core:
+            report[dataset_id] = "differs: the stored manifest differs from the rebuilt one"
+        elif any(store.get(f"{release.prefix}/{name}") != data for name, data in release.files.items()):
+            report[dataset_id] = "differs: stored file bytes differ from the rebuilt ones"
+        else:
+            report[dataset_id] = "reproduced"
+    return report
+
+
 def rebuild_check(
     world: World,
     store: LocalObjectStore,
@@ -353,13 +393,9 @@ def rebuild_check(
     cutoff: datetime,
     code_ref: dict[str, str],
 ) -> dict[str, bool]:
-    """S1-A11: rebuild every release from the stored receipts' vintages (reloaded from the
-    store) and report, per dataset, whether the rebuilt content hash is already stored. Needs
-    the rebuild rights (rights standard §3) and writes nothing."""
-    gate.authorise(Operation.REBUILD, [RBA, NYFED])
-    vs = VintageStore(store, world.series)
-    rebuilt = build_releases(world, vs, gate, rights, mode, cutoff, code_ref)
-    return {d: store.exists(f"{r.prefix}/manifest.json") for d, r in sorted(rebuilt.items())}
+    """True per dataset only when rebuild_report says "reproduced"."""
+    report = rebuild_report(world, store, gate, rights, mode, cutoff, code_ref)
+    return {d: status == "reproduced" for d, status in report.items()}
 
 
 def write_run_record(

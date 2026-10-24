@@ -64,12 +64,13 @@ def make_release(core_fields: dict[str, Any], files: Mapping[str, bytes]) -> Rel
     return Release(core, dict(files))
 
 
-def write_release(
-    store: LocalObjectStore, gate: RightsGate, release: Release, source_ids: Iterable[str]
-) -> bool:
-    """Store a release after the store_derived check. Returns False if this exact release
-    (same content hash) is already stored: a deterministic rebuild is a no-op."""
-    gate.authorise(Operation.STORE_DERIVED, source_ids)
+def write_release(store: LocalObjectStore, gate: RightsGate, release: Release) -> bool:
+    """Store a release after the store_derived check against its derived lineage (every source
+    behind its receipts and upstream releases; F-REVIEW-2026-10-24-s1a-1-1). Returns False if
+    this exact release (same content hash) is already stored: a deterministic rebuild is a no-op."""
+    from hio.publish.lineage import release_sources  # local: lineage imports this module
+
+    gate.authorise(Operation.STORE_DERIVED, release_sources(store, release.core))
     manifest_key = f"{release.prefix}/manifest.json"
     if store.exists(manifest_key):
         verify_release(store, release.core["dataset_id"], release.content_sha256)
