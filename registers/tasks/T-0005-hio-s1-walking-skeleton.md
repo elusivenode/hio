@@ -34,7 +34,7 @@ including its stack, CI and migration settings. S1b is not authorised.
 Listed in the implementation plan, under S1 exclusions.
 
 ## Review status
-S1a reviewed (REVIEW-2026-10-24-s1a-1, REQUEST CHANGES, received `e55cc89`); remediation of findings 1, 2, 3, 5, 6 submitted on `remediation/s1a-1` (OD-0023); VERIFY-2026-10-24-s1a-1-1 (`0255cb2`, not received) verified 1, 2, 3, 5 closed and rejected 6; F6 round 2 submitted (OD-0024) and rejected by VERIFY-2026-10-24-s1a-1-2 (`9a94c3a`, not received); F6 round 3 submitted on the same branch (OD-0025); findings 4 and 7 awaiting Q-001/Q-002. Originally implemented and **submitted for review** (2026-10-24): evidence in
+S1a reviewed (REVIEW-2026-10-24-s1a-1, REQUEST CHANGES, received `e55cc89`); remediation of findings 1, 2, 3, 5, 6 submitted on `remediation/s1a-1` (OD-0023); VERIFY-2026-10-24-s1a-1-1 (`0255cb2`, not received) verified 1, 2, 3, 5 closed and rejected 6; F6 round 2 submitted (OD-0024) and rejected by VERIFY-2026-10-24-s1a-1-2 (`9a94c3a`, not received); F6 round 3 submitted (OD-0025) and rejected by VERIFY-2026-10-24-s1a-1-3 (`ff0dd81`, not received); F6 round 4 submitted on the same branch (OD-0025); findings 4 and 7 awaiting Q-001/Q-002. Originally implemented and **submitted for review** (2026-10-24): evidence in
 [`docs/evidence/S1A-evidence-package.md`](../../docs/evidence/S1A-evidence-package.md), at the
 commit that adds it. **Not accepted.** The Codex review needs the owner's assignment; the §10
 fresh-session test has not been run. S1b: not authorised; do not start.
