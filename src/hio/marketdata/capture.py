@@ -11,15 +11,19 @@ file is read or anything is written (rights standard §3).
 
 from __future__ import annotations
 
+import csv
+import io
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from hio.contracts.canonical import canonical_json, sha256_hex
 from hio.contracts.observation import Receipt, parse_instant
 from hio.contracts.rights import Operation, RightsGate
 from hio.contracts.temporal import require_utc_instant
+from hio.marketdata.series import SeriesDef
 from hio.storage.objectstore import LocalObjectStore
 
 
@@ -35,8 +39,42 @@ class SyntheticSource:
         if not self.source_id.startswith("synthetic."):
             raise ValueError(f"S1a sources must be synthetic: {self.source_id}")
 
-    def fetch(self) -> bytes:
+    def fetch(self, as_of: datetime) -> bytes:
+        del as_of  # a static fixture: the same bytes whenever it is fetched
         return Path(self.fixture_path).read_bytes()
+
+
+@dataclass(frozen=True)
+class SyntheticWorldSource:
+    """A synthetic source backed by a 'world' file of true values. Fetched at an instant, it
+    returns what a real source's current file would hold then: the rows whose documented release
+    has happened. No network; the world file is a local synthetic fixture."""
+
+    source_id: str
+    world_path: Path
+    series: Mapping[str, SeriesDef]
+
+    def __post_init__(self) -> None:
+        if not self.source_id.startswith("synthetic."):
+            raise ValueError(f"S1a sources must be synthetic: {self.source_id}")
+
+    def fetch(self, as_of: datetime) -> bytes:
+        lines = Path(self.world_path).read_text().splitlines()
+        reader = csv.DictReader(io.StringIO("\n".join(lines[1:])))
+        released = []
+        for row in reader:
+            series = self.series[row["series_id"]]
+            schedule = series.schedule
+            if schedule is None:
+                raise ValueError(f"world series {series.series_id} needs a release schedule")
+            if schedule.release_instant(date.fromisoformat(row["valid_time"])) <= as_of:
+                released.append(f"{row['series_id']},{row['valid_time']},{row['value']}")
+        body = [
+            f"# SYNTHETIC receipt from {self.source_id} (released rows only)",
+            "series_id,valid_time,value",
+            *released,
+        ]
+        return ("\n".join(body) + "\n").encode("utf-8")
 
 
 def receipt_key(source_id: str, captured_at: datetime, receipt_id: str) -> str:
@@ -50,14 +88,17 @@ def capture_record_key(source_id: str, captured_at: datetime, receipt_id: str) -
 
 
 def capture(
-    source: SyntheticSource, store: LocalObjectStore, gate: RightsGate, captured_at: datetime
+    source: SyntheticSource | SyntheticWorldSource,
+    store: LocalObjectStore,
+    gate: RightsGate,
+    captured_at: datetime,
 ) -> tuple[Receipt, bool]:
     """Fetch and store one receipt. Returns (receipt, is_new). An identical consecutive re-fetch
     returns the previous capture's receipt and writes nothing."""
     require_utc_instant("captured_at", captured_at)
     gate.authorise(Operation.FETCH, [source.source_id])
     gate.authorise(Operation.STORE_RAW, [source.source_id])
-    data = source.fetch()
+    data = source.fetch(captured_at)
     rid = sha256_hex(data)
     previous = latest_capture(store, source.source_id)
     if previous is not None:
@@ -65,9 +106,8 @@ def capture(
             raise ValueError("captures of a source must be recorded in time order")
         if previous.receipt_id == rid:
             return previous, False
-    receipt = Receipt(
-        rid, source.source_id, captured_at, {"fixture": Path(source.fixture_path).name}, len(data)
-    )
+    origin = source.fixture_path if isinstance(source, SyntheticSource) else source.world_path
+    receipt = Receipt(rid, source.source_id, captured_at, {"fixture": Path(origin).name}, len(data))
     store.put_if_absent(receipt_key(source.source_id, captured_at, rid), data)
     store.put(capture_record_key(source.source_id, captured_at, rid), canonical_json(receipt.as_record()))
     return receipt, True

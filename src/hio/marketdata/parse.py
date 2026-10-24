@@ -71,6 +71,4 @@ def parse_receipt(data: bytes) -> list[RawRow]:
             raise MalformedReceipt(f"line {n}: duplicate key {key}")
         seen.add(key)
         rows.append(RawRow(rec["series_id"], valid_time, value, **opt))
-    if not rows:
-        raise MalformedReceipt("no rows")
-    return rows
+    return rows  # a well-formed receipt with no rows is valid: nothing has been released yet

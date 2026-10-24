@@ -1,0 +1,40 @@
+# SYNTHETIC rights fixtures (OD-0020 item 3). Never genuine records: every id starts with 'synthetic.'.
+# owner_verified here is fixture metadata for testing the gate. It is not, and can never become, an owner verification of any real source.
+allow_all: &allow_all
+  automated_retrieval: allow
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  post_termination_raw: allow
+  post_termination_derived: allow
+  quotation_in_documents: allow
+  agent_context: allow
+  external_processing: allow
+  audit_retention: allow
+  distribution: {hio_internal: allow, smsf_app: deny, smsf_trustee_pack: deny, smsf_auditor: deny, third_party: deny}
+sources:
+  - id: synthetic.rba
+    verification: owner_verified
+    rights: *allow_all
+  - id: synthetic.nyfed
+    verification: owner_verified
+    rights: *allow_all
+  - id: synthetic.daily_source
+    verification: owner_verified
+    rights: *allow_all
+  - id: synthetic.monthly_source
+    verification: owner_verified
+    rights: *allow_all
+  - id: synthetic.conditional
+    verification: owner_verified
+    rights:
+      <<: *allow_all
+      derivation: "conditional(label modified content)"
+    satisfied_conditions:
+      derivation: "fixture evidence: the label is applied by the publish job"
+  - id: synthetic.conditional_unsatisfied
+    verification: owner_verified
+    rights:
+      <<: *allow_all
+      derivation: "conditional(label modified content)"

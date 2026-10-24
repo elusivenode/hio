@@ -103,3 +103,22 @@ def test_consumer_class_only_for_approval():
 
 def test_dates_serialise_as_iso_dates_not_instants():
     assert canonical_json({"d": date(2020, 2, 1)}) == b'{"d":"2020-02-01"}'
+
+
+def test_obs_inv_005_a_vintage_refuses_an_instant_as_valid_time():
+    from hio.contracts.observation import Vintage
+    from hio.contracts.temporal import QualityStatus
+
+    with pytest.raises(TypeError, match="OBS-INV-005"):
+        Vintage(
+            "synthetic.s",
+            AT,
+            1,
+            Decimal(1),
+            "r" * 64,
+            AT,
+            AT,
+            KnowableBasis.SCHEDULE_ONLY,
+            "UTC",
+            QualityStatus.VALID,
+        )
