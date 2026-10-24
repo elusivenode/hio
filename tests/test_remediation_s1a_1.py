@@ -170,3 +170,45 @@ def test_f3_intact_receipts_still_select_and_build(tmp_path):
     s1a.build_releases(
         world, reopened, RightsGate(RIGHTS), RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
     )
+
+
+# --- F-REVIEW-2026-10-24-s1a-1-5: the rebuild check verifies the stored bytes ---------------------
+
+
+def published_store(root):
+    world, store, vs = world_store(root)
+    gate = RightsGate(RIGHTS)
+    releases = s1a.build_releases(world, vs, gate, RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE)
+    s1a.publish_releases(vs, gate, releases, CUTOFF)
+    return world, store, releases
+
+
+def corrupt(store, key, data=b"corrupt"):
+    path = store.root / key
+    path.chmod(0o644)
+    path.write_bytes(data)
+
+
+@pytest.mark.parametrize("target", ["data.csv", "manifest.json"])
+def test_f5_codex_counterexample_corrupt_stored_bytes_fail_the_rebuild_check(tmp_path, target):
+    """Codex: after changing the AUD release data.csv to b'corrupt', rebuild_check returned True
+    while verify_release raised IntegrityError."""
+    world, store, releases = published_store(tmp_path / "s")
+    corrupt(store, f"{releases['cash.aud.overnight'].prefix}/{target}")
+    result = s1a.rebuild_check(
+        world, store, RightsGate(RIGHTS), RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
+    )
+    assert result["cash.aud.overnight"] is False
+    assert all(result[d] is True for d in result if d != "cash.aud.overnight")
+    report = s1a.rebuild_report(
+        world, store, RightsGate(RIGHTS), RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
+    )
+    assert report["cash.aud.overnight"].startswith(("corrupt", "differs"))
+
+
+def test_f5_an_intact_store_still_reproduces(tmp_path):
+    world, store, _ = published_store(tmp_path / "s")
+    result = s1a.rebuild_check(
+        world, store, RightsGate(RIGHTS), RIGHTS, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
+    )
+    assert set(result.values()) == {True}
