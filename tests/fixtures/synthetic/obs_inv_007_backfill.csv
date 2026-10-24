@@ -1,0 +1,3 @@
+# SYNTHETIC observations standard §4.1 fixture, Case A: HIO's backfill holds only the current (revised) value 110 for key 2020-02.
+series_id,valid_time,value
+synthetic.x,2020-02-28,110

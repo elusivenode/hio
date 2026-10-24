@@ -1,0 +1,8 @@
+# SYNTHETIC business calendars for S1a tests: weekends plus the listed holidays. Not real market calendars.
+calendars:
+  synthetic.xsyd:
+    holidays: [2026-01-26]
+  synthetic.xnys:
+    holidays: [2026-01-19]
+  synthetic.monthly:
+    holidays: []
