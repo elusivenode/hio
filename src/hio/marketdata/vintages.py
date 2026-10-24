@@ -22,7 +22,7 @@ from decimal import Decimal
 from hio.contracts.canonical import canonical_json, instant_str, sha256_hex
 from hio.contracts.layout import CAPTURES_PREFIX
 from hio.contracts.observation import Receipt, Vintage, parse_instant
-from hio.contracts.temporal import KnowableBasis, KnowledgeMode, QualityStatus, require_utc_instant
+from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
 from hio.marketdata.capture import capture_record_key, load_receipt, load_receipt_record, receipt_bytes
 from hio.marketdata.knowability import determine
 from hio.marketdata.parse import MalformedReceipt, parse_receipt
@@ -166,47 +166,12 @@ class VintageStore:
         outcome_key = _processed_key(receipt)
         if self.store.exists(outcome_key):
             raise IncompleteProcessing(f"receipt {receipt.receipt_id} is already processed")
+        outcome_rows, derived = self._derive(receipt, rows, mode)
+        result.new_vintages, result.quarantined = derived.new_vintages, derived.quarantined
+        result.redundant, result.revisions = derived.redundant, derived.revisions
         staged = StagedWrites(self.store)
-        pending: dict[tuple[str, date], list[Vintage]] = {}
-        outcome_rows: list[dict] = []
-        for row in sorted(rows, key=_row_order):
-            series = self.series[row.series_id]
-            existing = self._vintages.get((row.series_id, row.valid_time), []) + pending.get(
-                (row.series_id, row.valid_time), []
-            )
-            k = determine(
-                row,
-                series,
-                receipt.captured_at,
-                mode,
-                revision=bool(existing) and existing[-1].value != row.value,
-            )
-            if existing and _redundant(existing, row.value, k.knowable_at, k.basis.strength):
-                result.redundant += 1
-                outcome_rows.append(_outcome_row(row, k.knowable_at, k.basis, "redundant", None))
-                continue
-            if existing and existing[-1].value != row.value:
-                result.revisions.append((row.series_id, row.valid_time, existing[-1].value, row.value))
-            reasons = self._jump_reasons(series, row.valid_time, row.value, pending, receipt.captured_at)
-            v = Vintage(
-                series_id=row.series_id,
-                valid_time=row.valid_time,
-                vintage_seq=len(existing) + 1,
-                value=row.value,
-                receipt_id=receipt.receipt_id,
-                captured_at=receipt.captured_at,
-                knowable_at=k.knowable_at,
-                knowable_basis=k.basis,
-                source_timezone=series.source_timezone,
-                quality_status=QualityStatus.QUARANTINED if reasons else QualityStatus.VALID,
-                quality_reasons=tuple(reasons),
-            )
+        for v in result.new_vintages:
             staged.add(_vintage_key(v), canonical_json(v.as_record()))
-            pending.setdefault((v.series_id, v.valid_time), []).append(v)
-            outcome_rows.append(_outcome_row(row, k.knowable_at, k.basis, "vintage", v.vintage_seq))
-            result.new_vintages.append(v)
-            if reasons:
-                result.quarantined.append(v)
         # The processing outcome is distinct from the capture evidence (the receipt and its
         # capture record) and records the capture mode, which the receipt bytes do not determine.
         staged.add(
@@ -222,15 +187,65 @@ class VintageStore:
             ),
         )
         staged.commit()
-        for key, vs in pending.items():
-            self._vintages.setdefault(key, []).extend(vs)
+        for v in result.new_vintages:
+            self._vintages.setdefault((v.series_id, v.valid_time), []).append(v)
         return result
+
+    def _derive(self, receipt: Receipt, rows, mode: CaptureMode) -> tuple[list[dict], IngestResult]:
+        """The capture-order processing of one receipt: the single rule set used both by ingest
+        (to decide) and by completeness (to verify; VERIFY-2026-10-24-s1a-1-7). It sees only the
+        vintages captured before this receipt, plus those it decides itself, so the outcome is a
+        function of the earlier evidence, the receipt and its capture mode."""
+        base = {k: [v for v in vs if v.captured_at < receipt.captured_at] for k, vs in self._vintages.items()}
+        pending: dict[tuple[str, date], list[Vintage]] = {}
+        outcome_rows: list[dict] = []
+        result = IngestResult()
+        for row in sorted(rows, key=_row_order):
+            series = self.series[row.series_id]
+            key = (row.series_id, row.valid_time)
+            existing = base.get(key, []) + pending.get(key, [])
+            k = determine(
+                row,
+                series,
+                receipt.captured_at,
+                mode,
+                revision=bool(existing) and existing[-1].value != row.value,
+            )
+            if existing and _redundant(existing, row.value, k.knowable_at, k.basis.strength):
+                result.redundant += 1
+                outcome_rows.append(_outcome_row(row, k.knowable_at, k.basis, "redundant", None))
+                continue
+            if existing and existing[-1].value != row.value:
+                result.revisions.append((row.series_id, row.valid_time, existing[-1].value, row.value))
+            reasons = self._jump_reasons(
+                series, row.valid_time, row.value, base, pending, receipt.captured_at
+            )
+            v = Vintage(
+                series_id=row.series_id,
+                valid_time=row.valid_time,
+                vintage_seq=len(existing) + 1,
+                value=row.value,
+                receipt_id=receipt.receipt_id,
+                captured_at=receipt.captured_at,
+                knowable_at=k.knowable_at,
+                knowable_basis=k.basis,
+                source_timezone=series.source_timezone,
+                quality_status=QualityStatus.QUARANTINED if reasons else QualityStatus.VALID,
+                quality_reasons=tuple(reasons),
+            )
+            pending.setdefault(key, []).append(v)
+            outcome_rows.append(_outcome_row(row, k.knowable_at, k.basis, "vintage", v.vintage_seq))
+            result.new_vintages.append(v)
+            if reasons:
+                result.quarantined.append(v)
+        return outcome_rows, result
 
     def _jump_reasons(
         self,
         series: SeriesDef,
         valid_time: date,
         value: Decimal,
+        base: dict[tuple[str, date], list[Vintage]],
         pending: dict[tuple[str, date], list[Vintage]],
         captured_at: datetime,
     ) -> list[str]:
@@ -239,7 +254,7 @@ class VintageStore:
         decided at the receipt's capture (Q = captured_at), so a replay decides identically."""
         if series.jump_threshold is None:
             return []
-        known = {k: self._vintages.get(k, []) + pending.get(k, []) for k in {*self._vintages, *pending}}
+        known = {k: base.get(k, []) + pending.get(k, []) for k in {*base, *pending}}
         earlier = [vt for (sid, vt) in known if sid == series.series_id and vt < valid_time]
         for vt in sorted(earlier, reverse=True):
             valid = [
@@ -471,6 +486,12 @@ class VintageStore:
                 ) from exc
 
     def _verify_outcome(self, receipt: Receipt, rows, outcome: dict, series_ids: set[str]) -> None:
+        """Re-derive the receipt's outcome with the same capture-order rules ingest used
+        (_derive: latest-value and evidence-strength redundancy, reverts, knowability from the
+        recorded capture mode, the jump gate) and require an exact match: the outcome rows, and
+        every derived vintage stored exactly, with no other stored vintage from this capture
+        event (receipt_id, captured_at). Any difference refuses (VERIFY-2026-10-24-s1a-1-7)."""
+
         def bad(why: str) -> IncompleteProcessing:
             return IncompleteProcessing(f"receipt {receipt.receipt_id}: processing outcome {why}")
 
@@ -479,67 +500,25 @@ class VintageStore:
             receipt.captured_at,
         ):
             raise bad("names another receipt")
-        mode = CaptureMode(outcome["capture_mode"])
+        derived_rows, derived = self._derive(receipt, rows, CaptureMode(outcome["capture_mode"]))
+        wanted = [r for r in json.loads(canonical_json(derived_rows)) if r["series_id"] in series_ids]
         recorded = [r for r in outcome["rows"] if r["series_id"] in series_ids]
-        expected = sorted(
-            (r.series_id, r.valid_time.isoformat(), canonical_value(r.value))
-            for r in rows
-            if r.series_id in series_ids
-        )
-        if sorted((r["series_id"], r["valid_time"], r["value"]) for r in recorded) != expected:
-            raise bad("does not match the receipt's rows")
-        by_row = {(r.series_id, r.valid_time.isoformat(), canonical_value(r.value)): r for r in rows}
-        named = {
-            (r["series_id"], r["valid_time"], r["vintage_seq"])
-            for r in recorded
-            if r["disposition"] == "vintage"
+        if recorded != wanted:
+            raise bad(f"differs from its capture-order derivation: recorded {recorded}, derived {wanted}")
+        expected = {
+            (v.series_id, v.valid_time, v.vintage_seq): v
+            for v in derived.new_vintages
+            if v.series_id in series_ids
         }
-        # A capture event is (receipt_id, captured_at): identical bytes captured again later (a
-        # revert) are a separate event with their own outcome.
+        for k, v in expected.items():
+            stored = next((s for s in self._vintages.get(k[:2], []) if s.vintage_seq == k[2]), None)
+            if stored != v:
+                raise bad(f"derives vintage {k[0]} {k[1]} #{k[2]}, which is not stored exactly")
         for (sid, vt_), stored_vs in self._vintages.items():
-            for v in stored_vs:
-                own = (v.receipt_id, v.captured_at) == (receipt.receipt_id, receipt.captured_at)
-                if sid in series_ids and own and (sid, vt_.isoformat(), v.vintage_seq) not in named:
-                    raise bad(f"does not account for stored vintage {sid} {vt_} #{v.vintage_seq}")
-        for r in recorded:
-            vt = date.fromisoformat(r["valid_time"])
-            knowable, basis = parse_instant(r["knowable_at"]), KnowableBasis(r["knowable_basis"])
-            stored = self._vintages.get((r["series_id"], vt), [])
-            if r["disposition"] == "vintage":
-                if not any(
-                    v.vintage_seq == r["vintage_seq"]
-                    and v.receipt_id == receipt.receipt_id
-                    and v.captured_at == receipt.captured_at
-                    and canonical_value(v.value) == r["value"]
-                    and (v.knowable_at, v.knowable_basis) == (knowable, basis)
-                    for v in stored
-                ):
-                    raise bad(f"names a vintage that is not stored as recorded: {r}")
-            elif r["disposition"] == "redundant":
-                row = by_row[(r["series_id"], r["valid_time"], r["value"])]
-                derived = determine(
-                    row, self.series[r["series_id"]], receipt.captured_at, mode, revision=False
-                )
-                if (derived.knowable_at, derived.basis) != (knowable, basis):
-                    raise bad(f"records evidence its capture mode does not derive: {r}")
-                # Justified only by an earlier capture, or by a vintage this outcome records itself
-                # (one decided earlier in the same receipt's transaction).
-                if not any(
-                    canonical_value(v.value) == r["value"]
-                    and (
-                        v.captured_at < receipt.captured_at
-                        or (
-                            (v.receipt_id, v.captured_at) == (receipt.receipt_id, receipt.captured_at)
-                            and (r["series_id"], r["valid_time"], v.vintage_seq) in named
-                        )
-                    )
-                    and v.knowable_basis.strength >= basis.strength
-                    and v.knowable_at <= knowable
-                    for v in stored
-                ):
-                    raise bad(f"claims a no-op that no earlier vintage justifies: {r}")
-            else:
-                raise bad(f"has an unknown disposition: {r['disposition']!r}")
+            for s in stored_vs:
+                own = (s.receipt_id, s.captured_at) == (receipt.receipt_id, receipt.captured_at)
+                if sid in series_ids and own and (sid, vt_, s.vintage_seq) not in expected:
+                    raise bad(f"does not account for stored vintage {sid} {vt_} #{s.vintage_seq}")
 
     # --- queries ---------------------------------------------------------------------------------
 
