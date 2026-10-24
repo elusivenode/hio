@@ -44,6 +44,7 @@ are in operating model §1.1; the template is
 | [OD-0027](OD-0027-q001-q002-final-draft-amendment.md) | authorise_work | final narrow amendment of the Q-001/Q-002 drafts (revision 3: admissibility, distinguishability, conflict identity, diagnostics); refined Option A supported, not approved | `baa8e4e` | recorded |
 | [OD-0028](OD-0028-q001-q002-revision4.md) | authorise_work | drafts revision 4: Q-001 header fix; Q-002 processing order vs acquisition history; architectural direction approved, exact text not yet | `6f013a7` | recorded |
 | [OD-0029](OD-0029-approve-q001-select-q002-a-prime.md) | approve | **OBS-AMEND-Q001 revision 4 approved** (blob `419992f2`) as the governing two-cutoff contract; Q-002 Option A′ selected as direction (not approved); reproducibility and completeness required | `4e57fa1` | recorded |
+| [OD-0030](OD-0030-approve-q002-authorise-f4-f7.md) | approve | **OBS-AMEND-Q002 revision 5 approved** (blob `d0a25b3b`); bounded F4/F7 implementation authorised on PR #2; observations v0.3 to be prepared for separate approval | `b4c398d` | recorded |
 
 **Current position:**
 - **Approved:**

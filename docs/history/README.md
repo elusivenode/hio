@@ -41,6 +41,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-q001-q002-final-amendment.md` | the owner's final narrow amendment instruction for the Q-001/Q-002 drafts, verbatim | authority for OD-0027 | — |
 | `2026-10-24-owner-q001-q002-revision4.md` | the owner's revision-4 instruction (Q-001 header; Q-002 processing order vs acquisition history), verbatim | authority for OD-0028 | — |
 | `2026-10-24-owner-approve-q001-select-q002-a-prime.md` | the owner's approval of Q-001 revision 4 and selection of Q-002 Option A′, verbatim | authority for OD-0029 | — |
+| `2026-10-24-owner-approve-q002-authorise-f4-f7.md` | the owner's approval of Q-002 revision 5 and authorisation of F4/F7 implementation, verbatim | authority for OD-0030 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
