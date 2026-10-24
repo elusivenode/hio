@@ -3,7 +3,7 @@ id: HIO-HISTORY
 title: Superseded inputs and rationale
 status: historical
 owner: HIO architecture lead (owner)
-last_reviewed: 2026-10-24
+last_reviewed: 2026-10-25
 ---
 
 # HIO history: superseded inputs (kept verbatim for rationale)
@@ -51,6 +51,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-f7-verify-10-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-10, verbatim | authority for OD-0036 | — |
 | `2026-10-25-owner-receive-verify-11-acceptance-prep.md` | the owner's authorisation to receive VERIFY-2026-10-24-s1a-1-11 and prepare the S1a acceptance package, verbatim | authority for OD-0037 | — |
 | `2026-10-25-owner-integrate-pr2-receive-evidence.md` | the owner's integration-first authorisation (PR #2, then receipt), verbatim | authority for OD-0037 | — |
+| `2026-10-25-owner-s1a-remaining-decisions.md` | the owner's decisions on Q-007, Q-008, Q-005a and the capture-clock archive question, and the §10 preparation instruction, verbatim | authority for OD-0038 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
