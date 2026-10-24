@@ -52,6 +52,9 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-receive-verify-11-acceptance-prep.md` | the owner's authorisation to receive VERIFY-2026-10-24-s1a-1-11 and prepare the S1a acceptance package, verbatim | authority for OD-0037 | — |
 | `2026-10-25-owner-integrate-pr2-receive-evidence.md` | the owner's integration-first authorisation (PR #2, then receipt), verbatim | authority for OD-0037 | — |
 | `2026-10-25-owner-s1a-remaining-decisions.md` | the owner's decisions on Q-007, Q-008, Q-005a and the capture-clock archive question, and the §10 preparation instruction, verbatim | authority for OD-0038 | — |
+| `2026-10-25-owner-s1a16-assessment.md` | the owner's preliminary assessment of S1-A16 run 1 and the correction instruction, verbatim | authority for OD-0039 | — |
+| `2026-10-25-s1a16-run1-claude-transcript.md` | the S1-A16 run 1 Claude session as saved by the owner, byte-identical (sha256 `51b513a0…f836`) | evidence for HARNESS-2026-10-25-s1a16-1 | — |
+| `2026-10-25-s1a16-run1-codex-transcript.md` | the S1-A16 run 1 Codex session as saved by the owner, byte-identical (sha256 `6f989c20…febe7c`) | evidence for HARNESS-2026-10-25-s1a16-1 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
