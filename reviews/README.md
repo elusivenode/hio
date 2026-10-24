@@ -52,6 +52,7 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 | REVIEW-2026-10-18-t0004 | T-0004 SMSF documentation amendment for HIO-001 boundary option C1 | `1502ab8..fe3fdc7` | Codex, under OD-0010 and OD-0018 | **READY** | [record](records/REVIEW-2026-10-18-t0004.md) |
 | REVIEW-2026-10-24-s1a-1 | T-0005 S1a synthetic-fixture implementation | `9370256..98e6a8e` | Codex, on the owner's direct 2026-10-24 assignment | **REQUEST CHANGES** | [record](records/REVIEW-2026-10-24-s1a-1.md) |
 | HARNESS-2026-10-25-s1a16-1 | operating model §10 cold-start test, run 1 (S1-A16): fresh Claude and Codex sessions | at `3fd129e` | owner-run sessions; owner-graded (preliminary, OD-0039) | **pending**: Claude pass subject to evidence; Codex baseline ambiguous (T-0004 assignment outstanding) | [record](records/HARNESS-2026-10-25-s1a16-1.md) |
+| HARNESS-2026-10-25-s1a16-2 | operating model §10 cold-start test, run 2 (Codex-only retest) and the combined S1-A16 result | at `df3af48` (Codex); with run 1 at `3fd129e` (Claude) | owner-run fresh session; owner-graded (OD-0041) | **satisfied**: S1-A16 PASS on the two-revision basis (OD-0040) | [record](records/HARNESS-2026-10-25-s1a16-2.md) |
 
 Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
 [locked offline sync and repeated tests](reports/2026-10-24-s1a-1-build-addendum.md).
