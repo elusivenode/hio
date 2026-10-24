@@ -178,11 +178,17 @@ def test_store_derived_refusal_writes_nothing(world_store):
     releases = s1a.build_releases(
         world, vs, RightsGate(rights), rights, KnowledgeMode.AS_CAPTURED_BY_HIO, CUTOFF, CODE
     )
+    # The cash releases are stored first (the FX releases cite them as upstream lineage).
+    for d in ("cash.aud.overnight", "cash.usd.overnight"):
+        write_release(store, RightsGate(rights), releases[d])
     before = store.snapshot()
-    gate = RightsGate(refusing_rights(rights, "derived_storage"))
-    for release in releases.values():
-        with pytest.raises(RightsRefused, match="derived_storage"):
-            write_release(store, gate, release, [SID, "synthetic.nyfed"])
+    gate = RightsGate(refusing_rights(rights, "derived_storage"))  # refuses synthetic.rba only
+    # Sources come from each release's lineage (F-REVIEW-2026-10-24-s1a-1-1): every release that
+    # depends on synthetic.rba is refused; the USD cash leg depends only on synthetic.nyfed.
+    for d in ("cash.aud.overnight", "fx.usd_cash_vs_aud.excess", "fx.usd_cash_vs_aud.decomposition"):
+        with pytest.raises(RightsRefused, match=re.escape("synthetic.rba: derived_storage")):
+            write_release(store, gate, releases[d])
+    assert write_release(store, gate, releases["cash.usd.overnight"]) is False  # allowed; already stored
     assert store.snapshot() == before
 
 
@@ -213,7 +219,6 @@ def test_publish_refusal_writes_no_status_event(world_store):
             "fixture",
             CUTOFF,
             gate=refusing,
-            source_ids=(SID,),
             consumer_class="hio_internal",
         )
     assert store.snapshot() == before
@@ -225,7 +230,6 @@ def test_publish_refusal_writes_no_status_event(world_store):
         "fixture",
         CUTOFF,
         gate=gate,
-        source_ids=(SID,),
         consumer_class="hio_internal",
     )
 

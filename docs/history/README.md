@@ -33,6 +33,19 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-s1a-proceed.md` | the owner's instruction to proceed with S1a implementation, verbatim | authority for OD-0020 | — |
 | `2026-10-24-owner-approve-harness-0.7.md` | the owner's approval of harness-0.7 rev 3, verbatim | authority for OD-0021 | — |
 | `2026-10-24-owner-receive-s1a-review.md` | the owner's receipt authorisation for PR #1, verbatim | authority for OD-0022 | — |
+| `2026-10-24-owner-authorise-s1a-remediation.md` | the owner's authorisation of the S1a remediation slice, verbatim | authority for OD-0023 | — |
+| `2026-10-24-owner-f6-remediation-before-receipt.md` | the owner's F6 remediation-before-receipt authorisation (harness-0.8 work stopped; local-first proposal requested), verbatim | authority for OD-0024 | — |
+| `2026-10-24-owner-f6-round3-authorisation.md` | the owner's F6 round-3 authorisation and disposition of the two verification records, verbatim (its record hash was mistranscribed) | authority for OD-0025, with its correction | corrected in part by the next file |
+| `2026-10-24-owner-f6-round3-hash-correction.md` | the owner's correction of that hash, verbatim | authority for OD-0025 | — |
+| `2026-10-24-owner-q001-q002-drafting.md` | pasted by the owner without other words: solution-architecture advice (Option A for Q-001/Q-002, refined) and a drafting-only instruction, verbatim | authority for OD-0026 (the advice is advice) | — |
+| `2026-10-24-owner-q001-q002-final-amendment.md` | the owner's final narrow amendment instruction for the Q-001/Q-002 drafts, verbatim | authority for OD-0027 | — |
+| `2026-10-24-owner-q001-q002-revision4.md` | the owner's revision-4 instruction (Q-001 header; Q-002 processing order vs acquisition history), verbatim | authority for OD-0028 | — |
+| `2026-10-24-owner-approve-q001-select-q002-a-prime.md` | the owner's approval of Q-001 revision 4 and selection of Q-002 Option A′, verbatim | authority for OD-0029 | — |
+| `2026-10-24-owner-approve-q002-authorise-f4-f7.md` | the owner's approval of Q-002 revision 5 and authorisation of F4/F7 implementation, verbatim | authority for OD-0030 | — |
+| `2026-10-24-owner-f4-f7-verify-6-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-6, verbatim | authority for OD-0031 | — |
+| `2026-10-24-owner-f7-verify-7-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-7, verbatim | authority for OD-0032 | — |
+| `2026-10-24-owner-f7-verify-8-exception.md` | the owner's remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-8, verbatim | authority for OD-0033 | — |
+| `2026-10-24-owner-q002-quality-digest-drafting.md` | the owner's quality_digest direction and drafting instruction, verbatim | authority for OD-0034 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
