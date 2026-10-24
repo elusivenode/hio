@@ -126,8 +126,21 @@ class VintageStore:
             seqs[k] = e["event_seq"]
             decided = parse_instant(e["decided_at"])
             previous = self._decisions.get(k, [])
-            if previous and decided <= previous[-1][0]:
-                raise ValueError(f"quality events for {k} are not strictly increasing in decided_at")
+            # The same decision-clock rule as set_quality (Q-001 OBS-INV-012), applied to every
+            # stored event before it can reach a view, digest, pin check or release: quality_digest
+            # excludes recorded_at only because this rule holds (VERIFY-2026-10-24-s1a-1-10).
+            if "recorded_at" not in e:
+                raise DecisionRefused(f"quality event {key} has no recorded_at")
+            vintage = next((v for v in self._vintages.get(k[:2], []) if v.vintage_seq == k[2]), None)
+            try:
+                _check_decision_clock(
+                    decided,
+                    parse_instant(e["recorded_at"]),
+                    vintage.captured_at if vintage is not None else None,
+                    previous[-1][0] if previous else None,
+                )
+            except DecisionRefused as exc:
+                raise DecisionRefused(f"stored quality event {key}: {exc}") from None
             self._decisions.setdefault(k, []).append((decided, QualityStatus(e["status"])))
             self._quality_events.append(_quality_event(key, e))
         for key in self.store.list(RESOLUTIONS_PREFIX):
@@ -321,15 +334,9 @@ class VintageStore:
             raise KeyError(k)
         recorded_at = self._clock()
         previous = self._decisions.get(k, [])
-        last = previous[-1][0] if previous else vintage.captured_at
-        if decided_at < recorded_at:
-            raise DecisionRefused(
-                f"decided_at {decided_at} is backdated: it precedes its recording {recorded_at}"
-            )
-        if decided_at <= last:
-            raise DecisionRefused(
-                f"decided_at {decided_at} is not after the vintage's previous decision {last}"
-            )
+        _check_decision_clock(
+            decided_at, recorded_at, vintage.captured_at, previous[-1][0] if previous else None
+        )
         seq = len(previous) + 1
         record = {
             "series_id": series_id,
@@ -800,6 +807,24 @@ def _row_order(r) -> tuple:
 
 def _vintage_key(v: Vintage) -> str:
     return f"catalogue/vintages/{v.series_id}/{v.valid_time.isoformat()}/{v.vintage_seq:06d}.json"
+
+
+def _check_decision_clock(
+    decided_at: datetime, recorded_at: datetime, captured_at: datetime | None, previous: datetime | None
+) -> None:
+    """Q-001's decision clock (OBS-INV-012), for new and stored decisions alike: never earlier
+    than its own recording (no backdating), strictly after the vintage's capture (the gate's
+    verdict at captured_at is the first decision), and strictly after the previous decision."""
+    if decided_at < recorded_at:
+        raise DecisionRefused(
+            f"decided_at {decided_at} is backdated: it precedes its recording {recorded_at}"
+        )
+    if captured_at is not None and decided_at <= captured_at:
+        raise DecisionRefused(f"decided_at {decided_at} is not after the vintage's capture {captured_at}")
+    if previous is not None and decided_at <= previous:
+        raise DecisionRefused(
+            f"decided_at {decided_at} is not after the vintage's previous decision {previous}"
+        )
 
 
 def _quality_event(key: str, e: dict) -> dict:

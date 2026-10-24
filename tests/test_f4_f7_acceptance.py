@@ -258,7 +258,9 @@ def test_at_q1_4_backdated_or_out_of_order_quality_decisions_are_refused(jumped)
     late_clock._clock = lambda: utc(2026, 1, 18)
     with pytest.raises(DecisionRefused, match="backdated"):  # decided before it is recorded
         late_clock.set_quality(RATE, D2, 1, QualityStatus.VALID, "owner", "x", utc(2026, 1, 17))
-    with pytest.raises(DecisionRefused, match="previous decision"):  # not after the capture
+    with pytest.raises(
+        DecisionRefused, match="capture"
+    ):  # not after the capture (message made precise, OD-0036)
         vs.set_quality(RATE, D2, 1, QualityStatus.VALID, "owner", "x", utc(2026, 1, 15, 9))
     with pytest.raises(PermissionError):  # an agent may propose, not decide
         vs.set_quality(RATE, D2, 1, QualityStatus.VALID, "claude/implementation-agent", "x", E1)
