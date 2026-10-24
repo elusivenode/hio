@@ -24,7 +24,7 @@ from hio.marketdata.knowability import determine
 from hio.marketdata.parse import MalformedReceipt, parse_receipt
 from hio.marketdata.queries import View, select
 from hio.marketdata.series import CaptureMode, SeriesDef
-from hio.storage.objectstore import LocalObjectStore
+from hio.storage.objectstore import LocalObjectStore, StagedWrites
 
 # Only the gate's own rules or the owner may release a quarantined vintage (§6). An agent may
 # propose; it may not decide.
@@ -91,9 +91,15 @@ class VintageStore:
             result.receipt_quarantined = str(exc)
             return result
 
+        # One catalogue transaction per receipt: every vintage is decided first, then all are
+        # committed together, so a refused row leaves nothing behind (F-REVIEW-2026-10-24-s1a-1-6).
+        staged = StagedWrites(self.store)
+        pending: dict[tuple[str, date], list[Vintage]] = {}
         for row in sorted(rows, key=_row_order):
             series = self.series[row.series_id]
-            existing = self._vintages.get((row.series_id, row.valid_time), [])
+            existing = self._vintages.get((row.series_id, row.valid_time), []) + pending.get(
+                (row.series_id, row.valid_time), []
+            )
             k = determine(
                 row,
                 series,
@@ -106,7 +112,7 @@ class VintageStore:
                 continue
             if existing and existing[-1].value != row.value:
                 result.revisions.append((row.series_id, row.valid_time, existing[-1].value, row.value))
-            reasons = self._jump_reasons(series, row.valid_time, row.value)
+            reasons = self._jump_reasons(series, row.valid_time, row.value, pending)
             v = Vintage(
                 series_id=row.series_id,
                 valid_time=row.valid_time,
@@ -120,22 +126,32 @@ class VintageStore:
                 quality_status=QualityStatus.QUARANTINED if reasons else QualityStatus.VALID,
                 quality_reasons=tuple(reasons),
             )
-            self.store.put(_vintage_key(v), canonical_json(v.as_record()))
-            self._vintages.setdefault((v.series_id, v.valid_time), []).append(v)
+            staged.add(_vintage_key(v), canonical_json(v.as_record()))
+            pending.setdefault((v.series_id, v.valid_time), []).append(v)
             result.new_vintages.append(v)
             if reasons:
                 result.quarantined.append(v)
+        if result.new_vintages:
+            staged.commit()
+        for key, vs in pending.items():
+            self._vintages.setdefault(key, []).extend(vs)
         return result
 
-    def _jump_reasons(self, series: SeriesDef, valid_time: date, value: Decimal) -> list[str]:
-        """Jump detection against the latest valid value of the nearest earlier key (§6)."""
+    def _jump_reasons(
+        self,
+        series: SeriesDef,
+        valid_time: date,
+        value: Decimal,
+        pending: dict[tuple[str, date], list[Vintage]],
+    ) -> list[str]:
+        """Jump detection against the latest valid value of the nearest earlier key (§6),
+        counting vintages already decided in the same receipt's transaction."""
         if series.jump_threshold is None:
             return []
-        earlier = [vt for (sid, vt) in self._vintages if sid == series.series_id and vt < valid_time]
+        known = {k: self._vintages.get(k, []) + pending.get(k, []) for k in {*self._vintages, *pending}}
+        earlier = [vt for (sid, vt) in known if sid == series.series_id and vt < valid_time]
         for vt in sorted(earlier, reverse=True):
-            valid = [
-                v for v in self._vintages[(series.series_id, vt)] if self._effective(v) is QualityStatus.VALID
-            ]
+            valid = [v for v in known[(series.series_id, vt)] if self._effective(v) is QualityStatus.VALID]
             if valid:
                 change = abs(value - valid[-1].value)
                 if change > series.jump_threshold:

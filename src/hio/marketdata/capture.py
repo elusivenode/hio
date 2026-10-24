@@ -24,7 +24,7 @@ from hio.contracts.observation import Receipt, parse_instant
 from hio.contracts.rights import Operation, RightsGate
 from hio.contracts.temporal import require_utc_instant
 from hio.marketdata.series import SeriesDef
-from hio.storage.objectstore import LocalObjectStore
+from hio.storage.objectstore import LocalObjectStore, StagedWrites
 
 
 @dataclass(frozen=True)
@@ -108,8 +108,13 @@ def capture(
             return previous, False
     origin = source.fixture_path if isinstance(source, SyntheticSource) else source.world_path
     receipt = Receipt(rid, source.source_id, captured_at, {"fixture": Path(origin).name}, len(data))
-    store.put_if_absent(receipt_key(source.source_id, captured_at, rid), data)
-    store.put(capture_record_key(source.source_id, captured_at, rid), canonical_json(receipt.as_record()))
+    # The bytes and the capture record are one transaction (F-REVIEW-2026-10-24-s1a-1-6).
+    staged = StagedWrites(store)
+    bytes_key = receipt_key(source.source_id, captured_at, rid)
+    if not store.put_if_absent_check(bytes_key, data):
+        staged.add(bytes_key, data)
+    staged.add(capture_record_key(source.source_id, captured_at, rid), canonical_json(receipt.as_record()))
+    staged.commit()
     return receipt, True
 
 
