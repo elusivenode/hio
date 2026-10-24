@@ -31,6 +31,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-s1a-authorisation.md` | the owner's S1a authorisation, T-0004 confirmation and parallel-work instructions, verbatim | authority for OD-0017 and OD-0018 | — |
 | `2026-10-24-owner-make-public.md` | the owner's instruction to make the repository public, verbatim | authority for OD-0019 | — |
 | `2026-10-24-owner-s1a-proceed.md` | the owner's instruction to proceed with S1a implementation, verbatim | authority for OD-0020 | — |
+| `2026-10-24-owner-approve-harness-0.7.md` | the owner's approval of harness-0.7 rev 3, verbatim | authority for OD-0021 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
