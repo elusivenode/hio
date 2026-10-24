@@ -50,6 +50,7 @@ are in operating model §1.1; the template is
 | [OD-0033](OD-0033-f7-verify-8-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-8 (`db1722c`, sha256 `6776d92b…`, checked); F7 quarantine-related completeness correction | `6720a6c` | recorded |
 | [OD-0034](OD-0034-q002-quality-digest-drafting.md) | authorise_work | `quality_digest` pin selected as direction; draft the Q-002 reproducibility amendment; VERIFY-2026-10-24-s1a-1-9 (`63df7ff`, sha256 `e3211b18…`) verified, not disposed | `0e900e8` | recorded |
 | [OD-0035](OD-0035-approve-q002-r1-verify-9-exception.md) | approve | **OBS-AMEND-Q002-R1 revision 1 approved** (blob `cb7a937d`); remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-9 (`63df7ff`, sha256 `e3211b18…`); quality-digest implementation authorised; review commit corrected by the owner | `312de66` | recorded |
+| [OD-0036](OD-0036-f7-verify-10-exception.md) | authorise_work | remediation-before-receipt exception for VERIFY-2026-10-24-s1a-1-10 (`586b35e`, sha256 `35685f04…`, checked); loaded quality-event clock validation | `21e4a07` | recorded |
 
 **Current position:**
 - **Approved:**
