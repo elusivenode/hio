@@ -33,6 +33,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-s1a-proceed.md` | the owner's instruction to proceed with S1a implementation, verbatim | authority for OD-0020 | — |
 | `2026-10-24-owner-approve-harness-0.7.md` | the owner's approval of harness-0.7 rev 3, verbatim | authority for OD-0021 | — |
 | `2026-10-24-owner-receive-s1a-review.md` | the owner's receipt authorisation for PR #1, verbatim | authority for OD-0022 | — |
+| `2026-10-24-advice-workflow-simplification.md` | a request to draft a simpler review workflow and a PR #2/#3 transition, pasted by the owner **without words of their own** (sha256 `264f1c8e…7dea5e`) | historical input; read as advice to draft; no OD (nothing decided); answered by [`harness-0.8-proposal.md`](../decisions/harness-0.8-proposal.md) (proposed) | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
