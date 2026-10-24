@@ -40,6 +40,7 @@ are in operating model §1.1; the template is
 | [OD-0023](OD-0023-authorise-s1a-remediation.md) | authorise_work | S1a remediation of findings 1, 2, 3, 5, 6; draft Q-001/Q-002 amendments | `6fe35cf` | recorded |
 | [OD-0024](OD-0024-f6-remediation-before-receipt.md) | authorise_work | F6 remediation on PR #2 under the remediation-before-receipt exception (VERIFY-2026-10-24-s1a-1-1 at `0255cb2`, sha256 checked); harness-0.8 stopped | `18c80f2` | recorded |
 | [OD-0025](OD-0025-f6-round3-disposition.md) | authorise_work | VERIFY-2026-10-24-s1a-1-1 and -2 disposed as preserved evidence (not received); F6 correction cycle on PR #2; hash transcription corrected by the owner | `759ddf7` | recorded |
+| [OD-0026](OD-0026-q001-q002-drafting.md) | authorise_work | refine the Q-001/Q-002 draft amendments (drafting only; Option A advised, not adopted); F6 verification (VERIFY-2026-10-24-s1a-1-5, READY) acknowledged | `d9fa276` | recorded |
 
 **Current position:**
 - **Approved:**
