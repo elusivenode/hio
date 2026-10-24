@@ -1,13 +1,14 @@
 ---
 id: HIO-HARNESS
 title: Agentic operating model and harness specification
-status: approved
-approved_by: OD-0012   # harness-0.6 at f2275e2, blob e3114bd188ad (earlier: OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
+status: proposed      # harness-0.7 on branch proposal/harness-0.7; NOT approved. The approved operating model remains harness-0.6 (OD-0012, f2275e2, blob e3114bd188ad)
+approved_by: OD-0012   # applies to harness-0.6 only (earlier: OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
 owner: HIO architecture lead (owner)
-version: harness-0.6
+version: harness-0.7 (proposed)
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
+  - "harness-0.7 rev 3 (2026-10-24, PROPOSED, no effect until approved): step 4a compares the record's assignment source with an owner-supplied expected source. Rev 2 (fcabd7f): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
   - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only. 2026-10-24: §8.1 status sentence updated (status only, OD-0016; migration performed, OD-0017). Paths written hio/<p> mean <p> after migration (MIGRATION-MAP.md)"
   - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
@@ -167,8 +168,10 @@ If the card is not authorised, you may only read and draft.
 
 ### 2.2 Codex (independent reviewer)
 
-1. **Find your assignment.** Look in the *Assigned reviews* table of `reviews/README.md`, or in
-   an owner assignment you were given directly.
+1. **Find your assignment.** It comes from exactly one owner-authored source (§6.2 step 1): a
+   row in the *Assigned reviews* table of `reviews/README.md`, an owner-authored comment on the
+   author's pull request, or an assignment the owner gave you directly. Your review record
+   cites which source it used.
    - **If there is none, your answer is "No review target has been assigned."** Stop there.
      Never infer a target from a candidate row, a branch tip or an author's self-assessment.
    - If there is one, take the repository, review id, base SHA, head SHA, task, scope and
@@ -378,10 +381,28 @@ carry `exploratory` status and never reach a consumer.
 
 **Status:** adopted by owner instruction (OD-0003); accepted at `b48f83c` (OD-0004); approved as
 part of this operating model by OD-0008 at `a82aa0d`. The `reports/` path was added by
-harness-0.6 (OD-0009).
+harness-0.6 (OD-0009). Harness-0.7 (proposed) adds pull requests as the visible surface, CI
+checks on reviewer PRs, CI-run citations and the completion block.
 
-1. **Assignment** (owner). The owner assigns one review, in the *Assigned reviews* table or
-   directly. The assignment states:
+**Pull requests are the visible surface, not the authority.** Records stay authoritative: the
+review record, the remediation response, the verification record and the OD records. A PR makes
+a fixed head, its CI result and its diff visible to every agent; merging a reviewer PR is
+receipt, never acceptance.
+
+0. **Submission** (author). The author pushes a branch and opens a PR to `main` whose
+   description states `Submission-Head: <full sha>`. That head is never rebased or
+   force-pushed while it is under review. An author PR merges only on the owner's instruction.
+1. **Assignment** (owner). The owner assigns one review in **one** owner-authored source: an
+   *Assigned reviews* row (an owner commit), an owner comment on the author's PR, or a direct
+   instruction to the reviewer. A direct instruction is valid but hard to discover, so the owner
+   or Claude adds the matching index row at receipt.
+
+   **Conflicting channels.** If two owner-authored channels give different values for one
+   review (id, base, head, scope or branch), or two reviews are assigned the same target with
+   different scopes, nobody picks one. The reviewer stops before reviewing, the author stops
+   before remediating, and either reports the conflict. The owner reconciles it in one
+   statement that names the assignment that stands; that statement is the source the review
+   record cites. The assignment states:
    - review id;
    - repository;
    - **full base and head SHAs**;
@@ -394,11 +415,11 @@ harness-0.6 (OD-0009).
 2. **Isolated checkout** (reviewer):
 
    ```
-   git worktree add ../macsmsf-review-<id> <head> -b review/<id>-codex
+   git worktree add ../hio-review-<id> <head> -b review/<id>-codex
    ```
 
    Worktrees isolate checkouts operationally. **They are not a security boundary.**
-3. **Allowed writes** (reviewer). Only add or modify `.md` files under `hio/reviews/`:
+3. **Allowed writes** (reviewer). Only add or modify `.md` files under `reviews/`:
    - review records and verification records in `reviews/records/`;
    - the reviewer's own session handoff in `reviews/handoffs/`, since its other handoff
      locations are out of bounds;
@@ -406,14 +427,18 @@ harness-0.6 (OD-0009).
      the records stay authoritative (harness-0.6, OD-0009);
    - its own rows in `reviews/README.md`.
 
-   The reviewer never edits `STATUS.md`, `hio/handoffs/`, the work under review or any
-   submitted record. There are no merge commits on the review branch.
-4. **Scope check** (owner, before merging). Run **the staging branch's copy** of
-   `hio/tools/check_review_branch.sh <head> review/<id>-codex`. It checks **every commit** in
+   The reviewer never edits `STATUS.md`, `handoffs/`, the work under review or any
+   submitted record. There are no merge commits on the review branch. The reviewer **pushes the
+   review branch** and opens a PR to `main` whose description states
+   `Reviewed-Head: <full sha>` (the assigned head). An unpushed review branch has not been
+   submitted.
+4. **Scope check** (CI and owner, before merging). CI runs **the base branch's copy** of
+   `tools/check_review_branch.sh <Reviewed-Head> <PR head>` on every reviewer PR
+   (`.github/workflows/review-scope.yml`); the owner may rerun it locally. It checks **every commit** in
    the range, not just the final diff, so a disallowed file that is committed and then reverted
    still fails. It fails on:
    - an empty branch, or a branch that adds no `records/REVIEW-*.md` or `records/VERIFY-*.md`;
-   - paths outside `hio/reviews/`;
+   - paths outside `reviews/`;
    - non-`.md` files;
    - symlinks, executables or submodules;
    - deletions or renames;
@@ -421,14 +446,39 @@ harness-0.6 (OD-0009).
      amend it before committing;
    - merge commits.
 
-   **A pass is a content-scope constraint, not reviewer authentication.** The owner also reads
-   the diff.
-5. **Receipt** (owner). Merge with `--no-ff` into the staging branch. Delete the review branch
-   and worktree afterwards. **A merge means the evidence has been received.** It does not mean
+   **A pass is a content-scope constraint, not reviewer authentication, and not assignment
+   verification.** The owner also reads the diff. CI takes the checking policy
+   (`tools/review_gate.py`, `tools/check_review_branch.sh`) from the trusted event base commit
+   with `git show`, under `pull_request_target`, so a reviewer PR cannot weaken its own check;
+   the PR's commits are read as data and never executed.
+
+4a. **Assignment verification** (owner, before receipt). Confirm that the record matches the
+   authoritative assignment: run `tools/check_review_assignment.py --review-id … --base …
+   --head … --branch … --assignment-source "…" [--scope-terms …]` with the values **from the
+   assignment source**, not from the record or the PR, and read the record's scope statement
+   against the assigned scope. It fails if the record's id, base, head or branch differ, if its
+   `assignment` field is missing or differs from the expected source, or if the branch does not
+   descend from the assigned head. A branch can pass
+   step 4 while reviewing the wrong head; only 4a catches that.
+5. **Receipt** (owner). Merge the reviewer PR with a merge commit (`--no-ff`) into `main`, never
+   squash or rebase, so the reviewer's commits keep their ids. Delete the review branch and
+   worktree afterwards. **A merge means the evidence has been received.** It does not mean
    the conclusions are accepted, defects are fixed, an ADR is approved, a slice is authorised,
    or the work is accepted. Those remain separate owner actions (§1.1). After receipt, the owner
    or Claude updates `STATUS.md`.
-6. **Remediation** (Claude, on the staging branch). There are two SHAs:
+6. **Remediation** (Claude, on a branch from the receipt commit, submitted as an author PR per
+   step 0). Claude starts only from a prompt naming the receipt commit, and stops if that commit
+   is not in `main`.
+
+   **Exception: remediation before receipt** (only by an explicit owner instruction, recorded in
+   an OD). It applies where immutable review evidence exists at a verified commit but cannot be
+   received normally (for example, the receipt merge is blocked). The instruction names the
+   review id, the commit holding the record, and the sha256 of each record file. Claude reads the
+   record only with `git show <commit>:<path>`, checks the hashes before relying on it, and cites
+   commit and hashes in the remediation response. The record must still be received, or its
+   disposition recorded by the owner, before verification of the remediation is assigned. The
+   exception never applies by inference, and never to a review branch whose steps 4–4a have not
+   passed. There are two SHAs:
    - commit the fix: these are the **fix commit(s)**;
    - then commit the remediation response (`reviews/responses/`) and the *Remediation claim*
      cell: this is the **submission head**. The response names the fix commits; the index cell
@@ -437,6 +487,21 @@ harness-0.6 (OD-0009).
 7. **Verification** (reviewer). The owner assigns the **submission head**, so the fix and
    Claude's evidence are seen at one fixed revision. The reviewer uses a fresh worktree and
    branch there, and adds a verification record. Steps 3–5 apply again.
+
+8. **Evidence citations** (both). A claim about a build cites the exact CI run id, attempt and
+   head SHA (for example `run 40044606055, attempt 1, 98e6a8e…`). The reviewer still reproduces
+   independently and writes its own counterexamples; CI is shared evidence, not a substitute
+   for review.
+9. **Completion block** (every handoff and every agent's final message). State:
+   - branch and full SHA;
+   - pushed (yes/no) and PR link;
+   - received into `main` (receipt commit, or "not received");
+   - the next actor (owner, author or reviewer);
+   - a ready prompt for that actor whose **prerequisites are explicit** (for example "stop if
+     commit X is not in `main`"). If a prerequisite is not met, the agent stops and reports;
+     it does not assume the step happened.
+
+   After receipt, the owner or Claude updates `STATUS.md`; the reviewer never does.
 
 **Index.** The records are the source of truth. `reviews/README.md` is a manually maintained
 navigation summary. If the two disagree, the record wins. Generating the index from record
@@ -447,9 +512,18 @@ branch, before this protocol existed. It also changed `hio/STATUS.md` and added
 `hio/handoffs/2026-10-18-a01-independent-review.md`. The scope check correctly fails on it. It
 is accepted as pre-protocol history, not as a precedent.
 
-**Hosted evolution** (not built): implementation PRs at exact heads; authenticated Codex
-reviews; branch protection and required checks (including this scope check); verifiable owner
-acceptance and waiver records.
+**Hosted evolution** (harness-0.7 builds the first two): PRs at exact heads, and the scope check
+in CI. Still not built: authenticated reviewer accounts, branch protection with required checks,
+and signed owner acceptance and waiver records.
+
+### 6.3 Open-decisions queue (proposed in harness-0.7)
+
+[`docs/decisions/open-decisions.md`](../decisions/open-decisions.md) lists every question that
+needs an owner or solution-architect decision, whether it comes from a review finding, an
+evidence package or a research note. Each entry links its source, gives the options and a
+recommendation, and later names the OD record that decided it. **The queue grants no
+authority** and is navigation only, like STATUS. `pending-owner-decisions.md` stays as the
+resolved G1 history.
 
 ## 7. Artefact-driven collaboration
 

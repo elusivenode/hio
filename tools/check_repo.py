@@ -91,6 +91,7 @@ def check_links(files: list[str]) -> None:
 FM_RULES: list[tuple[str, tuple[str, ...]]] = [
     (r"^docs/history/(?!README\.md$)", ()),  # exempt
     (r"^CLAUDE\.md$", ()),  # an @import shim
+    (r"^\.github/", ()),  # GitHub configuration, not records
     (r"^\.claude/skills/.+/SKILL\.md$", ("name", "description")),
     (r"^docs/decisions/owner/OD-\d{4}-.+\.md$", ("id", "title", "decision", "record_status")),
     (r"^handoffs/.+\.md$", ("id", "date")),  # the first handoff predates the template

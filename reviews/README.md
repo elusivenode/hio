@@ -14,8 +14,9 @@ record, the record wins. Rules: [operating model §3, §6.1 and
 §6.2](../docs/harness/operating-model.md#62-review-branch-and-worktree-protocol).
 
 **Who writes what:**
-- **The owner:** *Assigned reviews* (exact SHAs and the review branch); runs the scope check;
-  merges reviewer branches (receipt only); acceptance, approval and waivers (by OD id).
+- **The owner:** assignments (an *Assigned reviews* row, an owner PR comment, or a direct
+  instruction later indexed here; exact SHAs and the review branch); runs or reviews the scope
+  check; merges reviewer PRs (receipt only); acceptance, approval and waivers (by OD id).
 - **The reviewer (Codex):** review records and verification records (`records/`), its
   handoffs (`handoffs/`), opinion or readiness reports (`reports/`), and its own index rows. Written on its review branch, in its own
   worktree, never on the staging branch.
@@ -25,7 +26,7 @@ record, the record wins. Rules: [operating model §3, §6.1 and
 Commits carry `HIO-Actor` role trailers as **self-declared metadata, not proof**. Reviewer
 actions are evidenced by the reviewer's own output on a scope-checked review branch (§6.1–6.2).
 
-## Assigned reviews (owner-assigned; the only source of a review target)
+## Assigned reviews (owner-assigned; harness-0.7 proposed: one of three owner-authored sources, see operating model §6.2 step 1)
 
 | Review | Repository | Base SHA | Head SHA | Task / scope | Assigned by (OD / source) | Status |
 |---|---|---|---|---|---|---|

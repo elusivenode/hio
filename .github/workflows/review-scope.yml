@@ -1,0 +1,45 @@
+# Reviewer PR scope gate (harness-0.7 proposed, operating model §6.2 step 4).
+#
+# pull_request_target runs THIS workflow as it exists on the base branch, so a reviewer PR cannot
+# edit the workflow that checks it. The checking policy (tools/review_gate.py and
+# tools/check_review_branch.sh) is read with `git show` from the trusted event base commit
+# (github.event.pull_request.base.sha), never from a moving branch ref and never from the PR.
+# The PR's commits are fetched as git data and are never checked out or executed. No secrets;
+# contents: read.
+#
+# A pass constrains content only. Assignment verification (tools/check_review_assignment.py) and
+# receipt remain owner steps; merging is never acceptance.
+name: review-scope
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+permissions:
+  contents: read
+jobs:
+  scope:
+    if: startsWith(github.event.pull_request.head.ref, 'review/') && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch the PR commits as data
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --no-tags origin "+refs/pull/$PR_NUMBER/head:refs/remotes/pr/head"
+          test "$(git rev-parse refs/remotes/pr/head)" = "$PR_HEAD"
+      - name: Gate with policy from the trusted base commit
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n' "$BODY" > "$RUNNER_TEMP/body.txt"
+          git show "$BASE_SHA:tools/review_gate.py" > "$RUNNER_TEMP/review_gate.py"
+          python3 "$RUNNER_TEMP/review_gate.py" --base-sha "$BASE_SHA" --pr-head "$PR_HEAD" --body-file "$RUNNER_TEMP/body.txt"
