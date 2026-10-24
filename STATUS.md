@@ -22,7 +22,8 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 in this repository, `elusivenode/hio` (**public** since 2026-10-24, OD-0019). **S1a is integrated
 and its review evidence received, but not accepted** (OD-0037, 2026-10-25): PR #2 merged at the
 reviewed head `084154c` (`773a557`); all seven S1a findings **verified closed** by Codex;
-VERIFY-2026-10-24-s1a-1-1…-11 received. Readiness:
+VERIFY-2026-10-24-s1a-1-1…-11 received. Q-007, Q-008 (S1a only), Q-005a decided and the
+capture-clock archive question deferred to S1b (OD-0038). Readiness:
 [`docs/evidence/S1A-acceptance-readiness.md`](docs/evidence/S1A-acceptance-readiness.md). S1b is
 not authorised. HIO has no cloud storage, no real data and no credentials.
 
@@ -30,7 +31,7 @@ not authorised. HIO has no cloud storage, no real data and no credentials.
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0037 (latest: OD-0037, integrate PR #2 and receive the S1a evidence; not acceptance); the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public), OD-0020 (proceed with S1a implementation) OD-0021 (harness-0.7 approved) OD-0022 (S1a review received at `e55cc89`; harness-0.7 adoption condition met), OD-0023 (S1a remediation slice), OD-0024 (F6 round 2 before receipt; harness-0.8 stopped) and OD-0025 (VERIFY-…-1 and -2 disposed as preserved evidence; F6 correction cycle) OD-0026 (Q-001/Q-002 drafts refined), OD-0027/0028 (draft revisions), OD-0029 (**Q-001 revision 4 approved**; Q-002 A′ selected) OD-0030 (**Q-002 revision 5 approved**; F4/F7 implementation authorised) OD-0031, OD-0032 and OD-0033 (exceptions for VERIFY-2026-10-24-s1a-1-6, -7 and -8), OD-0034 and OD-0035 (**Q-002-R1 `quality_digest` approved**; exception for VERIFY-2026-10-24-s1a-1-9), OD-0036 (exception for VERIFY-2026-10-24-s1a-1-10) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | OD-0001…0038 (latest: OD-0038, Q-007 ratified, Q-008 accepted for S1a only, Q-005a confirmed, Q-010 deferred to S1b; not acceptance); OD-0037 (integrate PR #2 and receive the S1a evidence); the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public), OD-0020 (proceed with S1a implementation) OD-0021 (harness-0.7 approved) OD-0022 (S1a review received at `e55cc89`; harness-0.7 adoption condition met), OD-0023 (S1a remediation slice), OD-0024 (F6 round 2 before receipt; harness-0.8 stopped) and OD-0025 (VERIFY-…-1 and -2 disposed as preserved evidence; F6 correction cycle) OD-0026 (Q-001/Q-002 drafts refined), OD-0027/0028 (draft revisions), OD-0029 (**Q-001 revision 4 approved**; Q-002 A′ selected) OD-0030 (**Q-002 revision 5 approved**; F4/F7 implementation authorised) OD-0031, OD-0032 and OD-0033 (exceptions for VERIFY-2026-10-24-s1a-1-6, -7 and -8), OD-0034 and OD-0035 (**Q-002-R1 `quality_digest` approved**; exception for VERIFY-2026-10-24-s1a-1-9), OD-0036 (exception for VERIFY-2026-10-24-s1a-1-10) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model **harness-0.7** at `9b58811` (OD-0021; supersedes harness-0.6, OD-0012). All of these are `macsmsf` commit ids | per-file blobs in the OD records |
 | Authorised, not accepted | **S1a** (OD-0017, OD-0020): integrated (`773a557`) and evidence received (OD-0037); **acceptance pending** | [readiness](docs/evidence/S1A-acceptance-readiness.md) |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1b**; all T-0002 source permissions **unverified and blocked** (OD-0013); the ETF diagnostic workstream; any `macsmsf` pointer change or merge | [`docs/decisions/README.md`](docs/decisions/README.md) |
@@ -42,8 +43,8 @@ not authorised. HIO has no cloud storage, no real data and no credentials.
 | Item | State |
 |---|---|
 | Phase | S1a (synthetic-fixture foundation) |
-| Current gate | **S1a acceptance** (owner): needs the §10 fresh-session test (S1-A16, **not run**) and decisions on Q-007 and Q-008 (recommended: Q-005a). Observations v0.3 (blob `61ddd58e`) awaits separate approval and does not gate S1a |
-| Next permissible actions | **Owner:** run and grade the §10 test (instructions in the readiness document §7); decide Q-007, Q-008, Q-005a; approve or defer observations v0.3; then accept S1a or not. **Agents:** no S1a change without a new material finding; S1b not authorised |
+| Current gate | **S1a acceptance** (owner): needs the §10 fresh-session test (S1-A16, **not run**) and its owner grading. Q-007, Q-008 (S1a only) and Q-005a decided (OD-0038). Observations v0.3 (blob `61ddd58e`) awaits separate approval and does not gate S1a |
+| Next permissible actions | **Owner:** run and grade the §10 test (instructions in the readiness document §7); approve or defer observations v0.3; then accept S1a or not. **Before S1b is authorised:** a separate network and credential-control decision (OD-0038), and Q-010 in S1b design. **Agents:** no S1a change without a new material finding; S1b not authorised |
 | Next implementation slice | S1a: authorised. S1b: needs S1a accepted, T-0002 `owner_verified` rights, and its own authorisation |
 
 ## Work cards
