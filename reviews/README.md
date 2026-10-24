@@ -49,6 +49,9 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 | REVIEW-2026-10-18-t0007-pilot | T-0007 review-worktree protocol and harness-0.5 corrections | `46ea6a5..b48f83c` | Codex, on the owner's direct 2026-10-18 assignment | **READY** | [record](records/REVIEW-2026-10-18-t0007-pilot.md) |
 | REVIEW-2026-10-24-s1a-1 | T-0005 S1a synthetic-fixture implementation | `9370256..98e6a8e` | Codex, on the owner's direct 2026-10-24 assignment | **REQUEST CHANGES** | [record](records/REVIEW-2026-10-24-s1a-1.md) |
 
+Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
+[locked offline sync and repeated tests](reports/2026-10-24-s1a-1-build-addendum.md).
+
 ## Verification rounds
 
 | Verification | Original review | Base..submission head | Fix commit | Reviewer outcome | Record |
