@@ -1,7 +1,7 @@
 ---
 id: T-0005
 title: "HIO-S1 walking skeleton in two stages: S1a synthetic-fixture foundation (independent repository, contracts, cash legs and investable FX excess return on fixtures); S1b live official observations"
-status: authorised   # S1a only (OD-0017); S1b not authorised
+status: submitted_for_review   # S1a only (OD-0017, OD-0020); S1b not authorised
 owner: owner
 assignee_role: implementation engineer (+ quantitative researcher for specs; independent reviewer)
 created: 2026-10-18
@@ -34,4 +34,7 @@ including its stack, CI and migration settings. S1b is not authorised.
 Listed in the implementation plan, under S1 exclusions.
 
 ## Review status
-S1a authorised (OD-0017); **not accepted**. Submit at a fixed revision for Codex review. S1b: not authorised; do not start.
+S1a implemented and **submitted for review** (2026-10-24): evidence in
+[`docs/evidence/S1A-evidence-package.md`](../../docs/evidence/S1A-evidence-package.md), at the
+commit that adds it. **Not accepted.** The Codex review needs the owner's assignment; the §10
+fresh-session test has not been run. S1b: not authorised; do not start.

@@ -20,17 +20,19 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 
 **G1 is complete** (OD-0008, OD-0011). **S1a is authorised** (OD-0017): synthetic-fixture-only,
 in this repository, `elusivenode/hio` (**public** since 2026-10-24, OD-0019), migrated with history from
-`macsmsf@dc4fd02` on 2026-10-24. **No S1a code exists yet.** S1b is not authorised. HIO has no
-storage, no data and no credentials. The `macsmsf` staging branch `docs/hio-a01-baseline` is
+`macsmsf@dc4fd02` on 2026-10-24. **S1a is implemented and submitted for review** (OD-0020;
+[evidence package](docs/evidence/S1A-evidence-package.md)): synthetic fixtures only, 150 tests,
+CI green. **Not accepted**; the Codex review awaits the owner's assignment. S1b is not
+authorised. HIO has no cloud storage, no real data and no credentials. The `macsmsf` staging branch `docs/hio-a01-baseline` is
 frozen at `dc4fd02` and stays unmerged.
 
 ## Authority snapshot
 
 | Item | State | Record |
 |---|---|---|
-| Owner decision records | OD-0001…0019; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) and OD-0019 (repository public) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
+| Owner decision records | OD-0001…0020; the latest are OD-0016 (S1a preparation), OD-0017 (**S1a authorised**; migration) OD-0018 (T-0004 mechanics confirmed; parallel work; ETF card; roadmap corrections) OD-0019 (repository public) and OD-0020 (proceed with S1a implementation) | [`docs/decisions/owner/README.md`](docs/decisions/owner/README.md) |
 | Approved | at `a82aa0d` (OD-0008): charter, architecture, HIO-ADR-0001…0009 (C1; projection fund-level), six standards, `AGENTS.md`. HIO-ADR-0010 rev 3 at `760f73e` (OD-0011). Operating model harness-0.6 at `f2275e2` (OD-0012). All of these are `macsmsf` commit ids | per-file blobs in the OD records |
-| Authorised, not accepted | **S1a** (OD-0017) | [OD-0017](docs/decisions/owner/OD-0017-authorise-s1a.md) |
+| Authorised, not accepted | **S1a** (OD-0017, OD-0020): implemented, **submitted for review** | [evidence package](docs/evidence/S1A-evidence-package.md) |
 | Not approved / not authorised | factor specs (drafts); roadmap and plan (recommendations); **S1b**; all T-0002 source permissions **unverified and blocked** (OD-0013); the ETF diagnostic workstream; any `macsmsf` pointer change or merge | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Independent reviews | REVIEW-2026-10-18-a01 (REQUEST CHANGES), then VERIFY-2026-10-18-a01-1: **8/8 verified_closed**. T0007-PILOT READY. REVIEW-2026-10-18-t0004 **assigned, not received** | [`reviews/README.md`](reviews/README.md) |
 | Open findings | **none** | [`reviews/README.md`](reviews/README.md) |
@@ -40,8 +42,8 @@ frozen at `dc4fd02` and stays unmerged.
 | Item | State |
 |---|---|
 | Phase | S1a (synthetic-fixture foundation) |
-| Current gate | S1a acceptance, after an independent Codex review at a fixed revision |
-| Next permissible actions | **Agents:** S1a within OD-0017 (harness CI, contracts, observation model, constructions, gates; fixtures only); T-0002 evidence from published pages; T-0003 research (no vendor contact). **Owner:** run the Codex T-0004 review (a fresh session with the neutral §10 prompt, if it is also to count as the fresh-session test); decide how the T-0004 review record is received now that the staging branch is frozen; T-0002 evidence; the vendor drafts (**not sent**) |
+| Current gate | S1a acceptance, after an independent Codex review at a fixed revision (candidate row in the review index; **not assigned**) and the §10 fresh-session test (S1-A16; **not run**) |
+| Next permissible actions | **Owner:** assign the S1a Codex review (the candidate row gives base and head); run the §10 fresh-session test; decide on the evidence package's interpretation 1 (OBS-INV-007 Case B `reconstructed`). **Agents:** S1a remediation only on review findings; T-0002 evidence from published pages; T-0003 research (no vendor contact). **Also owner:** run the Codex T-0004 review (a fresh session with the neutral §10 prompt, if it is also to count as the fresh-session test); decide how the T-0004 review record is received now that the staging branch is frozen; T-0002 evidence; the vendor drafts (**not sent**) |
 | Next implementation slice | S1a: authorised. S1b: needs S1a accepted, T-0002 `owner_verified` rights, and its own authorisation |
 
 ## Work cards
@@ -52,7 +54,7 @@ frozen at `dc4fd02` and stays unmerged.
 | Rights verification for the S1 sources | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: findings drafted ([research](docs/research/T-0002-source-rights-and-timing.md)); awaiting owner verification |
 | Equity total-return source decision | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: scorecard drafted ([research](docs/research/T-0003-equity-total-return-sources.md)); vendor questions need owner approval |
 | HIO-001 boundary amendment (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review: `fe3fdc7` on `docs/hio-001-boundary-c1`; **review REVIEW-2026-10-18-t0004 assigned** (OD-0010); mechanics **confirmed** (OD-0018); not merged |
-| HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | **S1a authorised** (OD-0017); not started beyond migration. S1b **not authorised** |
+| HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | **S1a submitted for review** (OD-0017, OD-0020); not accepted. S1b **not authorised** |
 | Harness refinement (harness-0.3) | [T-0006](registers/tasks/T-0006-harness-refinement.md) | **accepted** at `35c9821` (OD-0007) |
 | Review branch and worktree protocol (harness-0.5) | [T-0007](registers/tasks/T-0007-review-worktree-protocol.md) | **accepted** at `b48f83c` (OD-0004) |
 | A01 correction slice (8 findings) | [T-0008](registers/tasks/T-0008-a01-correction-slice.md) | **accepted** at `0c74686` (OD-0006) |

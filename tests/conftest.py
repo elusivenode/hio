@@ -9,6 +9,12 @@ import ipaddress
 import socket
 
 import pytest
+from hypothesis import settings
+
+# Property tests are derandomised and keep no example database, so every run (local or CI)
+# exercises the same examples and a reviewer can reproduce the evidence exactly.
+settings.register_profile("hio", derandomize=True, database=None)
+settings.load_profile("hio")
 
 _real_connect = socket.socket.connect
 
