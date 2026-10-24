@@ -16,10 +16,11 @@ import io
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from hio.contracts.canonical import canonical_json, sha256_hex
+from hio.contracts.layout import capture_record_key, receipt_key
 from hio.contracts.observation import Receipt, parse_instant
 from hio.contracts.rights import Operation, RightsGate
 from hio.contracts.temporal import require_utc_instant
@@ -75,16 +76,6 @@ class SyntheticWorldSource:
             *released,
         ]
         return ("\n".join(body) + "\n").encode("utf-8")
-
-
-def receipt_key(source_id: str, captured_at: datetime, receipt_id: str) -> str:
-    # A storage partition by capture month (a UTC instant formatted as text), not a valid_time.
-    return f"receipts/{source_id}/{captured_at.astimezone(UTC):%Y/%m}/{receipt_id}"
-
-
-def capture_record_key(source_id: str, captured_at: datetime, receipt_id: str) -> str:
-    stamp = captured_at.astimezone(UTC).strftime("%Y%m%d-%H%M%S%f")  # sorts by capture instant
-    return f"catalogue/captures/{source_id}/{stamp}-{receipt_id}.json"
 
 
 def capture(

@@ -178,8 +178,10 @@ def build_releases(
 ) -> dict[str, Release]:
     if not mode.point_in_time and mode is not KnowledgeMode.RECONSTRUCTED:
         raise ValueError("releases are built from a point-in-time view or a labelled reconstruction")
-    gate.authorise(Operation.BUILD, [RBA, NYFED])
     v_cash, v_fx, v_sofr = (vs.view(s, mode, cutoff) for s in (CASH_RATE, AUDUSD, SOFR))
+    # Rights are checked against the sources of the vintages actually selected, from their
+    # verified capture records, before any computation (F-REVIEW-2026-10-24-s1a-1-1).
+    gate.authorise(Operation.BUILD, vs.sources_of(v_cash) | vs.sources_of(v_fx) | vs.sources_of(v_sofr))
     aud_fix, usd_fix, fx_q = fixings(v_cash), fixings(v_sofr), quotes(v_fx)
     common = {
         "version": "s1a",
@@ -325,8 +327,7 @@ def publish_releases(
     construction, so the producing job may (releases standard §5)."""
     out = {}
     for dataset_id, release in sorted(releases.items()):
-        sources = [RBA, NYFED] if dataset_id.startswith("fx.") else [RBA if "aud" in dataset_id else NYFED]
-        written = write_release(vs.store, gate, release, sources)
+        written = write_release(vs.store, gate, release)  # lineage-derived sources
         if written:
             append_status(
                 vs.store,
@@ -358,8 +359,11 @@ def rebuild_report(
     stored release verifies against its content hash and its manifest and files equal the
     rebuilt ones byte for byte (F-REVIEW-2026-10-24-s1a-1-5). Needs the rebuild rights and writes
     nothing."""
-    gate.authorise(Operation.REBUILD, [RBA, NYFED])
     vs = VintageStore(store, world.series)
+    gate.authorise(
+        Operation.REBUILD,
+        frozenset().union(*(vs.sources_of(vs.view(s, mode, cutoff)) for s in (CASH_RATE, AUDUSD, SOFR))),
+    )
     rebuilt = build_releases(world, vs, gate, rights, mode, cutoff, code_ref)
     report = {}
     for dataset_id, release in sorted(rebuilt.items()):

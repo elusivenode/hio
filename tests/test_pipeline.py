@@ -25,7 +25,6 @@ WORLD = FIXTURES / "s1a_world"
 RIGHTS = dict(load_synthetic(FIXTURES / "rights.yaml"))
 CUTOFF = datetime(2026, 1, 29, tzinfo=UTC)
 CODE = {"commit": "0" * 40, "lock_sha256": "1" * 64}
-SOURCES = ("synthetic.rba", "synthetic.nyfed")
 DATASETS = {
     "cash.aud.overnight",
     "cash.usd.overnight",
@@ -146,7 +145,7 @@ def test_rebuild_from_stored_receipts_reproduces_every_release(tmp_path):
         CUTOFF,
         CODE,
     ).values():
-        assert write_release(store, RightsGate(RIGHTS), r, SOURCES) is False
+        assert write_release(store, RightsGate(RIGHTS), r) is False
 
 
 def test_a_different_code_ref_or_cutoff_is_a_different_release(tmp_path):
@@ -184,7 +183,6 @@ def test_fixture_3_withdrawal_reaches_a_pinned_consumer(tmp_path):
         required=Status.EXPLORATORY,
         consumer_class="hio_internal",
         gate=RightsGate(RIGHTS),
-        source_ids=("synthetic.rba",),
     )
     resolve_for_use(store, "cash.aud.overnight", r.content_sha256, **use)
     append_status(store, r.content_sha256, Status.WITHDRAWN, "owner", "fixture", CUTOFF)
@@ -206,7 +204,6 @@ def test_consumers_check_level_and_current_rights_not_the_snapshot(tmp_path):
             required=Status.VALIDATED,
             consumer_class="hio_internal",
             gate=RightsGate(RIGHTS),
-            source_ids=("synthetic.rba",),
         )
     perms = {p: Permission.parse("allow") for p in ALL_PERMISSIONS} | {
         "distribution.hio_internal": Permission.parse("deny")
@@ -221,7 +218,6 @@ def test_consumers_check_level_and_current_rights_not_the_snapshot(tmp_path):
             required=Status.EXPLORATORY,
             consumer_class="hio_internal",
             gate=revoked,
-            source_ids=("synthetic.rba",),
         )
 
 

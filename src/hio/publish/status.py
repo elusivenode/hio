@@ -21,7 +21,7 @@ from hio.contracts.status import (
     effective_status,
     effective_status_for,
 )
-from hio.publish.release import verify_release
+from hio.publish.lineage import stored_release_sources
 from hio.storage.objectstore import LocalObjectStore
 
 OWNER_ONLY = {
@@ -60,7 +60,6 @@ def append_status(
     at: datetime,
     *,
     gate: RightsGate | None = None,
-    source_ids: tuple[str, ...] = (),
     consumer_class: str | None = None,
 ) -> StatusEvent:
     if status in OWNER_ONLY and actor != "owner":
@@ -68,7 +67,8 @@ def append_status(
     if status is Status.APPROVED_FOR_CONSUMER:
         if gate is None:
             raise StatusError("approval for a consumer class needs the publish rights gate")
-        gate.authorise(Operation.PUBLISH, source_ids, consumer_class)
+        _, _, sources = stored_release_sources(store, sha)  # lineage, never caller-supplied
+        gate.authorise(Operation.PUBLISH, sources, consumer_class)
     existing = events(store, sha)
     event = StatusEvent(sha, len(existing) + 1, status, actor, evidence, at, consumer_class)
     effective_status([*existing, event])  # validates seq and withdrawal precedence before writing
@@ -88,11 +88,13 @@ def resolve_for_use(
     required: Status,
     consumer_class: str,
     gate: RightsGate,
-    source_ids: tuple[str, ...],
 ) -> dict:
     """A pinned consumer's check at each use (§7): bytes verify; the effective status is not
-    withdrawn and is at least `required`; the CURRENT rights allow the class."""
-    core = verify_release(store, dataset_id, sha)
+    withdrawn and is at least `required` for this class; the CURRENT rights of every source in
+    the release's derived lineage allow the class. Callers cannot nominate sources."""
+    located, core, sources = stored_release_sources(store, sha)  # verifies bytes and lineage
+    if located != dataset_id:
+        raise RefusedUse(f"content hash {sha} belongs to {located}, not {dataset_id}")
     current = effective_status_for(events(store, sha), consumer_class)
     if current is None:
         raise RefusedUse("no status")
@@ -103,5 +105,5 @@ def resolve_for_use(
         raise RefusedUse(f"not approved for {consumer_class} (effective status {current.status.value})")
     if LEVEL[current.status] < LEVEL[required]:
         raise RefusedUse(f"status {current.status.value} is below {required.value}")
-    gate.authorise(Operation.PUBLISH, source_ids, consumer_class)
+    gate.authorise(Operation.PUBLISH, sources, consumer_class)  # CURRENT rights, actual lineage
     return core

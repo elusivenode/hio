@@ -5,6 +5,7 @@ that failed at the reviewed head (98e6a8e) and passes after the fix.
 """
 
 import os
+import re
 
 import pytest
 
@@ -238,7 +239,6 @@ def approve(store, sha, cls):
         "fixture",
         CUTOFF,
         gate=RightsGate(PERMISSIVE),
-        source_ids=("synthetic.rba",),
         consumer_class=cls,
     )
 
@@ -255,7 +255,6 @@ def use(store, sha, cls):
         required=Status.APPROVED_FOR_CONSUMER,
         consumer_class=cls,
         gate=RightsGate(PERMISSIVE),
-        source_ids=("synthetic.rba",),
     )
 
 
@@ -295,3 +294,136 @@ def test_f2_a_global_withdrawal_refuses_every_class_and_is_terminal(tmp_path):
             use(store, sha, cls)
     with pytest.raises(Exception, match="terminal"):
         approve(store, sha, "hio_internal")
+
+
+# --- F-REVIEW-2026-10-24-s1a-1-1: rights are checked against lineage, not caller-supplied ids ------
+
+import inspect  # noqa: E402
+
+from hio.contracts.rights import RightsRefused  # noqa: E402
+
+UNRELATED = {
+    "synthetic.unrelated": RightsRecord(
+        "synthetic.unrelated",
+        Verification.OWNER_VERIFIED,
+        {p: Permission.parse("allow") for p in ALL_PERMISSIONS},
+    )
+}
+
+
+def attacker_kwargs(func):
+    """The reviewed API accepted caller-supplied source ids; pass the attacker's choice wherever
+    the API still accepts one."""
+    return (
+        {"source_ids": ("synthetic.unrelated",)} if "source_ids" in inspect.signature(func).parameters else {}
+    )
+
+
+def test_f1_codex_counterexample_use_is_refused_when_the_gate_lacks_the_actual_source(tmp_path):
+    """Codex: with a gate holding only synthetic.unrelated (all allowed) and
+    source_ids=('synthetic.unrelated',), resolve_for_use returned the AUD release although the
+    gate had no record for its actual input synthetic.rba."""
+    _, store, releases = published_store(tmp_path / "s")
+    with pytest.raises(RightsRefused, match=re.escape("synthetic.rba")):
+        resolve_for_use(
+            store,
+            AUD,
+            releases[AUD].content_sha256,
+            required=Status.EXPLORATORY,
+            consumer_class="hio_internal",
+            gate=RightsGate(UNRELATED),
+            **attacker_kwargs(resolve_for_use),
+        )
+
+
+def test_f1_codex_counterexample_approval_is_refused_when_the_gate_lacks_the_actual_source(tmp_path):
+    _, store, releases = published_store(tmp_path / "s")
+    before = store.snapshot()
+    with pytest.raises(RightsRefused, match=re.escape("synthetic.rba")):
+        append_status(
+            store,
+            releases[AUD].content_sha256,
+            Status.APPROVED_FOR_CONSUMER,
+            "owner",
+            "fixture",
+            CUTOFF,
+            gate=RightsGate(UNRELATED),
+            consumer_class="hio_internal",
+            **attacker_kwargs(append_status),
+        )
+    assert store.snapshot() == before
+
+
+def revoke(sid, cls="hio_internal"):
+    perms = {p: Permission.parse("allow") for p in ALL_PERMISSIONS} | {
+        f"distribution.{cls}": Permission.parse("deny")
+    }
+    return {**PERMISSIVE, sid: RightsRecord(sid, Verification.OWNER_VERIFIED, perms)}
+
+
+def test_f1_lineage_is_transitive_through_upstream_releases(tmp_path):
+    """The FX excess release depends on both sources (its own receipts and its upstream cash
+    releases); the AUD cash release depends on synthetic.rba only."""
+    from hio.publish.lineage import stored_release_sources
+
+    _, store, releases = published_store(tmp_path / "s")
+    fx = releases["fx.usd_cash_vs_aud.excess"]
+    assert stored_release_sources(store, fx.content_sha256)[2] == {"synthetic.rba", "synthetic.nyfed"}
+    assert stored_release_sources(store, releases[AUD].content_sha256)[2] == {"synthetic.rba"}
+    no_nyfed = RightsGate(revoke("synthetic.nyfed"))
+    with pytest.raises(RightsRefused, match=re.escape("synthetic.nyfed: distribution.hio_internal")):
+        resolve_for_use(
+            store,
+            "fx.usd_cash_vs_aud.excess",
+            fx.content_sha256,
+            required=Status.EXPLORATORY,
+            consumer_class="hio_internal",
+            gate=no_nyfed,
+        )
+    resolve_for_use(
+        store,
+        AUD,
+        releases[AUD].content_sha256,
+        required=Status.EXPLORATORY,
+        consumer_class="hio_internal",
+        gate=no_nyfed,
+    )
+
+
+def test_f1_lineage_fails_closed_when_a_receipt_behind_a_release_is_missing(tmp_path):
+    from hio.publish.lineage import LineageError
+
+    _, store, releases = published_store(tmp_path / "s")
+    rid = releases[AUD].core["inputs"][0]["receipts"][0]
+    path = next(p for p in (store.root / "receipts").rglob(rid))
+    path.chmod(0o644)
+    path.unlink()
+    with pytest.raises(LineageError):
+        resolve_for_use(
+            store,
+            AUD,
+            releases[AUD].content_sha256,
+            required=Status.EXPLORATORY,
+            consumer_class="hio_internal",
+            gate=RightsGate(PERMISSIVE),
+        )
+
+
+def test_f1_callers_cannot_nominate_sources():
+    from hio.publish.release import write_release
+
+    for func in (resolve_for_use, append_status, write_release):
+        assert "source_ids" not in inspect.signature(func).parameters
+
+
+def test_f1_a_dataset_id_that_does_not_own_the_hash_is_refused(tmp_path):
+    _, store, releases = published_store(tmp_path / "s")
+    with pytest.raises(RefusedUse, match="belongs to"):
+        resolve_for_use(
+            store,
+            "cash.usd.overnight",
+            releases[AUD].content_sha256,
+            required=Status.EXPLORATORY,
+            consumer_class="hio_internal",
+            gate=RightsGate(PERMISSIVE),
+        )

@@ -216,6 +216,19 @@ class VintageStore:
             self._verify_receipt(v)
         return selected
 
+    def sources_of(self, view: View) -> frozenset[str]:
+        """The sources behind a view's selected vintages, read from their verified capture
+        records (F-REVIEW-2026-10-24-s1a-1-1): the input to rights checks before a build."""
+        out = set()
+        for v in view.values.values():
+            self._verify_receipt(v)
+            out.add(
+                load_receipt(
+                    self.store, self.series[v.series_id].source_id, v.captured_at, v.receipt_id
+                ).source_id
+            )
+        return frozenset(out)
+
     def _verify_receipt(self, v: Vintage) -> None:
         source_id = self.series[v.series_id].source_id
         try:
