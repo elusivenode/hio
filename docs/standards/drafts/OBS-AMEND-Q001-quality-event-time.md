@@ -2,7 +2,7 @@
 id: OBS-AMEND-Q001
 title: "Draft amendment to the observations standard: quality eligibility is evaluated on HIO's decision clock, never retroactively (Q-001)"
 status: proposed   # draft for the owner and solution architect; NOT approved; NOT implemented
-revision: 3        # revision 1 at d1edf1e (OD-0023); revision 2 at baa8e4e (OD-0026); revision 3 under OD-0027 (admissibility and distinguishability)
+revision: 4        # revision 1 at d1edf1e (OD-0023); revision 2 at baa8e4e (OD-0026); revision 3 at 6f013a7 (OD-0027); revision 4 under OD-0028 (duplicated table header removed; no substantive change)
 owner: owner + solution architect (decide); drafted by claude/implementation-agent
 last_reviewed: 2026-10-24
 amends: docs/standards/observations-and-point-in-time.md v0.2 (approved, OD-0008; blob 341cd608604d in this repository, bd9eff0893ea in macsmsf history)
@@ -75,8 +75,6 @@ market knowability.
 > A result is a function of (mode, T, Q) and of events dated `≤ Q` only. A decision made after
 > Q never changes it. Q is set per mode:
 
-| Mode | T (information) | Q (HIO decisions) | Label recorded with every result |
-|---|---|---|---|
 | Mode | T (information) | Q (HIO decisions) | Label recorded with every result |
 |---|---|---|---|
 | `as_captured_by_hio(T)` | `captured_at ≤ T` | **Q = T, fixed** (it cannot be overridden): "what HIO held and judged eligible at T" | `point_in_time`; `quality_as_of = T` |

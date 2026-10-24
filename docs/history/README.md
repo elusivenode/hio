@@ -39,6 +39,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-f6-round3-hash-correction.md` | the owner's correction of that hash, verbatim | authority for OD-0025 | — |
 | `2026-10-24-owner-q001-q002-drafting.md` | pasted by the owner without other words: solution-architecture advice (Option A for Q-001/Q-002, refined) and a drafting-only instruction, verbatim | authority for OD-0026 (the advice is advice) | — |
 | `2026-10-24-owner-q001-q002-final-amendment.md` | the owner's final narrow amendment instruction for the Q-001/Q-002 drafts, verbatim | authority for OD-0027 | — |
+| `2026-10-24-owner-q001-q002-revision4.md` | the owner's revision-4 instruction (Q-001 header; Q-002 processing order vs acquisition history), verbatim | authority for OD-0028 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is

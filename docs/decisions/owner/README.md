@@ -42,6 +42,7 @@ are in operating model §1.1; the template is
 | [OD-0025](OD-0025-f6-round3-disposition.md) | authorise_work | VERIFY-2026-10-24-s1a-1-1 and -2 disposed as preserved evidence (not received); F6 correction cycle on PR #2; hash transcription corrected by the owner | `759ddf7` | recorded |
 | [OD-0026](OD-0026-q001-q002-drafting.md) | authorise_work | refine the Q-001/Q-002 draft amendments (drafting only; Option A advised, not adopted); F6 verification (VERIFY-2026-10-24-s1a-1-5, READY) acknowledged | `d9fa276` | recorded |
 | [OD-0027](OD-0027-q001-q002-final-draft-amendment.md) | authorise_work | final narrow amendment of the Q-001/Q-002 drafts (revision 3: admissibility, distinguishability, conflict identity, diagnostics); refined Option A supported, not approved | `baa8e4e` | recorded |
+| [OD-0028](OD-0028-q001-q002-revision4.md) | authorise_work | drafts revision 4: Q-001 header fix; Q-002 processing order vs acquisition history; architectural direction approved, exact text not yet | `6f013a7` | recorded |
 
 **Current position:**
 - **Approved:**
