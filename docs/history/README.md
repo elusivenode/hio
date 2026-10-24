@@ -35,6 +35,8 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-24-owner-receive-s1a-review.md` | the owner's receipt authorisation for PR #1, verbatim | authority for OD-0022 | — |
 | `2026-10-24-owner-authorise-s1a-remediation.md` | the owner's authorisation of the S1a remediation slice, verbatim | authority for OD-0023 | — |
 | `2026-10-24-owner-f6-remediation-before-receipt.md` | the owner's F6 remediation-before-receipt authorisation (harness-0.8 work stopped; local-first proposal requested), verbatim | authority for OD-0024 | — |
+| `2026-10-24-owner-f6-round3-authorisation.md` | the owner's F6 round-3 authorisation and disposition of the two verification records, verbatim (its record hash was mistranscribed) | authority for OD-0025, with its correction | corrected in part by the next file |
+| `2026-10-24-owner-f6-round3-hash-correction.md` | the owner's correction of that hash, verbatim | authority for OD-0025 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
