@@ -8,7 +8,7 @@ version: harness-0.7 (proposed)
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
-  - "harness-0.7 (2026-10-24, PROPOSED, no effect until approved): integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
+  - "harness-0.7 rev 2 (2026-10-24, PROPOSED, no effect until approved; rev 1 decf55c not approved): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
   - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only. 2026-10-24: §8.1 status sentence updated (status only, OD-0016; migration performed, OD-0017). Paths written hio/<p> mean <p> after migration (MIGRATION-MAP.md)"
   - "harness-0.5 (2026-10-18): per-commit scope check and required record; reviewer handoff and STATUS exception; fix commits vs submission head (T-0007 remediation of a Codex assessment)"
@@ -395,7 +395,14 @@ receipt, never acceptance.
 1. **Assignment** (owner). The owner assigns one review in **one** owner-authored source: an
    *Assigned reviews* row (an owner commit), an owner comment on the author's PR, or a direct
    instruction to the reviewer. A direct instruction is valid but hard to discover, so the owner
-   or Claude adds the matching index row at receipt. The assignment states:
+   or Claude adds the matching index row at receipt.
+
+   **Conflicting channels.** If two owner-authored channels give different values for one
+   review (id, base, head, scope or branch), or two reviews are assigned the same target with
+   different scopes, nobody picks one. The reviewer stops before reviewing, the author stops
+   before remediating, and either reports the conflict. The owner reconciles it in one
+   statement that names the assignment that stands; that statement is the source the review
+   record cites. The assignment states:
    - review id;
    - repository;
    - **full base and head SHAs**;
@@ -439,8 +446,19 @@ receipt, never acceptance.
      amend it before committing;
    - merge commits.
 
-   **A pass is a content-scope constraint, not reviewer authentication.** The owner also reads
-   the diff.
+   **A pass is a content-scope constraint, not reviewer authentication, and not assignment
+   verification.** The owner also reads the diff. CI takes the checking policy
+   (`tools/review_gate.py`, `tools/check_review_branch.sh`) from the trusted event base commit
+   with `git show`, under `pull_request_target`, so a reviewer PR cannot weaken its own check;
+   the PR's commits are read as data and never executed.
+
+4a. **Assignment verification** (owner, before receipt). Confirm that the record matches the
+   authoritative assignment: run `tools/check_review_assignment.py --review-id … --base …
+   --head … --branch … [--scope-terms …]` with the values **from the assignment source**, not
+   from the record or the PR, and read the record's scope statement against the assigned scope.
+   It fails if the record's id, base, head or branch differ, if the branch does not descend from
+   the assigned head, or if the record does not state its assignment source. A branch can pass
+   step 4 while reviewing the wrong head; only 4a catches that.
 5. **Receipt** (owner). Merge the reviewer PR with a merge commit (`--no-ff`) into `main`, never
    squash or rebase, so the reviewer's commits keep their ids. Delete the review branch and
    worktree afterwards. **A merge means the evidence has been received.** It does not mean
@@ -449,7 +467,17 @@ receipt, never acceptance.
    or Claude updates `STATUS.md`.
 6. **Remediation** (Claude, on a branch from the receipt commit, submitted as an author PR per
    step 0). Claude starts only from a prompt naming the receipt commit, and stops if that commit
-   is not in `main`. There are two SHAs:
+   is not in `main`.
+
+   **Exception: remediation before receipt** (only by an explicit owner instruction, recorded in
+   an OD). It applies where immutable review evidence exists at a verified commit but cannot be
+   received normally (for example, the receipt merge is blocked). The instruction names the
+   review id, the commit holding the record, and the sha256 of each record file. Claude reads the
+   record only with `git show <commit>:<path>`, checks the hashes before relying on it, and cites
+   commit and hashes in the remediation response. The record must still be received, or its
+   disposition recorded by the owner, before verification of the remediation is assigned. The
+   exception never applies by inference, and never to a review branch whose steps 4–4a have not
+   passed. There are two SHAs:
    - commit the fix: these are the **fix commit(s)**;
    - then commit the remediation response (`reviews/responses/`) and the *Remediation claim*
      cell: this is the **submission head**. The response names the fix commits; the index cell
@@ -469,7 +497,8 @@ receipt, never acceptance.
    - received into `main` (receipt commit, or "not received");
    - the next actor (owner, author or reviewer);
    - a ready prompt for that actor whose **prerequisites are explicit** (for example "stop if
-     commit X is not in `main`").
+     commit X is not in `main`"). If a prerequisite is not met, the agent stops and reports;
+     it does not assume the step happened.
 
    After receipt, the owner or Claude updates `STATUS.md`; the reviewer never does.
 
