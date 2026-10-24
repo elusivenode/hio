@@ -75,10 +75,13 @@ def test_f6_rollback_never_removes_an_object_this_commit_did_not_write(tmp_path,
     store, staged = staged_pair(tmp_path)
     real_put = LocalObjectStore.put
 
-    def racing_put(self, key, data):
-        if key == "catalogue/b" and not self.exists(key):
-            real_put(self, key, b"other writer")
-        return real_put(self, key, data)
+    def racing_put(self, key, data, **kwargs):  # passes round 3's `claim` through (OD-0025)
+        target = self.root / key
+        if key == "catalogue/b" and not target.exists():
+            # Round 3: the other writer's file is created directly; calling this store's put()
+            # mid-transaction would be concurrent use of one store (outside the single-writer model).
+            target.write_bytes(b"other writer")
+        return real_put(self, key, data, **kwargs)
 
     monkeypatch.setattr(LocalObjectStore, "put", racing_put)
     with pytest.raises(WriteOnceViolation):

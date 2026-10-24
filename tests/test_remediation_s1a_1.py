@@ -60,8 +60,14 @@ def test_f6_induced_failure_mid_commit_exposes_nothing(tmp_path, monkeypatch, ke
 def test_f6_an_interrupted_journalled_commit_is_rolled_back_when_the_store_is_reopened(tmp_path):
     """A crash after the first object of a journalled commit: the next open removes it."""
     store = LocalObjectStore(tmp_path / "s")
-    store._journal_begin("txn1", ["catalogue/x/1.json", "catalogue/y/2.json"])
-    store.put("catalogue/x/1.json", b"partial")
+    # Round 3 (OD-0025): a journal claims each object it creates, so the crash is simulated on
+    # the claimed write path; an intent-only journal is refused (test_remediation_s1a_1_f6_round3).
+    journal = store._journal_begin("txn1")
+    store.put(
+        "catalogue/x/1.json",
+        b"partial",
+        claim=lambda st: store._journal_claim(journal, "catalogue/x/1.json", st),
+    )
     reopened = LocalObjectStore(tmp_path / "s")
     assert list(reopened.list()) == []
 

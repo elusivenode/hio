@@ -9,16 +9,23 @@ operation leaves the store unchanged (rights standard §3: no partial output). c
 all-or-nothing (F-REVIEW-2026-10-24-s1a-1-6):
 - a group of objects under one new directory (a release) is built in a hidden staging area and
   appears with a single atomic directory rename;
-- any other set is written under an intent journal: a failure rolls back the objects this
-  commit wrote, including one that became visible before its write failed, and a journal left
-  by a crash, or by a rollback that could not finish, is rolled back when the store is next
-  opened (round 2, VERIFY-2026-10-24-s1a-1-1).
+- any other set is written under a journal that durably claims each object by file identity
+  (device, inode) before linking it (round 3, VERIFY-2026-10-24-s1a-1-2):
+  - while a journal is unresolved, the objects it owns are not observable through get, exists,
+    list or snapshot, from any open store;
+  - rollback and recovery remove only objects whose identity matches a claim, never another
+    writer's object at the same key;
+  - a failed rollback or a crash leaves the journal, and the next open rolls back. If that still
+    cannot finish, opening fails.
+
+  A single writer is assumed; this is not general concurrent-transaction support.
 Hidden staging and journal directories are never listed as objects.
 """
 
 from __future__ import annotations
 
 import contextlib
+import functools
 import json
 import os
 import posixpath
@@ -26,13 +33,14 @@ import re
 import shutil
 import tempfile
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from hio.contracts.canonical import sha256_hex
 
 _KEY = re.compile(r"^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*$")
 _HASH_SEGMENT = re.compile(r"^[0-9a-f]{64}$")
+_JOURNAL_FORMAT = "hio-objectstore-journal/2"  # JSON lines: a header, then one claim per created object
 
 
 class WriteOnceViolation(Exception):
@@ -59,14 +67,87 @@ class LocalObjectStore:
     def _staging_dir(self) -> Path:
         return self.root / ".staging"
 
-    def _journal_begin(self, txn: str, keys: list[str]) -> None:
+    def _journal_begin(self, txn: str) -> Path:
+        """Create a durable, empty journal for one transaction, after resolving any earlier one."""
+        self._resolve_before_write()
         self._journal_dir.mkdir(exist_ok=True)
         path = self._journal_dir / f"{txn}.json"
-        path.write_text(json.dumps(sorted(keys)))
-        _fsync_path(path)
+        with open(path, "x") as fh:
+            fh.write(json.dumps({"format": _JOURNAL_FORMAT, "txn": txn}) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        _fsync_path(self._journal_dir)
+        return path
 
-    def _journal_end(self, txn: str) -> None:
-        (self._journal_dir / f"{txn}.json").unlink(missing_ok=True)
+    def _journal_claim(self, journal: Path, key: str, st: os.stat_result) -> None:
+        """Durably record, before the link, the identity of the file about to be placed at key.
+        The link places that same inode, so an object at key belongs to this transaction only
+        if its (device, inode) matches; another writer's object never does."""
+        line = (json.dumps({"key": key, "dev": st.st_dev, "ino": st.st_ino}) + "\n").encode()
+        fd = os.open(journal, os.O_WRONLY | os.O_APPEND)  # never re-creates a vanished journal
+        try:
+            os.write(fd, line)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+    def _journal_end(self, journal: Path) -> None:
+        journal.unlink(missing_ok=True)
+        _fsync_path(self._journal_dir)  # a resurrected journal would roll back committed objects
+
+    def _claims(self, journal: Path) -> list[tuple[str, int, int]]:
+        lines = journal.read_text().splitlines()
+        try:
+            header = json.loads(lines[0]) if lines else None
+        except json.JSONDecodeError:
+            if len(lines) == 1:
+                return []  # torn header: no claim can follow it
+            raise
+        if header is None:
+            return []
+        if not isinstance(header, dict) or header.get("format") != _JOURNAL_FORMAT:
+            raise RuntimeError(
+                f"journal {journal} lists intended keys only and cannot prove ownership of any "
+                "object; the store will not open until it is inspected"
+            )
+        claims = []
+        for n, line in enumerate(lines[1:], start=2):
+            try:
+                c = json.loads(line)
+            except json.JSONDecodeError:
+                if n == len(lines):
+                    break  # torn final claim: claims are durable before their link, so no link
+                raise
+            claims.append((c["key"], c["dev"], c["ino"]))
+        return claims
+
+    def _owned(self, key: str, dev: int, ino: int) -> bool:
+        try:
+            st = os.lstat(self._path(key))
+        except FileNotFoundError:
+            return False
+        return (st.st_dev, st.st_ino) == (dev, ino)
+
+    def _unresolved(self) -> set[str]:
+        """Keys whose objects belong to a transaction that has not resolved: not observable."""
+        if not self._journal_dir.is_dir():
+            return set()
+        hidden: set[str] = set()
+        for journal in self._journal_dir.glob("*.json"):
+            hidden.update(k for k, dev, ino in self._claims(journal) if self._owned(k, dev, ino))
+        return hidden
+
+    def _rollback(self, journal: Path) -> None:
+        """Remove the objects this journal's transaction created, then the journal. Raises if
+        an object cannot be removed; the journal then stays, hiding it until recovery."""
+        for key, dev, ino in self._claims(journal):
+            if self._owned(key, dev, ino):
+                self._remove(key)
+            for tmp in self._path(key).parent.glob(".tmp-*"):  # a crash leaves the claimed temp file
+                st = os.lstat(tmp)
+                if (st.st_dev, st.st_ino) == (dev, ino):
+                    os.unlink(tmp)
+        self._journal_end(journal)
 
     def _remove(self, key: str) -> None:
         """Remove an object written by an unfinished commit (never used on committed objects).
@@ -80,13 +161,19 @@ class LocalObjectStore:
             path.chmod(0o644)
             path.unlink()
 
+    def _resolve_before_write(self) -> None:
+        """No new write while a transaction is unresolved: a freed inode could be reused for the
+        new object, and the stale claim would then hide and later remove it. Recover first; if
+        recovery cannot finish, the write is refused (raises)."""
+        if self._journal_dir.is_dir() and any(self._journal_dir.glob("*.json")):
+            self._recover()
+
     def _recover(self) -> None:
-        """Roll back any commit interrupted by a crash, and clear abandoned staging areas."""
+        """Roll back any unresolved commit (a crash or a failed rollback), and clear abandoned
+        staging areas. If a rollback still cannot finish, opening fails and the journal stays."""
         if self._journal_dir.is_dir():
             for journal in sorted(self._journal_dir.glob("*.json")):
-                for key in json.loads(journal.read_text()):
-                    self._remove(key)
-                journal.unlink()
+                self._rollback(journal)
         if self._staging_dir.is_dir():
             shutil.rmtree(self._staging_dir, onexc=_make_writable_and_retry)
 
@@ -96,13 +183,16 @@ class LocalObjectStore:
         return self.root / key
 
     def exists(self, key: str) -> bool:
-        return self._path(key).is_file()
+        return self._path(key).is_file() and key not in self._unresolved()
 
-    def put(self, key: str, data: bytes) -> str:
+    def put(self, key: str, data: bytes, *, claim: Callable[[os.stat_result], None] | None = None) -> str:
         """Write once. Refuses any second write to the same key, identical bytes included.
-        A failure after the object became visible removes it again before re-raising."""
+        A failure after the object became visible removes it again before re-raising.
+        `claim` (used by journalled commits) receives the new file's identity before the link."""
         path = self._path(key)
         _verify_content_addressed(key, data)
+        if claim is None:  # a transaction's own writes run under its (already resolved) journal
+            self._resolve_before_write()
         path.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
         linked = False
@@ -111,6 +201,8 @@ class LocalObjectStore:
                 fh.write(data)
                 fh.flush()
                 os.fsync(fh.fileno())
+            if claim is not None:
+                claim(os.stat(tmp))
             try:
                 os.link(tmp, path)  # atomic, and fails if the key exists
             except FileExistsError:
@@ -148,6 +240,8 @@ class LocalObjectStore:
         return True
 
     def get(self, key: str, sha256: str | None = None) -> bytes:
+        if key in self._unresolved():
+            raise FileNotFoundError(f"object not committed: {key}")
         data = self._path(key).read_bytes()
         _verify_content_addressed(key, data)
         if sha256 is not None and sha256_hex(data) != sha256:
@@ -156,11 +250,12 @@ class LocalObjectStore:
 
     def list(self, prefix: str = "") -> Iterator[str]:
         base = self.root
+        hidden = self._unresolved()
         for path in sorted(base.rglob("*")):
             rel = path.relative_to(base)
             if path.is_file() and not any(part.startswith(".") for part in rel.parts):
                 key = rel.as_posix()
-                if key.startswith(prefix):
+                if key.startswith(prefix) and key not in hidden:
                     yield key
 
     def snapshot(self) -> dict[str, str]:
@@ -229,28 +324,21 @@ class StagedWrites:
                 shutil.rmtree(stage_root, onexc=_make_writable_and_retry)
 
     def _commit_journalled(self, keys: list[str]) -> None:
-        txn = uuid.uuid4().hex
-        self.store._journal_begin(txn, keys)
-        written: list[str] = []
-        key = None
+        store = self.store
+        journal = store._journal_begin(uuid.uuid4().hex)
         try:
             for key in keys:
-                self.store.put(key, self._pending[key])
-                written.append(key)
-        except BaseException as exc:
-            # The key in flight may already be visible (a failure after os.link), so it is rolled
-            # back too, unless it failed because another writer's object holds that key.
-            undo = written if isinstance(exc, WriteOnceViolation) or key is None else [*written, key]
-            complete = True
-            for k in undo:
-                try:
-                    self.store._remove(k)
-                except OSError:
-                    complete = False
-            if complete:
-                self.store._journal_end(txn)  # else the journal stays, and the next open rolls back
+                claim = functools.partial(store._journal_claim, journal, key)
+                store.put(key, self._pending[key], claim=claim)
+        except BaseException:
+            # Removes only objects this transaction created (by identity). If that cannot
+            # finish, the journal stays: its objects remain hidden, and the next open rolls back.
+            with contextlib.suppress(OSError):
+                store._rollback(journal)
             raise
-        self.store._journal_end(txn)
+        for parent in sorted({store._path(k).parent for k in keys}):
+            _fsync_path(parent)  # the links are durable before the journal that could undo them goes
+        store._journal_end(journal)
 
 
 def _new_group(store: LocalObjectStore, keys: list[str]) -> str | None:
