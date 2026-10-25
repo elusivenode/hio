@@ -73,6 +73,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-pr5-receipt-harness-0.7.1.md` | the owner's authorisation of the one-off PR #5 evidence receipt and the harness-0.7.1 progression, verbatim | authority for OD-0050 | — |
 | `2026-10-25-owner-adr0012-remediation-harness-review-prep.md` | the owner's instruction to remediate the three ADR-0012 findings and to push and prepare the harness-0.7.1 independent review, verbatim | authority for OD-0051 | — |
 | `2026-10-25-owner-adr0012-f2-harness-0.7.1-corrections.md` | the owner's instruction for the ADR-0012 F2 correction and the four harness-0.7.1 corrections, verbatim | authority for OD-0052 | — |
+| `2026-10-25-owner-adr0012-harness-0.7.1-approval.md` | the owner's approval of HIO-ADR-0012 rev 3 and harness-0.7.1 (C1; C2 conditional), the D0 disposition, and the controlled-receipt execution instruction, verbatim | authority for OD-0055, OD-0056, OD-0057 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
