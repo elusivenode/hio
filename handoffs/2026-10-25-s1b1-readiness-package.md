@@ -16,6 +16,7 @@ work_card: T-0002
 
 ## Changed files
 - Added `docs/evidence/S1B1-readiness-package.md` (revision 2: reconciled with `origin/main` at `0665b66`, owner direction applied, one authorisation request).
+- Added OD-0062 (with its history file and index row) and proposed T-0009 (staging direction, IaC, lean capture, the one staging decision). Package §7 notes the supersession.
 - Added this handoff. `STATUS.md` unchanged (state did not change).
 
 ## Done

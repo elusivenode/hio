@@ -312,6 +312,18 @@ documentation check is complete and H1 is done.
 **Decision requested:** (1) approve Authorisation A as scoped, (2) confirm the split reading,
 (3) confirm H2's P3-until-approved reading. Any one "no" and I stop at the document.
 
+## 7. Revision 3 note: superseded by T-0009 (OD-0062)
+
+After this package, the owner approved Authorisation A and directed a simpler first slice
+([T-0009](../../registers/tasks/T-0009-s1b1-cash-capture-and-research.md), proposed). Where they differ,
+**T-0009 governs** and these sections are history:
+- §5.1 and §5.2: scope and acceptance now follow T-0009 §2, §3 and §7 (P3 only; no P2 or Q-013
+  implementation; lean capture without C1–C7; A-9 and A-10 replaced).
+- §3.1 (Q-013): stays an open standards decision, not implemented in this slice.
+- §4 and §5.3: Azure Blob is the working assumption (an account exists); the writer uses OIDC;
+  infrastructure is authored as OpenTofu or Terraform (T-0009 §5), never applied under Authorisation A.
+- §2.2: unchanged (no probe). §6.1 rights evidence: unchanged and still unapproved.
+
 ## Stop conditions I will honour
 
 I will stop and flag if: a right is read differently from §1.2; the existing manifest fields cannot
