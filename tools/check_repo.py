@@ -238,6 +238,10 @@ FORBIDDEN_PATHS = [
     (r"\.(parquet|feather|arrow|h5|hdf5|pkl|pickle|npz?)$", "binary data or artefact"),
     (r"\.(xlsx?|zip|gz|tgz|bz2|7z)$", "archive or spreadsheet"),
     (r"^(data|receipts|releases|artefacts|catalogue|\.hio-store)/", "object-store or data directory"),
+    (
+        r"\.tfstate(\.|$)|\.tfplan$|(^|/)\.terraform(/|$)|\.tfvars(\.json)?$",
+        "infrastructure state, plan or variables",
+    ),
 ]
 DATA_SUFFIXES = (".csv", ".json", ".jsonl", ".xml", ".txt", ".tsv")
 SYNTHETIC_DIR = "tests/fixtures/synthetic/"
