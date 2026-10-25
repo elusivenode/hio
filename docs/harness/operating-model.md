@@ -8,6 +8,7 @@ version: harness-0.7.1
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
+  - "harness-0.7.1 correction 1 (2026-10-25, APPROVED by OD-0059; docs/decisions/harness-0.7.1-trailer-correction-proposal.md revision 1, blob b8d2fac0dc18): section 6.2 steps 5.7, 5.8 and 5.10 only. Requires the HIO-Actor trailer on each receipt import commit, runs tools/check_repo.py trailers on the import commit before the 5.9 recheck, and makes CI status a mandatory reported result kept separate from the evidence-integrity checks. Tested by a bounded scratch-clone regression (OD-0059). No tool, workflow or hook changed"
   - "harness-0.7.1 (2026-10-25, APPROVED by OD-0056 at 552d4fb, blob a74a41453d10; STATUS-ONLY edits follow): review evidence is delivered by a pushed review branch with no reviewer PR, and received by a byte-identical import with a verified provenance tag (docs/decisions/harness-0.7.1-proposal.md revision 3 at 8ed13fd, blob 72deffc37a4c; verified by VERIFY-2026-10-25-harness-0.7.1-1). Content change: the section 6.2 preamble sentence and steps 3, 4, 5 and 6 only. Adoption condition (OD-0056): the first receipt is supervised and its result recorded in an OD before routine delegated receipt is enabled; until then each receipt needs the owner's explicit go-ahead before anything is pushed to main"
   - "harness-0.7 rev 3 (2026-10-24): APPROVED by OD-0021 at 9b58811 (blob 90e2565fe814); integrated by merge 910c5d5; later edits record status only. Adoption condition: the CI reviewer-PR gate is not an established control until the first reviewer PR validates it. Content: step 4a compares the record's assignment source with an owner-supplied expected source. Rev 2 (fcabd7f): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
@@ -538,16 +539,22 @@ a fixed head, its CI result and its diff visible to every agent; receipt (step 5
 
    **5.7 Verify.** Each imported file's blob id (`git rev-parse :<path>`) equals
    `git rev-parse T:<path>`; nothing outside `reviews/` is staged; `tools/check_repo.py` passes; and
-   5.6 passes.
+   5.6 passes. Once the 5.8 commit exists and before the 5.9 recheck, run
+   `uv run python tools/check_repo.py trailers origin/main HEAD`: it must pass. (The local hook does
+   not check trailers; CI does. If it fails, stop and fix the **unpublished** import commit.)
 
    **5.8 Commit the pure import**, with the trailers:
    - `Review-Id`, `Review-Branch`, `Review-Commit: <T>`, `Reviewed-Base`, `Reviewed-Head`;
    - `Assignment-Source`: the location in 5.0.1, never the record's field;
    - `Reviewer-Report`: how it was supplied;
    - one `Record: <path> blob <id> sha256 <hex>` per imported file;
-   - `Inventory: complete` and `Receipt-Checks`.
+   - `Inventory: complete` and `Receipt-Checks`;
+   - `HIO-Actor: <role> (evidence receipt, OD-NNNN)`, as CI requires on every non-merge commit
+     (`tools/check_repo.py trailers`); and `Co-Authored-By` when the receiver is an agent.
 
-   Keep it pure: no status cell, `STATUS.md` or OD change in this commit.
+   Keep it pure: no status cell, `STATUS.md` or OD change in this commit. The merge commit of 5.9
+   and any administrative commit that follows carry the same `HIO-Actor` trailer by the same rule
+   (merge commits are exempt in CI, but carry it for consistency).
 
    **5.9 Final remote recheck, then merge and publish.** Immediately before merging, re-run the
    `ls-remote` of 5.1 and of the tag. The branch tip must still equal `T` and the reported tip, and
@@ -560,6 +567,14 @@ a fixed head, its CI result and its diff visible to every agent; receipt (step 5
    "received" in the index and report completion. Until then the status word is **"receipt
    incomplete"**, and the receiver reports it to the owner by name. A partial receipt is never
    presented as complete.
+
+   **Report CI as a separate, mandatory result.** After the push, the receiver reports the CI
+   conclusion (run id and head SHA) for every commit pushed, in a section separate from the
+   evidence-integrity result. *Evidence-integrity checks* (5.1 to 5.10: tip, tag, inventory, blobs,
+   tree) decide whether the receipt is complete. *CI integration checks* (workflow results) are
+   reported alongside: a CI failure does not by itself change a verified receipt, and a green run does
+   not substitute for those checks. A failed run is never rewritten away: published history and its
+   run stay on record, and a later green run is reported as a separate run, never as a repair.
 
    **5.11 Recovery from a partial operation.** Restart at 5.1 each time. The steps check state before
    acting.

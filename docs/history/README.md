@@ -76,6 +76,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-adr0012-harness-0.7.1-approval.md` | the owner's approval of HIO-ADR-0012 rev 3 and harness-0.7.1 (C1; C2 conditional), the D0 disposition, and the controlled-receipt execution instruction, verbatim | authority for OD-0055, OD-0056, OD-0057 | — |
 | `2026-10-25-owner-a2-supervised-receipt-authorisation.md` | the owner's authorisation of the production receipt of VERIFY-2026-10-25-adr0012-2 with Option (b), verbatim | authority for OD-0058 | — |
 | `2026-10-25-owner-a2-receipt-ci-recovery.md` | the owner's Option 1 recovery instruction after the HIO-Actor trailer CI failure, verbatim | authority for OD-0058 | — |
+| `2026-10-25-owner-approve-trailer-correction.md` | the owner's approval of the bounded harness-0.7.1 trailer and CI-reporting correction, verbatim | authority for OD-0059 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
