@@ -8,8 +8,8 @@ supersedes: []          # on approval only, in part: the HIO-ADR-0010 rev 3 S1b 
 superseded_by: null
 gates: [S1b-1 authorisation, S1b-2 authorisation]
 review_record: null     # independent review required before approval (decisions README, process step 3); draft assignment: HIO-ADR-0012-review-assignment-draft.md
-drafted_under: [OD-0046, OD-0047, OD-0048, OD-0051]
-revision: 2   # revision 1 = 1d68da3e90d879da6318082551bab943c60cf68b (reviewed: REVIEW-2026-10-25-adr0012, REQUEST CHANGES); revision 2 remediates its three findings
+drafted_under: [OD-0046, OD-0047, OD-0048, OD-0051, OD-0052]
+revision: 3   # rev 1 = 1d68da3e90d879da6318082551bab943c60cf68b (REVIEW-2026-10-25-adr0012, REQUEST CHANGES); rev 2 = 860fd7879c6c663980bc4bf037a8c29e8c7df769 (VERIFY-2026-10-25-adr0012-1: F1 and F3 verified closed, F2 open); rev 3 corrects F2 only
 evidence: [docs/evidence/S1B-readiness-assessment.md, docs/research/T-0002-rba-nyfed-evidence-2026-10-25.md, docs/research/T-0002-owner-verification-matrix.md]
 ---
 
@@ -126,7 +126,7 @@ claimed.
 | **Datasets** (source id each) | `rba.cash_rate` (AONIA); `rba.expert_judgement` (the F1 expert-judgement file); `rba.cash_rate_tri`; optionally `rba.cash_rate_target`; `nyfed.sofr`; `nyfed.sofr_index` | one FX fixing source, chosen in a **separate FX-source decision** | each reference source |
 | **Outputs** | `cash.aud.overnight`, `cash.usd.overnight` (`as_captured_by_hio`, with labelled `reconstructed(T)` history); two **index triangulations** (§4.4) | `fx.usd_cash_vs_aud.excess` and its decomposition (S1-A9); the FX fixing triangulation | the bill-rate triangulations; any later reference |
 | **Calendars** (cited reference data) | RITS (AONIA selection); SIFMA (SOFR); NSW, defining J for `cash.usd` periods until S1b-2 supplies fixings | the FX source's calendar; J checked against actual fixings | each reference's |
-| **Entry gate** | (a) S1a accepted (done, OD-0042); (b) **`owner_verified` rights for each S1b-1 dataset × each operation it performs** ([matrix](../research/T-0002-owner-verification-matrix.md)); (c) cited RITS, SIFMA and NSW calendars; (d) publication timing evidenced and the spec patches applied: AUD regime "in arrears", RITS selection, the §4.1 wording, the windows in §4.3; (d2) header and payload timestamp semantics evidenced per dataset, or that evidence declared unavailable (§4.3.1); (d3) Q-013 decided (§4.3.1); (e) the network and credential-control decision (OD-0038); (f) the bucket and keys decision; (g) the owner's S1b-1 authorisation of scope and infrastructure | (a) S1b-1 authorised; (b) the **FX-source decision**, with `owner_verified` rights for that source × every operation; (c) publication timing, calendar, timestamp semantics (§4.3.1) and revision window (§4.3.4) for it; (d) the FX spec re-versioned if the source is not RBA F11 (quote convention per RA-INV-007); (e) the owner's S1b-2 authorisation | per triangulation: `owner_verified` rights for its reference; a cited calendar; a methodological-suitability note with a pre-registered expected-difference model; an owner instruction |
+| **Entry gate** | (a) S1a accepted (done, OD-0042); (b) **`owner_verified` rights for each S1b-1 dataset × each operation it performs** ([matrix](../research/T-0002-owner-verification-matrix.md)); (c) cited RITS, SIFMA and NSW calendars; (d) publication timing evidenced and the spec patches applied: AUD regime "in arrears", RITS selection, the §4.1 wording, the windows in §4.3; (d2) header and payload timestamp semantics evidenced per dataset, or that evidence declared unavailable (§4.3.1); (d3) Q-013 decided (§4.3.1); (e) the network and credential-control decision (OD-0038); (f) the bucket and keys decision, including a provider-assigned write timestamp for stored objects (§4.3.3, C5); (g) the owner's S1b-1 authorisation of scope and infrastructure | (a) S1b-1 authorised; (b) the **FX-source decision**, with `owner_verified` rights for that source × every operation; (c) publication timing, calendar, timestamp semantics (§4.3.1) and revision window (§4.3.4) for it; (d) the FX spec re-versioned if the source is not RBA F11 (quote convention per RA-INV-007); (e) the owner's S1b-2 authorisation | per triangulation: `owner_verified` rights for its reference; a cited calendar; a methodological-suitability note with a pre-registered expected-difference model; an owner instruction |
 | **Excludes** | FX; equity, bonds, futures; any `smsf_*` distribution | the same, apart from FX | — |
 
 ### 4.3 Placing a vintage in time; publication and revision windows (both stages)
@@ -194,52 +194,133 @@ the finality window (§4.3.4). **They are never, on their own, the `knowable_at`
 - **Gaps and backfill.** A missed run is a recorded capture gap. A backfill is a single
   current-value receipt, `schedule_only`, usable only through `reconstructed(T)`.
 
-#### 4.3.3 Capture-attempt records (additive)
+#### 4.3.3 Capture-attempt records: completion evidence (additive)
 
-Every capture run for a dataset writes **one write-once attempt record**, whatever the outcome:
-`catalogue/attempts/<source_id>/<attempted_at>-<attempt_id>`, under the same integrity rules as
-other catalogue records (content-addressed, verified on read).
+**What this evidence can and cannot show.** A final check must show that a request was made,
+that a response generated after W_doc was received, and that it was examined and matched to the
+held value. **No self-recorded event can cryptographically prove network activity.** The capture
+adapter makes the request, the same adapter writes the record, and the store that holds it is
+HIO's own. A record can be internally consistent, can be checked against artefacts HIO retains,
+and can be audited against witnesses outside HIO's bookkeeping. By itself it cannot prove that a
+request happened. This section states what is replayable, what is witnessed, and what is simply
+trusted, and it refuses finality unless every required check passes.
+
+**Trust assumption (already implicit, now explicit).** The S1b capture adapter, running the pinned
+`code_ref` in a scheduled or dispatched workflow on `main`, is a **trusted component**. HIO already
+trusts it to write receipts and capture records honestly; this ADR claims nothing stronger.
+
+**No second bookkeeping system.** The design adds one record type, written the same way as the
+existing catalogue records, and validates it against artefacts and witnesses that already exist
+(the retained receipt, the publisher's own response headers, the CI platform's run record, the
+object store's write timestamp). It adds **no** signature scheme, hash chain, ledger or second
+store. Those would move the same trust to a key or system held by the same adapter. Any such
+mechanism would be a **trust-model change** and is not proposed here.
+
+**The record.** Every capture run for a dataset writes exactly one write-once record at
+`catalogue/attempts/<source_id>/<attempted_at>-<record_sha256>`, where `record_sha256` is the
+SHA-256 of the record's canonical content. **On read the hash is recomputed and compared with the
+key**, as for the other content-addressed records (S1-A3).
 
 | Field | Content |
 |---|---|
-| `source_id`, `attempted_at` | the dataset and HIO's clock at the attempt (UTC) |
+| `execution` | `platform`, `run_id`, `run_attempt`, `job`, and `sha` (the commit the run executed), copied **unaltered** from the CI environment. A run outside the scheduled or dispatched capture workflow on `main` records `platform: other` |
+| `request` | method and the URL configured for the dataset |
+| `response_envelope` | status; `Date`; `Age`, `Last-Modified` and `ETag` if present; `Content-Type`; `Content-Length`: as received, unaltered |
+| `response_sha256`, `response_bytes` | the hash and length of the body read |
+| `attempted_at`, `completed_at` | HIO's clock at the start of the request and when the body was fully read |
 | `outcome` | `verified_changed`, `verified_unchanged` or `failed` |
-| for a verified outcome | the response's sha256 and length; the `receipt_id` it matches (a new capture, or the held capture whose bytes hash equals the response); the keys checked, each with a digest of the value held |
+| for a verified outcome | the `receipt_id` the body matches (a new capture, or the held capture whose bytes hash equals `response_sha256`); the keys checked, each with a digest of the value found |
 | for `failed` | an error class (network, HTTP status, parse, schema, hash mismatch, key missing). No bytes |
 
-**What "verified" means:** the request succeeded; the bytes were hashed and parsed under the
-series schema; every key the release needs is present; and each held value equals the response's
-value (unchanged), or the new value was recorded through `capture()` in the same run (changed).
+**Completion checks.** A record is completion evidence only if **all** of these pass. Any failure,
+or any missing field, makes it **not evidence** (fail closed).
 
-**Constraints:**
+| Check | Rule | Kind |
+|---|---|---|
+| **C1 integrity** | the key's hash matches the recomputed content hash; the object is the stored version, never rewritten | replayable |
+| **C2 response binding** | `response_sha256` equals the referenced receipt's id, and re-hashing that receipt's stored bytes reproduces it | replayable |
+| **C3 content** | parsing the stored bytes under the series schema reproduces each `keys_checked` digest, and each equals the digest of the held vintage's value for that key (for `verified_changed`, the new vintage) | replayable |
+| **C4 freshness** | `Date` is present and parses, `W_doc(k) ≤ Date`, and `−ε ≤ completed_at − Date ≤ δ`. `Date` is the origin server's clock at generation, so a cached copy generated before the window fails even if it was fetched after it | publisher's clock, recorded unaltered |
+| **C5 timing** | `W_doc(k) ≤ attempted_at ≤ completed_at`, and the object store's **provider-assigned write time** `s` satisfies `completed_at ≤ s ≤ completed_at + δ`. If the store cannot supply a provider-assigned write time, C5 fails | witnessed by the store provider |
+| **C6 execution binding** | `execution.platform` is the CI platform, `sha` equals the pinned adapter `code_ref`, and the run identifiers are well formed. At build time this is checked for presence, format and consistency | witnessed by the CI platform (audit below) |
+| **C7 uniqueness** | at most one record exists for the same (`platform`, `run_id`, `run_attempt`, `source_id`) | replayable |
+
+δ and ε are declared per dataset in its spec. This ADR proposes δ = 10 minutes and ε = 2 minutes.
+
+**Which evidence is which.**
+- **Replayable from retained artefacts alone:** C1, C2, C3, C7, and the arithmetic of C4 and C5.
+  A verifier needs only the stores.
+- **Witnessed outside HIO's bookkeeping:**
+  - the publisher's `Date` (C4);
+  - the store's write time (C5);
+  - the CI run record (C6), which the owner or an auditor can check against the platform's run
+    history. This audit is required for a sample of runs in the soak (S1-A13) and for any release
+    the owner promotes beyond exploratory use.
+  - the value itself: the publisher documents no revision after W_doc, so **any later genuine
+    fetch must return the same value**. That re-checks the content of a "final" claim, not the
+    time of the original request.
+- **Trusted-adapter assertions, not replayable:** that the request was actually sent; that the
+  envelope is the response's; and that `attempted_at` and `completed_at` are truthful.
+
+**The unchanged-response case.** Identical bytes cannot prove that a request was made, or when:
+a record can reuse the held receipt's hash and length. An unchanged completion is therefore
+accepted **only** through a fresh envelope (C4) together with C5–C7, with C2 and C3 showing that
+the bytes equal the held receipt's. The forged case raised in the review (a `verified_unchanged`
+record copying R's hash and length, with no request after W_doc) passes C1–C3 and **fails C4**,
+because the genuine response carried a pre-window `Date`. To pass, the adapter would also have to
+fabricate a post-window `Date`, write the record at a matching time (C5) and name a CI run that
+exists (C6). That is the stated trust limit, and an audit against the CI run history and a later
+genuine fetch can expose it.
+
+**Constraints.**
 - **`capture()` is unchanged.** It remains the only writer of receipts and vintages, and an
-  identical consecutive re-fetch **still writes no capture record** (`src/hio/marketdata/capture.py:98-99`).
-  The attempt record is the only durable evidence that such a check happened.
+  identical consecutive re-fetch **still writes no capture record**
+  (`src/hio/marketdata/capture.py:98-99`). The attempt record is the durable evidence that such a
+  check happened.
 - An attempt record is evidence of a **check**, never of **publication**. It never creates or
   changes an observation, a vintage or a `knowable_at`.
+- Source-by-source evidence that `Date`, `Age` and the store's write time behave as assumed is a
+  gate item (§4.2 (d2) and (f)). Where it cannot be evidenced, the dataset has **no finality**.
 
 #### 4.3.4 Finality (fail closed)
 
 A vintage v of key k in a dataset is **final at cutoff C** if and only if all of these hold:
 1. an attempt record r exists with outcome `verified_changed` or `verified_unchanged`, covering
-   k, and **W_doc(k) ≤ r.attempted_at ≤ C**;
-2. r's value for k equals v's value; and
+   k, that passes **C1–C7**, with `W_doc(k) ≤ r.attempted_at` and `s(r) ≤ C`;
+2. r's value for k equals v's value (C3); and
 3. no later vintage of k has `captured_at` ≤ C.
 
-**Fail closed:**
-- An attempt alone establishes nothing. A `failed` record, a missing record, a parse or schema
-  failure and a missing key never count.
-- A delayed check after W_doc counts, because the publisher documents no revision after W_doc. It
-  must still be ≤ C.
-- A **release is final only if every input vintage it uses is final at the release's
-  `knowledge_cutoff`**. Otherwise it is exploratory and identified by its recorded cutoff.
-- The **evidence record ids** for finality are recorded among the release's inputs, so that they
-  fall inside the release's content identity. If the manifest schema cannot carry them without an
-  amendment of the releases standard, that is **escalated**, not decided here.
-- **Worked case from the review (F2).** AONIA is revised at 15:50 Sydney, W_doc is 16:00, and the
-  final check runs at 16:30. A build at 16:10 with `knowledge_cutoff` 16:10 has no verified record
-  in [16:00, 16:10], so it is **not final**. A 16:30 check that returns the revised value records
-  `verified_changed` and a new vintage, and a later build with a cutoff ≥ 16:30 is final.
+**Refused (not evidence for that cutoff):**
+- **Missing:** no record, or a required field absent.
+- **Failed:** a `failed` record, or a verified record whose parse, schema or key check failed.
+- **Delayed:** a check made before W_doc, or one completed or stored after C. A check after C may
+  support a **later** cutoff.
+- **Inconsistent:** any of C1–C7 failing; two records for the same dataset and window that
+  disagree about a key's value, which are also quarantined pending owner review; or two records
+  claiming the same execution.
+- **Unverified:** a record from a run with `platform: other`, a manual or local run, or a dataset
+  whose header and write-time behaviour has not been evidenced.
+
+An attempt alone establishes nothing. A **release is final only if every input vintage it uses is
+final at the release's `knowledge_cutoff`**. Otherwise it is exploratory and identified by its
+recorded cutoff. The evidence record ids are recorded among the release's inputs, so that they
+fall inside its content identity. If the manifest schema cannot carry them without an amendment of
+the releases standard, that is **escalated**, not decided here.
+
+**If a "final" claim is later contradicted.** A later genuine fetch that returns a value other
+than v, or an audit that finds no matching run, triggers the out-of-window rule (§4.3.2). Releases
+that relied on v are then withdrawn or deprecated by an owner-recorded status event under
+HIO-ADR-0006. No new mechanism is introduced.
+
+**Worked cases.**
+- *The review's original case (F2).* AONIA is revised at 15:50 Sydney, W_doc is 16:00, the final
+  check runs at 16:30, and a build at 16:10 has no record with `attempted_at ≥ 16:00` and
+  `s ≤ 16:10`, so it is **not final**. After a `verified_changed` check at 16:30, a build with a
+  cutoff after the store's write time is final.
+- *A cached response.* The check runs at 16:05, but the response carries `Date` 15:58 and
+  `Age: 420`. C4 fails because the content predates W_doc, so the check does not count and is
+  retried.
+- *A forged completion (the verification's counterexample).* Refused at C4, as above.
 
 #### 4.3.5 Independent checks per dataset (SOFR and the SOFR Index)
 
@@ -418,7 +499,7 @@ table.
    evidence integrity, release integrity or the boundary.
 4. The owner's disposition of **Q-013** (§4.3.1), which concerns the approved observation
    semantics and the accepted S1a placement behaviour. Approving this ADR does not decide it.
-5. Scoped re-verification by Codex of F-REVIEW-2026-10-25-adr0012-1, -2 and -3 at the new head.
+5. **F-REVIEW-2026-10-25-adr0012-1 and -3** were independently verified closed as design corrections by VERIFY-2026-10-25-adr0012-1 (reviewer commit `e1f60f9e04034c5b9cb21ac8b3c77b93afc516ce`, not yet received). **F-REVIEW-2026-10-25-adr0012-2** needs scoped re-verification by Codex at the new head.
 
 ## Approval
 
@@ -434,6 +515,13 @@ rejects this file at commit `<sha>`.)
   - §4.3 the publication and revision windows;
   - §4.6 unavailable versus denied;
   - §5 the complete obligation mapping, with classes.
+- 2026-10-25, **revision 3** (OD-0052): corrects **F-REVIEW-2026-10-25-adr0012-2 only**, after VERIFY-2026-10-25-adr0012-1
+  (F1 and F3 verified closed, F2 open on a forged `verified_unchanged` counterexample):
+  - §4.3.3 rewritten as completion evidence: an execution-bound record, seven completion checks
+    (C1–C7), the replayable / witnessed / trusted split, an explicit statement that self-recorded
+    events do not prove network activity, and the unchanged-response case;
+  - §4.3.4 finality now requires C1–C7, and lists what is refused;
+  - §4.2 gate (f) and §8 item 5 adjusted. §4.3.1 and §4.3.5 (F1 and F3) are not reopened.
 - 2026-10-25, **revision 2** (OD-0051): remediates the three findings of REVIEW-2026-10-25-adr0012
   (see `reviews/responses/RESPONSE-REVIEW-2026-10-25-adr0012-1.md`):
   - §4.3 rewritten as §4.3.1–§4.3.5: placing a vintage by evidenced instant, capture time or the
