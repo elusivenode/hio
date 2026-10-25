@@ -103,5 +103,9 @@ evidence integrity.
 
 - 2026-10-25 (OD-0047): before this record was committed, the owner directed that the proposal
   become a new ADR. The file was renamed to
-  [`docs/decisions/HIO-ADR-0011-staged-s1b.md`](../HIO-ADR-0011-staged-s1b.md) and revised under
-  OD-0047. The text above describes the state under OD-0046.
+  `docs/decisions/HIO-ADR-0011-staged-s1b.md` and revised under OD-0047. The text above describes
+  the state under OD-0046.
+- 2026-10-25 (OD-0048): the owner renumbered the proposal **HIO-ADR-0012**, now
+  [`docs/decisions/HIO-ADR-0012-staged-s1b.md`](../HIO-ADR-0012-staged-s1b.md). HIO-ADR-0011
+  stays reserved for the equity total-return decision. The link in the entry above was corrected
+  on the owner's instruction ("any new links introduced by this proposal").

@@ -14,8 +14,8 @@ owner_statement:
 applies_to:
   - path: /
     revision: 183523fd6e2cc148abfe2619426bfc38c7cf2108   # main, verified and pushed under this record
-  - path: docs/decisions/HIO-ADR-0011-staged-s1b.md
-    revision: self   # the commit that adds it on docs/adr0011-staged-s1b-proposal
+  - path: docs/decisions/HIO-ADR-0012-staged-s1b.md   # path corrected by OD-0048 (renumbered; first committed as HIO-ADR-0011-staged-s1b.md)
+    revision: bd0b8fd56bf6b849fe67abf04493e9e1693eb296   # the commit that first added it, as HIO-ADR-0011, on docs/adr0011-staged-s1b-proposal
 related: {adrs: [HIO-ADR-0010, HIO-ADR-0011, HIO-ADR-0005, HIO-ADR-0007, HIO-ADR-0004, HIO-ADR-0002], tasks: [T-0002, T-0005], findings: []}
 ---
 
@@ -61,8 +61,8 @@ related: {adrs: [HIO-ADR-0010, HIO-ADR-0011, HIO-ADR-0005, HIO-ADR-0007, HIO-ADR
 - Pushed: `a37d81f..183523f`.
 
 **Steps 2–10.**
-- [`HIO-ADR-0011`](../HIO-ADR-0011-staged-s1b.md), `status: proposed`;
-- the [draft review assignment](../HIO-ADR-0011-review-assignment-draft.md), `status: draft`
+- `HIO-ADR-0011` (now [`HIO-ADR-0012`](../HIO-ADR-0012-staged-s1b.md); see Corrections), `status: proposed`;
+- the draft review assignment (now [here](../HIO-ADR-0012-review-assignment-draft.md)), `status: draft`
   (not an assignment);
 - the [verification matrix](../../research/T-0002-owner-verification-matrix.md) relabelled as
   recommended interpretations, with third-party series `unknown` (unavailable), not `deny`.
@@ -94,4 +94,13 @@ number by owner decision.
 
 ## Corrections (append-only)
 
-None.
+- 2026-10-25 (OD-0048): **the owner selected HIO-ADR-0012** for this proposal, and retains
+  HIO-ADR-0011 for the equity total-return source decision under T-0003.
+  - The files were renamed to `HIO-ADR-0012-staged-s1b.md` and
+    `HIO-ADR-0012-review-assignment-draft.md`, and the branch to
+    `docs/adr0012-staged-s1b-proposal`.
+  - The links and the `applies_to` path above were corrected, as the owner instructed ("any new
+    links introduced by this proposal").
+  - The "Conflict flagged" paragraph is **resolved** by that selection. The historical equity
+    references are unedited and keep their meaning.
+  - No substantive change to the proposal.

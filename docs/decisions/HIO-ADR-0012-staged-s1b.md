@@ -1,5 +1,5 @@
 ---
-id: HIO-ADR-0011
+id: HIO-ADR-0012
 title: "Staged S1b live-observation implementation: S1b-1 official AUD and USD overnight cash benchmarks and publisher cash-return indices; S1b-2 FX and the AUD-investor USD cash excess return on a separately authorised FX source; further triangulations independently gated"
 status: proposed   # NOT policy. HIO-ADR-0010 rev 3 (OD-0011, 760f73e, blob 8ade1962cf28) remains approved and in force, unedited
 owner: HIO architecture lead (owner); drafted by claude/implementation-agent
@@ -7,22 +7,17 @@ date: 2026-10-25
 supersedes: []          # on approval only, in part: the HIO-ADR-0010 rev 3 S1b provisions S10-B2 and S10-B5, and the wording of S10-B8(ii) if its condition applies (§2); nothing else
 superseded_by: null
 gates: [S1b-1 authorisation, S1b-2 authorisation]
-review_record: null     # independent review required before approval (decisions README, process step 3); draft assignment: HIO-ADR-0011-review-assignment-draft.md
-drafted_under: [OD-0046, OD-0047]
+review_record: null     # independent review required before approval (decisions README, process step 3); draft assignment: HIO-ADR-0012-review-assignment-draft.md
+drafted_under: [OD-0046, OD-0047, OD-0048]
 evidence: [docs/evidence/S1B-readiness-assessment.md, docs/research/T-0002-rba-nyfed-evidence-2026-10-25.md, docs/research/T-0002-owner-verification-matrix.md]
 ---
 
-# HIO-ADR-0011: staged S1b live-observation implementation
+# HIO-ADR-0012: staged S1b live-observation implementation
 
 > **Proposed, not policy.** HIO-ADR-0010 revision 3 stays approved and in force, and its file is
 > not edited. If this ADR is approved, it supersedes **only** the revision 3 provisions marked
 > "superseded" in §2, and every revision 3 S1b obligation is kept and re-mapped (§5). If it is
 > rejected, nothing changes.
->
-> **Numbering.** The owner chose `HIO-ADR-0011` (OD-0047). Earlier planning documents reserve
-> "HIO-ADR-0011" for the equity total-return source decision (T-0003 Q3, roadmap G3,
-> implementation plan S2, the G1 decision package, REVIEW-2026-10-18-a01). Those references are
-> left unedited, pending the owner's renumbering of the equity ADR.
 
 ## 1. Context
 
@@ -317,12 +312,10 @@ table.
 ## 8. Evidence required before approval
 
 1. The **independent review** of this exact revision, assigned by the owner
-   ([draft assignment](HIO-ADR-0011-review-assignment-draft.md)).
+   ([draft assignment](HIO-ADR-0012-review-assignment-draft.md)).
 2. The owner's answers to the matrix questions U1–U7. **Approving this ADR verifies no right.**
 3. Confirmation that §3 holds: no change to the return mathematics, the observation invariants,
    evidence integrity, release integrity or the boundary.
-4. The owner's renumbering decision for the equity ADR that earlier documents call
-   "HIO-ADR-0011".
 
 ## Approval
 
@@ -338,3 +331,6 @@ rejects this file at commit `<sha>`.)
   - §4.3 the publication and revision windows;
   - §4.6 unavailable versus denied;
   - §5 the complete obligation mapping, with classes.
+- 2026-10-25: renumbered **HIO-ADR-0012** by the owner (OD-0048). HIO-ADR-0011 stays reserved for
+  the equity total-return source decision (T-0003). The numbering note and the renumbering item in
+  §8 are removed. No substantive change.

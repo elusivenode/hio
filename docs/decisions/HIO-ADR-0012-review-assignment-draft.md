@@ -1,13 +1,13 @@
 ---
-id: HIO-ADR-0011-REVIEW-ASSIGNMENT-DRAFT
-title: "Draft Codex review assignment for HIO-ADR-0011 (staged S1b), for the owner to issue or amend"
+id: HIO-ADR-0012-REVIEW-ASSIGNMENT-DRAFT
+title: "Draft Codex review assignment for HIO-ADR-0012 (staged S1b), for the owner to issue or amend"
 status: draft   # NOT an assignment. Only an owner-authored source assigns a review (operating model §6.2 step 1)
 owner: owner (assigns); drafted by claude/implementation-agent
 created_at: 2026-10-25
-drafted_under: OD-0047
+drafted_under: [OD-0047, OD-0048]
 ---
 
-# Draft review assignment: HIO-ADR-0011
+# Draft review assignment: HIO-ADR-0012
 
 > **Not an assignment.** A reviewer must not treat this file as its target. It is the text the
 > owner may adopt, in one owner-authored source: an *Assigned reviews* row, an owner PR comment,
@@ -18,18 +18,18 @@ drafted_under: OD-0047
 
 | Field | Proposed value |
 |---|---|
-| Review id | `REVIEW-2026-10-25-adr0011` |
+| Review id | `REVIEW-2026-10-25-adr0012` |
 | Repository | `elusivenode/hio` |
 | Base SHA | `183523fd6e2cc148abfe2619426bfc38c7cf2108` (`main`, pushed) |
-| Head SHA | the commit that adds this file and `docs/decisions/HIO-ADR-0011-staged-s1b.md`, resolved with `git log -n1 --format=%H -- docs/decisions/HIO-ADR-0011-staged-s1b.md`, on branch `docs/adr0011-staged-s1b-proposal`. The full SHA is given in the owner-facing completion report |
-| Review branch | `review/adr0011-codex`, cut at the head |
+| Head SHA | the commit that adds this file and `docs/decisions/HIO-ADR-0012-staged-s1b.md`, resolved with `git log -n1 --format=%H -- docs/decisions/HIO-ADR-0012-staged-s1b.md`, on branch `docs/adr0012-staged-s1b-proposal`. The full SHA is given in the owner-facing completion report |
+| Review branch | `review/adr0012-codex`, cut at the head |
 | Reviewer | Codex, independent reviewer (declared role) |
 | Writes allowed | `.md` files under `reviews/` only (operating model §6.2 step 3) |
 
 ## Scope (bounded)
 
 **In scope (read-only):**
-- `docs/decisions/HIO-ADR-0011-staged-s1b.md`, the subject;
+- `docs/decisions/HIO-ADR-0012-staged-s1b.md`, the subject;
 - `docs/research/T-0002-owner-verification-matrix.md`, and the 2026-10-25 evidence note,
   including its append-only correction, only as far as the ADR relies on them.
 
@@ -56,11 +56,22 @@ drafted_under: OD-0047
    §3.2 and §10 (`total_return`, `replicable_with_basis`)? Is the RITS calendar patch an RA
    §3.2 step 2 alignment, not a change? Is the §4.4 "no label shift" claim correct for the TRI
    and the SOFR Index, as their documentation describes them?
-5. **Observation and evidence integrity.**
+5. **Observation and evidence integrity, including publication and revision timestamp
+   semantics.**
    - Do the §4.3 window rules use only existing mechanisms (OBS-INV-001…007, `knowable_basis`,
      quality gates)?
+   - **Timestamp semantics:** for each series, are the publication instant P and the window close
+     W correctly derived from the cited documentation (time zones, RITS and SIFMA days,
+     daylight saving)?
+   - Is `knowable_at` = P for a first capture, with `captured_on_schedule` only within
+     `capture_grace`, consistent with observations §3?
    - Is `knowable_at` = W for a final-capture revision conservative, never earlier than the
      truth?
+   - Is `captured_at` always the fact from the capture record, never adjusted?
+   - Does a late capture (the Q-004 default) avoid claiming `captured_on_schedule`?
+   - Is no `valid_time` derived from an instant (OBS-INV-005)?
+   - Is a release's "final" status determined only by its recorded `knowledge_cutoff` relative
+     to W?
    - Do rule 3 (quarantining an out-of-window change) and §4.7 (an ingest check) only add
      fail-closed behaviour?
    - Is Q-010's existing suppression unchanged?
@@ -78,4 +89,4 @@ drafted_under: OD-0047
 
 **Verdicts:**
 - `READY`, `READY WITH CONDITIONS` or `REQUEST CHANGES`;
-- findings recorded as `F-REVIEW-2026-10-25-adr0011-N`, each with a failure scenario.
+- findings recorded as `F-REVIEW-2026-10-25-adr0012-N`, each with a failure scenario.
