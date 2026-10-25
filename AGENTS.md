@@ -1,10 +1,10 @@
 ---
 id: HIO-AGENTS
 title: Agent and collaborator onboarding
-status: current
+status: proposed      # the reviewer bullet follows harness-0.7.1 (proposed); NOT approved. The approved AGENTS.md is harness-0.7 (OD-0021)
 approved_by: OD-0021   # harness-0.7 rev 3 at 9b58811, blob a2dc93d335105 (earlier: OD-0008 at a82aa0d, blob 4000ab1895ee)
 owner: HIO architecture lead (owner)
-version: harness-0.7
+version: harness-0.7.1 (proposed)
 last_reviewed: 2026-10-18
 ---
 
@@ -70,8 +70,9 @@ Record `git rev-parse HEAD`.
   - If something is assigned, fix your test plan from the assignment and the records **before**
     reading the author's handoff. Treat the handoff as unverified.
   - Work in your own worktree, on a review branch at the assigned head, and write only under
-    `reviews/` (operating model §6.2). Push the branch and open a PR stating `Reviewed-Head`.
-    Never edit the work under review.
+    `reviews/` (operating model §6.2). Push the branch and **open no PR**. In your final message,
+    state the branch tip SHA, the reviewed head and the sha256 of every file you added: the receiver
+    reconciles against that report. Never edit the work under review.
 
 **Skills** (Claude Code; other agents read the files directly): `hio-session` and
 `hio-return-accounting`.
