@@ -1,0 +1,4 @@
+{"_synthetic": "SYNTHETIC fixture; invented values; layout ASSUMED", "refRates": [
+{"effectiveDate": "2026-10-22", "type": "SOFRAI", "index": 1.12345678, "revisionIndicator": ""},
+{"effectiveDate": "2026-10-23", "type": "SOFRAI", "index": 1.12355678, "revisionIndicator": ""}
+]}

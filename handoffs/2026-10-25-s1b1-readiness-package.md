@@ -45,6 +45,15 @@ work_card: T-0002
 - Revision 1 (drafted at stale `618059f`) said OD-0061 was absent. Wrong: after fetch and fast-forward to `0665b66`, OD-0061, STATUS and harness-0.7.1 + OD-0059 were verified present and left untouched.
 - Releases standard §2 enumerates the manifest core "exactly"; resolved by deferral (exploratory releases).
 
+## S1b-1.0 implementation, step 1 (branch `impl/t0009-adapters-and-run-record`)
+- Added: `hio.sources` (five dataset specs and parsers, transport protocol, fixture transport only, `run_capture`), `hio.marketdata.runrecord` (capture-run record, written in full per T-0009 §4, hash verified on read), `attempt_record_key` in `contracts/layout.py`, the `sources` import rule in `tools/check_repo.py`, synthetic fixtures under `tests/fixtures/synthetic/s1b1/`, and `tests/test_s1b1_capture.py` (30 tests).
+- Not changed: `capture()`, S1a vintages, knowability, jobs, library, publish, storage, rights.
+- Evidence: full suite 308 passed (includes the S1a release-hash tests); `ruff check` clean; `check_repo.py` PASS.
+- Payload layouts are ASSUMED (fixtures mirror them); the first authorised structure check must confirm. A mismatch fails closed as a failed run.
+- No real transport, URL, register entry or network call exists. URLs are unset in the specs by design.
+- **Rights finding:** the RBA F1 file carries ASX and FENICS columns, so retaining the file raw retains third-party material (package §6.1). Needs the owner with U1.
+- Owner note: the Azure subscription `hnf-dev` is excluded from this work; subscription ids are kept out of the repo (public).
+
 ## NOT approved by this session
 Nothing. No right verified, no Q-013 decision, no provider chosen, no S1b-1 authorisation, no
 standard amended.

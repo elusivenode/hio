@@ -274,6 +274,17 @@ extracts are fetch-tool excerpts, **not yet checked against the live pages**.
 | D9 SOFR Index | NY Fed terms of use; same | same | as D8 |
 | D7 RITS/NSW calendars | RBA RITS hours and bank-holiday pages | retain and cite as reference data | none (facts) |
 
+**Finding for H1, raised while building the adapters (not yet in the matrix).** AONIA, the TRI and the
+Cash Rate Target come in the **same F1 CSV file** as the ASX bank-bill and FENICS OIS columns
+(evidence note §1: their `Source` rows are ASX and FENICS, RBA copyright §7.2 third party). So
+`raw_retention` of "the F1 file as published" retains third-party material whose permission is
+`unknown`, even though the parser reads only the RBA columns. Options for you: (1) record a reasoned
+judgement that retaining RBA's own published file unaltered is covered; (2) ask the RBA/ASX;
+(3) retain a column-filtered copy as the receipt and record only the original's hash (loses the exact
+raw bytes the evidence design wants); (4) a different RBA-only source for AONIA and the TRI.
+I recommend deciding this together with U1. The adapters are unaffected; the parser already ignores
+those columns.
+
 Left `unknown`: `distribution.smsf_*`, `quotation_in_documents`, D4 Cash Rate Target, D5 WM/Reuters,
 D6 ASX, and SIFMA (no dependency). Raw retention duration (U5): indefinite.
 Verifying U1–U5 and U7 is the only part that cannot be delegated.

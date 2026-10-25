@@ -279,6 +279,7 @@ ALLOWED_IMPORTS = {
     "storage": {"contracts"},
     "rights": {"contracts"},
     "marketdata": {"contracts", "reference", "storage", "rights"},
+    "sources": {"contracts", "reference", "storage", "rights", "marketdata"},  # S1b-1 adapters, T-0009
     "library": {"contracts", "reference"},  # pure compute: no storage, no writes
     "publish": {"contracts", "storage", "rights"},  # the only writer of releases and artefacts
     "models": {"contracts"},

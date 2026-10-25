@@ -20,3 +20,13 @@ def capture_record_key(source_id: str, captured_at: datetime, receipt_id: str) -
 
 
 CAPTURES_PREFIX = "catalogue/captures/"
+
+
+def attempt_record_key(source_id: str, attempted_at: datetime, record_sha256: str) -> str:
+    """A capture-run record (HIO-ADR-0012 §4.3.3): keyed by the attempt instant and the hash of its
+    own canonical content, so a read can recompute the hash and compare."""
+    stamp = attempted_at.astimezone(UTC).strftime("%Y%m%d-%H%M%S%f")  # sorts by attempt instant
+    return f"catalogue/attempts/{source_id}/{stamp}-{record_sha256}.json"
+
+
+ATTEMPTS_PREFIX = "catalogue/attempts/"
