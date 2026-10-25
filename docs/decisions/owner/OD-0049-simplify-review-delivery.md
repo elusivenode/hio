@@ -71,4 +71,7 @@ existing review record.
 
 ## Corrections (append-only)
 
-None.
+- 2026-10-25 (OD-0050): the owner's follow-up instruction (OD-0050) authorised the PR #5 receipt
+  that this record only proposed, and asked that the package distinguish byte-identical record
+  preservation from ancestry and delegate routine receipt to Claude. The package was revised to
+  revision 2 accordingly. This record's execution text describes the state at revision 1.

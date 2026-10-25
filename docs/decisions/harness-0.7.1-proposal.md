@@ -1,10 +1,10 @@
 ---
 id: HIO-HARNESS-0.7.1-PROPOSAL
-title: "Decision package: harness-0.7.1, review evidence delivered by pushed branch and byte-identical receipt (no reviewer PRs), proposed, revision 1"
+title: "Decision package: harness-0.7.1, review evidence delivered by pushed branch and byte-identical receipt (no reviewer PRs), proposed, revision 2"
 status: proposed   # NO EFFECT until the owner approves an exact revision. harness-0.7 (OD-0021, 9b58811, blob 90e2565fe814) stays in force
 owner: owner (decides); drafted by claude/implementation-agent
 created_at: 2026-10-25
-drafted_under: OD-0049
+drafted_under: [OD-0049, OD-0050]
 amends: docs/harness/operating-model.md §6.2 (harness-0.7), the review delivery and receipt steps only
 ---
 
@@ -52,6 +52,29 @@ own commit adds only three `reviews/` files.
 
   Precedent: OD-0040 received the T-0004 review this way, as a one-off exception.
 
+### Two different things "preservation" can mean
+
+The choice between M1/M2 and M4 is a choice between two properties that are often confused.
+
+| Property | What it proves | M1/M2 (merge) | M4 (import + tag) |
+|---|---|---|---|
+| **Byte-identical record preservation** | the record on `main` is the file the reviewer committed: same git blob id, same sha256 | yes | **yes**, checked mechanically before the commit and recorded in its message |
+| **Reviewer commit identity** (the exact commit, its message, author and timestamps, retrievable) | which commit the reviewer produced | yes | **yes**: the commit is named in the receipt trailers, kept by an **annotated tag** and by the pushed branch |
+| **Commit ancestry in `main`** (the reviewer's commit is an ancestor of `main`) | that everything the reviewer's branch contains has been integrated | yes | **no, deliberately** |
+
+**Ancestry is not evidence integrity, and it can be a liability.** A review branch is cut at the
+reviewed head, so its ancestry is the work under review. For an unmerged head, ancestry in `main`
+*is* integration of unaccepted work. M4 gives up only that property, and keeps the other two.
+
+**What M4 loses, stated plainly:**
+- `git log` on `main` does not show the reviewer's commit. It is found through the receipt
+  message, the tag, or the review index.
+- The tag and branch are refs, not history. They are protected only by convention (no
+  force-push or deletion by the receiver) until branch and tag protection exist (§6.2, "Hosted
+  evolution"). The blob ids on `main` remain verifiable against them at any time.
+- Commit authorship is not authentication either way. The reviewer's commits carry the owner's
+  Git identity, so reviewer provenance rests on the assignment, the record and the pushed branch.
+
 ## 3. The recommended procedure (summary)
 
 1. **Claude** uses PRs for implementation, standards and architecture proposals (author PR,
@@ -61,9 +84,17 @@ own commit adds only three `reviews/` files.
    and commits records there. It may add files under `reviews/records/`, `reviews/handoffs/` and
    `reviews/reports/`, and its own rows in `reviews/README.md`, as today. **It pushes the branch
    and opens no PR.**
-3. **Receipt** (Claude or the owner) is the M4 import, run as scripted Git commands. It stops on
-   any mismatch. It needs **no separate owner approval** when an owner-authored assignment exists
-   and every check passes, because receipt is evidence delivery, not acceptance.
+3. **Routine receipt is delegated to Claude** (or the owner), after mechanical checks. It is the M4
+   import, run as scripted Git commands. It needs **no per-receipt owner approval** when all of
+   these hold:
+   - an owner-authored assignment exists, with the review id, repository, full base and head
+     SHAs, scope and branch, and the reviewed head is the head the owner assigned;
+   - the scope check, the assignment check and the blob-identity check all pass;
+   - the import adds only the allowed files and only additive `README` lines.
+
+   Receipt is evidence delivery, not acceptance. **Anything else needs the owner:** an assignment
+   discrepancy, a failed check, an unexpected file, a reviewer branch that moved, a waiver, closing
+   or disposing of a finding, integrating the work, or accepting it.
 4. **Unchanged:**
    - records are immutable;
    - only Codex verifies technical closure;
@@ -117,11 +148,23 @@ are no reviewer PRs. Removing it is a separate change to accepted `.github/` con
 >
 >       Then merge `--no-ff` into `main` as `Merge receipt/<id>: receive <id> evidence (receipt
 >       only)`.
->    7. **Preserve provenance:** push the tag `reviews/<id>` pointing to T, so the reviewer's
->       commit stays reachable. The review branch may then be deleted by the owner or the
->       reviewer.
+>    7. **Preserve provenance:** push an **annotated** tag `reviews/<id>` pointing to T, so the
+>       reviewer's commit stays reachable. The receiver never deletes or moves the tag or the
+>       reviewer's branch. The owner or the reviewer may delete the branch later.
+>    7a. **Keep the import commit pure.** It contains only the imported files and the `README`
+>       lines. Any change to an index status cell, `STATUS.md` or an OD goes in a **later**
+>       commit, so that the import can be diffed against the reviewer's commit with no noise.
 >    8. Update the review index row ("received at `<receipt merge>` from `<T>`, tag
 >       `reviews/<id>`") and `STATUS.md`.
+>
+>    **Receiver independence.** The author of the work under review may be the receiver (Claude
+>    receives Codex's review of Claude's proposal). The safeguards are mechanical, not trust:
+>    the receiver cannot alter the record without the blob id differing from the reviewer's
+>    commit; the reviewer's branch and tag stay reachable for anyone to compare; the receipt names
+>    the reviewer's commit and each file's sha256; and the reviewer states its tip SHA and each
+>    record's sha256 in its final message, which the receiver compares with the values it
+>    verified. The receiver reports a receipt as "received" only, and never characterises the
+>    findings as resolved.
 >
 >    **A receipt means the evidence has been received.** It does not mean that the conclusions
 >    are accepted, that defects are fixed, that an ADR is approved, that a slice is authorised, or
@@ -167,6 +210,13 @@ acceptance" with:
 
 ## 6. Migration: PR #5 (REVIEW-2026-10-25-adr0012)
 
+> **Executed on 2026-10-25 under OD-0050**, as a one-off exception to harness-0.7 step 5: import
+> commit `eadda1e5da5df2d5141d7951abed14df40f70782`, receipt merge `6fbec1aa064551d7aa505cf3008a677acfd68e73`,
+> annotated tag `reviews/REVIEW-2026-10-25-adr0012` → `1a05d8e6e0dd453c91cc37aba16c921cd6c97238`,
+> PR #5 closed unmerged. Both files on `main` are blob-identical to the reviewer's. The reviewer's
+> commit is not an ancestor of `main`, and HIO-ADR-0012 is not in `main`. The proposal text below
+> is kept as written; the lessons from the execution are folded into §3 and §4.
+
 **State, checked from Git on 2026-10-25:**
 
 | Item | Value |
@@ -200,12 +250,23 @@ delivery differs.
   OD-0040.
 - **Delivery as a pilot:** the owner may ask Codex to push only (no PR), and have the review
   received by the §4 procedure as a second one-off exception. That exercises the procedure before
-  it is adopted.
+  it is adopted. The PR #5 receipt (OD-0050) was the first, manual exercise.
+- **The draft assignment** is [`harness-0.7.1-review-assignment-draft.md`](harness-0.7.1-review-assignment-draft.md).
+  It is a draft, not an assignment.
 
 ## 8. Owner decisions
 
-1. **Smallest, and now:** authorise receipt of REVIEW-2026-10-25-adr0012 by byte-identical import,
-   tag `reviews/REVIEW-2026-10-25-adr0012` → `1a05d8e`, and closing PR #5 unmerged. This is a
-   one-off exception to harness-0.7 step 5. With it, confirm the record's `assignment` string.
-2. **Later:** assign the independent check of this package at its exact revision, then approve
-   or reject harness-0.7.1.
+1. **Done (OD-0050):** the PR #5 receipt, the tag and the closing of PR #5.
+2. **Next, and smallest:** assign the independent check of this package at its exact revision (the
+   [draft assignment](harness-0.7.1-review-assignment-draft.md)), and say whether Codex should
+   push only, with no PR, as a pilot of the procedure (a second one-off exception).
+3. **Later:** approve or reject harness-0.7.1 at the revision that was checked.
+
+## Changelog
+
+- 2026-10-25, revision 1 (OD-0049): created.
+- 2026-10-25, revision 2 (OD-0050): adds "Two different things 'preservation' can mean" (§2); the
+  explicit delegation conditions of routine receipt (§3); the annotated tag, the pure import
+  commit and the receiver-independence safeguard (§4 step 5); records the executed PR #5 receipt
+  (§6); updates the owner decisions (§8); adds the draft review assignment. The mechanism and the
+  exact replacement text of steps 3, 4, 6 and the preamble are otherwise unchanged.
