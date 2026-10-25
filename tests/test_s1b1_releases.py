@@ -120,15 +120,13 @@ def capture_once(store, gate, sid: str, body: bytes, at: datetime):
     )
 
 
-@pytest.fixture(scope="module")
-def world(tmp_path_factory):
-    store = LocalObjectStore(tmp_path_factory.mktemp("w") / "store")
+def build_world(store):
+    """Capture through the run record, ingest under P3 and build every release into `store`."""
     gate = AllowAllGate()
     # AUD: one capture a RITS day at 10:00 Sydney (AEDT, UTC+11) after the 09:20 release
     for day in AUD_DAYS[1:]:
         at = datetime(day.year, day.month, day.day, 10, tzinfo=UTC) - timedelta(hours=11)
-        for sid in ("rba.f1",):  # ONE receipt serves both datasets
-            capture_once(store, gate, sid, f1_csv(day), at)
+        capture_once(store, gate, "rba.f1", f1_csv(day), at)  # ONE receipt serves both datasets
     # USD: one capture a SIFMA day at 09:00 ET (EDT, UTC-4) after the 08:00 release
     for day in US_DAYS[1:]:
         at = datetime(day.year, day.month, day.day, 9, tzinfo=UTC) + timedelta(hours=4)
@@ -143,6 +141,11 @@ def world(tmp_path_factory):
     code = {"commit": "test", "lock_sha256": "0" * 64}
     releases = build_releases(vs, AllowAllGate(), rights, cals, cutoff, code)
     return store, cals, vs, cutoff, rights, code, releases
+
+
+@pytest.fixture(scope="module")
+def world(tmp_path_factory):
+    return build_world(LocalObjectStore(tmp_path_factory.mktemp("w") / "store"))
 
 
 def rows(release):
