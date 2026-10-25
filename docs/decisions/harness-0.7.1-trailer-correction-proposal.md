@@ -1,7 +1,7 @@
 ---
 id: HIO-HARNESS-0.7.1-TRAILER-CORRECTION
 title: "Proposed correction to harness-0.7.1 §6.2 step 5: require the HIO-Actor trailer on receipt commits and check it before merge"
-status: proposed   # NO EFFECT until the owner approves an exact revision. harness-0.7.1 (OD-0056, commit 552d4fb, blob a74a41453d10) stays in force
+status: approved_applied   # approved by OD-0059 at revision 1, blob b8d2fac0dc18 (commit dfb0a20), with one owner addition: CI status as a mandatory reported result (step 5.10). Status-only edit; text below unchanged
 owner: owner (decides); drafted by claude/implementation-agent
 created_at: 2026-10-25
 drafted_under: [OD-0058]
