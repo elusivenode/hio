@@ -61,6 +61,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-s1a16-run2-codex-transcript.md` | the S1-A16 run 2 Codex session as saved by the owner, byte-identical (sha256 `a3f818e5…15d5`) | evidence for HARNESS-2026-10-25-s1a16-2 | — |
 | `2026-10-25-owner-accept-s1a.md` | the owner's acceptance of S1a, with its final integrity checks, verbatim | authority for OD-0042 | — |
 | `2026-10-25-owner-relocate-s1a16-evidence.md` | the owner's two short instructions to relocate the S1-A16 evidence and add a correction note, verbatim | authority for OD-0043 | — |
+| `2026-10-25-owner-s1b-readiness-assessment.md` | the owner's instruction for a bounded S1b readiness assessment (no implementation, real data, vendor contact, infrastructure or credentials), verbatim | authority for OD-0044 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
