@@ -78,6 +78,7 @@ are in operating model §1.1; the template is
 | [OD-0061](OD-0061-enable-routine-delegated-receipt.md) | authorise_work | **routine delegated receipt enabled** under the OD-0060 conditions (owner-authored assignment; independent report held; no index change or Class N only); full §6.2 still runs; Class S, conflicts and any stop condition keep the owner's go-ahead; OD-0056 adoption condition recorded as met | OD-0060 recommendation | recorded |
 | [OD-0062](OD-0062-authorise-s1b1-development-and-staging-direction.md) | authorise_work | **Authorisation A approved** (S1b-1.0 development on synthetic fixtures; no live operation); staging direction for proposed T-0009 recorded as a **proposal**; Q-013, rights, storage, controls and finality staging **not decided** | readiness package `1e5b7e8`; T-0009 (proposed) | recorded |
 | [OD-0063](OD-0063-approve-opentofu-and-s1b1-0-finality-staging.md) | approve | **OpenTofu approved** as the IaC tool (authoring only); **S1b-1.0 finality staging approved** (T-0009 §6 at `c7b51a5`): records written in full, C1-C7, finality and final labels deferred and still owed; Q-013 stays open; no live operation | T-0009 §5-§6; ADR-0012 unchanged | recorded |
+| [OD-0064](OD-0064-f1-file-retention-direction.md) | authorise_work | the RBA F1 file may be assumed **retained unaltered** in the S1b-1.0 design; **not a rights verification** (permissions stay unverified; the gate still refuses) | readiness package §6.1 | recorded |
 
 **Current position:**
 - **Approved:**
