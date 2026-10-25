@@ -1,13 +1,14 @@
 ---
 id: HIO-ADR-0012
 title: "Staged S1b live-observation implementation: S1b-1 official AUD and USD overnight cash benchmarks and publisher cash-return indices; S1b-2 FX and the AUD-investor USD cash excess return on a separately authorised FX source; further triangulations independently gated"
-status: proposed   # NOT policy. HIO-ADR-0010 rev 3 (OD-0011, 760f73e, blob 8ade1962cf28) remains approved and in force, unedited
+status: approved   # revision 3 approved by OD-0055. HIO-ADR-0010 rev 3 (OD-0011, 760f73e, blob 8ade1962cf28) stays approved and in force except the provisions listed in §2; S1b is NOT authorised
+approved_by: OD-0055   # at d0965ccfd37a0ddefdbb5ff08a11674c3267792a, blob eb110ee394afa5b3a8abe612cf2e22196acbf51c
 owner: HIO architecture lead (owner); drafted by claude/implementation-agent
 date: 2026-10-25
-supersedes: []          # on approval only, in part: the HIO-ADR-0010 rev 3 S1b provisions S10-B2 and S10-B5, and the wording of S10-B8(ii) if its condition applies (§2); nothing else
+supersedes: [HIO-ADR-0010]   # IN PART ONLY (OD-0055): the HIO-ADR-0010 rev 3 S1b provisions S10-B2 and S10-B5, and the wording of S10-B8(ii) if its condition applies (§2); nothing else
 superseded_by: null
 gates: [S1b-1 authorisation, S1b-2 authorisation]
-review_record: null     # independent review required before approval (decisions README, process step 3); draft assignment: HIO-ADR-0012-review-assignment-draft.md
+review_record: reviews/records/REVIEW-2026-10-25-adr0012.md   # received (OD-0050); verifications VERIFY-2026-10-25-adr0012-1 and -2 are unreceived Codex records on pushed branches (OD-0054, OD-0057)
 drafted_under: [OD-0046, OD-0047, OD-0048, OD-0051, OD-0052]
 revision: 3   # rev 1 = 1d68da3e90d879da6318082551bab943c60cf68b (REVIEW-2026-10-25-adr0012, REQUEST CHANGES); rev 2 = 860fd7879c6c663980bc4bf037a8c29e8c7df769 (VERIFY-2026-10-25-adr0012-1: F1 and F3 verified closed, F2 open); rev 3 corrects F2 only
 evidence: [docs/evidence/S1B-readiness-assessment.md, docs/research/T-0002-rba-nyfed-evidence-2026-10-25.md, docs/research/T-0002-owner-verification-matrix.md]
@@ -15,10 +16,11 @@ evidence: [docs/evidence/S1B-readiness-assessment.md, docs/research/T-0002-rba-n
 
 # HIO-ADR-0012: staged S1b live-observation implementation
 
-> **Proposed, not policy.** HIO-ADR-0010 revision 3 stays approved and in force, and its file is
-> not edited. If this ADR is approved, it supersedes **only** the revision 3 provisions marked
-> "superseded" in §2, and every revision 3 S1b obligation is kept and re-mapped (§5). If it is
-> rejected, nothing changes.
+> **Approved (revision 3, OD-0055).** It supersedes **only** the HIO-ADR-0010 revision 3 provisions
+> marked "superseded" in §2, and every revision 3 S1b obligation is kept and re-mapped (§5).
+> HIO-ADR-0010 revision 3 is otherwise in force. S1a acceptance (OD-0042) is unchanged. **S1b-1 and
+> S1b-2 are not authorised**, and Q-013, the release-manifest schema, publisher header semantics,
+> source permissions and the network and credential controls are not decided by this approval.
 
 ## 1. Context
 
@@ -503,11 +505,16 @@ table.
 
 ## Approval
 
-_Unapproved._ (Set only by reference to an owner decision record: `OD-NNNN`, which approves or
-rejects this file at commit `<sha>`.)
+Approved by [OD-0055](owner/OD-0055-approve-adr-0012-rev3.md), revision 3 at commit
+`d0965ccfd37a0ddefdbb5ff08a11674c3267792a`, file blob `eb110ee394afa5b3a8abe612cf2e22196acbf51c`
+(2026-10-25). The approval records status only; no text of §1–§8 was changed. It does not resolve
+Q-013, the release-manifest schema, publisher header semantics, source permissions,
+infrastructure controls or S1b authorisation.
 
 ## Changelog
 
+- 2026-10-25: **revision 3 approved** (OD-0055). Status-only edit: front matter `status`,
+  `approved_by`, `supersedes`, the opening banner and this section. No policy text changed.
 - 2026-10-25: drafted as "HIO-ADR-0010 revision 4 (proposed)" (OD-0046). Renumbered as a new
   ADR, HIO-ADR-0011, and revised (OD-0047):
   - the §2 provision-level supersession table;
