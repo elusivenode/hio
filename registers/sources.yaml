@@ -20,11 +20,12 @@ sources:
     verification: unverified             # held by OD-0013: the published terms were read 2026-10-18, but permissions stay unverified and blocked until the outstanding questions have evidence
     blocked_by: OD-0013
     evidence: [https://www.rba.gov.au/copyright/, https://www.rba.gov.au/mkt-operations/resources/cash-rate-methodology/, https://www.rba.gov.au/statistics/frequency/exchange-rates.html, https://www.rba.gov.au/schedules-events/frequency-statistical-releases.html]
-    research_note: docs/research/T-0002-source-rights-and-timing.md
+    research_note: [docs/research/T-0002-source-rights-and-timing.md, docs/research/T-0002-rba-nyfed-evidence-2026-10-25.md]
     datasets:
       cash_rate: {rights_proposed: "see research note §2 (Cash Rate clause: no implied endorsement)", automated_retrieval: unknown, timing: "published before 09:20 Sydney for the preceding RITS business day; republication until 16:00; in arrears"}
-      audusd_4pm: {rights_proposed: "CC BY 4.0 (Financial Data); caveat 'not for regulatory or commercial purposes'", automated_retrieval: unknown, timing: "16:00 AEST fixing (DST question open); released about 17:00"}
-      bab_1m: {rights_proposed: unknown, note: "source not determined; possibly third-party ASX BBSW, which would need ASX consent", automated_retrieval: unknown}
+      audusd_4pm: {rights_proposed: "NOT RBA material: the F11 Source row is WM/Reuters (the WM/Reuters Australian Dollar Fix, since 2008-07-01), third-party under copyright §7.2, needs LSEG consent (2026-10-25 evidence; the 2026-10-18 CC BY proposal was wrong); caveat 'not for regulatory or commercial purposes'", automated_retrieval: unknown, timing: "4.00 pm (Sydney) local time, AEDT in summer (definitions page, 2026-10-25); F11.1 Last-Modified 16:43 AEDT on 2026-10-23"}
+      bab_1m: {rights_proposed: unknown, note: "F1 Source row is ASX (series FIRMMBAB30D, 2026-10-25): third-party under copyright §7.2, needs ASX consent", automated_retrieval: unknown}
+      cash_rate_tri: {rights_proposed: "RBA-sourced (FIRMMCTRI); §4 Cash Rate or §5 Financial Data, ambiguous; both need attribution and no implied endorsement", automated_retrieval: unknown, timing: "labelled by publication date (base 2011-01-04 = 100); published with the cash rate before 09:20 Sydney"}
       f2_yields: {timing: "weekly on Fridays, for daily yields up to 2 business days earlier"}
     rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown, post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown, audit_retention: unknown, attribution_required: "Source: Reserve Bank of Australia [year]"}   # effective values stay unknown (= deny) until owner_verified
   - id: nyfed_reference_rates
@@ -35,7 +36,7 @@ sources:
     verification: unverified             # held by OD-0013 (published terms read; not verified)
     blocked_by: OD-0013
     evidence: [https://www.newyorkfed.org/privacy/termsofuse, https://www.newyorkfed.org/markets/reference-rates/sofr, https://www.newyorkfed.org/markets/reference-rates/additional-information-about-reference-rates]
-    research_note: docs/research/T-0002-source-rights-and-timing.md
+    research_note: [docs/research/T-0002-source-rights-and-timing.md, docs/research/T-0002-rba-nyfed-evidence-2026-10-25.md]
     rights_proposed: "automated access, storage, derivation and redistribution allowed by the terms; label modified content; notice and disclaimer on republication; no endorsement"
     timing: "about 08:00 ET on the next SIFMA business day; same-day revision about 14:30 ET only if > 1bp; first value date 2018-04-02"
     rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown, post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown, audit_retention: unknown, attribution_required: "notice '… is subject to the Terms of Use posted at newyorkfed.org' + no-endorsement disclaimer"}   # effective values stay unknown until owner_verified

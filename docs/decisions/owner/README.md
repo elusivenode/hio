@@ -59,6 +59,7 @@ are in operating model §1.1; the template is
 | [OD-0042](OD-0042-accept-s1a.md) | accept_work | **S1a accepted** as complete (HIO-ADR-0010 rev 3; OD-0017, OD-0020), with the package's limitations; S1b **not** authorised | implementation `084154c` (integrated `773a557`); package at `edc80d3` | recorded |
 | [OD-0043](OD-0043-relocate-s1a16-evidence.md) | authorise_work | correction note: the S1-A16 owner-held evidence moved from `~/hio-s10/evidence/` to `~/Documents/hio-evidence/` (12 hashes re-checked OK); the test clones and Codex homes deleted; the harness records unedited | HARNESS-…-1 and -2 at `df5666e` | recorded |
 | [OD-0044](OD-0044-s1b-readiness-assessment.md) | authorise_work | a bounded S1b readiness assessment, one report ([S1B-readiness-assessment](../../evidence/S1B-readiness-assessment.md)); escalations E1–E4 raised, none approved; **not** S1b authorisation; OD-0013 not lifted | `main` at `1f5e5e2` | recorded |
+| [OD-0045](OD-0045-integrate-s1b-readiness-advance-t0002.md) | authorise_work | integrate the S1b readiness assessment (`569753a`, merge `a37d81f`, status kept); continue T-0002 for RBA and NY Fed by limited manual inspection ([evidence](../../research/T-0002-rba-nyfed-evidence-2026-10-25.md)); staging recommendation; **no** permission verified, OD-0013 not lifted | `main` at `a37d81f` | recorded |
 
 **Current position:**
 - **Approved:**
