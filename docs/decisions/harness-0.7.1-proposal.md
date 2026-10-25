@@ -1,7 +1,7 @@
 ---
 id: HIO-HARNESS-0.7.1-PROPOSAL
 title: "Decision package: harness-0.7.1, review evidence delivered by pushed branch and byte-identical receipt (no reviewer PRs), proposed, revision 3"
-status: proposed   # NO EFFECT until the owner approves an exact revision. harness-0.7 (OD-0021, 9b58811, blob 90e2565fe814) stays in force
+status: approved_applied   # approved as applied in C1 552d4fbde6f4256bf969b908d721a765aae84e17 (operating model blob a74a41453d10) by OD-0056; this file is the preserved decision package, revision 3 at 8ed13fd. Status-only edit; text below unchanged
 owner: owner (decides); drafted by claude/implementation-agent
 created_at: 2026-10-25
 drafted_under: [OD-0049, OD-0050, OD-0052]
