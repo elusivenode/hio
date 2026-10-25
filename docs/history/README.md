@@ -61,6 +61,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-s1a16-run2-codex-transcript.md` | the S1-A16 run 2 Codex session as saved by the owner, byte-identical (sha256 `a3f818e5…15d5`) | evidence for HARNESS-2026-10-25-s1a16-2 | — |
 | `2026-10-25-owner-accept-s1a.md` | the owner's acceptance of S1a, with its final integrity checks, verbatim | authority for OD-0042 | — |
 | `2026-10-25-owner-relocate-s1a16-evidence.md` | the owner's two short instructions to relocate the S1-A16 evidence and add a correction note, verbatim | authority for OD-0043 | — |
+| `2026-10-25-owner-closure-approval-preparation.md` | the owner's adoption of Codex's verification conclusions and the instruction to prepare the closure and approval package, verbatim | authority for OD-0054 | — |
 | `2026-10-25-owner-s1b-readiness-assessment.md` | the owner's instruction for a bounded S1b readiness assessment (no implementation, real data, vendor contact, infrastructure or credentials), verbatim | authority for OD-0044 | — |
 | `2026-10-25-owner-integrate-s1b-readiness-t0002.md` | the owner's instruction to integrate the S1b readiness assessment and continue T-0002 for RBA and NY Fed with limited manual inspection, verbatim | authority for OD-0045 | — |
 | `2026-10-25-owner-pr5-receipt-harness-0.7.1.md` | the owner's authorisation of the one-off PR #5 evidence receipt and the harness-0.7.1 progression, verbatim | authority for OD-0050 | — |
