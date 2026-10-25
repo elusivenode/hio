@@ -16,7 +16,7 @@ record, the record wins. Rules: [operating model §3, §6.1 and
 **Who writes what:**
 - **The owner:** assignments (an *Assigned reviews* row, an owner PR comment, or a direct
   instruction later indexed here; exact SHAs and the review branch); runs or reviews the scope
-  check; merges reviewer PRs (receipt only); acceptance, approval and waivers (by OD id).
+  check; receives reviewer evidence by byte-identical import, never by merging a reviewer branch (receipt only; operating model §6.2 step 5); acceptance, approval and waivers (by OD id).
 - **The reviewer (Codex):** review records and verification records (`records/`), its
   handoffs (`handoffs/`), opinion or readiness reports (`reports/`), and its own index rows. Written on its review branch, in its own
   worktree, never on the staging branch.

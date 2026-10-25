@@ -1,13 +1,14 @@
 ---
 id: HIO-HARNESS
 title: Agentic operating model and harness specification
-status: approved
-approved_by: OD-0021   # harness-0.7 rev 3 at 9b58811, blob 90e2565fe814 (earlier: OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
+status: approved      # harness-0.7.1 approved by OD-0056 at 552d4fb (blob a74a41453d10). Adoption is conditional on a supervised first receipt recorded in an OD; routine delegated receipt is NOT authorised until then
+approved_by: OD-0056   # harness-0.7.1 at 552d4fbde6f4256bf969b908d721a765aae84e17, blob a74a41453d10b54161136ff08ac36e6ca86f33bc (earlier: OD-0021, harness-0.7 rev 3 at 9b58811, blob 90e2565fe814; before that OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
 owner: HIO architecture lead (owner)
-version: harness-0.7
+version: harness-0.7.1
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
+  - "harness-0.7.1 (2026-10-25, APPROVED by OD-0056 at 552d4fb, blob a74a41453d10; STATUS-ONLY edits follow): review evidence is delivered by a pushed review branch with no reviewer PR, and received by a byte-identical import with a verified provenance tag (docs/decisions/harness-0.7.1-proposal.md revision 3 at 8ed13fd, blob 72deffc37a4c; verified by VERIFY-2026-10-25-harness-0.7.1-1). Content change: the section 6.2 preamble sentence and steps 3, 4, 5 and 6 only. Adoption condition (OD-0056): the first receipt is supervised and its result recorded in an OD before routine delegated receipt is enabled; until then each receipt needs the owner's explicit go-ahead before anything is pushed to main"
   - "harness-0.7 rev 3 (2026-10-24): APPROVED by OD-0021 at 9b58811 (blob 90e2565fe814); integrated by merge 910c5d5; later edits record status only. Adoption condition: the CI reviewer-PR gate is not an established control until the first reviewer PR validates it. Content: step 4a compares the record's assignment source with an owner-supplied expected source. Rev 2 (fcabd7f): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
   - "harness-0.1 (2026-10-18, 85ef0fa): initial"
   - "harness-0.6 (2026-10-18): CONTENT change after approval: §6.2 step 3 adds reviews/reports/ (owner instruction OD-0009). STATUS-ONLY edits recording OD-0008: front matter, the 'Bootstrap history' paragraph and §6.2 status replace the provisional wording, and precedence row 3 drops 'provisional'. Approved blob at a82aa0d: 7172659cf4ba. harness-0.6 approved by OD-0012 at f2275e2 (blob e3114bd188ad); later edits record status only. 2026-10-24: §8.1 status sentence updated (status only, OD-0016; migration performed, OD-0017). Paths written hio/<p> mean <p> after migration (MIGRATION-MAP.md)"
@@ -391,8 +392,7 @@ control; steps 4 and 4a are performed locally regardless.
 
 **Pull requests are the visible surface, not the authority.** Records stay authoritative: the
 review record, the remediation response, the verification record and the OD records. A PR makes
-a fixed head, its CI result and its diff visible to every agent; merging a reviewer PR is
-receipt, never acceptance.
+a fixed head, its CI result and its diff visible to every agent; receipt (step 5) is evidence delivery, never acceptance. Reviewers do not open PRs.
 
 0. **Submission** (author). The author pushes a branch and opens a PR to `main` whose
    description states `Submission-Head: <full sha>`. That head is never rebased or
@@ -433,13 +433,13 @@ receipt, never acceptance.
    - its own rows in `reviews/README.md`.
 
    The reviewer never edits `STATUS.md`, `handoffs/`, the work under review or any
-   submitted record. There are no merge commits on the review branch. The reviewer **pushes the
-   review branch** and opens a PR to `main` whose description states
-   `Reviewed-Head: <full sha>` (the assigned head). An unpushed review branch has not been
-   submitted.
-4. **Scope check** (CI and owner, before merging). CI runs **the base branch's copy** of
-   `tools/check_review_branch.sh <Reviewed-Head> <PR head>` on every reviewer PR
-   (`.github/workflows/review-scope.yml`); the owner may rerun it locally. It checks **every commit** in
+   submitted record. There are no merge commits on the review branch. The reviewer **pushes the review branch** and does **not** open a pull request. An unpushed
+   review branch has not been submitted. The reviewer's **final message** is its independent
+   report: it states the pushed branch, the branch **tip SHA**, the reviewed head, and the
+   **sha256 of every file the reviewer added**. The handoff cannot carry its own commit id, so the
+   final message is the source the receiver reconciles against.
+4. **Scope check** (the receiver, before receipt). Run **`main`'s copy** of
+   `tools/check_review_branch.sh <assigned head> review/<id>-codex` against the pushed branch. It checks **every commit** in
    the range, not just the final diff, so a disallowed file that is committed and then reverted
    still fails. It fails on:
    - an empty branch, or a branch that adds no `records/REVIEW-*.md` or `records/VERIFY-*.md`;
@@ -465,14 +465,150 @@ receipt, never acceptance.
    `assignment` field is missing or differs from the expected source, or if the branch does not
    descend from the assigned head. A branch can pass
    step 4 while reviewing the wrong head; only 4a catches that.
-5. **Receipt** (owner). Merge the reviewer PR with a merge commit (`--no-ff`) into `main`, never
-   squash or rebase, so the reviewer's commits keep their ids. Delete the review branch and
-   worktree afterwards. **A merge means the evidence has been received.** It does not mean
-   the conclusions are accepted, defects are fixed, an ADR is approved, a slice is authorised,
-   or the work is accepted. Those remain separate owner actions (§1.1). After receipt, the owner
-   or Claude updates `STATUS.md`.
-6. **Remediation** (Claude, on a branch from the receipt commit, submitted as an author PR per
-   step 0). Claude starts only from a prompt naming the receipt commit, and stops if that commit
+5. **Receipt by byte-identical import** (Claude or the owner; routine, not acceptance). Run it in
+   a scratch clone, never in a reviewer's worktree. Every step is idempotent and re-checks the state
+   it depends on. Stop and report on any failure.
+
+   **5.0 Inputs the receiver must hold first.** If any is absent or withheld, the receiver
+   **reports it as absent** and stops. It never substitutes the record's own statements.
+   1. The **owner-authored assignment source**, cited by location: a file in `docs/history/` holding
+      the owner's assignment text verbatim, an *Assigned reviews* row committed by the owner, or an
+      owner PR comment. The expected review id, repository, full base and head SHAs, scope, branch
+      and any delivery exception are taken **from it**. The record's `assignment` field and the
+      reviewer's branch are **never** the expected source.
+   2. The **reviewer's independent report** (step 3): the branch tip SHA and the sha256 of every
+      file the reviewer added, from the reviewer's own final message and relayed by the owner. It
+      must come from somewhere other than the branch.
+   3. A statement that the receiver looked for a **second owner-authored assignment** for the same
+      target (step 1, conflicting channels), naming where it looked.
+
+   **5.1 Resolve the tip.**
+   - `T=$(git ls-remote origin refs/heads/review/<id>-codex | awk '{print $1}')`. `T` must be
+     exactly one 40-character lowercase hex id. Stop on no line, on several lines, or on any other
+     shape.
+   - `git fetch origin refs/heads/review/<id>-codex`, then `git rev-parse FETCH_HEAD` must equal `T`.
+   - `T` must equal the tip in the reviewer's report (5.0.2). If not, the branch moved after the
+     report or the report is wrong: stop. The owner decides. Changed work needs a new assignment at
+     a newly stated head.
+
+   **5.2 Inventory, reconciled both ways.** List `git diff --name-status <head> T`. Allowed: `A`
+   under `reviews/records/`, `reviews/handoffs/` or `reviews/reports/`, and `M reviews/README.md`.
+   Anything else: stop. Then reconcile with the reviewer's report: every reported file exists at `T`
+   with the reported sha256, **and** no file exists at `T` that was not reported. Record the
+   inventory (expected, found, missing, extra) in the receipt's OD. A missing or extra file is a
+   stop, never a note.
+
+   **5.3 Checks.** Scope: `main`'s copy of `tools/check_review_branch.sh <head> T`. Assignment:
+   `tools/check_review_assignment.py` with the values from 5.0.1. Both must pass.
+
+   **5.4 Publish and verify the provenance tag first.**
+   - Create the annotated tag `reviews/<id>` at `T`, push it, and verify that
+     `git ls-remote origin 'refs/tags/reviews/<id>^{}'` returns exactly `T`.
+   - If the tag already exists, it must peel to `T`; otherwise stop. A tag is never moved or deleted.
+   - Nothing has been imported yet, so a tag without a receipt is harmless and recoverable.
+
+   **5.5 Import.** On `receipt/<id>` cut at the current `main`: `git checkout T -- <each added
+   file>`. For `reviews/README.md`, apply `git diff <head> T -- reviews/README.md`. Stop if it does not
+   apply cleanly.
+
+   **5.6 Index-row semantics.** The staged `reviews/README.md` may differ from `main`'s only by lines
+   of these two classes. Each is checked against the **imported immutable records**: the receiver
+   reads the record, not the row.
+   - **Class N (navigation).** A new row for the imported record itself (assigned-review or
+     received-review row), whose id, base, head, record path and verdict equal the record's front
+     matter, and whose assignment cell matches 5.0.1. Or a new finding row for a finding that the
+     imported **review** record defines: the same id and severity, and the state `open`.
+   - **Class S (state transition).** The rewrite of an existing finding row. It is allowed only when
+     the imported record is a **verification** (`VERIFY-*`) of that finding at its reviewed head,
+     and states that finding's outcome. The row's id, review, severity and remediation-claim cells
+     are unchanged. The state cell begins with the state word the record states (`verified_closed`,
+     `remediation_rejected` or `open`), and any further text is traceable to the record.
+
+   **Refuse and stop** on any of these:
+   - a duplicate id: a first-column id appearing twice in one table, or a finding id appearing twice
+     anywhere in the file;
+   - `verified_closed`, `waived` or `accepted` that no imported record supports. A waiver exists
+     only as an owner OD, which the receiver may cite and never creates;
+   - a state transition with no verifying record;
+   - a removed or changed line that is not the superseded version of a Class S row;
+   - any other change.
+
+   Where the reviewer's own `README` diff fails this check, the receiver does not apply it, and
+   reports the discrepancy to the owner.
+
+   **5.7 Verify.** Each imported file's blob id (`git rev-parse :<path>`) equals
+   `git rev-parse T:<path>`; nothing outside `reviews/` is staged; `tools/check_repo.py` passes; and
+   5.6 passes.
+
+   **5.8 Commit the pure import**, with the trailers:
+   - `Review-Id`, `Review-Branch`, `Review-Commit: <T>`, `Reviewed-Base`, `Reviewed-Head`;
+   - `Assignment-Source`: the location in 5.0.1, never the record's field;
+   - `Reviewer-Report`: how it was supplied;
+   - one `Record: <path> blob <id> sha256 <hex>` per imported file;
+   - `Inventory: complete` and `Receipt-Checks`.
+
+   Keep it pure: no status cell, `STATUS.md` or OD change in this commit.
+
+   **5.9 Final remote recheck, then merge and publish.** Immediately before merging, re-run the
+   `ls-remote` of 5.1 and of the tag. The branch tip must still equal `T` and the reported tip, and
+   the tag must still peel to `T`. If the branch moved, **do not merge**: leave the tag, report, and
+   let the owner decide. Otherwise merge `--no-ff` into `main` as `Merge receipt/<id>: receive <id>
+   evidence (receipt only)`, and push `main`.
+
+   **5.10 Complete only when verified.** After the push, verify that remote `main` equals the local
+   merge, that the blobs on `main` equal `T`'s, and that the remote tag peels to `T`. Only then write
+   "received" in the index and report completion. Until then the status word is **"receipt
+   incomplete"**, and the receiver reports it to the owner by name. A partial receipt is never
+   presented as complete.
+
+   **5.11 Recovery from a partial operation.** Restart at 5.1 each time. The steps check state before
+   acting.
+
+   | State found | Action |
+   |---|---|
+   | checks failed, nothing pushed | stop and report; nothing has changed |
+   | tag pushed, no import | harmless. Resume at 5.5 with the same `T`, or abandon with a note in the OD. Never delete or move the tag |
+   | tag push failed or rejected | nothing else was done; retry. If the tag exists at a different commit, stop: a mismatch for the owner |
+   | import committed, not merged | re-verify 5.9, then merge; or discard `receipt/<id>` (disposable: the reviewer's evidence is untouched) |
+   | merged locally, push of `main` failed | re-verify 5.9, then push. The status stays "receipt incomplete" |
+   | `main` pushed, tag missing (an outside action removed it) | recreate the exact tag at `T`, verify, and record in the OD that the receipt was incomplete until then |
+   | reviewer branch moved or deleted after the tag | `T` stays pinned by the tag and by the blobs on `main`; report it and take no other action |
+
+   **Accountability, not mechanism.** The author of the work may be the receiver (Claude receives
+   Codex's review of Claude's proposal). **Blob identity detects substitution when the comparison
+   runs.** It does not authenticate the reviewer, discover conflicting owner instructions, or make
+   the receiver import an adverse record. So **timely receipt and completeness depend on procedural
+   accountability**, which these rules make visible to the owner:
+   - the owner holds the reviewer's report (5.0.2) and can compare it with the receipt;
+   - a **receipt sweep**: at the start and end of every session that touches reviews, and in every
+     completion report, the receiver lists `git ls-remote origin 'refs/heads/review/*'` and reports
+     every branch whose tip is not recorded as received or dispositioned, so that silence is
+     visible;
+   - the receiver reports adverse verdicts and open findings first, with the record path, and never
+     describes findings as resolved;
+   - absent or withheld evidence is reported, not inferred.
+
+   These do not make an author-receiver independent. Where the owner wants independence, the owner
+   or a different agent performs the receipt.
+
+   **A receipt means the evidence has been received.** It does not mean that the conclusions are
+   accepted, that defects are fixed, that an ADR is approved, that a slice is authorised, or that the
+   work under review is integrated or accepted. Those remain separate owner actions (§1.1).
+
+   **Stop conditions:**
+   - the tip changed (5.1 or 5.9);
+   - a 5.0 input is absent;
+   - a scope or assignment check failed;
+   - an inventory mismatch, a missing or extra file, or any file outside the allowed set;
+   - a `README` hunk that does not apply or fails 5.6;
+   - any blob id differs;
+   - `check_repo` failed;
+   - the reviewed head differs from the assignment;
+   - a tag that exists at a different commit.
+6. **Remediation** (Claude, on the work's own author branch, submitted at a new fixed `Submission-Head` per step 0, which
+   Claude states in the author PR or a comment on it. Claude starts only from a prompt naming the
+   receipt commit, reads the record from `main`, and stops if that commit is not in `main` or if
+   the record's blob differs from the tag `reviews/<id>`.). Claude starts only from a prompt naming the receipt commit, and stops if that commit
    is not in `main`.
 
    **Exception: remediation before receipt** (only by an explicit owner instruction, recorded in
