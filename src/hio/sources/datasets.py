@@ -46,9 +46,10 @@ class Parsed:
 
 @dataclass(frozen=True)
 class DatasetSpec:
-    source_id: str
+    source_id: str  # the dataset id: the rights subject
     parse: Callable[[bytes], Parsed]
     url: str | None = None  # configured per environment and approved with the rights (T-0009 §8)
+    series: tuple[str, ...] = ()
 
 
 def _text(data: bytes) -> str:
@@ -178,10 +179,51 @@ TRI = "rba.cash_rate.tri"
 SOFR = "nyfed.sofr"
 SOFR_INDEX = "nyfed.sofr_index"
 
+F1_COLUMNS = {"FIRMMCRID": AONIA, "FIRMMCTRI": TRI}
+
+
+@dataclass(frozen=True)
+class Publication:
+    """One published file, and the datasets it serves. The raw receipt belongs to the publication;
+    each dataset keeps its own identity, series and rights (OD-0065). A publication that serves one
+    dataset under its own id is the ordinary single-dataset case, with no provenance link."""
+
+    publication_id: str
+    datasets: tuple[DatasetSpec, ...]
+    parse: Callable[[bytes], Parsed]
+    url: str | None = None
+
+    @property
+    def shared(self) -> bool:
+        return len(self.datasets) > 1 or self.datasets[0].source_id != self.publication_id
+
+    def link(self) -> dict[str, list[str]]:
+        """dataset id -> its series, as recorded in the provenance link."""
+        return {d.source_id: sorted(d.series) for d in self.datasets}
+
+
+def _dataset(source_id: str, series: tuple[str, ...], parse: Callable[[bytes], Parsed]) -> DatasetSpec:
+    return DatasetSpec(source_id, parse, series=series)
+
+
 DATASETS: Mapping[str, DatasetSpec] = {
-    "rba.cash_rate": DatasetSpec("rba.cash_rate", parse_rba_f1({"FIRMMCRID": AONIA})),
-    "rba.expert_judgement": DatasetSpec("rba.expert_judgement", parse_rba_expert_judgement),
-    "rba.cash_rate_tri": DatasetSpec("rba.cash_rate_tri", parse_rba_f1({"FIRMMCTRI": TRI})),
-    "nyfed.sofr": DatasetSpec("nyfed.sofr", parse_nyfed("SOFR", "percentRate", SOFR)),
-    "nyfed.sofr_index": DatasetSpec("nyfed.sofr_index", parse_nyfed("SOFRAI", "index", SOFR_INDEX)),
+    "rba.cash_rate": _dataset("rba.cash_rate", (AONIA,), parse_rba_f1({"FIRMMCRID": AONIA})),
+    "rba.expert_judgement": _dataset("rba.expert_judgement", (), parse_rba_expert_judgement),
+    "rba.cash_rate_tri": _dataset("rba.cash_rate_tri", (TRI,), parse_rba_f1({"FIRMMCTRI": TRI})),
+    "nyfed.sofr": _dataset("nyfed.sofr", (SOFR,), parse_nyfed("SOFR", "percentRate", SOFR)),
+    "nyfed.sofr_index": _dataset(
+        "nyfed.sofr_index", (SOFR_INDEX,), parse_nyfed("SOFRAI", "index", SOFR_INDEX)
+    ),
+}
+
+PUBLICATIONS: Mapping[str, Publication] = {
+    "rba.f1": Publication(
+        "rba.f1",
+        (DATASETS["rba.cash_rate"], DATASETS["rba.cash_rate_tri"]),
+        parse_rba_f1(F1_COLUMNS),
+    ),
+    **{
+        sid: Publication(sid, (DATASETS[sid],), DATASETS[sid].parse)
+        for sid in ("rba.expert_judgement", "nyfed.sofr", "nyfed.sofr_index")
+    },
 }

@@ -70,7 +70,7 @@ def envelope_headers(headers: Sequence[tuple[str, str]]) -> list[list[str]]:
 
 @dataclass(frozen=True)
 class RunRecord:
-    source_id: str
+    source_id: str  # the publication: the file that was fetched
     execution: Execution
     request: Mapping[str, Any]  # method, url, final_url, user_agent
     status: int | None
@@ -84,8 +84,10 @@ class RunRecord:
     error_class: str | None = None
     slot: str | None = None  # the intended slot, e.g. "first" or "final"
     slot_due_at: datetime | None = None
+    datasets: Sequence[str] = ()  # the datasets this publication serves (rights subjects), if shared
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "datasets", tuple(self.datasets))
         require_utc_instant("attempted_at", self.attempted_at)
         require_utc_instant("completed_at", self.completed_at)
         if self.completed_at < self.attempted_at:
@@ -117,6 +119,7 @@ class RunRecord:
             "error_class": self.error_class,
             "slot": self.slot,
             "slot_due_at": self.slot_due_at,
+            "datasets": list(self.datasets),
         }
 
     def canonical(self) -> bytes:
@@ -160,4 +163,5 @@ def _decode(data: bytes) -> RunRecord:
         error_class=r["error_class"],
         slot=r["slot"],
         slot_due_at=parse_instant(r["slot_due_at"]) if r["slot_due_at"] else None,
+        datasets=tuple(r["datasets"]),
     )

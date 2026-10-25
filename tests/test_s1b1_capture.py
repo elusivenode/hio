@@ -16,7 +16,7 @@ from hio.marketdata.capture import latest_capture, load_receipt_record, receipt_
 from hio.marketdata.runrecord import Execution, IntegrityError, envelope_headers, load_run_record
 from hio.rights.gate import RightsGate
 from hio.rights.register import load_genuine
-from hio.sources.datasets import DATASETS, MalformedPayload
+from hio.sources.datasets import DATASETS, PUBLICATIONS, MalformedPayload
 from hio.sources.run import run_capture
 from hio.sources.transport import FixtureTransport, HttpResponse, TransportError
 from hio.storage.objectstore import LocalObjectStore
@@ -29,9 +29,8 @@ UA = "hio-test (synthetic)"
 EXEC = Execution("github_actions", "123", "1", "capture", "a" * 40)
 
 FILES = {
-    "rba.cash_rate": "rba_f1_v1.csv",
+    "rba.f1": "rba_f1_v1.csv",  # one published file serving rba.cash_rate and rba.cash_rate_tri
     "rba.expert_judgement": "rba_expert_judgement.csv",
-    "rba.cash_rate_tri": "rba_f1_v1.csv",
     "nyfed.sofr": "nyfed_sofr_v1.json",
     "nyfed.sofr_index": "nyfed_sofr_index_v1.json",
 }
@@ -65,7 +64,7 @@ def store(tmp_path):
 
 def go(sid, transport, store, clk, gate=None, **kw):
     return run_capture(
-        DATASETS[sid],
+        PUBLICATIONS[sid],
         transport=transport,
         store=store,
         gate=gate or AllowAllGate(),
@@ -81,7 +80,7 @@ def attempts(store):
     return list(store.list(ATTEMPTS_PREFIX))
 
 
-@pytest.mark.parametrize("sid", sorted(DATASETS))
+@pytest.mark.parametrize("sid", sorted(PUBLICATIONS))
 def test_genuine_register_refuses_every_dataset_before_any_request(sid, store):
     """A-2: no rights are verified, so each adapter refuses before it requests or writes anything."""
     gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"))
@@ -105,7 +104,7 @@ def test_gate_runs_before_the_request(store):
     assert [o for o, _ in gate.calls] == [Operation.FETCH, Operation.STORE_RAW]
 
 
-@pytest.mark.parametrize("sid", sorted(DATASETS))
+@pytest.mark.parametrize("sid", sorted(PUBLICATIONS))
 def test_a_new_capture_keeps_the_receipt_and_the_provenance(sid, store):
     transport = FixtureTransport({URL.format(sid): [resp(FILES[sid], url=sid)]})
     res = go(sid, transport, store, clock(t(1, 0, 0), t(1, 0, 3)), slot="first", slot_due_at=t(0, 45))
@@ -196,16 +195,17 @@ def test_a_record_that_does_not_match_its_key_is_refused(store):
 
 
 def test_replay_reparses_every_capture_from_the_store_alone(store):
-    sid = "rba.cash_rate"
+    sid = "rba.f1"
     transport = FixtureTransport({URL.format(sid): [resp("rba_f1_v1.csv"), resp("rba_f1_v2.csv")]})
     go(sid, transport, store, clock(t(1), t(2)))
     go(sid, transport, store, clock(t(3), t(4)))
     parsed = [
-        DATASETS[sid].parse(receipt_bytes(store, load_receipt_record(store, k)))
+        PUBLICATIONS[sid].parse(receipt_bytes(store, load_receipt_record(store, k)))
         for k in store.list(CAPTURES_PREFIX)
     ]
-    assert [len(p.rows) for p in parsed] == [2, 3]
-    assert [r.value for r in parsed[1].rows] == [Decimal("3.60"), Decimal("3.61"), Decimal("3.62")]
+    assert [len(p.rows) for p in parsed] == [5, 6]  # AONIA and TRI rows from the one file
+    aonia = [r.value for r in parsed[1].rows if r.series_id == "rba.cash_rate.aonia"]
+    assert aonia == [Decimal("3.60"), Decimal("3.61"), Decimal("3.62")]
 
 
 def test_capture_is_deterministic_across_fresh_stores(tmp_path):
@@ -276,7 +276,7 @@ def test_execution_is_copied_from_the_ci_environment_or_marked_other():
 def test_a_url_is_required():
     with pytest.raises(ValueError):
         run_capture(
-            DATASETS["nyfed.sofr"],
+            PUBLICATIONS["nyfed.sofr"],
             transport=FixtureTransport({}),
             store=None,
             gate=AllowAllGate(),

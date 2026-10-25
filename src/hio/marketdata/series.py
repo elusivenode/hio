@@ -49,3 +49,11 @@ class SeriesDef:
     schedule: ReleaseSchedule | None
     jump_threshold: Decimal | None = None  # absolute change between consecutive keys that quarantines
     rule_lag: timedelta | None = None  # a spec-declared lag: basis rule_inferred, never market evidence
+    # The dataset whose rights govern this series when one published file (a shared receipt) serves
+    # several datasets. None (S1a, and every single-dataset source): the receipt's source_id is the
+    # rights subject, exactly as before. When set, source_id names the published file.
+    dataset_id: str | None = None
+
+    @property
+    def rights_id(self) -> str:
+        return self.dataset_id or self.source_id

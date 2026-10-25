@@ -21,7 +21,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from hio.contracts.canonical import canonical_json, instant_str, sha256_hex
-from hio.contracts.layout import CAPTURES_PREFIX
+from hio.contracts.layout import CAPTURES_PREFIX, link_record_key
 from hio.contracts.observation import Receipt, Vintage, parse_instant
 from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
 from hio.marketdata.capture import capture_record_key, load_receipt, load_receipt_record, receipt_bytes
@@ -40,7 +40,8 @@ from hio.marketdata.queries import (
     status_at,
 )
 from hio.marketdata.series import CaptureMode, SeriesDef
-from hio.storage.objectstore import IntegrityError, LocalObjectStore, StagedWrites
+from hio.storage.objectstore import IntegrityError, LocalObjectStore
+from hio.storage.staging import staged_writes
 
 
 class ReceiptIntegrityError(Exception):
@@ -191,7 +192,7 @@ class VintageStore:
         outcome_rows, derived = self._derive(receipt, rows, mode)
         result.new_vintages, result.quarantined = derived.new_vintages, derived.quarantined
         result.redundant, result.revisions = derived.redundant, derived.revisions
-        staged = StagedWrites(self.store)
+        staged = staged_writes(self.store)
         for v in result.new_vintages:
             staged.add(_vintage_key(v), canonical_json(v.as_record()))
         # The processing outcome is distinct from the capture evidence (the receipt and its
@@ -720,12 +721,29 @@ class VintageStore:
         out = set()
         for v in view.values.values():
             self._verify_receipt(v)
-            out.add(
-                load_receipt(
-                    self.store, self.series[v.series_id].source_id, v.captured_at, v.receipt_id
-                ).source_id
+            receipt = load_receipt(
+                self.store, self.series[v.series_id].source_id, v.captured_at, v.receipt_id
             )
+            # A shared receipt's rights subject is the series' own dataset (T-0009, OD-0065); every
+            # other source is its receipt's source, exactly as before.
+            out.add(self.series[v.series_id].dataset_id or receipt.source_id)
         return frozenset(out)
+
+    def _verify_link(self, v: Vintage) -> None:
+        """A series with a dataset id reads a shared receipt: its provenance link must exist and
+        name this series under exactly this dataset, or the vintage is unusable (fail closed)."""
+        series = self.series[v.series_id]
+        key = link_record_key(series.source_id, v.captured_at, v.receipt_id)
+        try:
+            link = json.loads(self.store.get(key))
+        except (OSError, IntegrityError, ValueError) as exc:
+            raise ReceiptIntegrityError(
+                f"no provenance link for shared receipt {v.receipt_id}: {exc}"
+            ) from exc
+        if link.get("receipt_id") != v.receipt_id or v.series_id not in link["datasets"].get(
+            series.dataset_id, ()
+        ):
+            raise ReceiptIntegrityError(f"{v.series_id} is not linked to {series.dataset_id} in {key}")
 
     def _verify_receipt(self, v: Vintage) -> None:
         source_id = self.series[v.series_id].source_id
@@ -740,6 +758,8 @@ class VintageStore:
                     f"capture record does not match vintage {v.series_id} {v.valid_time}"
                 )
             receipt_bytes(self.store, receipt)  # verifies existence and the content hash
+            if self.series[v.series_id].dataset_id is not None:
+                self._verify_link(v)
         except ReceiptIntegrityError:
             raise
         except (OSError, IntegrityError, ValueError) as exc:

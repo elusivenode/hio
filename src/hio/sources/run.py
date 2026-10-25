@@ -14,15 +14,16 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from hio.contracts.canonical import canonical_json, sha256_hex
-from hio.contracts.layout import capture_record_key, receipt_key
+from hio.contracts.layout import capture_record_key, link_record_key, receipt_key
 from hio.contracts.observation import Receipt
 from hio.contracts.rights import Operation, RightsGate
 from hio.contracts.temporal import require_utc_instant
 from hio.marketdata.capture import latest_capture
 from hio.marketdata.runrecord import Execution, RunRecord, envelope_headers
-from hio.sources.datasets import DatasetSpec, MalformedPayload
+from hio.sources.datasets import MalformedPayload, Publication
 from hio.sources.transport import HttpResponse, Transport, TransportError
-from hio.storage.objectstore import LocalObjectStore, StagedWrites
+from hio.storage.objectstore import LocalObjectStore
+from hio.storage.staging import staged_writes
 
 
 @dataclass(frozen=True)
@@ -33,7 +34,7 @@ class RunResult:
 
 
 def run_capture(
-    spec: DatasetSpec,
+    spec: Publication,
     *,
     transport: Transport,
     store: LocalObjectStore,
@@ -48,10 +49,13 @@ def run_capture(
     target = url or spec.url
     if not target:
         raise ValueError(
-            f"{spec.source_id}: no URL configured; a URL is part of the approved request identity"
+            f"{spec.publication_id}: no URL configured; a URL is part of the approved request identity"
         )
-    gate.authorise(Operation.FETCH, [spec.source_id])
-    gate.authorise(Operation.STORE_RAW, [spec.source_id])
+    # Every dataset the file serves must allow the operation: fetching or retaining the file is an
+    # operation on all of its datasets, and each is evaluated on its own record (OD-0065).
+    subjects = [d.source_id for d in spec.datasets]
+    gate.authorise(Operation.FETCH, subjects)
+    gate.authorise(Operation.STORE_RAW, subjects)
 
     attempted_at = clock()
     require_utc_instant("attempted_at", attempted_at)
@@ -59,7 +63,7 @@ def run_capture(
 
     def failed(error_class: str, response: HttpResponse | None, completed_at: datetime) -> RunResult:
         record = RunRecord(
-            source_id=spec.source_id,
+            source_id=spec.publication_id,
             execution=execution,
             request={**request, "final_url": response.final_url if response else None},
             status=response.status if response else None,
@@ -72,6 +76,7 @@ def run_capture(
             error_class=error_class,
             slot=slot,
             slot_due_at=slot_due_at,
+            datasets=subjects,
         )
         store.put(record.key, record.canonical())
         return RunResult(record, None, False)
@@ -92,13 +97,13 @@ def run_capture(
 
     data = response.body
     rid = sha256_hex(data)
-    previous = latest_capture(store, spec.source_id)
+    previous = latest_capture(store, spec.publication_id)
     if previous is not None and completed_at <= previous.captured_at:
         return failed("clock_order", response, completed_at)
 
     def record_for(outcome: str) -> RunRecord:
         return RunRecord(
-            source_id=spec.source_id,
+            source_id=spec.publication_id,
             execution=execution,
             request=request,
             status=response.status,
@@ -111,6 +116,7 @@ def run_capture(
             receipt_id=rid,
             slot=slot,
             slot_due_at=slot_due_at,
+            datasets=subjects,
         )
 
     if previous is not None and previous.receipt_id == rid:
@@ -118,13 +124,23 @@ def run_capture(
         store.put(record.key, record.canonical())
         return RunResult(record, previous, False)
 
-    receipt = Receipt(rid, spec.source_id, completed_at, dict(request), len(data))
+    receipt = Receipt(rid, spec.publication_id, completed_at, dict(request), len(data))
     record = record_for("verified_changed")
-    staged = StagedWrites(store)
-    bytes_key = receipt_key(spec.source_id, completed_at, rid)
+    staged = staged_writes(store)
+    bytes_key = receipt_key(spec.publication_id, completed_at, rid)
     if not store.put_if_absent_check(bytes_key, data):
         staged.add(bytes_key, data)
-    staged.add(capture_record_key(spec.source_id, completed_at, rid), canonical_json(receipt.as_record()))
+    staged.add(
+        capture_record_key(spec.publication_id, completed_at, rid), canonical_json(receipt.as_record())
+    )
+    if spec.shared:
+        link = {
+            "publication_id": spec.publication_id,
+            "receipt_id": rid,
+            "captured_at": completed_at,
+            "datasets": spec.link(),
+        }
+        staged.add(link_record_key(spec.publication_id, completed_at, rid), canonical_json(link))
     staged.add(record.key, record.canonical())
     staged.commit()
     return RunResult(record, receipt, True)

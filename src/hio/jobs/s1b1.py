@@ -31,7 +31,7 @@ from hio.marketdata.vintages import VintageStore, _processed_key
 from hio.publish.release import Release, make_release, render_csv
 from hio.reference.calendar import BusinessCalendar, calendar_from_observations
 from hio.rights.model import RightsRecord, propagate
-from hio.sources.datasets import AONIA, DATASETS, SOFR, SOFR_INDEX, TRI, MalformedPayload
+from hio.sources.datasets import AONIA, DATASETS, PUBLICATIONS, SOFR, SOFR_INDEX, TRI, MalformedPayload
 from hio.storage.objectstore import LocalObjectStore
 
 VERSION = "s1b1-0"
@@ -40,7 +40,9 @@ LIMITATIONS = (
     "benchmark accrual; not an achievable deposit or fund return; replicable only with a basis. "
     "Exploratory: placed schedule_only (HIO-ADR-0012 P3), not final, no as_known_by_market claim"
 )
-SOURCES = {
+# The published file each series is read from, and the dataset (the rights subject) it belongs to.
+PUBLICATION_OF = {AONIA: "rba.f1", TRI: "rba.f1", SOFR: "nyfed.sofr", SOFR_INDEX: "nyfed.sofr_index"}
+DATASET_OF = {
     AONIA: "rba.cash_rate",
     TRI: "rba.cash_rate_tri",
     SOFR: "nyfed.sofr",
@@ -67,6 +69,19 @@ def sofr_calendar(store: LocalObjectStore, cutoff: datetime) -> BusinessCalendar
     return calendar_from_observations("nyfed.observed", observations)
 
 
+def _series(sid: str, tz: str, calendar: BusinessCalendar, schedule: ReleaseSchedule) -> SeriesDef:
+    shared = PUBLICATION_OF[sid] != DATASET_OF[sid]
+    return SeriesDef(
+        sid,
+        PUBLICATION_OF[sid],
+        UNIT[sid],
+        tz,
+        calendar,
+        schedule,
+        dataset_id=DATASET_OF[sid] if shared else None,
+    )
+
+
 def series_defs(cals: Calendars) -> dict[str, SeriesDef]:
     """P3 uses the documented release instant, so the schedules carry the documented rules only:
     AONIA and SOFR are released on the next business day, the TRI and the SOFR Index on their label
@@ -74,19 +89,15 @@ def series_defs(cals: Calendars) -> dict[str, SeriesDef]:
     weekdays = BusinessCalendar("weekdays")
     grace = timedelta(days=1)
     return {
-        AONIA: SeriesDef(AONIA, SOURCES[AONIA], UNIT[AONIA], SYD, cals.rits,
-                         ReleaseSchedule(cals.rits, time(9, 20), SYD, 1, grace)),
-        TRI: SeriesDef(TRI, SOURCES[TRI], UNIT[TRI], SYD, cals.rits,
-                       ReleaseSchedule(cals.rits, time(9, 20), SYD, 0, grace)),
-        SOFR: SeriesDef(SOFR, SOURCES[SOFR], UNIT[SOFR], NY, cals.ny,
-                        ReleaseSchedule(weekdays, time(8, 0), NY, 1, grace)),
-        SOFR_INDEX: SeriesDef(SOFR_INDEX, SOURCES[SOFR_INDEX], UNIT[SOFR_INDEX], NY, cals.ny,
-                              ReleaseSchedule(weekdays, time(8, 0), NY, 0, grace)),
-    }  # fmt: skip
+        AONIA: _series(AONIA, SYD, cals.rits, ReleaseSchedule(cals.rits, time(9, 20), SYD, 1, grace)),
+        TRI: _series(TRI, SYD, cals.rits, ReleaseSchedule(cals.rits, time(9, 20), SYD, 0, grace)),
+        SOFR: _series(SOFR, NY, cals.ny, ReleaseSchedule(weekdays, time(8, 0), NY, 1, grace)),
+        SOFR_INDEX: _series(SOFR_INDEX, NY, cals.ny, ReleaseSchedule(weekdays, time(8, 0), NY, 0, grace)),
+    }
 
 
-def _parser(source_id: str) -> Callable[[bytes], list[RawRow]]:
-    spec = DATASETS[source_id]
+def _parser(publication_id: str) -> Callable[[bytes], list[RawRow]]:
+    spec = PUBLICATIONS[publication_id]
 
     def parse(data: bytes) -> list[RawRow]:
         try:
@@ -100,7 +111,7 @@ def _parser(source_id: str) -> Callable[[bytes], list[RawRow]]:
 def vintage_store(
     store: LocalObjectStore, cals: Calendars, clock: Callable[[], datetime] | None = None
 ) -> VintageStore:
-    parsers = {sid: _parser(sid) for sid in DATASETS}
+    parsers = {pid: _parser(pid) for pid in PUBLICATIONS}
     return VintageStore(store, series_defs(cals), clock, parsers)
 
 
@@ -108,8 +119,8 @@ def ingest_pending(vs: VintageStore, cutoff: datetime) -> int:
     """Process every captured, not yet processed receipt of the five datasets in capture order, under
     P3. Returns the number of receipts processed."""
     n = 0
-    for source_id in sorted(DATASETS):
-        for key in vs.store.list(f"{CAPTURES_PREFIX}{source_id}/"):
+    for publication_id in sorted(PUBLICATIONS):
+        for key in vs.store.list(f"{CAPTURES_PREFIX}{publication_id}/"):
             receipt = load_receipt_record(vs.store, key)
             if receipt.captured_at > cutoff or vs.store.exists(_processed_key(receipt)):
                 continue
@@ -140,6 +151,19 @@ def _decimals(view) -> int:
     return max((_places(v.value) for v in view.values.values()), default=0)
 
 
+CASH = {
+    # dataset id: (series, rate calendar, period-end calendar, day-count base)
+    "cash.aud.overnight": (AONIA, "rits", "rits", ACT_365F),
+    "cash.usd.overnight": (SOFR, "ny", "nsw", ACT_360),
+}
+COMPARISON = {
+    # output id: (the cash release it compares, the publisher's index series, the series' day-count base)
+    "cash.aud.overnight.vs_tri": ("cash.aud.overnight", TRI, 365),
+    "cash.usd.overnight.vs_sofr_index": ("cash.usd.overnight", SOFR_INDEX, 360),
+}
+OUTPUTS = (*CASH, *COMPARISON)
+
+
 def build_releases(
     vs: VintageStore,
     gate: RightsGate,
@@ -147,14 +171,15 @@ def build_releases(
     cals: Calendars,
     cutoff: datetime,
     code_ref: dict[str, str],
+    outputs: Iterable[str] | None = None,
 ) -> dict[str, Release]:
+    """Build the requested outputs (default: all four). Each output is authorised on the datasets
+    it actually uses, evaluated one by one: the AUD cash release needs only `rba.cash_rate`, while
+    its TRI comparison also needs `rba.cash_rate_tri`. A refusal writes nothing."""
+    wanted = frozenset(outputs) if outputs is not None else frozenset(OUTPUTS)
+    if wanted - set(OUTPUTS):
+        raise ValueError(f"unknown outputs: {sorted(wanted - set(OUTPUTS))}")
     mode = KnowledgeMode.AS_CAPTURED_BY_HIO
-    views = {sid: vs.view(sid, mode, cutoff, None) for sid in (AONIA, TRI, SOFR, SOFR_INDEX)}
-    for view in views.values():
-        if any(v.knowable_basis.supports_market_knowledge for v in view.values.values()):
-            raise RuntimeError(f"{view.series_id}: a vintage is placed above schedule_only; P3 only here")
-    sources = frozenset().union(*(vs.sources_of(v) for v in views.values()))
-    gate.authorise(Operation.BUILD, sources)
     common = {
         "version": VERSION,
         "code_ref": code_ref,
@@ -162,38 +187,52 @@ def build_releases(
         "knowledge_cutoff": instant_str(cutoff),
         "supersedes": None,
     }
-    aud_fix, usd_fix = _fixings(views[AONIA]), _fixings(views[SOFR])
+    calendars = {"rits": cals.rits, "nsw": cals.nsw, "ny": cals.ny}
+    views: dict[str, object] = {}
+
+    def view(sid: str):
+        if sid not in views:
+            v = vs.view(sid, mode, cutoff, None)
+            if any(x.knowable_basis.supports_market_knowledge for x in v.values.values()):
+                raise RuntimeError(f"{sid}: a vintage is placed above schedule_only; P3 only here")
+            views[sid] = v
+        return views[sid]
+
+    def authorised(*sids: str) -> frozenset[str]:
+        subjects = frozenset().union(*(vs.sources_of(view(s)) for s in sids))
+        gate.authorise(Operation.BUILD, subjects)
+        return subjects
+
     releases: dict[str, Release] = {}
-    plans = (
-        ("cash.aud.overnight", AONIA, aud_fix, cals.rits, cals.rits, ACT_365F, SOURCES[AONIA]),
-        ("cash.usd.overnight", SOFR, usd_fix, cals.ny, cals.nsw, ACT_360, SOURCES[SOFR]),
-    )
     series = {}
-    for dataset_id, sid, fix, rate_cal, end_cal, base, source in plans:
-        if fix:
-            last = rate_cal.add_business_days(rate_cal.latest_on_or_before(max(fix)), 1)
-            ends = [d for d in end_cal.business_days(min(fix), last) if d <= last]
-        else:
-            ends = []
-        series[dataset_id] = overnight_series(ends, fix, rate_cal, base)
-        releases[dataset_id] = _cash_release(
-            dataset_id, series[dataset_id], views[sid], common, propagate([rights[source]])
-        )
-        core = releases[dataset_id].core
-        core["quality_summary"] = {**core["quality_summary"], "limitations": LIMITATIONS}
-        releases[dataset_id] = make_release(
-            {k: v for k, v in core.items() if k != "files"}, releases[dataset_id].files
-        )
-    comparisons = (
-        ("cash.aud.overnight", "cash.aud.overnight.vs_tri", TRI, 365, "rba.cash_rate"),
-        ("cash.usd.overnight", "cash.usd.overnight.vs_sofr_index", SOFR_INDEX, 360, "nyfed.sofr"),
-    )
-    for dataset_id, out_id, ref_sid, base, source in comparisons:
-        releases[out_id] = _comparison(
-            releases[dataset_id], series[dataset_id], views[ref_sid], out_id, common, base,
-            propagate([rights[source], rights[SOURCES[ref_sid]]]),
-        )  # fmt: skip
-    return releases
+    for dataset_id in OUTPUTS:
+        if dataset_id in CASH and (
+            dataset_id in wanted or any(COMPARISON[o][0] == dataset_id for o in wanted & set(COMPARISON))
+        ):
+            sid, rate_key, end_key, base = CASH[dataset_id]
+            subjects = authorised(sid)
+            fix = _fixings(view(sid))
+            rate_cal, end_cal = calendars[rate_key], calendars[end_key]
+            if fix:
+                last = rate_cal.add_business_days(rate_cal.latest_on_or_before(max(fix)), 1)
+                ends = [d for d in end_cal.business_days(min(fix), last) if d <= last]
+            else:
+                ends = []
+            series[dataset_id] = overnight_series(ends, fix, rate_cal, base)
+            built = _cash_release(
+                dataset_id, series[dataset_id], view(sid), common, propagate([rights[s] for s in subjects])
+            )
+            core = {k: v for k, v in built.core.items() if k != "files"}
+            core["quality_summary"] = {**core["quality_summary"], "limitations": LIMITATIONS}
+            releases[dataset_id] = make_release(core, built.files)
+        elif dataset_id in COMPARISON and dataset_id in wanted:
+            cash_id, ref_sid, base = COMPARISON[dataset_id]
+            subjects = authorised(CASH[cash_id][0], ref_sid)
+            releases[dataset_id] = _comparison(
+                releases[cash_id], series[cash_id], view(ref_sid), dataset_id, common, base,
+                propagate([rights[s] for s in subjects]),
+            )  # fmt: skip
+    return {k: v for k, v in releases.items() if k in wanted}
 
 
 def _comparison(cash: Release, cash_series, ref_view, out_id: str, common, base: int, rights) -> Release:

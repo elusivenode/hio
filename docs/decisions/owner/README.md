@@ -79,6 +79,7 @@ are in operating model §1.1; the template is
 | [OD-0062](OD-0062-authorise-s1b1-development-and-staging-direction.md) | authorise_work | **Authorisation A approved** (S1b-1.0 development on synthetic fixtures; no live operation); staging direction for proposed T-0009 recorded as a **proposal**; Q-013, rights, storage, controls and finality staging **not decided** | readiness package `1e5b7e8`; T-0009 (proposed) | recorded |
 | [OD-0063](OD-0063-approve-opentofu-and-s1b1-0-finality-staging.md) | approve | **OpenTofu approved** as the IaC tool (authoring only); **S1b-1.0 finality staging approved** (T-0009 §6 at `c7b51a5`): records written in full, C1-C7, finality and final labels deferred and still owed; Q-013 stays open; no live operation | T-0009 §5-§6; ADR-0012 unchanged | recorded |
 | [OD-0064](OD-0064-f1-file-retention-direction.md) | authorise_work | the RBA F1 file may be assumed **retained unaltered** in the S1b-1.0 design; **not a rights verification** (permissions stay unverified; the gate still refuses) | readiness package §6.1 | recorded |
+| [OD-0065](OD-0065-authorise-shared-receipt-correction-and-storage.md) | authorise_work | **shared F1 receipt** (two datasets keep separate ids and rights), cloud-store interface and HIO-only OpenTofu definitions authorised; one fixed head for Codex review; **nothing live** | T-0009 at `772b362` | recorded |
 
 **Current position:**
 - **Approved:**

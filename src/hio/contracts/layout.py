@@ -30,3 +30,13 @@ def attempt_record_key(source_id: str, attempted_at: datetime, record_sha256: st
 
 
 ATTEMPTS_PREFIX = "catalogue/attempts/"
+
+
+def link_record_key(publication_id: str, captured_at: datetime, receipt_id: str) -> str:
+    """Provenance of one shared receipt: which datasets (and series) one published file serves.
+    Written in the same transaction as the capture record (T-0009, OD-0065)."""
+    stamp = captured_at.astimezone(UTC).strftime("%Y%m%d-%H%M%S%f")
+    return f"catalogue/links/{publication_id}/{stamp}-{receipt_id}.json"
+
+
+LINKS_PREFIX = "catalogue/links/"

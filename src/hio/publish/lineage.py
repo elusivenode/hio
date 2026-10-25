@@ -15,7 +15,7 @@ import json
 import re
 from typing import Any
 
-from hio.contracts.layout import CAPTURES_PREFIX, receipt_key
+from hio.contracts.layout import CAPTURES_PREFIX, LINKS_PREFIX, receipt_key
 from hio.contracts.observation import parse_instant
 from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
@@ -34,6 +34,48 @@ def capture_index(store: LocalObjectStore) -> dict[str, list[str]]:
         rid = key.rsplit("-", 1)[-1].removesuffix(".json")
         index.setdefault(rid, []).append(key)
     return index
+
+
+def link_index(store: LocalObjectStore) -> dict[str, list[str]]:
+    """receipt id -> provenance-link keys (shared receipts only), from one listing."""
+    index: dict[str, list[str]] = {}
+    for key in store.list(LINKS_PREFIX):
+        index.setdefault(key.rsplit("-", 1)[-1].removesuffix(".json"), []).append(key)
+    return index
+
+
+def rights_sources(
+    store: LocalObjectStore,
+    receipt_id: str,
+    series_id: str | None,
+    index: dict[str, list[str]],
+    links: dict[str, list[str]],
+) -> frozenset[str]:
+    """The rights subjects behind one receipt used for one series. A receipt with no provenance link
+    is a single-dataset receipt: its source, as always. A shared receipt is attributed through its
+    link to the one dataset that owns the named series; a missing series or an ambiguous link refuses."""
+    published_as = receipt_source(store, receipt_id, index)
+    keys = links.get(receipt_id, [])
+    if not keys:
+        return frozenset({published_as})
+    if series_id is None:
+        raise LineageError(f"shared receipt {receipt_id} is used by an input that names no series")
+    datasets = set()
+    for key in keys:
+        link = json.loads(store.get(key))
+        if (
+            link["receipt_id"] != receipt_id
+            or link["publication_id"] != published_as
+            or not key.startswith(f"{LINKS_PREFIX}{published_as}/")
+        ):
+            raise LineageError(f"provenance link {key} does not match its receipt")
+        owners = [d for d, series in link["datasets"].items() if series_id in series]
+        if len(owners) != 1:
+            raise LineageError(f"series {series_id} is not owned by exactly one dataset in {key}")
+        datasets.add(owners[0])
+    if len(datasets) != 1:
+        raise LineageError(f"provenance links of {receipt_id} disagree about the owner of {series_id}")
+    return frozenset(datasets)
 
 
 def receipt_source(
@@ -60,10 +102,15 @@ def receipt_source(
 
 
 def release_sources(
-    store: LocalObjectStore, core: dict[str, Any], _depth: int = 0, _index: dict[str, list[str]] | None = None
+    store: LocalObjectStore,
+    core: dict[str, Any],
+    _depth: int = 0,
+    _index: dict[str, list[str]] | None = None,
+    _links: dict[str, list[str]] | None = None,
 ) -> frozenset[str]:
     """Every source behind a release core (stored or about to be stored), transitively."""
     index = _index if _index is not None else capture_index(store)
+    links = _links if _links is not None else link_index(store)
     if _depth > _MAX_DEPTH:
         raise LineageError("lineage is too deep or cyclic")
     sources: set[str] = set()
@@ -71,11 +118,12 @@ def release_sources(
         if "upstream" in item:
             up = item["upstream"]
             upstream_core = _verified(store, up["dataset_id"], up["content_sha256"])
-            sources |= release_sources(store, upstream_core, _depth + 1, index)
+            sources |= release_sources(store, upstream_core, _depth + 1, index, links)
         elif "receipts" in item:
             if not item["receipts"]:
                 raise LineageError(f"input {item.get('series_id')} names no receipts")
-            sources |= {receipt_source(store, rid, index) for rid in item["receipts"]}
+            for rid in item["receipts"]:
+                sources |= rights_sources(store, rid, item.get("series_id"), index, links)
         else:
             raise LineageError(f"unrecognised input: {sorted(item)}")
     if not sources:

@@ -20,7 +20,7 @@ from hio.reference.calendar import BusinessCalendar
 from hio.rights.gate import RightsGate
 from hio.rights.model import ALL_PERMISSIONS, Permission, RightsRecord, Verification
 from hio.rights.register import load_genuine
-from hio.sources.datasets import DATASETS
+from hio.sources.datasets import PUBLICATIONS
 from hio.sources.run import run_capture
 from hio.sources.transport import FixtureTransport, HttpResponse
 from hio.storage.objectstore import LocalObjectStore
@@ -106,26 +106,35 @@ def resp(body: bytes, url: str) -> HttpResponse:
     return HttpResponse(200, (("Date", "synthetic"),), body, url)
 
 
+def capture_once(store, gate, sid: str, body: bytes, at: datetime):
+    url = f"https://fixture.invalid/{sid}"
+    return run_capture(
+        PUBLICATIONS[sid],
+        transport=FixtureTransport({url: [resp(body, url)]}),
+        store=store,
+        gate=gate,
+        clock=iter([at, at + timedelta(seconds=2)]).__next__,
+        execution=EXEC,
+        user_agent=UA,
+        url=url,
+    )
+
+
 @pytest.fixture(scope="module")
 def world(tmp_path_factory):
     store = LocalObjectStore(tmp_path_factory.mktemp("w") / "store")
-    url = "https://fixture.invalid/{}".format
     gate = AllowAllGate()
     # AUD: one capture a RITS day at 10:00 Sydney (AEDT, UTC+11) after the 09:20 release
     for day in AUD_DAYS[1:]:
         at = datetime(day.year, day.month, day.day, 10, tzinfo=UTC) - timedelta(hours=11)
-        for sid in ("rba.cash_rate", "rba.cash_rate_tri"):
-            run_capture(DATASETS[sid], transport=FixtureTransport({url(sid): [resp(f1_csv(day), url(sid))]}),
-                        store=store, gate=gate, clock=iter([at, at + timedelta(seconds=2)]).__next__,
-                        execution=EXEC, user_agent=UA, url=url(sid))  # fmt: skip
+        for sid in ("rba.f1",):  # ONE receipt serves both datasets
+            capture_once(store, gate, sid, f1_csv(day), at)
     # USD: one capture a SIFMA day at 09:00 ET (EDT, UTC-4) after the 08:00 release
     for day in US_DAYS[1:]:
         at = datetime(day.year, day.month, day.day, 9, tzinfo=UTC) + timedelta(hours=4)
         sofr, index = ny_json(day)
         for sid, body in (("nyfed.sofr", sofr), ("nyfed.sofr_index", index)):
-            run_capture(DATASETS[sid], transport=FixtureTransport({url(sid): [resp(body, url(sid))]}),
-                        store=store, gate=gate, clock=iter([at, at + timedelta(seconds=2)]).__next__,
-                        execution=EXEC, user_agent=UA, url=url(sid))  # fmt: skip
+            capture_once(store, gate, sid, body, at)
     cutoff = datetime(2026, 11, 1, tzinfo=UTC)
     cals = Calendars(RITS, NSW, sofr_calendar(store, cutoff))
     vs = vintage_store(store, cals)
@@ -236,25 +245,9 @@ def test_publishing_marks_exploratory_and_writes_no_final_status(world, tmp_path
 
     store, cals, _vs, cutoff, _rights, _code, built = world
     local = _copy(store, tmp_path)
-    publishable = {k: r for k, r in built.items() if "usd" in k}  # the AUD releases are blocked: next test
-    out = publish_releases(vintage_store(local, cals), AllowAllGate(), publishable, cutoff)
-    assert all(v["written"] for v in out.values())
-    for release in publishable.values():
+    out = publish_releases(vintage_store(local, cals), AllowAllGate(), built, cutoff)
+    assert len(out) == 4 and all(v["written"] for v in out.values())  # the AUD releases publish too
+    for release in built.values():
         verify_release(local, release.core["dataset_id"], release.content_sha256)
         events = [json.loads(local.get(k)) for k in local.list(f"catalogue/status/{release.content_sha256}/")]
         assert [e["status"] for e in events] == [Status.EXPLORATORY.value]
-
-
-@pytest.mark.parametrize("dataset", ["cash.aud.overnight", "cash.aud.overnight.vs_tri"])
-def test_one_file_under_two_source_ids_blocks_publishing_every_aud_release(world, tmp_path, dataset):
-    """FINDING (T-0009 step 2): AONIA and the TRI are one F1 file, so identical bytes were stored
-    under rba.cash_rate and rba.cash_rate_tri. Accepted S1a lineage refuses a receipt attributed to
-    two sources, and it indexes every capture, so no AUD release that uses an F1 receipt can be
-    written. Building and rebuilding work; publishing does not. The USD releases are unaffected.
-    This needs an owner decision on the source-id structure (ADR-0012 section 4.2 lists two ids)."""
-    from hio.publish.lineage import LineageError
-    from hio.publish.release import write_release
-
-    store, _cals, _vs, _cutoff, _rights, _code, built = world
-    with pytest.raises(LineageError, match="several sources"):
-        write_release(_copy(store, tmp_path), AllowAllGate(), built[dataset])
