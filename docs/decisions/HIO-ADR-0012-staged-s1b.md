@@ -8,7 +8,8 @@ supersedes: []          # on approval only, in part: the HIO-ADR-0010 rev 3 S1b 
 superseded_by: null
 gates: [S1b-1 authorisation, S1b-2 authorisation]
 review_record: null     # independent review required before approval (decisions README, process step 3); draft assignment: HIO-ADR-0012-review-assignment-draft.md
-drafted_under: [OD-0046, OD-0047, OD-0048]
+drafted_under: [OD-0046, OD-0047, OD-0048, OD-0051]
+revision: 2   # revision 1 = 1d68da3e90d879da6318082551bab943c60cf68b (reviewed: REVIEW-2026-10-25-adr0012, REQUEST CHANGES); revision 2 remediates its three findings
 evidence: [docs/evidence/S1B-readiness-assessment.md, docs/research/T-0002-rba-nyfed-evidence-2026-10-25.md, docs/research/T-0002-owner-verification-matrix.md]
 ---
 
@@ -87,7 +88,9 @@ owner.
    - capture records fixed at capture;
    - bucket versioning;
    - capture gaps recorded, never filled;
-   - no backfill presented as captured.
+   - no backfill presented as captured;
+   - S1b may **add** record types (the capture-attempt records, §4.3.3). It may not change the
+     meaning or write behaviour of an existing one, including `capture()`.
 5. **Release integrity:**
    - release ids and `content_sha256` reproduce from receipts (S1-A11);
    - status events do not change identity;
@@ -123,55 +126,149 @@ claimed.
 | **Datasets** (source id each) | `rba.cash_rate` (AONIA); `rba.expert_judgement` (the F1 expert-judgement file); `rba.cash_rate_tri`; optionally `rba.cash_rate_target`; `nyfed.sofr`; `nyfed.sofr_index` | one FX fixing source, chosen in a **separate FX-source decision** | each reference source |
 | **Outputs** | `cash.aud.overnight`, `cash.usd.overnight` (`as_captured_by_hio`, with labelled `reconstructed(T)` history); two **index triangulations** (§4.4) | `fx.usd_cash_vs_aud.excess` and its decomposition (S1-A9); the FX fixing triangulation | the bill-rate triangulations; any later reference |
 | **Calendars** (cited reference data) | RITS (AONIA selection); SIFMA (SOFR); NSW, defining J for `cash.usd` periods until S1b-2 supplies fixings | the FX source's calendar; J checked against actual fixings | each reference's |
-| **Entry gate** | (a) S1a accepted (done, OD-0042); (b) **`owner_verified` rights for each S1b-1 dataset × each operation it performs** ([matrix](../research/T-0002-owner-verification-matrix.md)); (c) cited RITS, SIFMA and NSW calendars; (d) publication timing evidenced and the spec patches applied: AUD regime "in arrears", RITS selection, the §4.1 wording, the windows in §4.3; (e) the network and credential-control decision (OD-0038); (f) the bucket and keys decision; (g) the owner's S1b-1 authorisation of scope and infrastructure | (a) S1b-1 authorised; (b) the **FX-source decision**, with `owner_verified` rights for that source × every operation; (c) publication timing and calendar for it; (d) the FX spec re-versioned if the source is not RBA F11 (quote convention per RA-INV-007); (e) the owner's S1b-2 authorisation | per triangulation: `owner_verified` rights for its reference; a cited calendar; a methodological-suitability note with a pre-registered expected-difference model; an owner instruction |
+| **Entry gate** | (a) S1a accepted (done, OD-0042); (b) **`owner_verified` rights for each S1b-1 dataset × each operation it performs** ([matrix](../research/T-0002-owner-verification-matrix.md)); (c) cited RITS, SIFMA and NSW calendars; (d) publication timing evidenced and the spec patches applied: AUD regime "in arrears", RITS selection, the §4.1 wording, the windows in §4.3; (d2) header and payload timestamp semantics evidenced per dataset, or that evidence declared unavailable (§4.3.1); (d3) Q-013 decided (§4.3.1); (e) the network and credential-control decision (OD-0038); (f) the bucket and keys decision; (g) the owner's S1b-1 authorisation of scope and infrastructure | (a) S1b-1 authorised; (b) the **FX-source decision**, with `owner_verified` rights for that source × every operation; (c) publication timing, calendar, timestamp semantics (§4.3.1) and revision window (§4.3.4) for it; (d) the FX spec re-versioned if the source is not RBA F11 (quote convention per RA-INV-007); (e) the owner's S1b-2 authorisation | per triangulation: `owner_verified` rights for its reference; a cited calendar; a methodological-suitability note with a pre-registered expected-difference model; an owner instruction |
 | **Excludes** | FX; equity, bonds, futures; any `smsf_*` distribution | the same, apart from FX | — |
 
-### 4.3 Publication and revision windows (both stages)
+### 4.3 Placing a vintage in time; publication and revision windows (both stages)
 
-For each series, the spec declares two instants from the publisher's documentation:
+**Revision 2 (OD-0051).** Revision 1 treated the documented publication time as the time a
+vintage became public. The independent review found that unsafe: a publisher may defer
+publication, and some series are published "shortly after" a stated time (REVIEW-2026-10-25-adr0012,
+F1). A schedule is an **expectation**. It is not vintage evidence (observations §3: "A schedule is
+not vintage evidence").
 
-| Series | Publication instant P | Window close W (final) | Evidence |
+For each dataset, the spec declares the publisher's documented schedule:
+
+| Dataset | Documented publication P_doc | Documented window close W_doc | Evidence |
 |---|---|---|---|
-| AONIA, Cash Rate TRI | before 09:20 Sydney, on the next RITS day after the rate's day b (the TRI is dated by its publication day) | 16:00 Sydney on that day ("will not revise" after) | RBA cash-rate methodology, last updated 21 July 2026 |
-| SOFR, SOFR Index | about 08:00 ET on the next SIFMA day (the index is dated by its publication day) | about 14:30 ET on that day (a revision only if it moves more than 1 bp) | NY Fed reference-rate information, last updated 10/5/2026 |
+| `rba.cash_rate` (AONIA), `rba.cash_rate_tri` | before 09:20 Sydney, on the next RITS day after the rate's day b (the TRI is dated by its publication day); the RBA may defer | 16:00 Sydney on that day ("will not revise" after) | RBA cash-rate methodology, last updated 21 July 2026; deferral per the review record, F1 |
+| `nyfed.sofr` | about 08:00 ET on the next SIFMA day | about 14:30 ET on that day, only if the rate moves by more than 1 bp | NY Fed reference-rate information, last updated 10/5/2026 |
+| `nyfed.sofr_index` | "shortly after" SOFR, about 08:00 ET (dated by its publication day) | about 14:30 ET on that day; **also** for an error in the Index calculation, whether or not SOFR was revised (see §4.3.5) | the same page, as cited by the review record, F3; to be evidenced at the S1b-1 gate |
 | FX | per the S1b-2 source | per the S1b-2 source | S1b-2 |
 
-**Rules.** Each uses only existing standard mechanisms.
+**P_doc and W_doc are used only to:** schedule captures and checks, define staleness, and define
+the finality window (§4.3.4). **They are never, on their own, the `knowable_at` of a vintage.**
 
-1. **First capture**, after P and within `capture_grace`. A new vintage gets
-   `knowable_at` = P and `knowable_basis = captured_on_schedule`.
-   - Where P is uncertain, use the **later** documented candidate.
-   - A capture after P plus `capture_grace` keeps `captured_at` as fact but does not claim
-     `captured_on_schedule` (the Q-004 default, for the owner to confirm).
-2. **Final capture**, after W.
-   - If identical, it is a no-op (OBS-INV-001).
-   - If changed, it creates a new vintage with `knowable_at` = W (the latest instant the
-     revision could have been published), `captured_on_schedule`, logged by revision detection
-     (observations §6).
-   - SOFR's `revisionIndicator` is recorded as a material attribute, so a change to it alone
-     also makes a new vintage.
-3. **Out-of-window change.** A value that differs at a capture after W on a later day becomes
-   a new vintage (never an overwrite). It is logged **and quarantined pending owner review**,
-   by a series-specific quality rule. This is additive: the observations §6 gates are a
-   minimum.
-4. **Final builds.** A release described as final for period t uses a `knowledge_cutoff` after
-   W of every input used. For X_t, that is the SOFR window close on NY day t, about 05:30–06:30
-   Sydney on t+1.
-   - Earlier cutoffs are allowed, but such releases are exploratory and identified by their
-     recorded cutoff.
-   - No new release attribute is needed.
-5. **Gaps and backfill.** A missed run is a recorded capture gap. A backfill is a single
-   current-value receipt, `schedule_only`, usable only through `reconstructed(T)`.
-6. **Expert-judgement days.** An AONIA type-A day (the last rate republished) repeats the prior
-   value by design. It is flagged from `rba.expert_judgement` and must not trip staleness.
+#### 4.3.1 Placing a vintage (first appearance and revision alike)
+
+| Rule | Condition | `knowable_at` | `knowable_basis` |
+|---|---|---|---|
+| **P1 evidenced instant** | the receipt carries this vintage's own publication instant, in the payload or in response headers that the adapter records **unaltered** in the receipt metadata, **and** that instant is ≤ the vintage's `captured_at` | that instant | `publisher_timestamp` (observations §3 allows "payload or headers") |
+| **P2 capture-time basis** | no P1 evidence | `captured_at` of the **first capture that contains the value**: the earliest instant HIO can prove it was public. It may be later than the true publication, never earlier | `captured_on_schedule` |
+| **P3 fail-closed fallback** | P2 is not available (Q-013 undecided or declined) | the documented release instant, labelled as such | `schedule_only`: **excluded from `as_known_by_market`**; usable through `as_captured_by_hio` and `reconstructed(T)` |
+
+**Conditions and consequences:**
+- **P1 is available for a dataset only after its timestamp semantics are evidenced** at the S1b
+  gate: what event the header or field times, that it is stable across requests, and that
+  intermediaries do not skew it. Until then the dataset uses P2, or P3 if P2 is unavailable.
+- A P1 instant **later** than `captured_at` is evidence of a clock or semantics fault. The vintage
+  is **quarantined**, not placed.
+- **Current evidence (2026-10-25 samples):**
+  - the `nyfed.sofr` and `nyfed.sofr_index` API payloads carry **no** publication timestamp, and
+    their header semantics have not been examined, so they would use P2 or P3;
+  - the RBA CSV's "Publication date" row is a **date**, not an instant, so an RBA dataset needs
+    header evidence for P1.
+- **P2 uses the reading the accepted S1a code already applies to a revised value.**
+  `src/hio/marketdata/knowability.py:51-52` gives a scheduled capture that sees a revised value
+  `captured_on_schedule` with `knowable_at` = the capture instant ("HIO's own capture is the only
+  evidence"). **The approved observations standard §3 defines `captured_on_schedule` as the
+  "documented release time preceding that capture" and does not state this reading.** Extending
+  it to first captures is therefore a **clarification of approved observation semantics**, and it
+  needs a change to the accepted S1a placement behaviour (an opt-in S1b mode that leaves default
+  behaviour, and so every S1a release, unchanged). **Both are escalated as Q-013 and are not
+  decided here.** The S1b-1 gate (d3) requires Q-013 to be decided. If it is declined, P3 applies.
+- **Q-004** (is a late first capture market evidence?) has no effect under P2, because the
+  capture instant is used however late the capture is. It stays open for P3.
+
+#### 4.3.2 Revisions and out-of-window changes
+
+- A revision is a vintage like any other: it is placed by P1–P3 at its own capture. **No rule
+  sets `knowable_at` to W_doc.**
+- A material attribute change, such as SOFR's `revisionIndicator`, also makes a new vintage.
+- **Out-of-window change.** A value that differs from a vintage already final (§4.3.4) for the
+  same key becomes a new vintage (never an overwrite). It is logged and **quarantined pending
+  owner review**, by a series-specific quality rule. This is additive: the observations §6 gates
+  are a minimum.
+- **Expert-judgement days.** An AONIA type-A day repeats the last rate by design. It is flagged
+  from `rba.expert_judgement` and must not trip staleness.
+- **Gaps and backfill.** A missed run is a recorded capture gap. A backfill is a single
+  current-value receipt, `schedule_only`, usable only through `reconstructed(T)`.
+
+#### 4.3.3 Capture-attempt records (additive)
+
+Every capture run for a dataset writes **one write-once attempt record**, whatever the outcome:
+`catalogue/attempts/<source_id>/<attempted_at>-<attempt_id>`, under the same integrity rules as
+other catalogue records (content-addressed, verified on read).
+
+| Field | Content |
+|---|---|
+| `source_id`, `attempted_at` | the dataset and HIO's clock at the attempt (UTC) |
+| `outcome` | `verified_changed`, `verified_unchanged` or `failed` |
+| for a verified outcome | the response's sha256 and length; the `receipt_id` it matches (a new capture, or the held capture whose bytes hash equals the response); the keys checked, each with a digest of the value held |
+| for `failed` | an error class (network, HTTP status, parse, schema, hash mismatch, key missing). No bytes |
+
+**What "verified" means:** the request succeeded; the bytes were hashed and parsed under the
+series schema; every key the release needs is present; and each held value equals the response's
+value (unchanged), or the new value was recorded through `capture()` in the same run (changed).
+
+**Constraints:**
+- **`capture()` is unchanged.** It remains the only writer of receipts and vintages, and an
+  identical consecutive re-fetch **still writes no capture record** (`src/hio/marketdata/capture.py:98-99`).
+  The attempt record is the only durable evidence that such a check happened.
+- An attempt record is evidence of a **check**, never of **publication**. It never creates or
+  changes an observation, a vintage or a `knowable_at`.
+
+#### 4.3.4 Finality (fail closed)
+
+A vintage v of key k in a dataset is **final at cutoff C** if and only if all of these hold:
+1. an attempt record r exists with outcome `verified_changed` or `verified_unchanged`, covering
+   k, and **W_doc(k) ≤ r.attempted_at ≤ C**;
+2. r's value for k equals v's value; and
+3. no later vintage of k has `captured_at` ≤ C.
+
+**Fail closed:**
+- An attempt alone establishes nothing. A `failed` record, a missing record, a parse or schema
+  failure and a missing key never count.
+- A delayed check after W_doc counts, because the publisher documents no revision after W_doc. It
+  must still be ≤ C.
+- A **release is final only if every input vintage it uses is final at the release's
+  `knowledge_cutoff`**. Otherwise it is exploratory and identified by its recorded cutoff.
+- The **evidence record ids** for finality are recorded among the release's inputs, so that they
+  fall inside the release's content identity. If the manifest schema cannot carry them without an
+  amendment of the releases standard, that is **escalated**, not decided here.
+- **Worked case from the review (F2).** AONIA is revised at 15:50 Sydney, W_doc is 16:00, and the
+  final check runs at 16:30. A build at 16:10 with `knowledge_cutoff` 16:10 has no verified record
+  in [16:00, 16:10], so it is **not final**. A 16:30 check that returns the revised value records
+  `verified_changed` and a new vintage, and a later build with a cutoff ≥ 16:30 is final.
+
+#### 4.3.5 Independent checks per dataset (SOFR and the SOFR Index)
+
+Each dataset has its own captures, attempt records, vintages and finality: `rba.cash_rate`,
+`rba.cash_rate_tri`, `nyfed.sofr` and `nyfed.sofr_index`.
+
+- **A verified post-window check is required for every dataset**, whether or not its sibling
+  changed and whether or not `revisionIndicator` shows a revision.
+- **SOFR revision rule:** a revision only if the rate moves by more than 1 bp, marked by
+  `revisionIndicator`.
+- **SOFR Index revision rule:** a revision at about 14:30 ET **also** for an error found in the
+  Index calculation, with no SOFR revision. Revision 1 grouped the Index under the SOFR rule,
+  which is wrong (F3). **This is the reviewer's citation of the NY Fed page, not independently
+  re-read by the author; the S1b-1 gate requires it to be evidenced** (timing evidence, gate (d)).
+- **Dependence:**
+  - `cash.usd.overnight` is final on SOFR checks only;
+  - the SOFR Index triangulation (§4.4) is final only if both SOFR and Index are final at its
+    cutoff;
+  - an Index-only correction creates a new Index vintage and does not change `cash.usd`.
 
 **Capture schedule.**
-- Two captures per series per publication day: shortly after P, and after W.
+- Each dataset has a **first check** shortly after P_doc and a **final check** after W_doc:
   - AONIA and TRI at about 09:45 and about 16:30 Sydney;
   - SOFR and SOFR Index at about 08:30 and about 15:00 ET.
-- Jobs fire on several UTC cron slots, and act only when the local P or W is due, because the
-  Sydney and New York daylight-saving switches move independently. Idempotence makes the extra
+- Jobs fire on several UTC cron slots, and act only when the local P_doc or W_doc is due, because
+  the Sydney and New York daylight-saving switches move independently. Idempotence makes the extra
   runs no-ops.
+- A final check that fails is retried within the day. If no verified check exists by the next
+  publication day, the affected releases stay exploratory and the miss is recorded as a gap.
 - Requests stay light (a few a day per source), as the NY Fed terms condition automated access
   on not impairing the site.
 
@@ -236,8 +333,8 @@ the RA invariants stay as approved. Neither becomes a CI gate without a later ow
   vintages of a key are a capture-clock conflict, and `as_captured_by_hio` suppresses the key
   (Q-002 r5).
 - **No intra-receipt ranking is introduced.**
-- S1b sources are declared **single-vintage per receipt**. The windows in §4.3 make every
-  revision a later-captured vintage.
+- S1b sources are declared **single-vintage per receipt**. Under §4.3 every revision becomes a
+  later-captured vintage from a separate capture, never an intra-receipt vintage.
 - **Proposed additional, additive check:** an S1b receipt that carries more than one vintage of
   a key is quarantined at ingest. It fails closed earlier and changes no S1a code path. The
   owner may decline it and rely on the suppression alone.
@@ -272,7 +369,8 @@ in the implementation plan, plus its G2 evidence list.
 | S1-A11 rebuild reproduces `content_sha256`; releases §6.1 | Retained | yes | yes | yes |
 | S1-A12 fail-closed rights on real sources, per operation | Retained; **per dataset** | D1–D4, D7–D9 | the FX source | yes |
 | S1-A13 soak: ≥10 consecutive Sydney business days, punctuality, gaps, an alert on a failed run | Staged (two soaks) | **yes** (cash captures) | **yes** (FX captures) | yes |
-| S1-A14 quality gates (quarantine; staleness) | Retained; plus the §4.3 rules 3 and 6, and §4.7's ingest check if adopted | yes | yes | yes |
+| S1-A14 quality gates (quarantine; staleness) | Retained; plus the §4.3.2 out-of-window quarantine and expert-judgement rule, the §4.3.1 later-than-capture quarantine, and §4.7's ingest check if adopted | yes | yes | yes |
+| Capture-attempt records and finality evidence (§4.3.3–§4.3.4; remediates F-REVIEW-2026-10-25-adr0012-2) | **New** (additive; `capture()` unchanged) | **yes** | **yes** | yes |
 | S1-A15 harness checks; handoff | Retained | yes | yes | yes |
 | S1-A16 fresh-agent reproduction test | Retained | — | — | **once**, at S1b completion |
 | S10-B2 "a cloud bucket with scoped keys" | Staged | **yes** | inherits | — |
@@ -297,6 +395,8 @@ table.
     supersession;
   - using a series whose permissions are `unknown` or `deny`;
   - claiming `investable` for a cash benchmark;
+  - using a documented schedule as the evidence of when a vintage became public;
+  - calling a release final without verified post-window evidence (§4.3.4);
   - any S1b change to S1a semantics.
 
 ## 7. Rollback or exit
@@ -316,6 +416,9 @@ table.
 2. The owner's answers to the matrix questions U1–U7. **Approving this ADR verifies no right.**
 3. Confirmation that §3 holds: no change to the return mathematics, the observation invariants,
    evidence integrity, release integrity or the boundary.
+4. The owner's disposition of **Q-013** (§4.3.1), which concerns the approved observation
+   semantics and the accepted S1a placement behaviour. Approving this ADR does not decide it.
+5. Scoped re-verification by Codex of F-REVIEW-2026-10-25-adr0012-1, -2 and -3 at the new head.
 
 ## Approval
 
@@ -331,6 +434,14 @@ rejects this file at commit `<sha>`.)
   - §4.3 the publication and revision windows;
   - §4.6 unavailable versus denied;
   - §5 the complete obligation mapping, with classes.
+- 2026-10-25, **revision 2** (OD-0051): remediates the three findings of REVIEW-2026-10-25-adr0012
+  (see `reviews/responses/RESPONSE-REVIEW-2026-10-25-adr0012-1.md`):
+  - §4.3 rewritten as §4.3.1–§4.3.5: placing a vintage by evidenced instant, capture time or the
+    fail-closed fallback; additive capture-attempt records; finality by verified post-window
+    evidence; independent per-dataset checks;
+  - §3, §4.2, §4.7, §5, §6 and §8 adjusted accordingly;
+  - Q-013 raised. Nothing else is changed: §2's supersession table, §4.1, §4.4–§4.6 and the
+    stage structure are as reviewed.
 - 2026-10-25: renumbered **HIO-ADR-0012** by the owner (OD-0048). HIO-ADR-0011 stays reserved for
   the equity total-return source decision (T-0003). The numbering note and the renumbering item in
   §8 are removed. No substantive change.
