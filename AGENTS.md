@@ -1,10 +1,10 @@
 ---
 id: HIO-AGENTS
 title: Agent and collaborator onboarding
-status: proposed      # the reviewer bullet follows harness-0.7.1 (proposed); NOT approved. The approved AGENTS.md is harness-0.7 (OD-0021)
-approved_by: OD-0021   # harness-0.7 rev 3 at 9b58811, blob a2dc93d335105 (earlier: OD-0008 at a82aa0d, blob 4000ab1895ee)
+status: current
+approved_by: OD-0056   # harness-0.7.1 C2 at 8461e99639f0ee7bc8cb9de2895d00d257d12974, blob 6eb9f76668149986c8a0fb0677b1e55218334719 (earlier: OD-0021, harness-0.7 rev 3 at 9b58811, blob a2dc93d335105; before that OD-0008 at a82aa0d, blob 4000ab1895ee)
 owner: HIO architecture lead (owner)
-version: harness-0.7.1 (proposed)
+version: harness-0.7.1
 last_reviewed: 2026-10-18
 ---
 
