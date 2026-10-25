@@ -63,7 +63,12 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-relocate-s1a16-evidence.md` | the owner's two short instructions to relocate the S1-A16 evidence and add a correction note, verbatim | authority for OD-0043 | — |
 | `2026-10-25-owner-s1b-readiness-assessment.md` | the owner's instruction for a bounded S1b readiness assessment (no implementation, real data, vendor contact, infrastructure or credentials), verbatim | authority for OD-0044 | — |
 | `2026-10-25-owner-integrate-s1b-readiness-t0002.md` | the owner's instruction to integrate the S1b readiness assessment and continue T-0002 for RBA and NY Fed with limited manual inspection, verbatim | authority for OD-0045 | — |
+| `2026-10-25-owner-integrate-t0002-draft-adr0010-rev4.md` | the owner's instruction to push `main`, integrate the T-0002 evidence and draft HIO-ADR-0010 revision 4 (staged S1b) with an owner-verification matrix, verbatim | authority for OD-0046 | — |
+| `2026-10-25-owner-adr0011-staged-s1b.md` | the owner's direction to push the T-0002 evidence and commit the staged-S1b proposal as a new HIO-ADR-0011, with a draft Codex review assignment, verbatim | authority for OD-0047 | — |
+| `2026-10-25-owner-adr0012-renumber-review-prep.md` | the owner's selection of HIO-ADR-0012 for the staged-S1b proposal, the PR instruction and the Codex review authorisation, verbatim | authority for OD-0048 | — |
 | `2026-10-25-owner-pr5-receipt-harness-0.7.1.md` | the owner's authorisation of the one-off PR #5 evidence receipt and the harness-0.7.1 progression, verbatim | authority for OD-0050 | — |
+| `2026-10-25-owner-adr0012-remediation-harness-review-prep.md` | the owner's instruction to remediate the three ADR-0012 findings and to push and prepare the harness-0.7.1 independent review, verbatim | authority for OD-0051 | — |
+| `2026-10-25-owner-adr0012-f2-harness-0.7.1-corrections.md` | the owner's instruction for the ADR-0012 F2 correction and the four harness-0.7.1 corrections, verbatim | authority for OD-0052 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is

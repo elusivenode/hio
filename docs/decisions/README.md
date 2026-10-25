@@ -38,6 +38,7 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 | [HIO-ADR-0008](HIO-ADR-0008-canonical-knowledge-and-harness.md) | Canonical knowledge, precedence and agentic harness | **approved** (OD-0008, at `a82aa0d`) | owner | all work |
 | [HIO-ADR-0009](HIO-ADR-0009-catalogue-from-manifests.md) | Catalogue derived from immutable manifests; no hosted database initially | **approved** (OD-0008, at `a82aa0d`) | owner | S1 |
 | [HIO-ADR-0010](HIO-ADR-0010-first-slice-scope.md) | The first slice in two stages: S1a synthetic-fixture-only, then S1b live data (revision 3) | **approved** rev 3 (OD-0011, at `760f73e`) | owner | S1 |
+| [HIO-ADR-0012](HIO-ADR-0012-staged-s1b.md) | Staged S1b live-observation implementation: S1b-1 official cash benchmarks and publisher indices; S1b-2 FX on a separately authorised source; triangulations independently gated | **approved** rev 3 (OD-0055, at `d0965cc`, blob `eb110ee394af`; findings 1–3 technically verified closed, OD-0054). Supersedes **only** HIO-ADR-0010 rev 3's S10-B2 and S10-B5 (and S10-B8(ii) wording if the FX source is not RBA F11); S1a acceptance unchanged. **S1b-1 and S1b-2 not authorised**; Q-013, the release-manifest schema, header semantics and source rights not decided. (HIO-ADR-0011 is reserved for the equity total-return source decision, T-0003) | owner | S1b-1, S1b-2 |
 
 ### G1 decision package
 
@@ -45,7 +46,7 @@ agent may draft and propose ADRs and OD records; it may not approve them.
 
 ### Owner decision records
 
-See [`owner/README.md`](owner/README.md). [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) approves HIO-ADR-0001 to 0009 at `a82aa0d`. [OD-0011](owner/OD-0011-approve-adr-0010-rev3.md) approves HIO-ADR-0010 revision 3 at `760f73e`. **G1 is complete. S1a is not authorised.**
+See [`owner/README.md`](owner/README.md). [OD-0008](owner/OD-0008-g1-decisions-a82aa0d.md) approves HIO-ADR-0001 to 0009 at `a82aa0d`. [OD-0011](owner/OD-0011-approve-adr-0010-rev3.md) approves HIO-ADR-0010 revision 3 at `760f73e`. [OD-0055](owner/OD-0055-approve-adr-0012-rev3.md) approves HIO-ADR-0012 revision 3 at `d0965cc`, superseding only the S1b provisions it lists. **G1 is complete. S1a is not authorised.**
 
 ### Deferred decisions (revisit triggers in [`../architecture.md`](../architecture.md#5-measurable-evolution-triggers))
 

@@ -8,7 +8,13 @@ date: 2026-10-18
 gates: [G1 completion, S1a authorisation, S1b authorisation]
 revision: 3   # rev 1 (blob fe651aca746d at a82aa0d) returned by OD-0008; rev 2 at f2275e2; rev 3 clarifies the S1a gate (OD-0010)
 review_record: null
+partially_superseded_by: HIO-ADR-0012   # OD-0055: ONLY the S1b provisions S10-B2 and S10-B5, and S10-B8(ii)'s wording if the FX source is not RBA F11 (ADR-0012 §2). Text below is unedited
 ---
+
+> **Status note (OD-0055, 2026-10-25; status only).** HIO-ADR-0012 revision 3 supersedes, in
+> part, the S1b provisions S10-B2 and S10-B5 of this revision, and the wording of S10-B8(ii) if its
+> condition applies (ADR-0012 §2). Every other provision, including the whole S1a column and S1a
+> acceptance (OD-0042), is unchanged and in force. The text below is not edited.
 
 # HIO-ADR-0010: first-slice scope
 
