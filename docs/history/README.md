@@ -65,6 +65,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-s1b-readiness-assessment.md` | the owner's instruction for a bounded S1b readiness assessment (no implementation, real data, vendor contact, infrastructure or credentials), verbatim | authority for OD-0044 | — |
 | `2026-10-25-owner-integrate-s1b-readiness-t0002.md` | the owner's instruction to integrate the S1b readiness assessment and continue T-0002 for RBA and NY Fed with limited manual inspection, verbatim | authority for OD-0045 | — |
 | `2026-10-25-owner-pr5-receipt-harness-0.7.1.md` | the owner's authorisation of the one-off PR #5 evidence receipt and the harness-0.7.1 progression, verbatim | authority for OD-0050 | — |
+| `2026-10-25-owner-adr0012-harness-0.7.1-approval.md` | the owner's approval of HIO-ADR-0012 rev 3 and harness-0.7.1 (C1; C2 conditional), the D0 disposition, and the controlled-receipt execution instruction, verbatim | authority for OD-0055, OD-0056, OD-0057 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
