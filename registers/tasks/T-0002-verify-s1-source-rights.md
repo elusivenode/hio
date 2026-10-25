@@ -54,3 +54,4 @@ implementation plan).
 Findings drafted at `docs/research/T-0002-source-rights-and-timing.md`. **R1–R5 need owner verification**; `automated_retrieval` is unresolved for RBA, Treasury and H.10; the BAB source is undetermined.
 
 - 2026-10-18: **OD-0013:** every source permission stays `unverified` and blocked until the outstanding terms, source, timing and calendar questions have evidence.
+- 2026-10-25: **OD-0045:** primary-source evidence for RBA and NY Fed recorded at `docs/research/T-0002-rba-nyfed-evidence-2026-10-25.md`, from manual inspection only (samples deleted). Findings: RBA F11 AUD/USD is the WM/Reuters fix (third party) and the F1 BAB is ASX (third party); the RBA FX "4.00 pm (Sydney)" is local time; RITS and NSW calendars differ. Every permission stays `unverified`.
