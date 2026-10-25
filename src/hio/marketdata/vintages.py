@@ -26,7 +26,7 @@ from hio.contracts.observation import Receipt, Vintage, parse_instant
 from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
 from hio.marketdata.capture import capture_record_key, load_receipt, load_receipt_record, receipt_bytes
 from hio.marketdata.knowability import determine
-from hio.marketdata.parse import MalformedReceipt, parse_receipt
+from hio.marketdata.parse import MalformedReceipt, RawRow, parse_receipt
 from hio.marketdata.queries import (
     Conflict,
     Resolution,
@@ -91,12 +91,16 @@ class VintageStore:
         store: LocalObjectStore,
         series: Mapping[str, SeriesDef],
         clock: Callable[[], datetime] | None = None,
+        parsers: Mapping[str, Callable[[bytes], list[RawRow]]] | None = None,
     ) -> None:
         """clock is the recording clock for decisions (OBS-INV-012: no decision is dated before
         the moment it is recorded). Tests inject one; the default is the system clock."""
         self.store = store
         self.series = dict(series)
         self._clock = clock or (lambda: datetime.now(UTC))
+        # An opt-in payload parser per source id (S1b adapters). A source without one uses the
+        # synthetic receipt format, exactly as in S1a.
+        self._parsers = dict(parsers or {})
         self._vintages: dict[tuple[str, date], list[Vintage]] = {}
         # (series_id, valid_time, vintage_seq) -> [(decided_at, status)], strictly increasing
         self._decisions: dict[tuple[str, date, int], list[tuple[datetime, QualityStatus]]] = {}
@@ -213,7 +217,7 @@ class VintageStore:
         """The ingest validation, shared by ingest (to quarantine) and completeness (to verify a
         quarantine): (rows, None) for a valid receipt, or ([], reason) for one quarantined whole."""
         try:
-            rows = parse_receipt(raw)
+            rows = self._parsers.get(receipt.source_id, parse_receipt)(raw)
             unknown = sorted({r.series_id for r in rows} - set(self.series))
             if unknown:
                 raise MalformedReceipt(f"unknown series {unknown}")

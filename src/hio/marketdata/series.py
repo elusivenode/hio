@@ -14,6 +14,10 @@ from hio.reference.calendar import BusinessCalendar
 class CaptureMode(StrEnum):
     SCHEDULED = "scheduled"  # HIO's own capture after a documented release
     BACKFILL = "backfill"  # history fetched later: the current value of each key, which may be a revision
+    # HIO's own live capture placed by HIO-ADR-0012 P3 (T-0009, OD-0063): knowable_at is the
+    # documented release instant and the basis is always schedule_only, never market evidence.
+    # Opt-in; S1a does not use it.
+    SCHEDULED_P3 = "scheduled_p3"
 
 
 @dataclass(frozen=True)

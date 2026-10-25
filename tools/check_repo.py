@@ -286,7 +286,7 @@ ALLOWED_IMPORTS = {
     "portfolio": {"contracts"},
     "taa": {"contracts"},
     "implementation": {"contracts"},
-    "jobs": {"contracts", "reference", "storage", "rights", "marketdata", "library", "publish"},
+    "jobs": {"contracts", "reference", "storage", "rights", "marketdata", "library", "publish", "sources"},
 }
 # Network clients are forbidden in src/: S1a has no source-data network access (OD-0017).
 FORBIDDEN_MODULES = {

@@ -54,6 +54,13 @@ work_card: T-0002
 - **Rights finding:** the RBA F1 file carries ASX and FENICS columns, so retaining the file raw retains third-party material (package §6.1). Needs the owner with U1.
 - Owner note: the Azure subscription `hnf-dev` is excluded from this work; subscription ids are kept out of the repo (public).
 
+## S1b-1.0 implementation, step 2: exploratory releases and index comparisons
+- Added `hio.jobs.s1b1` (ingest under P3, derived US calendar, two cash releases, two index comparisons) and `tests/test_s1b1_releases.py`. Additive changes to S1a code only: `CaptureMode.SCHEDULED_P3`, an optional `parsers` argument on `VintageStore`, `calendar_from_observations`; the `jobs` import rule allows `sources`. The S1a release-hash tests pass unchanged (suite: 321 passed).
+- Results on invented data: AUD and USD legs match independent compounding (RA fixture 0.000295890411 holds); the US holiday is derived from published dates only; every vintage is `schedule_only`; `as_known_by_market` returns nothing; rebuild from stored receipts reproduces every release hash; both index comparisons classify `within_expected_bound`; releases are exploratory and say so.
+- **Fixed during the work:** the comparison's precision estimate read Decimal exponents, which differ between parsed and reloaded values, so a rebuild changed the release hash. It now counts places in the canonical rendering (a regression test covers rebuild reproduction).
+- **FINDING 2 (needs an owner decision): one F1 file, two source ids blocks all AUD publishing.** Identical bytes stored under `rba.cash_rate` and `rba.cash_rate_tri` hit accepted S1a lineage ("receipt attributed to several sources"), and the capture index covers every capture. Building and rebuilding work; writing any AUD release does not (the USD releases publish). Recommendation: one source id for the F1 file serving both series, with D1 and D3 rights recorded together (same file, same terms under U2). ADR-0012 §4.2 lists two ids, so this is a recorded staging decision like OD-0063, not a silent change. The other options change accepted S1a lineage.
+- Known limitations: SOFR's documented release instant uses weekdays, so across a US-only holiday it is a day early (labels stay `schedule_only`, never a market claim); the spec patches (gate (d)) are not applied (a spec version bump would change S1a `spec_ref` strings; the S1a data.csv hashes are unaffected, but this needs a deliberate step); the comparison bound uses observed precision as a stand-in for publisher rounding, to be confirmed on real data.
+
 ## NOT approved by this session
 Nothing. No right verified, no Q-013 decision, no provider chosen, no S1b-1 authorisation, no
 standard amended.

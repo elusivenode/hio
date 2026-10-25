@@ -6,6 +6,7 @@ date (OBS-INV-005).
 
 from __future__ import annotations
 
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
@@ -66,3 +67,30 @@ def load_calendars(path: str | Path) -> dict[str, BusinessCalendar]:
             holidays=frozenset(date.fromisoformat(str(h)) for h in spec.get("holidays", [])),
         )
     return out
+
+
+def calendar_from_observations(
+    calendar_id: str, observations: Iterable[Collection[date]], weekend: frozenset[int] = frozenset({5, 6})
+) -> BusinessCalendar:
+    """A calendar derived from the dates a publisher actually published (T-0009 §2.7, owner
+    direction 2026-10-25). Each observation is the set of value dates one captured payload lists.
+    A weekday is a holiday only when it lies inside some payload's span (first to last listed date)
+    and that payload does not list it. A weekday outside every span stays a business day, so a rate
+    the period needs but nobody published is reported missing (an absent period), never guessed.
+    Evidence that disagrees (a date listed by one payload and absent from another's span) refuses."""
+    listed: set[date] = set()
+    absent: set[date] = set()
+    for dates in observations:
+        ds = sorted(dates)
+        if not ds:
+            continue
+        listed |= set(ds)
+        d = ds[0]
+        while d < ds[-1]:
+            if d.weekday() not in weekend and d not in dates:
+                absent.add(d)
+            d += timedelta(days=1)
+    conflict = listed & absent
+    if conflict:
+        raise ValueError(f"{calendar_id}: observations disagree about {sorted(conflict)}")
+    return BusinessCalendar(calendar_id, frozenset(absent), weekend)
