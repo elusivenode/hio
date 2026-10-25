@@ -176,3 +176,15 @@ factor `fx.usd_cash_vs_aud.excess` **cannot be cleared by any publisher terms re
   change, and possibly a change to the RA-INV-007 quote convention if the new source quotes
   AUD per USD.
 - None of this changes an approved standard or the return mathematics.
+
+## Corrections (append-only)
+
+- 2026-10-25 (OD-0046): §3 says the TRI and the SOFR Index rows are "labelled by publication date,
+  not by rate date: the triangulation must shift one RITS day", and §5 says "after the one-day
+  label shift". **The publication-date labelling is right, but the shift is wrong.** An index
+  value dated P compounds the rate applicable to the previous business day over the days since
+  then: the methodology says the TRI "applies on the Publication Date", and the SOFR Index starts
+  at 1.00000000 on the first value date. That is exactly the period return ending at P (RA §3.2:
+  the window `t−1 ≤ d < t` uses the rate of `t−1`). So `cash.aud.overnight`'s `I_t/I_s` compares
+  with TRI(t)/TRI(s) directly, with no shift. The text above is left as written.
+
