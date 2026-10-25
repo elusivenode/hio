@@ -61,6 +61,8 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-s1a16-run2-codex-transcript.md` | the S1-A16 run 2 Codex session as saved by the owner, byte-identical (sha256 `a3f818e5…15d5`) | evidence for HARNESS-2026-10-25-s1a16-2 | — |
 | `2026-10-25-owner-accept-s1a.md` | the owner's acceptance of S1a, with its final integrity checks, verbatim | authority for OD-0042 | — |
 | `2026-10-25-owner-relocate-s1a16-evidence.md` | the owner's two short instructions to relocate the S1-A16 evidence and add a correction note, verbatim | authority for OD-0043 | — |
+| `2026-10-25-owner-simplify-review-delivery.md` | the owner's request to stop reviewer PRs, and the pasted brief for a narrowly scoped review-delivery amendment, verbatim | authority for OD-0049 | — |
+| `2026-10-25-owner-adr0012-f2-harness-0.7.1-corrections.md` | the owner's instruction for the ADR-0012 F2 correction and the four harness-0.7.1 corrections, verbatim | authority for OD-0052 | — |
 | `2026-10-25-owner-s1b-readiness-assessment.md` | the owner's instruction for a bounded S1b readiness assessment (no implementation, real data, vendor contact, infrastructure or credentials), verbatim | authority for OD-0044 | — |
 | `2026-10-25-owner-integrate-s1b-readiness-t0002.md` | the owner's instruction to integrate the S1b readiness assessment and continue T-0002 for RBA and NY Fed with limited manual inspection, verbatim | authority for OD-0045 | — |
 | `2026-10-25-owner-integrate-t0002-draft-adr0010-rev4.md` | the owner's instruction to push `main`, integrate the T-0002 evidence and draft HIO-ADR-0010 revision 4 (staged S1b) with an owner-verification matrix, verbatim | authority for OD-0046 | — |
