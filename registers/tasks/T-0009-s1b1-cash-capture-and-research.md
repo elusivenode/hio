@@ -3,9 +3,10 @@ id: T-0009
 title: "S1b-1.0: immutable live cash-rate capture and reproducible exploratory cash-return research (AONIA, expert-judgement flags, Cash Rate TRI, SOFR, SOFR Index), staged under HIO-ADR-0012"
 status: proposed   # drafted under OD-0062; Authorisation A (development on synthetic fixtures) is approved, nothing else is. Not authorised for live operations
 owner: owner
-assignee_role: implementation engineer (independent reviewer: Codex)
+assignee_role: "implementation engineer (independent reviewer: Codex)"
 created: 2026-10-25
 authorised_by: OD-0062   # Authorisation A ONLY: synthetic-fixture development and a documentation-only storage check
+staging_approved_by: OD-0063   # section 6 (finality staging) and OpenTofu (section 5); no live operation
 base_revision: 0665b66b1af4aa51ceda89d9e95451e365b2670d
 links:
   adrs: [HIO-ADR-0012, HIO-ADR-0010, HIO-ADR-0005, HIO-ADR-0006, HIO-ADR-0002]
@@ -20,7 +21,8 @@ links:
 
 > **Proposed.** Authorisation A lets work start on synthetic fixtures. **Nothing here permits a live
 > fetch, a credential, provisioning, or a right to be treated as verified.** Role: implementation
-> agent. This card narrows no approved text; the one staging decision it needs is in §6.
+> agent. This card narrows no approved text. Its one staging decision (§6) and OpenTofu (§5) were
+> **approved by OD-0063**.
 
 ## 1. Purpose
 
@@ -93,10 +95,10 @@ single current-value receipt, `schedule_only`, as ADR §4.3.2 says.
 
 - **Working assumption:** Azure Blob Storage, flat namespace, in the owner's Azure account. Terraform
   files are authored and reviewed in this slice. **They are never applied under Authorisation A.**
-- **"Fully open-source Terraform" needs one fact checked by the owner.** HashiCorp Terraform has been
+- **"Fully open-source Terraform" resolved to OpenTofu.** HashiCorp Terraform has been
   under the Business Source Licence since 2023 [EXT]. The open-source (MPL-2.0) fork is **OpenTofu**,
-  with HCL and `.tf` files compatible. **Recommendation: OpenTofu**, one new tool in the Q-007 stack
-  list, as a separate decision.
+  with HCL and `.tf` files compatible. **OpenTofu is approved (OD-0063)** as an authoring tool, one new entry in
+  the Q-007-style stack list.
 - **State.** The state holds the account's resource detail, so it never enters git (public repository).
   Remote state belongs in a separate container or account, **not** the evidence store. `*.tfstate`,
   `*.tfvars` and plan files go in `.gitignore`, and the repository check refuses them.
@@ -105,7 +107,7 @@ single current-value receipt, `schedule_only`, as ADR §4.3.2 says.
 - **`tofu fmt` is allowed. `init`, `validate` and `plan` are not,** because they download providers.
   They move to Authorisation B (control decision H3).
 
-## 6. Staging decision requested (the precise one)
+## 6. Staging decision (approved by OD-0063)
 
 ADR-0012 §5 lists **"Capture-attempt records and finality evidence (§4.3.3–§4.3.4)" as owed in
 S1b-1**. T-0009 writes the record (every §4.3.3 field, so nothing is lost) but does not implement the
@@ -122,7 +124,7 @@ No text of ADR-0012 changes. The sections above stay as approved. Everything tha
 within the ADR's own wording is §4.3.1 (P3 when P2 is unavailable) and §4.3.4 (otherwise
 exploratory). Only (a) is a real narrowing.
 
-If you decline, T-0009 adds C1–C7 to its scope with no change to what is captured.
+Approved by OD-0063 as worded above. Had it been declined, T-0009 would have added C1–C7 to its scope.
 
 ## 7. Acceptance tests
 
@@ -158,7 +160,7 @@ store; the soak records punctuality and gaps; replay and reconstruction (A-6, A-
 | H3 | network and credential controls (OD-0038 successor), including the IaC tool and state decisions | undecided |
 | H4 | storage facts verified, then go-ahead to provision | documentation check is in scope; provisioning is not |
 | H5 | the Q-010 ingest check | undecided (default: decline) |
-| H6 | **the §6 staging decision** | requested |
+| H6 | the §6 staging decision | **approved, OD-0063** |
 
 ## 9. Not approved
 
