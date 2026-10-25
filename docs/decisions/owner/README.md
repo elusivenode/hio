@@ -57,6 +57,7 @@ are in operating model §1.1; the template is
 | [OD-0040](OD-0040-t0004-cross-lineage-receipt.md) | approve | Q-011: REVIEW-2026-10-18-t0004 received by byte-identical cross-lineage copy from `macsmsf@db305a3` (exception to §6.2 step 5; descent check inapplicable to this review only, failure preserved); S1-A16 two-revision basis; documentation-only integration; **not** T-0004 or S1a acceptance | record and handoff from `macsmsf@db305a3` | recorded |
 | [OD-0041](OD-0041-s1a16-result-pass.md) | accept_work | S1-A16 run 2 graded PASS; the combined S1-A16 result accepted as PASS on the two-revision basis, its conditions verified; **S1-A16 satisfied**; **not** S1a acceptance | HARNESS-…-1 at `3fd129e`, HARNESS-…-2 at `df3af48` | recorded |
 | [OD-0042](OD-0042-accept-s1a.md) | accept_work | **S1a accepted** as complete (HIO-ADR-0010 rev 3; OD-0017, OD-0020), with the package's limitations; S1b **not** authorised | implementation `084154c` (integrated `773a557`); package at `edc80d3` | recorded |
+| [OD-0043](OD-0043-relocate-s1a16-evidence.md) | authorise_work | correction note: the S1-A16 owner-held evidence moved from `~/hio-s10/evidence/` to `~/Documents/hio-evidence/` (12 hashes re-checked OK); the test clones and Codex homes deleted; the harness records unedited | HARNESS-…-1 and -2 at `df5666e` | recorded |
 
 **Current position:**
 - **Approved:**
