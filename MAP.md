@@ -1,89 +1,82 @@
 ---
 id: HIO-MAP
-title: HIO map (big picture, active threads, settled facts, open questions)
-status: proposed   # seed draft for harness-0.9 H1 (OD-0068); no effect and no authority until the owner approves it
+title: HIO map (purpose, architecture, threads, settled facts, open questions)
+status: proposed   # seed draft for harness-0.9 H1 (OD-0068), revision 2; no effect and no authority until the owner approves it
 owner: owner (approves changes); drafted by claude/implementation-agent
 last_reviewed: 2026-10-28
-max_length: 120 lines
+max_length: 110 lines
 ---
 
 # HIO map
 
-> **Navigation only.** One page to read right after `AGENTS.md`. Every line points to its
-> source; where they disagree, the source wins. Changes need the owner's approval (harness-0.9
-> H1, proposed).
+> **Navigation only** (precedence rank 5, like `STATUS.md`). Read right after `AGENTS.md`. Every
+> line cites a source; where they disagree, the source wins. **No operational state here:** what
+> is live, blocked or next is in [`STATUS.md`](STATUS.md). Changes need the owner's approval.
+> **Codex:** read only *Purpose*, *Pillars* and *Architecture* before your test plan.
 
-## What HIO is for, now
+## Purpose
 
 HIO builds **investable factor returns from point-in-time observations of known provenance and
 rights**, then uses them for risk, expected-return and exposure-space portfolio analysis
-([charter](docs/charter.md) §1). It informs consumers; it never decides for them. The first
-consumer is the MacDonald Family SMSF; its objective (about CPI + 5% over rolling three years,
+([charter](docs/charter.md) §1). It informs consumers and never decides for them. The first
+consumer is the MacDonald Family SMSF. Its objective (about CPI + 5% over rolling three years,
 convention unsettled) is a parameter HIO is given, never one it resolves (charter §2).
 
+## Pillars
+
 Two research pillars stay visible in every phase (charter §2):
-1. **True diversification**: independent economic risks, tail and conditional dependence,
+1. **True diversification:** independent economic risks, tail and conditional dependence, and
    resilience when diversification fails.
-2. **Factor dynamics**: whether valuations and states revert in ways that predict factor
-   returns. Not assumed to work.
+2. **Factor dynamics:** whether valuations and states revert in ways that predict factor
+   returns. HIO does not assume that they do.
 
-**Year 1 goal** (charter §6): validated cash, FX, rates, equity and futures factor returns in AUD
-and USD, with uncertainty; **daily point-in-time capture running**, because lost days cannot be
-recovered.
-
-## Where we are (2026-10-28)
-
-| Stage | State | Source |
-|---|---|---|
-| G1 (A01 baseline: ADRs, standards, harness) | done 2026-10-18 | OD-0008, OD-0011 |
-| S1a: synthetic-fixture foundation (contracts, cash legs, investable FX excess) | **accepted** | OD-0042 |
-| S1b-1.0 (T-0009): live cash capture, staged | built on synthetic fixtures; review **NOT READY**, 7 findings open; remediation authorised, not started | OD-0062 to OD-0067; `REVIEW-2026-10-25-t0009-1` |
-| S1b live operation | **not authorised**: needs owner-verified rights, network and credential controls, storage, and an explicit go-ahead | HIO-ADR-0012; T-0009 card |
-| S2 (equity TR) / S3 (rates CMT) | not started; after G2 | [roadmap](docs/roadmap.md) §1 |
-| Research | 4 hypotheses `proposed`, 0 experiments | `registers/hypotheses.yaml` |
-
-The roadmap's 90-day plan put S1b live capture in weeks 4 to 8 (mid-November to mid-December
-2026). The **PIT capture clock has not started**; every week of delay is a week of lost
-captured vintages (charter §6).
+**Year 1 trajectory** (charter §6; a sequencing hypothesis, not a commitment):
+- validated cash, FX, rates, equity and futures factor returns in AUD and USD, with uncertainty;
+- the risk of hypothetical portfolios explained by factors;
+- **daily point-in-time capture running.** Captured vintages cannot be recovered later, so
+  every week before capture starts is a week of evidence lost (charter §6, "Must exist from
+  Year 1").
 
 ## Architecture
 
-| | Current | Target (Year 1) | Proposed / undecided |
+| | Current | Target (Year 1) | Undecided |
 |---|---|---|---|
-| Shape | one repository, modular monolith, import rules in CI | same | services only on a measured trigger ([architecture](docs/architecture.md) §5) |
-| Storage | local filesystem store and an in-memory blob fake; no cloud | object store (receipts, releases, artefacts, catalogue) as system of record; DuckDB index rebuilt from manifests | Azure Blob in `hnf-prod` named (OD-0066); OpenTofu authored, never applied; immutability period, replication and second copy undecided |
-| Data | synthetic fixtures only | RBA and NY Fed official data, captured daily | every source right **unverified**; the F1 file's ASX and FENICS columns are an open rights question (OD-0064) |
-| Scheduling | none | scheduled capture with a local-time due check | workflow definition required by F-7, disabled |
-| Consumers | none | contract-only clients; SMSF reads pinned artefacts | consumer contract (A05) not started |
+| Shape | one repository, modular monolith, import rules in CI ([architecture](docs/architecture.md) §1) | same | services only on a measured trigger (architecture §5) |
+| Storage | local filesystem store; no cloud storage (STATUS one-line state) | object store as system of record for receipts, releases, artefacts and catalogue; DuckDB index rebuilt from manifests (architecture §2; HIO-ADR-0009) | provider subscription named `hnf-prod` ([OD-0066](docs/decisions/owner/OD-0066-assign-t0009-review-and-name-subscription.md)); immutability period, replication and second copy (branch `impl/t0009-shared-receipt-and-storage`, `infra/tofu/README.md`, not on `main`) |
+| Data | synthetic fixtures only (OD-0019; `tools/check_repo.py` `check_public`) | RBA and NY Fed official data, captured daily ([roadmap](docs/roadmap.md) §1) | every source right unverified (`registers/sources.yaml`; OD-0013) |
+| Consumers | none | contract-only clients; the SMSF reads pinned artefacts (HIO-ADR-0002) | consumer contract A05 not started (roadmap §1) |
 
-## Active threads
+## Threads (state lives in `STATUS.md`)
 
-| Thread | Serves | State | Detail |
-|---|---|---|---|
-| T-0009 remediation | starting the PIT capture clock (S1b-1) | 7 findings open; plan agreed | OD-0067; `reviews/records/REVIEW-2026-10-25-t0009-1.md`; `handoffs/` |
-| T-0002 source rights | every live operation | in progress; U1 to U7 await the owner's reading | `docs/research/T-0002-owner-verification-matrix.md` |
-| T-0003 equity TR source | S2 and gate G3 | in progress | `registers/tasks/T-0003-equity-total-return-source.md` |
-| Harness-0.9 | long-term context for Claude and Codex | proposed | `docs/decisions/harness-0.9-proposal.md` |
-| Futures data procurement | S4 and gate G4 | **not raised** although planned for weeks 4 to 8 | roadmap §1 |
+| Thread | Serves | Detail |
+|---|---|---|
+| S1b-1 cash capture (T-0009) | starting the PIT capture clock | [OD-0067](docs/decisions/owner/OD-0067-receive-t0009-review-and-authorise-remediation.md); `reviews/records/REVIEW-2026-10-25-t0009-1.md`; the T-0009 card and OD-0062 to OD-0065 (branch `impl/t0009-shared-receipt-and-storage`, not on `main`) |
+| T-0002 source rights | every live operation | `registers/tasks/T-0002-verify-s1-source-rights.md`; `docs/research/T-0002-owner-verification-matrix.md` |
+| T-0003 equity TR source | S2 and gate G3 | `registers/tasks/T-0003-equity-total-return-source.md` |
+| Futures data procurement | S4 and gate G4 | roadmap §1 (task not yet raised) |
+| Research memory | both pillars | `registers/hypotheses.yaml`, `registers/experiments.yaml` |
+| Harness-0.9 | long-term context for Claude and Codex | `docs/decisions/harness-0.9-proposal.md` |
 
 ## Settled facts worth knowing before you start
 
-- HIO never writes SMSF accounting truth and never imports `macsmsf` (ADR-0002).
-- A price-only or state series is never a return factor (return standard).
-- Unknown rights mean deny; licensed data never enters a prompt (ADR-0005).
-- S1a outputs and release identities are frozen: the four S1a `data.csv` hashes and the S1a
-  `spec_ref` strings must not change (accepted at OD-0042; preservation required by OD-0067).
-- S1b capture uses P3 `schedule_only`; no `as_known_by_market` claim until Q-013 is decided.
-- Finality (C1 to C7) is deferred in S1b-1.0 (OD-0063).
-- Further facts and dead ends: [`knowledge/findings.md`](knowledge/findings.md).
+- HIO never writes SMSF accounting truth and never imports `macsmsf` (`AGENTS.md` Boundaries;
+  HIO-ADR-0002).
+- A price-only or state series is never a return factor (`AGENTS.md` Boundaries; return
+  standard).
+- Unknown rights mean deny; licensed data never enters a prompt (`AGENTS.md`; HIO-ADR-0005).
+- S1a's four `data.csv` hashes must be preserved through T-0009 remediation (OD-0067); S1a was
+  accepted at its reviewed head (OD-0042).
+- Without evidenced publication instants, S1b vintages use P3 `schedule_only`, excluded from
+  `as_known_by_market`, until Q-013 is decided (HIO-ADR-0012, P1 to P3 table and gate d3).
+- Engineering facts and dead ends: [`knowledge/findings.md`](knowledge/findings.md).
 
 ## Open strategic questions (owner)
 
 | Question | Blocks | Source |
 |---|---|---|
 | Source rights per dataset and operation (RBA, NY Fed) | all live capture | T-0002; OD-0013 |
-| Network and credential controls (successor to OD-0038) | provisioning, live runs | OD-0038; T-0009 card |
-| Storage: immutability period and lock, replication, second copy, network default | provisioning | `infra/tofu/README.md` |
-| Q-013: capture-time knowability for unevidenced publication instants | `as_known_by_market` claims | `docs/decisions/open-decisions.md` |
-| Q-003, Q-004, Q-005b, Q-006, Q-010 | research use, S1b design, consumers | `docs/decisions/open-decisions.md` |
-| Harness-0.9 (this map's own adoption) | how agents keep context | `docs/decisions/harness-0.9-proposal.md` |
+| Network and credential controls (successor to OD-0038) | provisioning, live runs | OD-0038 |
+| Storage immutability, replication, second copy, network default | provisioning | branch `impl/t0009-shared-receipt-and-storage`, `infra/tofu/README.md` (not on `main`) |
+| Q-013: capture-time knowability for unevidenced publication instants | `as_known_by_market` claims | [`open-decisions.md`](docs/decisions/open-decisions.md) |
+| Q-003, Q-004, Q-005b, Q-006, Q-010 | research use, S1b design, consumers | `open-decisions.md` |
+| Q-014: harness-0.9 | how agents keep context | `open-decisions.md` |
