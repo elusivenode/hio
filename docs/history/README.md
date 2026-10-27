@@ -81,6 +81,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-codex-b2-independent-evidence-inventory.md` | Codex's final-message inventory for B2 (§6.2 step 5.0.2), relayed by the owner, verbatim | evidence input to OD-0060; not authoritative | — |
 | `2026-10-25-owner-local-agent-exchange-authorisation.md` | the owner's authorisation of the local agent-exchange convention, verbatim | authority for OD-0060 Part 2 | — |
 | `2026-10-25-owner-enable-routine-delegated-receipt.md` | the owner's instruction to enable routine delegated receipt, verbatim | authority for OD-0061 | — |
+| `2026-10-28-owner-harness-0.9-instruction.md` | the owner's request to assess the harness and draft harness-0.9, verbatim | authority for OD-0068 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
