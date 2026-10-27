@@ -76,19 +76,30 @@ are in operating model §1.1; the template is
 | [OD-0059](OD-0059-approve-harness-trailer-correction.md) | approve | **bounded harness-0.7.1 correction approved** (steps 5.7, 5.8, 5.10): `HIO-Actor` trailer on each receipt import commit, `check_repo.py trailers` before merge, CI status a mandatory separate report; regression test passed; failed run `347da95` and later green run `09c86f7` preserved; recommendation on lifting the suspension prepared (**not** enabled) | proposal blob `b8d2fac0dc18`; operating model §6.2 | recorded |
 | [OD-0060](OD-0060-b2-receipt-and-local-exchange.md) | authorise_work | **supervised receipt of B2** (VERIFY-2026-10-25-harness-0.7.1-1, `4682c98`) under the corrected harness-0.7.1: **evidence receipt and CI both clean** (merge `c3905d7`, run `40177539871`); local agent-exchange convention authorised and demonstrated (not authority); bounded recommendation to enable routine receipt prepared, **not enabled**; index finding rows not changed | import `d39013e`, merge `c3905d7` | recorded |
 | [OD-0061](OD-0061-enable-routine-delegated-receipt.md) | authorise_work | **routine delegated receipt enabled** under the OD-0060 conditions (owner-authored assignment; independent report held; no index change or Class N only); full §6.2 still runs; Class S, conflicts and any stop condition keep the owner's go-ahead; OD-0056 adoption condition recorded as met | OD-0060 recommendation | recorded |
+| [OD-0062](OD-0062-authorise-s1b1-development-and-staging-direction.md) | authorise_work | **Authorisation A approved** (S1b-1.0 development on synthetic fixtures; no live operation); staging direction for proposed T-0009 recorded as a **proposal**; Q-013, rights, storage, controls and finality staging **not decided** | readiness package `1e5b7e8`; T-0009 (proposed) | recorded |
+| [OD-0063](OD-0063-approve-opentofu-and-s1b1-0-finality-staging.md) | approve | **OpenTofu approved** as the IaC tool (authoring only); **S1b-1.0 finality staging approved** (T-0009 §6 at `c7b51a5`): records written in full, C1-C7, finality and final labels deferred and still owed; Q-013 stays open; no live operation | T-0009 §5-§6; ADR-0012 unchanged | recorded |
+| [OD-0064](OD-0064-f1-file-retention-direction.md) | authorise_work | the RBA F1 file may be assumed **retained unaltered** in the S1b-1.0 design; **not a rights verification** (permissions stay unverified; the gate still refuses) | readiness package §6.1 | recorded |
+| [OD-0065](OD-0065-authorise-shared-receipt-correction-and-storage.md) | authorise_work | **shared F1 receipt** (two datasets keep separate ids and rights), cloud-store interface and HIO-only OpenTofu definitions authorised; one fixed head for Codex review; **nothing live** | T-0009 at `772b362` | recorded |
 | [OD-0066](OD-0066-assign-t0009-review-and-name-subscription.md) | authorise_work | **REVIEW-2026-10-25-t0009-1 assigned** to Codex at head `ce0c3b5` (delivered via the local exchange); `hnf-prod` named as HIO's intended subscription (by name only); nothing provisioned | `impl/t0009-shared-receipt-and-storage` | recorded |
 | [OD-0067](OD-0067-receive-t0009-review-and-authorise-remediation.md) | authorise_work | **REVIEW-2026-10-25-t0009-1 received** (NOT READY; seven findings **open**) by byte-identical import under OD-0061 (merge `9efabbe`, tag `reviews/REVIEW-2026-10-25-t0009-1`); the owner's bounded remediation instruction recorded, **not yet executed**; nothing accepted or waived | reviewer tip `71f5b37` | recorded |
 | [OD-0068](OD-0068-authorise-harness-0.9-drafting.md) | authorise_work | **harness-0.9 drafted as a proposal** (knowledge layer, tiered records, mechanised receipt) with seed `MAP.md` and `knowledge/findings.md`, plus a same-vendor dry-run review; nothing applied or approved | `proposal/harness-0.9` from `eb19ef7` | recorded |
+| [OD-0069](OD-0069-bring-t0009-authority-records-to-main.md) | authorise_work | **T-0009 authority records on `main`**: OD-0062 to OD-0065, their transcripts, the T-0009 card and the S1b-1 readiness package imported byte-identically from `ce0c3b5`; `STATUS.md` rewritten; nothing approved | `main` from `eb19ef7` | recorded |
 
-**Current position:**
+**Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
   - charter, architecture, HIO-ADR-0001…0009, six standards and `AGENTS.md`, at `a82aa0d`
     (OD-0008);
   - HIO-ADR-0010 rev 3 at `760f73e` (OD-0011);
-  - the operating model, harness-0.6, at `f2275e2` (OD-0012).
+  - HIO-ADR-0012 rev 3 at `d0965cc` (OD-0055);
+  - the operating model, harness-0.7.1 at `552d4fb` (OD-0056) with correction 1 (OD-0059);
+  - OpenTofu as the IaC authoring tool, and the S1b-1.0 finality staging (OD-0063).
 - **G1 is complete.**
-- **Not approved:** the factor specs (drafts); the roadmap and plan (recommendations).
+- **Not approved:** the factor specs (drafts); the roadmap and plan (recommendations); harness-0.9
+  (proposed, Q-014).
 - **Authorised and accepted:** S1a (OD-0017; accepted by OD-0042).
-- **Not authorised:** S1b.
+- **Authorised, in progress:** T-0009 under Authorisation A only (synthetic-fixture development;
+  OD-0062, OD-0065); its remediation of seven open findings (OD-0067).
+- **Not authorised:** S1b-1 live operation (Authorisation B), S1b-2, any provisioning, credential
+  or real fetch.
 - **Accepted:** T-0006, T-0007 and T-0008; the S1a stage of T-0005 (OD-0042).
 - **No finding is waived.**
