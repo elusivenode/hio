@@ -1,7 +1,7 @@
 ---
 id: HIO-MAP
 title: HIO map (purpose, architecture, threads, settled facts, open questions)
-status: proposed   # seed draft for harness-0.9 H1 (OD-0068), revision 2; no effect and no authority until the owner approves it
+status: proposed   # seed for harness-0.9 H1 (OD-0068, OD-0070), revision 3 (Appendix A1); no effect and no authority until the owner approves it
 owner: owner (approves changes); drafted by claude/implementation-agent
 last_reviewed: 2026-10-28
 max_length: 110 lines
@@ -11,8 +11,9 @@ max_length: 110 lines
 
 > **Navigation only** (precedence rank 5, like `STATUS.md`). Read right after `AGENTS.md`. Every
 > line cites a source; where they disagree, the source wins. **No operational state here:** what
-> is live, blocked or next is in [`STATUS.md`](STATUS.md). Changes need the owner's approval.
-> **Codex:** read only *Purpose*, *Pillars* and *Architecture* before your test plan.
+> is live, blocked or next is in [`STATUS.md`](STATUS.md). Substantive changes need the owner's
+> approval; mechanical link, path or citation fixes follow operating model §4.1 (proposed).
+> Codex's bootstrap does not include this file (harness-0.9 H11 is not adopted).
 
 ## Purpose
 
@@ -50,7 +51,7 @@ Two research pillars stay visible in every phase (charter §2):
 
 | Thread | Serves | Detail |
 |---|---|---|
-| S1b-1 cash capture (T-0009) | starting the PIT capture clock | [OD-0067](docs/decisions/owner/OD-0067-receive-t0009-review-and-authorise-remediation.md); `reviews/records/REVIEW-2026-10-25-t0009-1.md`; the T-0009 card and OD-0062 to OD-0065 (branch `impl/t0009-shared-receipt-and-storage`, not on `main`) |
+| S1b-1 cash capture (T-0009) | starting the PIT capture clock | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md); OD-0062 to OD-0065, [OD-0067](docs/decisions/owner/OD-0067-receive-t0009-review-and-authorise-remediation.md); `reviews/records/REVIEW-2026-10-25-t0009-1.md`; code on branch `impl/t0009-shared-receipt-and-storage` (not on `main`) |
 | T-0002 source rights | every live operation | `registers/tasks/T-0002-verify-s1-source-rights.md`; `docs/research/T-0002-owner-verification-matrix.md` |
 | T-0003 equity TR source | S2 and gate G3 | `registers/tasks/T-0003-equity-total-return-source.md` |
 | Futures data procurement | S4 and gate G4 | roadmap §1 (task not yet raised) |
@@ -79,4 +80,4 @@ Two research pillars stay visible in every phase (charter §2):
 | Storage immutability, replication, second copy, network default | provisioning | branch `impl/t0009-shared-receipt-and-storage`, `infra/tofu/README.md` (not on `main`) |
 | Q-013: capture-time knowability for unevidenced publication instants | `as_known_by_market` claims | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 | Q-003, Q-004, Q-005b, Q-006, Q-010 | research use, S1b design, consumers | `open-decisions.md` |
-| Q-014: harness-0.9 | how agents keep context | `open-decisions.md` |
+| Q-014: harness-0.9 | how agents keep context | `open-decisions.md`; `docs/decisions/harness-0.9-proposal.md` |
