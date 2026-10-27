@@ -86,6 +86,11 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-25-owner-f1-file-direction.md` | the owner's direction on the RBA F1 file, verbatim | authority for OD-0064 (a design direction, not a rights verification) | — |
 | `2026-10-25-owner-shared-receipt-and-storage-authorisation.md` | the owner's shared-receipt, storage and review instruction, verbatim | authority for OD-0065 | — |
 | `2026-10-28-owner-decision-0-authority-to-main.md` | the owner's "do decision 0 first", with the decision text it selects | authority for OD-0069 | — |
+| `2026-10-28-owner-harness-0.9-instruction.md` | the owner's request to assess the harness and draft harness-0.9, verbatim | authority for OD-0068 | — |
+| `2026-10-28-solution-architect-harness-0.9-assessment.md` | the solution architect's assessment of harness-0.9 revision 2, verbatim | advice; disposition adopted, qualified, by OD-0070 | — |
+| `2026-10-28-claude-response-to-solution-architect-harness-0.9.md` | Claude's response to that assessment, verbatim | advice; adopted as a qualification by OD-0070 | — |
+| `2026-10-28-owner-adopt-harness-0.9-disposition.md` | the owner's adoption and adjudication, verbatim | authority for OD-0070 | — |
+| `2026-10-28-owner-documentation-merge-and-handoff.md` | the owner's "yes, do the documentation merge and handoff", with the proposal it answers | authority for OD-0071 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
