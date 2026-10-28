@@ -7,7 +7,8 @@ the row: the tool transcribes an assignment, it does not make one.
 
 It refuses a second assignment for the same target (step 1, "conflicting channels"):
   - the review id is already assigned or recorded (index tables or reviews/records/);
-  - another active assigned or received review has the same head with a different scope;
+  - another active assignment exists for the same repository and head, whatever its scope or id
+    (active: the status cell does not mark it received, withdrawn or superseded);
   - a SHA is not 40 lowercase hex characters;
   - inside a repository holding both commits, the head is not a descendant of the base.
 
@@ -34,6 +35,7 @@ HEADING = "## Assigned reviews"
 RECORDED_HEADING = "## Reviewed revisions and review records"
 SCOPE_END = ". Review branch `"
 INITIAL_STATUS = "assigned"
+INACTIVE = re.compile(r"received|withdrawn|superseded", re.IGNORECASE)
 
 
 class Refusal(Exception):
@@ -190,19 +192,19 @@ def check_conflicts(a: argparse.Namespace, lines: list[str], readme: Path) -> No
     records = readme.parent / "records"
     if records.is_dir() and any(records.glob(f"{a.review_id}.md")):
         raise Refusal(f"review id {a.review_id} already has a record in {records}")
-    mine = scope_part(scope_cell(a.scope, a.branch, a.reviewer, a.kind))
     for i in assigned:
         row = cells(lines[i])
-        if len(row) < 7 or plain(row[3]) != a.head:
+        if len(row) < 7 or plain(row[3]) != a.head or plain(row[1]) != a.repo.strip():
             continue
-        if "superseded" in row[6].lower():
+        if INACTIVE.search(row[6]):
             continue
-        if scope_part(row[4]) != mine:
-            raise Refusal(
-                f"conflicting channels (operating model §6.2 step 1): {plain(row[0])} already "
-                f"assigns head {a.head} with a different scope (README line {i + 1}). Do not pick "
-                "one: the owner reconciles it in one statement that names the assignment that stands"
-            )
+        raise Refusal(
+            f"second assignment for the same target (operating model §6.2 step 1): "
+            f"{plain(row[0])} is already active for {a.repo} head {a.head} (README line {i + 1}), "
+            "whatever the scope wording. Do not pick one: the owner reconciles it in one "
+            "statement that names the assignment that stands, and marks the other "
+            "received, withdrawn or superseded"
+        )
 
 
 def apply_row(readme: Path, lines: list[str], row: str, newline: str) -> None:

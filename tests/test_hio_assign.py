@@ -5,6 +5,7 @@ README content is synthetic; ancestry checks use throwaway git repositories.
 
 import importlib.util
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,8 @@ A = "a" * 40
 B = "b" * 40
 C = "c" * 40
 D = "d" * 40
+E = "e" * 40
+TOOL = REPO / "tools" / "hio_assign.py"
 
 HEADER = "| Review | Repository | Base SHA | Head SHA | Task / scope | Assigned by (OD / source) | Status |"
 ROW_1 = (
@@ -181,14 +184,57 @@ def test_duplicate_id_with_a_record_file_is_refused(readme, capsys):
     assert "already has a record" in capsys.readouterr().err
 
 
+def with_active_row(readme, status="assigned", repo="elusivenode/hio"):
+    row = (
+        f"| REVIEW-X-4 | `{repo}` | `{A}` | `{E}` | Review: active scope. "
+        f"Review branch `review/REVIEW-X-4-codex`. Reviewer: codex | OD-0004 | {status} |"
+    )
+    text = README.replace(ROW_2, f"{ROW_2}\n{row}")
+    readme.write_text(text)
+    return text
+
+
 def test_same_head_different_scope_is_refused(readme, capsys):
-    assert run(readme, "--apply", head=B, scope=("another scope",)) == 1
+    text = with_active_row(readme)
+    assert run(readme, "--apply", head=E, scope=("another scope",)) == 1
     err = capsys.readouterr().err
-    assert "conflicting channels" in err and "REVIEW-X-1" in err
-    assert readme.read_text() == README
+    assert "second assignment for the same target" in err and "REVIEW-X-4" in err
+    assert readme.read_text() == text
 
 
-def test_same_head_same_scope_is_not_a_conflict(readme):
+def test_same_head_same_scope_new_id_is_refused(readme, capsys):
+    text = with_active_row(readme)
+    assert run(readme, "--apply", review_id="REVIEW-N-2", head=E, scope=("active scope",)) == 1
+    assert "second assignment for the same target" in capsys.readouterr().err
+    assert readme.read_text() == text
+
+
+def test_cli_same_target_and_scope_exits_nonzero_and_leaves_readme(readme, tmp_path):
+    text = with_active_row(readme)
+    proc = subprocess.run(
+        [
+            sys.executable, str(TOOL), "--review-id", "REVIEW-N-9", "--repo", "elusivenode/hio",
+            "--base", A, "--head", E, "--scope", "active scope", "--readme", str(readme), "--apply",
+        ],
+        capture_output=True, text=True, cwd=tmp_path,
+    )
+    assert proc.returncode != 0
+    assert "REFUSED" in proc.stderr
+    assert readme.read_text() == text
+
+
+@pytest.mark.parametrize("status", ["**received** at `abc`", "withdrawn", "superseded by X-5"])
+def test_inactive_assignment_does_not_block_its_head(readme, status):
+    with_active_row(readme, status=status)
+    assert run(readme, head=E, scope=("anything",)) == 0
+
+
+def test_same_head_in_another_repository_is_not_a_conflict(readme):
+    with_active_row(readme, repo="other/repo")
+    assert run(readme, head=E) == 0
+
+
+def test_received_assignment_does_not_block_its_head(readme):
     assert run(readme, head=B, scope=("first scope",)) == 0
 
 
