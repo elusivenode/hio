@@ -33,7 +33,9 @@ related: {adrs: [HIO-ADR-0008], tasks: [], findings: [F-REVIEW-2026-10-28-h6-1-2
 
 **The reviewer's row, verbatim:**
 
-`| VERIFY-2026-10-28-h6-1-2 | REVIEW-2026-10-28-h6-1, findings 2–4 and F-1-fix regression | `ab0288f..5b9e49c` | `fb9b456`, `e4fff98` | F-2 open; F-3 and F-4 verified_closed; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-2.md) |`
+```
+| VERIFY-2026-10-28-h6-1-2 | REVIEW-2026-10-28-h6-1, findings 2–4 and F-1-fix regression | `ab0288f..5b9e49c` | `fb9b456`, `e4fff98` | F-2 open; F-3 and F-4 verified_closed; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-2.md) |
+```
 
 **Administrative edit (this OD's commit; §6.2 5.6 option B practice, OD-0100 draft):**
 - **Navigation row:** Codex's row added exactly as written, placed after the VERIFY-2026-10-28-h6-1-1 row.
@@ -63,3 +65,11 @@ The 501-test baseline and CI's lint commands passed, and 12 scoped receipt check
 Nothing is accepted, waived or activated. F-2 is being addressed by option B (OD-0100).
 
 ## Corrections (append-only)
+
+1. **2026-10-28, formatting fix (Claude's error, disclosed).**
+   - **What failed:** as first committed (`118d4dc`, merged and pushed as `704d2b5`), the verbatim quote of the reviewer's
+     row sat in an inline code span. The row's own backticks broke the span, so its relative link to the record file was
+     live and unresolved from this folder. `check_repo` failed.
+   - **Why it went out:** the failure was hidden by piping the check through `tail` (Settled finding: "Never pipe a
+     gate").
+   - **The fix:** the quote is now a fenced code block. Its text is unchanged.
