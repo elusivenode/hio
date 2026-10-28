@@ -46,3 +46,14 @@ related: {adrs: [HIO-ADR-0008], tasks: [], findings: [], ods: [OD-0070, OD-0080,
 - live operation.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, CI failures disclosed (Claude's error).**
+   - **What failed:** from `cab1747` to `a949875`, four pushes to `main` failed CI's harness job, "HIO-Actor trailers
+     on new commits". Claude's commits for OD-0086 to OD-0090 and OD-0088 correction 2 carried no `HIO-Actor:`
+     trailer. The tests job passed each time.
+   - **Already known:** the findings Inbox held this trap (`[repo]`, OD-0058/OD-0059), and it recurred anyway.
+   - **What stays and what changed:**
+     - pushed history is not rewritten, so those four runs stay failed;
+     - the three unpushed commits of OD-0091 and OD-0092 were rebuilt with the trailer, with the tree unchanged;
+     - every later commit carries it;
+     - `tools/check_repo.py trailers origin/main HEAD` runs before each push.
