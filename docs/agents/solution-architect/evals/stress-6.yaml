@@ -1,0 +1,15 @@
+id: stress-6
+dimension: practical-prioritisation
+cutoff: cab174713cf4980bbb009da70bd283da864d6b9a
+extras: []
+forbid: []
+allow_ods: []
+question: 'The owner can allocate roughly two focused weeks to HIO. Candidate work: (A) polish the investor
+  dashboard; (B) prepare the remaining S1b-1 finality staging and evidence required before Authorisation B;
+  (C) buy a commercial factor feed immediately; (D) create a multi-agent TAA research framework; (E) document
+  and validate a narrow cash/FX research artefact using existing synthetic evidence. The owner asks for a recommendation
+  that produces visible investment-research progress without violating any current approval boundary. Consult
+  STATUS, charter, roadmap and task evidence in the supplied snapshot. Rank by dependencies and expected research
+  value, but do not assume one ranking is uniquely correct. State which activities can be undertaken under
+  existing authority and which require new authorisation. Identify the smallest demonstrable outcome and stop
+  conditions.'
