@@ -1,7 +1,7 @@
 ---
 id: HIO-FINDINGS-INDEX
 title: Findings index (findings, dead ends and settled assessments, one line each)
-status: proposed   # seed for harness-0.9 H2 (OD-0068, OD-0070, OD-0080), revision 4 (Appendix A2); no authority. Every line cites its source; the source wins
+status: current   # harness-0.9a (OD-0091); Settled section accepted by OD-0093 at 8393552 (rank 5); Inbox lines are claims (rank 6). Every line cites its source; the source wins
 owner: owner (approves Settled lines at distil); any agent appends to the Inbox
 last_reviewed: 2026-10-28
 ---
@@ -21,7 +21,7 @@ last_reviewed: 2026-10-28
 
 ## Settled
 
-_Distil 1 (proposed 2026-10-28, OD-0092; **not yet accepted**: the owner accepts this section at an exact revision). Dispositions of the 57 Inbox lines: `docs/decisions/distil-1-proposal.md`._
+_Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57 Inbox lines: `docs/decisions/distil-1-proposal.md`._
 
 ### Repository and CI
 - [repo] A factor spec file is named `<factor_id>.yaml`; a superseded version that a release still cites lives at `specs/factors/archive/<factor_id>@<version>.yaml`. The YAML check compares the file stem with these. New specs need distinct factor ids. Source: `tools/check_repo.py` (spec naming check, ~l.163–170); F-REVIEW-2026-10-25-t0009-4.

@@ -1,7 +1,7 @@
 ---
 id: HIO-MAP
 title: HIO map (purpose, architecture, threads, settled facts, open questions)
-status: proposed   # seed for harness-0.9 H1 (OD-0068, OD-0070, OD-0080), revision 4 (Appendix A1); no effect and no authority until the owner approves it
+status: current   # approved as part of harness-0.9a by OD-0091 (seed at 2df83b4); navigational, rank 5, no independent authority; substantive changes need the owner's approval (operating model §4.1)
 owner: owner (approves changes); drafted by claude/implementation-agent
 last_reviewed: 2026-10-28
 max_length: 110 lines

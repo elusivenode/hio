@@ -1,7 +1,7 @@
 ---
 id: HIO-DISTIL-1
 title: "Findings distil 1: a disposition for each of the 57 Inbox lines"
-status: proposed   # OD-0092; the owner accepts the Settled text of knowledge/findings.md at an exact revision; nothing here is settled until then
+status: accepted   # OD-0093 at 8393552 (drafted under OD-0092)
 owner: owner (accepts); drafted by claude/implementation-agent
 last_reviewed: 2026-10-28
 ---
