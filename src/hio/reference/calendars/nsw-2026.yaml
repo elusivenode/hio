@@ -1,0 +1,30 @@
+# REFERENCE calendar (real data; not synthetic): New South Wales business days, 2026 (public and bank holidays observed in NSW). Dated, cited extract (T-0009 §2.7; owner decision D7, OD-0076).
+# Source: Reserve Bank of Australia 2026. Facts only, extracted by hand; RBA copyright §5 Financial Data conditions apply; no endorsement by the RBA is implied.
+calendar_id: nsw
+kind: reference
+as_of: 2026-10-28
+source:
+  citation: >-
+    Source: Reserve Bank of Australia 2026. "Public & Bank Holidays – 2026", read once by hand on 2026-10-28 05:30 UTC
+    under OD-0076: every weekday the page lists as observed in New South Wales (including "All States and
+    Territories"). Weekend holidays (Easter Saturday and Sunday, Anzac Day on Saturday 25 April, Boxing Day on
+    Saturday 26 December) are covered by the weekend.
+  url: https://www.rba.gov.au/schedules-events/bank-holidays/
+  page_sha256: b027fedddb12140a7e1e1bc46d16d36e304aa9f84bba8d9e59c9058e23e9294d
+  rights_source_id: rba_calendar_pages
+  interpretation: >-
+    The Bank Holiday on 3 August is marked "(a) Not a state-wide public holiday"; it is a bank holiday observed in NSW,
+    so it is closed here (this calendar is NSW public and bank holidays, the F11 publication rule).
+coverage: {start: 2026-01-01, end: 2026-12-31}
+weekend: [5, 6]
+closed:
+  - {date: 2026-01-01, reason: "New Year's Day"}
+  - {date: 2026-01-26, reason: "Australia Day"}
+  - {date: 2026-04-03, reason: "Good Friday"}
+  - {date: 2026-04-06, reason: "Easter Monday"}
+  - {date: 2026-04-27, reason: "Additional Day (ACT, NSW, WA; Anzac Day 25 April is a Saturday)"}
+  - {date: 2026-06-08, reason: "King's Birthday"}
+  - {date: 2026-08-03, reason: "Bank Holiday (ACT, NSW; not a state-wide public holiday)"}
+  - {date: 2026-10-05, reason: "Labour Day (ACT, NSW, SA)"}
+  - {date: 2026-12-25, reason: "Christmas Day"}
+  - {date: 2026-12-28, reason: "Boxing Day Observed"}

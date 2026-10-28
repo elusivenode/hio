@@ -16,7 +16,8 @@ from typing import Any
 from hio.contracts.canonical import canonical_json, sha256_hex
 from hio.contracts.manifest import content_sha256, release_id, validate_manifest_core
 from hio.contracts.rights import Operation, RightsGate
-from hio.storage.objectstore import LocalObjectStore, StagedWrites
+from hio.storage.objectstore import LocalObjectStore
+from hio.storage.staging import staged_writes
 
 CSV_RENDERING = "csv-utf8-lf-header-sorted-v1"
 
@@ -75,7 +76,7 @@ def write_release(store: LocalObjectStore, gate: RightsGate, release: Release) -
     if store.exists(manifest_key):
         verify_release(store, release.core["dataset_id"], release.content_sha256)
         return False
-    staged = StagedWrites(store)
+    staged = staged_writes(store)
     for name, data in sorted(release.files.items()):
         staged.add(f"{release.prefix}/{name}", data)
     staged.add(manifest_key, canonical_json(release.core))

@@ -21,12 +21,13 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from hio.contracts.canonical import canonical_json, instant_str, sha256_hex
-from hio.contracts.layout import CAPTURES_PREFIX
+from hio.contracts.layout import CAPTURES_PREFIX, link_record_key
 from hio.contracts.observation import Receipt, Vintage, parse_instant
+from hio.contracts.publications import PublicationMappingError, is_shared, link_datasets, owning_dataset
 from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
 from hio.marketdata.capture import capture_record_key, load_receipt, load_receipt_record, receipt_bytes
 from hio.marketdata.knowability import determine
-from hio.marketdata.parse import MalformedReceipt, parse_receipt
+from hio.marketdata.parse import MalformedReceipt, RawRow, parse_receipt
 from hio.marketdata.queries import (
     Conflict,
     Resolution,
@@ -40,7 +41,8 @@ from hio.marketdata.queries import (
     status_at,
 )
 from hio.marketdata.series import CaptureMode, SeriesDef
-from hio.storage.objectstore import IntegrityError, LocalObjectStore, StagedWrites
+from hio.storage.objectstore import IntegrityError, LocalObjectStore
+from hio.storage.staging import staged_writes
 
 
 class ReceiptIntegrityError(Exception):
@@ -91,12 +93,16 @@ class VintageStore:
         store: LocalObjectStore,
         series: Mapping[str, SeriesDef],
         clock: Callable[[], datetime] | None = None,
+        parsers: Mapping[str, Callable[[bytes], list[RawRow]]] | None = None,
     ) -> None:
         """clock is the recording clock for decisions (OBS-INV-012: no decision is dated before
         the moment it is recorded). Tests inject one; the default is the system clock."""
         self.store = store
         self.series = dict(series)
         self._clock = clock or (lambda: datetime.now(UTC))
+        # An opt-in payload parser per source id (S1b adapters). A source without one uses the
+        # synthetic receipt format, exactly as in S1a.
+        self._parsers = dict(parsers or {})
         self._vintages: dict[tuple[str, date], list[Vintage]] = {}
         # (series_id, valid_time, vintage_seq) -> [(decided_at, status)], strictly increasing
         self._decisions: dict[tuple[str, date, int], list[tuple[datetime, QualityStatus]]] = {}
@@ -187,7 +193,7 @@ class VintageStore:
         outcome_rows, derived = self._derive(receipt, rows, mode)
         result.new_vintages, result.quarantined = derived.new_vintages, derived.quarantined
         result.redundant, result.revisions = derived.redundant, derived.revisions
-        staged = StagedWrites(self.store)
+        staged = staged_writes(self.store)
         for v in result.new_vintages:
             staged.add(_vintage_key(v), canonical_json(v.as_record()))
         # The processing outcome is distinct from the capture evidence (the receipt and its
@@ -213,7 +219,7 @@ class VintageStore:
         """The ingest validation, shared by ingest (to quarantine) and completeness (to verify a
         quarantine): (rows, None) for a valid receipt, or ([], reason) for one quarantined whole."""
         try:
-            rows = parse_receipt(raw)
+            rows = self._parsers.get(receipt.source_id, parse_receipt)(raw)
             unknown = sorted({r.series_id for r in rows} - set(self.series))
             if unknown:
                 raise MalformedReceipt(f"unknown series {unknown}")
@@ -716,12 +722,57 @@ class VintageStore:
         out = set()
         for v in view.values.values():
             self._verify_receipt(v)
-            out.add(
-                load_receipt(
-                    self.store, self.series[v.series_id].source_id, v.captured_at, v.receipt_id
-                ).source_id
+            receipt = load_receipt(
+                self.store, self.series[v.series_id].source_id, v.captured_at, v.receipt_id
             )
+            # A shared receipt's rights subject is the dataset the fixed publication mapping assigns
+            # the series to (T-0009, OD-0065; F-REVIEW-2026-10-25-t0009-1); every other source is
+            # its receipt's source, exactly as before.
+            out.add(self._rights_subject(v.series_id, receipt.source_id))
         return frozenset(out)
+
+    def _rights_subject(self, series_id: str, source_id: str) -> str:
+        """The rights subject of a series read from a receipt of source_id. The series definition's
+        dataset id must agree with the fixed mapping; a disagreement in either direction refuses."""
+        declared = self.series[series_id].dataset_id
+        if not is_shared(source_id):
+            if declared is not None:
+                raise ReceiptIntegrityError(
+                    f"{series_id} declares dataset {declared} but {source_id} is not a shared publication"
+                )
+            return source_id
+        try:
+            owner = owning_dataset(source_id, series_id)
+        except PublicationMappingError as exc:
+            raise ReceiptIntegrityError(str(exc)) from exc
+        if declared != owner:
+            raise ReceiptIntegrityError(
+                f"{series_id} declares dataset {declared}, but {source_id} assigns it to {owner}"
+            )
+        return owner
+
+    def _verify_link(self, v: Vintage) -> None:
+        """A vintage read from a shared receipt needs that receipt's provenance link, equal byte for
+        byte to the link the fixed publication mapping implies, or the vintage is unusable."""
+        source_id = self.series[v.series_id].source_id
+        self._rights_subject(v.series_id, source_id)
+        key = link_record_key(source_id, v.captured_at, v.receipt_id)
+        expected = canonical_json(
+            {
+                "publication_id": source_id,
+                "receipt_id": v.receipt_id,
+                "captured_at": v.captured_at,
+                "datasets": link_datasets(source_id),
+            }
+        )
+        try:
+            stored = self.store.get(key)
+        except (OSError, IntegrityError) as exc:
+            raise ReceiptIntegrityError(
+                f"no provenance link for shared receipt {v.receipt_id}: {exc}"
+            ) from exc
+        if stored != expected:
+            raise ReceiptIntegrityError(f"provenance link {key} does not match the fixed publication mapping")
 
     def _verify_receipt(self, v: Vintage) -> None:
         source_id = self.series[v.series_id].source_id
@@ -736,6 +787,8 @@ class VintageStore:
                     f"capture record does not match vintage {v.series_id} {v.valid_time}"
                 )
             receipt_bytes(self.store, receipt)  # verifies existence and the content hash
+            if is_shared(source_id) or self.series[v.series_id].dataset_id is not None:
+                self._verify_link(v)
         except ReceiptIntegrityError:
             raise
         except (OSError, IntegrityError, ValueError) as exc:

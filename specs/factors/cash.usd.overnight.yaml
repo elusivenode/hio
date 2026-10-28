@@ -1,7 +1,8 @@
-# Draft for HIO-S1. External facts are marked [EXT] and are unverified (see registers/sources.yaml).
+# Draft for HIO-S1b-1.0 (T-0009). External facts are marked [EXT] and are unverified (see registers/sources.yaml).
+# Version 0.2.0, which the accepted S1a releases cite, is kept byte-identical in archive/cash.usd.overnight@0.2.0.yaml.
 identity:
   factor_id: cash.usd.overnight
-  version: 0.2.0
+  version: 0.3.0
   status: draft
   owner: quantitative researcher
   family: cash
@@ -14,7 +15,7 @@ classification:
   investability: replicable_with_basis   # an in-arrears benchmark (RA §3.2 regime "in arrears"): replicable via SOFR-linked deposits or FRNs, or daily rolled repo; the period rate cannot be locked at the start
 return_convention:
   return_type: simple
-  period: joint calendar J of fx.usd_cash_vs_aud.excess (Sydney business days with an RBA fixing)
+  period: NSW business days, from dated, cited reference data (the joint calendar J of fx.usd_cash_vs_aud.excess until S1b-2 supplies RBA fixings)
   compounding: "RA §3.2: Π_b (1 + SOFR_b × n_b / 360) − 1 within each period; periods chained"
   numeraire: USD
   hedging: n/a
@@ -22,22 +23,29 @@ return_convention:
   excess_definition: n/a
 observations:
   - series_id: nyfed.sofr
-    source_id: nyfed_reference_rates
+    source_id: nyfed.sofr   # a single-dataset publication: the dataset is its own rights subject
     unit: percent per annum
-    knowledge_mode_required: "as_captured_by_hio or as_known_by_market for point-in-time releases; descriptive history may use reconstructed(T), labelled (observations standard §4)"
+    knowledge_mode_required: "as_captured_by_hio in S1b-1.0 (every vintage schedule_only under HIO-ADR-0012 P3); descriptive history may use reconstructed(T), labelled (observations standard §4)"
 availability:
   knowable_rule: >-
-    Per vintage (observations standard §3). Captured vintages: captured_on_schedule, with
-    knowable_at = the documented publication instant for SOFR_b, believed to be the next NY
-    business-day morning [EXT, verify in T-0002]. Backfilled history without vintage evidence:
-    schedule_only, so reconstructed(T) only. Period knowable_at = max over the SOFR_b used.
+    Per vintage (observations standard §3), placed by HIO-ADR-0012 P3 in S1b-1.0: knowable_at =
+    the documented publication instant P_doc (about 08:00 ET on the next US business day after b
+    [EXT, HIO-ADR-0012 §4.3]) and basis schedule_only, never market evidence; Q-013 stays open.
+    The P3 instant counts weekdays only, so across a US-only holiday it is a day early: a known,
+    declared limitation that can only make a schedule_only label optimistic. Regime: IN ARREARS.
+    Period knowable_at = max over the SOFR_b used.
+  publication_window: "P_doc about 08:00 ET; W_doc about 14:30 ET on the same day [EXT, HIO-ADR-0012 §4.3]"
   earliest_history: "SOFR from its first publication date in 2018 [EXT]; no pre-SOFR splice in v0.2"
   capture_clock_dependency: point-in-time use starts at the S1 capture start
 construction:
   calendar: >-
     Window for period (t−1, t] on J: the calendar days d with t−1 ≤ d < t, read as NY calendar
-    dates with the same date labels (declared alignment; see limitations). SOFR business days
-    are from the NY Fed calendar [EXT].
+    dates with the same date labels (declared alignment; see limitations). Period ends are NSW
+    business days from dated, cited reference data; a date outside its coverage refuses. SOFR
+    business days (rate selection) are DERIVED from the dates the NY Fed actually published in the
+    captured receipts (T-0009 §2.7): no SIFMA dependency. A rate a period needs that no captured
+    payload covers makes the period absent, never guessed.
+  regime: in_arrears
   day_count: ACT/360
   algorithm: |
     For each period (t-1, t] on J:
@@ -65,6 +73,22 @@ invariants:
     - id: CASH-USD-INV-4
       statement: "the period knowable_at equals the latest publication instant among the SOFR_b used; for Fri→Mon that is Friday's SOFR publication (on the following NY business day)"
 triangulation:
+  - reference: NY Fed SOFR Index (nyfed.sofr_index, a single-dataset publication)
+    kind: publisher_index   # HIO-ADR-0012 §4.4; recorded, classified, never pass or fail on agreement
+    quantity_compared: "per period (t-1, t]: (1 + r_t) against Index_t / Index_{t-1}"
+    series_class_of_reference: total_return
+    reference_decimals: 8   # [EXT, unverified] published precision of the SOFR Index; to confirm at the first authorised structure check
+    rate_decimals: 2        # [EXT, unverified] published precision of SOFR; same
+    expected_differences:
+      - mechanism: >-
+          publisher rounding only, under the same model as cash.aud.overnight@0.3.0's TRI
+          comparison. Not modelled, so they appear as outside_expected_bound: an Index calculation
+          error and its correction (HIO-ADR-0012 §4.3.5), and NSW period ends on a date with no
+          Index value (reported as not_compared).
+        predicted_sign: either
+        predicted_magnitude: "within the bound; about 0"
+    classification: "as cash.aud.overnight@0.3.0: within_expected_bound | outside_expected_bound | precision_exceeds_declared | not_compared (with its cause)"
+    metrics: [periods, periods_compared, not_compared_by_cause, within_expected_bound, outside_expected_bound, precision_exceeds_declared]
   - reference: US Treasury daily bill rates, 4-week and 13-week [EXT]
     quantity_compared: >-
       A RATE triangulation, not a return comparison. Two comparisons:
@@ -87,6 +111,8 @@ triangulation:
         predicted_magnitude: "removed by the declared conversion"
     metrics: [mean_level_difference_bp, max_level_difference_bp, horizon_aligned_difference_bp]
 limitations:
+  - "benchmark accrual; not an achievable deposit or fund return; replicable only with a basis"
+  - "S1b-1.0 releases are exploratory: placed schedule_only (HIO-ADR-0012 P3), never final (OD-0063)"
   - SOFR is a secured overnight repo rate, compounded in arrears; the investable equivalent is approximate
   - "date-label alignment of NY days to the Sydney window is approximate (about a half-day offset at the Sydney 4pm fixing); declared, not corrected"
   - history starts 2018; earlier USD cash needs a separate, declared segment
@@ -101,3 +127,4 @@ rights_required:   # per operation (rights standard §3)
 changelog:
   - 0.1.0 (2026-10-18): draft
   - "0.2.0 (2026-10-18): numbers change, so a version bump. Rate selection by applicability (RA §3.2), not by knowability; exact in-arrears compounding replaces the false 1e-8 bound; period knowable_at; vintage-specific basis; triangulation restated as a rate comparison (T-0008: F-REVIEW-2026-10-18-a01-2, -6, -7, -1)"
+  - "0.3.0 (2026-10-28): S1b-1.0 construction (T-0009 §2.6, §2.7, HIO-ADR-0012 gate (d); F-REVIEW-2026-10-25-t0009-4): input nyfed.sofr as its own dataset; rate selection on the NY Fed calendar derived from published dates (no SIFMA); NSW period ends from dated, cited reference data; regime in arrears; P3 placement; the SOFR Index comparison model pre-registered with declared precisions (F-REVIEW-2026-10-25-t0009-3). The accepted S1a releases keep citing 0.2.0"

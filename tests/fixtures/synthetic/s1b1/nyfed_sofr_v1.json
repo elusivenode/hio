@@ -1,0 +1,4 @@
+{"_synthetic": "SYNTHETIC fixture; invented values; layout ASSUMED", "refRates": [
+{"effectiveDate": "2026-10-21", "type": "SOFR", "percentRate": 3.65, "revisionIndicator": ""},
+{"effectiveDate": "2026-10-22", "type": "SOFR", "percentRate": 3.66, "revisionIndicator": ""}
+]}

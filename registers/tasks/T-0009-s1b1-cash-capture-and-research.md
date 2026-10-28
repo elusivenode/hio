@@ -1,7 +1,8 @@
 ---
 id: T-0009
 title: "S1b-1.0: immutable live cash-rate capture and reproducible exploratory cash-return research (AONIA, expert-judgement flags, Cash Rate TRI, SOFR, SOFR Index), staged under HIO-ADR-0012"
-status: proposed   # drafted under OD-0062; Authorisation A (development on synthetic fixtures) is approved, nothing else is. Not authorised for live operations
+status: accepted   # S1b-1.0 (Authorisation A slice) ACCEPTED (OD-0079); nothing live is authorised; finality staging (section 7) and Authorisation B remain
+accepted_by: OD-0079   # at 846974b2c43e5b9839809af0f1ebc08cee4e88b1, integrated 7eba3f9fe50d69a7030759ec15e4eb02f8d1c85f
 owner: owner
 assignee_role: "implementation engineer (independent reviewer: Codex)"
 created: 2026-10-25
