@@ -94,3 +94,4 @@ _(Empty after distil 1. Append new candidate lines below this note.)_
 - [hiomux] A Codex reviewer needs network or a pre-built environment to run the pinned suite; without either it hunts for unrelated local interpreters. Source: OD-0094 correction 1.
 - [process] Each push question names the exact commit range, and nothing beyond it is pushed: two overreaches. Source: OD-0093 correction 1; OD-0099 correction 1.
 - [ops] The owner prefers to follow agents from the orchestrator session: relay Codex and worker messages with the Monitor tool. Source: session 2026-10-28.
+- [review] Push the assignment OD before launching a Codex reviewer: a source named "on local main" fails check_review_assignment's exact match and needs an owner ruling. Source: OD-0103.
