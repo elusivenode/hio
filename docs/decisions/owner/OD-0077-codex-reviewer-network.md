@@ -113,4 +113,10 @@ transcribed from OD-0076's assignment with three changes: the id, the branch, an
 
 ## Corrections (append-only)
 
-None.
+1. **2026-10-28: the owner accepts finding 2** (Claude workers can look up the `gh` keychain token): "I don't mind
+   if claude workers can access the gh token. they must behave responsibly". Source:
+   `docs/history/2026-10-28-owner-gh-token-residual.md` (sha256 `85840a3469de63acfa15bcb0c4ebc887bd53a43a3b5c996c870cab5dafaf28fa`).
+   It is now an accepted residual, not a defect, and nothing in hiomux changes for it. `~/.hio-runs/PROTOCOL.md`
+   lists it among the residuals and no longer says workers cannot read GitHub credentials (sha256 now
+   `c8bac354281d1ebedc54c4ca524817b002b492668bdbac84ec5b4abd0b7f3658`). Finding 1 (the earlier unrecorded hiomux
+   change) is still open.
