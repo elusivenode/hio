@@ -113,6 +113,7 @@ are in operating model §1.1; the template is
 | [OD-0096](OD-0096-receive-h6-review.md) | authorise_work | **Receipt of REVIEW-2026-10-28-h6-1** (NOT READY; F-1, F-2 high and F-3, F-4 medium open) by manual byte-identical import (merge `61c2a4a`, tag `reviews/REVIEW-2026-10-28-h6-1`); nothing accepted or waived | `review/h6-1-codex` at `731dfa2` | recorded |
 | [OD-0097](OD-0097-assign-h6-verification.md) | authorise_work | **Codex verification VERIFY-2026-10-28-h6-1-1 assigned**: H6 remediation at `ab0288f` (`phase-b/h6`), base `9e07b8b`; gpt-6-sol xhigh with network and the pre-built review environment | `phase-b/h6` at `ab0288f` | recorded |
 | [OD-0098](OD-0098-receive-h6-verification.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-1** (NOT READY: F-1 verified_closed by the record; F-2, F-3, F-4 open; F-1-fix regression); completed in two imports after a receiver error (disclosed); F-1 index row pending an owner decision | `review/h6-1-verify-1-codex` at `505d498` | recorded |
+| [OD-0099](OD-0099-assign-h6-verification-2.md) | authorise_work | **Codex verification VERIFY-2026-10-28-h6-1-2 assigned** (H6 round 2 at `5b9e49c`, base `ab0288f`); **F-1 index row updated to verified_closed** per VERIFY-2026-10-28-h6-1-1 | `phase-b/h6` at `5b9e49c`; `reviews/README.md` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
