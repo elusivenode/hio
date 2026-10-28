@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
+from hio.contracts.publications import is_shared, link_datasets
 from hio.marketdata.parse import RawRow
 
 
@@ -200,6 +201,14 @@ class Publication:
     def link(self) -> dict[str, list[str]]:
         """dataset id -> its series, as recorded in the provenance link."""
         return {d.source_id: sorted(d.series) for d in self.datasets}
+
+    def __post_init__(self) -> None:
+        # The adapters must describe exactly the fixed mapping the publication boundary verifies
+        # against (F-REVIEW-2026-10-25-t0009-1, -2): a drift between them refuses at import.
+        if self.shared != is_shared(self.publication_id) or (
+            self.shared and self.link() != link_datasets(self.publication_id)
+        ):
+            raise ValueError(f"{self.publication_id}: datasets disagree with the fixed publication mapping")
 
 
 def _dataset(source_id: str, series: tuple[str, ...], parse: Callable[[bytes], Parsed]) -> DatasetSpec:

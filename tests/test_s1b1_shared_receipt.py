@@ -18,7 +18,7 @@ from hio.jobs.s1a import publish_releases
 from hio.jobs.s1b1 import _places, build_releases, ingest_pending, sofr_calendar, vintage_store
 from hio.marketdata.capture import load_receipt_record
 from hio.marketdata.vintages import ReceiptIntegrityError
-from hio.publish.lineage import stored_release_sources
+from hio.publish.lineage import LineageError, stored_release_sources
 from hio.publish.release import write_release
 from hio.rights.gate import RightsGate
 from hio.rights.model import ALL_PERMISSIONS, Permission, RightsRecord, Verification
@@ -178,9 +178,9 @@ def test_a_shared_receipt_without_its_link_fails_closed(world, tmp_path):
     gate = RightsGate(
         {s: allow(s) for s in ("rba.cash_rate", "rba.cash_rate_tri", "nyfed.sofr", "nyfed.sofr_index")}
     )
-    # Without its link the receipt is attributed to the publication id, which has no rights record:
-    # unknown means deny, so publishing is refused rather than guessed.
-    with pytest.raises(RightsRefused, match=r"rba.f1: no rights record"):
+    # Without its link the shared receipt cannot be attributed at all: publication refuses in lineage,
+    # before any rights record is consulted (F-REVIEW-2026-10-25-t0009-1).
+    with pytest.raises(LineageError, match="missing or unexpected"):
         write_release(local, gate, built["cash.aud.overnight"])
 
 
@@ -190,7 +190,7 @@ def test_a_link_naming_the_wrong_dataset_fails_closed(world, tmp_path):
     link = json.loads(store.get(key))
     link["datasets"] = {"rba.cash_rate": [TRI], "rba.cash_rate_tri": [AONIA]}  # swapped
     local = copy_store(store, tmp_path, "swap", replace={key: canonical_json(link)})
-    with pytest.raises(ReceiptIntegrityError, match="is not linked to"):
+    with pytest.raises(ReceiptIntegrityError, match="does not match the fixed publication mapping"):
         vintage_store(local, cals).view(AONIA, KnowledgeMode.AS_CAPTURED_BY_HIO, cutoff, None)
 
 

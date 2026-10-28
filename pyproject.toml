@@ -48,3 +48,4 @@ ignore = ["RUF001", "RUF002", "RUF003"]   # the documents use typographic charac
 [tool.ruff.lint.per-file-ignores]
 # A pytest fixture shared from another test module is imported by name and used as a parameter.
 "tests/test_s1b1_shared_receipt.py" = ["F811"]
+"tests/test_s1b1_remediation_*.py" = ["F811"]

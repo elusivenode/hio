@@ -23,6 +23,7 @@ from decimal import Decimal
 from hio.contracts.canonical import canonical_json, instant_str, sha256_hex
 from hio.contracts.layout import CAPTURES_PREFIX, link_record_key
 from hio.contracts.observation import Receipt, Vintage, parse_instant
+from hio.contracts.publications import PublicationMappingError, is_shared, link_datasets, owning_dataset
 from hio.contracts.temporal import KnowledgeMode, QualityStatus, require_utc_instant
 from hio.marketdata.capture import capture_record_key, load_receipt, load_receipt_record, receipt_bytes
 from hio.marketdata.knowability import determine
@@ -724,26 +725,54 @@ class VintageStore:
             receipt = load_receipt(
                 self.store, self.series[v.series_id].source_id, v.captured_at, v.receipt_id
             )
-            # A shared receipt's rights subject is the series' own dataset (T-0009, OD-0065); every
-            # other source is its receipt's source, exactly as before.
-            out.add(self.series[v.series_id].dataset_id or receipt.source_id)
+            # A shared receipt's rights subject is the dataset the fixed publication mapping assigns
+            # the series to (T-0009, OD-0065; F-REVIEW-2026-10-25-t0009-1); every other source is
+            # its receipt's source, exactly as before.
+            out.add(self._rights_subject(v.series_id, receipt.source_id))
         return frozenset(out)
 
-    def _verify_link(self, v: Vintage) -> None:
-        """A series with a dataset id reads a shared receipt: its provenance link must exist and
-        name this series under exactly this dataset, or the vintage is unusable (fail closed)."""
-        series = self.series[v.series_id]
-        key = link_record_key(series.source_id, v.captured_at, v.receipt_id)
+    def _rights_subject(self, series_id: str, source_id: str) -> str:
+        """The rights subject of a series read from a receipt of source_id. The series definition's
+        dataset id must agree with the fixed mapping; a disagreement in either direction refuses."""
+        declared = self.series[series_id].dataset_id
+        if not is_shared(source_id):
+            if declared is not None:
+                raise ReceiptIntegrityError(
+                    f"{series_id} declares dataset {declared} but {source_id} is not a shared publication"
+                )
+            return source_id
         try:
-            link = json.loads(self.store.get(key))
-        except (OSError, IntegrityError, ValueError) as exc:
+            owner = owning_dataset(source_id, series_id)
+        except PublicationMappingError as exc:
+            raise ReceiptIntegrityError(str(exc)) from exc
+        if declared != owner:
+            raise ReceiptIntegrityError(
+                f"{series_id} declares dataset {declared}, but {source_id} assigns it to {owner}"
+            )
+        return owner
+
+    def _verify_link(self, v: Vintage) -> None:
+        """A vintage read from a shared receipt needs that receipt's provenance link, equal byte for
+        byte to the link the fixed publication mapping implies, or the vintage is unusable."""
+        source_id = self.series[v.series_id].source_id
+        self._rights_subject(v.series_id, source_id)
+        key = link_record_key(source_id, v.captured_at, v.receipt_id)
+        expected = canonical_json(
+            {
+                "publication_id": source_id,
+                "receipt_id": v.receipt_id,
+                "captured_at": v.captured_at,
+                "datasets": link_datasets(source_id),
+            }
+        )
+        try:
+            stored = self.store.get(key)
+        except (OSError, IntegrityError) as exc:
             raise ReceiptIntegrityError(
                 f"no provenance link for shared receipt {v.receipt_id}: {exc}"
             ) from exc
-        if link.get("receipt_id") != v.receipt_id or v.series_id not in link["datasets"].get(
-            series.dataset_id, ()
-        ):
-            raise ReceiptIntegrityError(f"{v.series_id} is not linked to {series.dataset_id} in {key}")
+        if stored != expected:
+            raise ReceiptIntegrityError(f"provenance link {key} does not match the fixed publication mapping")
 
     def _verify_receipt(self, v: Vintage) -> None:
         source_id = self.series[v.series_id].source_id
@@ -758,7 +787,7 @@ class VintageStore:
                     f"capture record does not match vintage {v.series_id} {v.valid_time}"
                 )
             receipt_bytes(self.store, receipt)  # verifies existence and the content hash
-            if self.series[v.series_id].dataset_id is not None:
+            if is_shared(source_id) or self.series[v.series_id].dataset_id is not None:
                 self._verify_link(v)
         except ReceiptIntegrityError:
             raise

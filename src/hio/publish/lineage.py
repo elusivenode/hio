@@ -15,8 +15,10 @@ import json
 import re
 from typing import Any
 
-from hio.contracts.layout import CAPTURES_PREFIX, LINKS_PREFIX, receipt_key
+from hio.contracts.canonical import canonical_json
+from hio.contracts.layout import CAPTURES_PREFIX, LINKS_PREFIX, link_record_key, receipt_key
 from hio.contracts.observation import parse_instant
+from hio.contracts.publications import PublicationMappingError, is_shared, link_datasets, owning_dataset
 from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
 _SHA = re.compile(r"^[0-9a-f]{64}$")
@@ -51,31 +53,48 @@ def rights_sources(
     index: dict[str, list[str]],
     links: dict[str, list[str]],
 ) -> frozenset[str]:
-    """The rights subjects behind one receipt used for one series. A receipt with no provenance link
-    is a single-dataset receipt: its source, as always. A shared receipt is attributed through its
-    link to the one dataset that owns the named series; a missing series or an ambiguous link refuses."""
+    """The rights subject behind one receipt used for one series (F-REVIEW-2026-10-25-t0009-1, -2).
+
+    Whether a receipt is shared is decided by its publication id against the fixed mapping in
+    `hio.contracts.publications`, never by whether a link happens to exist. For a shared publication
+    the subject is the dataset that mapping assigns the series to, and every capture of the receipt
+    must have exactly its expected provenance link, byte for byte: a missing, substituted, extra or
+    inconsistent link refuses. A single-dataset receipt is its own subject and may have no link."""
     published_as = receipt_source(store, receipt_id, index)
-    keys = links.get(receipt_id, [])
-    if not keys:
+    found = set(links.get(receipt_id, []))
+    if not is_shared(published_as):
+        if found:
+            raise LineageError(f"single-dataset receipt {receipt_id} has provenance links: {sorted(found)}")
         return frozenset({published_as})
     if series_id is None:
         raise LineageError(f"shared receipt {receipt_id} is used by an input that names no series")
-    datasets = set()
-    for key in keys:
-        link = json.loads(store.get(key))
-        if (
-            link["receipt_id"] != receipt_id
-            or link["publication_id"] != published_as
-            or not key.startswith(f"{LINKS_PREFIX}{published_as}/")
-        ):
-            raise LineageError(f"provenance link {key} does not match its receipt")
-        owners = [d for d, series in link["datasets"].items() if series_id in series]
-        if len(owners) != 1:
-            raise LineageError(f"series {series_id} is not owned by exactly one dataset in {key}")
-        datasets.add(owners[0])
-    if len(datasets) != 1:
-        raise LineageError(f"provenance links of {receipt_id} disagree about the owner of {series_id}")
-    return frozenset(datasets)
+    try:
+        owner = owning_dataset(published_as, series_id)
+    except PublicationMappingError as exc:
+        raise LineageError(str(exc)) from exc
+    expected: dict[str, bytes] = {}
+    for key in index[receipt_id]:
+        captured_at = parse_instant(json.loads(store.get(key))["captured_at"])
+        link = {
+            "publication_id": published_as,
+            "receipt_id": receipt_id,
+            "captured_at": captured_at,
+            "datasets": link_datasets(published_as),
+        }
+        expected[link_record_key(published_as, captured_at, receipt_id)] = canonical_json(link)
+    if found != set(expected):
+        raise LineageError(
+            f"provenance links of shared receipt {receipt_id} are missing or unexpected: "
+            f"missing {sorted(set(expected) - found)}, unexpected {sorted(found - set(expected))}"
+        )
+    for key, content in expected.items():
+        try:
+            stored = store.get(key)
+        except (OSError, IntegrityError) as exc:
+            raise LineageError(f"provenance link {key} cannot be read: {exc}") from exc
+        if stored != content:
+            raise LineageError(f"provenance link {key} does not match the fixed publication mapping")
+    return frozenset({owner})
 
 
 def receipt_source(
