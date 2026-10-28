@@ -63,3 +63,11 @@ OD-0094 (`488f4a3`, merge `4802133`), OD-0094 correction 1 (`8362c60`, `b5e10db`
 Remediation of F-1 to F-4 proceeds under OD-0092. Verifying it needs a new owner assignment.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, CI reported (separately, §6.2 5.10).**
+   - **`d2604fe`** (receipt and this OD): run 40671865688, **success**.
+   - **`61c2a4a`** (receipt merge): run 40671788011, **cancelled**, because the push of `d2604fe` a minute later
+     superseded it; that later run covers the same commits.
+   - **`2cc5374`**: run 40669141740, **success**.
+
+   CI does not change the verified receipt.
