@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-10-28
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0079"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0080"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -25,7 +25,8 @@ finality staging (C1–C7, finality, the soak; T-0009 §7) and **Authorisation B
 HIO has no cloud storage, no real data beyond the D7 calendars (OD-0076) and no credentials, so the
 point-in-time capture clock has not started.
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
-revision 3 is drafted and **not approved** (branch `proposal/harness-0.9`, Q-014). **hiomux** is a tmux
+revision 4 (`2df83b4`, OD-0080) carries this session's distilled findings and is **not approved** (branch
+`proposal/harness-0.9`, Q-014); its findings Inbox holds 42 lines, so a first distil is due. **hiomux** is a tmux
 orchestration pilot (an Opus orchestrator, Sonnet workers, Codex) kept **outside the repository**
 (OD-0072). Its residual risks were accepted by the owner (OD-0073); the Codex reviewer has network access (OD-0077). It changes no harness text.
 
@@ -62,13 +63,13 @@ No finding is waived.
 | Phase | S1b-1.0 **accepted** (OD-0079); next stage: finality staging and Authorisation B, staged by HIO-ADR-0012 (approved rev 3) |
 | Current gate | T-0009 **accepted** and integrated (OD-0079, `7eba3f9`); the next gate is Authorisation B (below) |
 | Gate to live S1b-1 (Authorisation B) | T-0002 `owner_verified` rights per dataset and operation; the network and credential-control decision (OD-0038 successor); storage selection and verification; Q-013 decided or P3 in force; an explicit live authorisation (T-0009 card, `depends_on`) |
-| Next permissible actions | **Claude:** nothing new without an owner instruction. **Owner:** the Authorisation B prerequisites (below); optionally an OD assigning a Codex smoke review to test hiomux end to end. Also harness-0.9 (Q-014): approve Phase A (Appendix A at an exact revision), when to apply it (recommended during Codex's T-0009 verification), the Phase B work authorisation (after T-0009 remediation is submitted), H7 timing, branch protection on `main`. Also: the T-0002 rights reading (U1 to U7); the controls decision; observations v0.3 (blob `61ddd58e`) approve or defer; the run-1 stale-line candidates |
+| Next permissible actions | **Claude:** nothing new without an owner instruction. **Owner:** the Authorisation B prerequisites (below); optionally an OD assigning a Codex smoke review to test hiomux end to end. Also harness-0.9 (Q-014): approve Phase A (Appendix A at `2df83b4`) and apply it now, then the first distil; the Phase B work authorisation (its gate is met; §14 adds G1 to G3); H7 timing; branch protection on `main`; whether OD-0061 covers hiomux-delivered reports (§14 G5); the unrecorded hiomux change (OD-0077 finding 1). Also: the T-0002 rights reading (U1 to U7); the controls decision; observations v0.3 (blob `61ddd58e`) approve or defer; the run-1 stale-line candidates |
 
 ## Branches holding work not on `main`
 
 | Branch | Head | Holds |
 |---|---|---|
-| `proposal/harness-0.9` | `50e7229` (pushed) | harness-0.9 revision 3 with Appendix A (exact Phase A text), seed `MAP.md` and `knowledge/findings.md`, the Fable dry-run report; the records OD-0068 and OD-0070 are also on `main` (OD-0071) |
+| `proposal/harness-0.9` | `2df83b4` (pushed) | harness-0.9 revision 4 with Appendix A (exact Phase A text), refreshed seed `MAP.md` and `knowledge/findings.md` (42 Inbox lines), the Fable dry-run report; the records OD-0068 and OD-0070 are also on `main` (OD-0071) |
 
 ## Work cards
 
