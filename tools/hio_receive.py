@@ -96,6 +96,12 @@ class Git:
         return self.run(*args).returncode == 0
 
 
+def index_diff_trailer(problems: list[str]) -> str:
+    first = _norm(problems[0])
+    more = f"; and {len(problems) - 1} more" if len(problems) > 1 else ""
+    return f"Index-Diff: refused ({first[:160]}{more})"
+
+
 @dataclass
 class Ctx:
     args: argparse.Namespace
@@ -145,9 +151,7 @@ class Ctx:
 
     @property
     def index_diff_trailer(self) -> str:
-        first = _norm(self.index_refused[0])
-        more = f"; and {len(self.index_refused) - 1} more" if len(self.index_refused) > 1 else ""
-        return f"Index-Diff: refused ({first[:160]}{more})"
+        return index_diff_trailer(self.index_refused)
 
     def sec(self, title: str) -> None:
         self.lines += ["", f"### {title}"]
@@ -911,6 +915,37 @@ def _prepare_receipt_branch(ctx: Ctx) -> None:
     ctx.notes.append(f"discarded the disposable {rb} at {tip} and rebuilt it from the current {MAIN} (5.11)")
 
 
+def reviewer_readme_diff(ctx: Ctx) -> tuple[bytes, list[str]]:
+    """The reviewer's `README` diff (`head..T`) and its changed lines, verbatim (5.6 refused lines)."""
+    patch = ctx.g.raw("diff", "--no-renames", ctx.args.head, ctx.tip, "--", ctx.prefix + README)
+    body = patch.decode(errors="replace").splitlines()
+    first_hunk = next((i for i, ln in enumerate(body) if ln.startswith("@@")), len(body))
+    return patch, [ln for ln in body[first_hunk:] if ln[:1] in ("+", "-")]
+
+
+def apply_readme_diff(w: Git, patch: bytes) -> list[str]:
+    """Stage the reviewer's README diff in worktree `w`; a non-empty result means it did not apply."""
+    p = w.run("apply", "--index", "-", input=patch)
+    if p.returncode:
+        return [
+            f"the reviewer's README diff does not apply cleanly to {MAIN}: "
+            f"{p.stderr.decode(errors='replace').strip()}"
+        ]
+    return []
+
+
+def report_refused_index(ctx: Ctx, path: str, problems: list[str]) -> None:
+    """Record the refusal and disclose it (5.6): the same lines on import and on every restart."""
+    ctx.index_refused = problems
+    ctx.checks["index rows"] = "REFUSED"
+    ctx.add("- **INDEX DIFF REFUSED: the record files are received WITHOUT the index (--without-index)**")
+    ctx.add(f"- `{path}` is main's, unchanged; no part of the reviewer's diff was applied. Reasons:")
+    ctx.lines += [f"  - {x}" for x in problems]
+    ctx.add("- refused lines, verbatim:")
+    ctx.lines += ["", "```", *ctx.refused_lines, "```", ""]
+    ctx.add("- the navigation rows and any finding-state changes follow by 5.12 (owner-authorised)")
+
+
 def step_import(ctx: Ctx) -> None:
     g, a = ctx.g, ctx.args
     ctx.sec("5.5 Import")
@@ -933,20 +968,12 @@ def step_import(ctx: Ctx) -> None:
     path = ctx.prefix + README
     problems: list[str] = []
     if ctx.readme_modified:
-        patch = g.raw("diff", "--no-renames", a.head, ctx.tip, "--", path)
-        p = w.run("apply", "--index", "-", input=patch)
-        if p.returncode:
-            problems.append(
-                f"the reviewer's README diff does not apply cleanly to {MAIN}: "
-                f"{p.stderr.decode(errors='replace').strip()}"
-            )
-            if not a.without_index:
-                raise Stop(f"5.5: {problems[0]}")
-        else:
+        patch, ctx.refused_lines = reviewer_readme_diff(ctx)
+        problems = apply_readme_diff(w, patch)
+        if problems and not a.without_index:
+            raise Stop(f"5.5: {problems[0]}")
+        if not problems:
             ctx.add("- the reviewer's `reviews/README.md` diff applied cleanly")
-        body = patch.decode(errors="replace").splitlines()
-        first_hunk = next((i for i, ln in enumerate(body) if ln.startswith("@@")), len(body))
-        ctx.refused_lines = [ln for ln in body[first_hunk:] if ln[:1] in ("+", "-")]
 
     ctx.sec("5.6 Index-row semantics (navigation only)")
     if ctx.readme_modified and not problems:
@@ -964,14 +991,7 @@ def step_import(ctx: Ctx) -> None:
         w.out("checkout", "HEAD", "--", path)  # discard every part of the reviewer's diff
         if w.out("rev-parse", f":{path}") != g.out("rev-parse", f"{MAIN}:{path}"):
             raise Stop(f"5.6: {path} is not main's after discarding the refused diff")
-        ctx.index_refused = problems
-        ctx.checks["index rows"] = "REFUSED"
-        ctx.add("- **INDEX DIFF REFUSED: the record files are received WITHOUT the index (--without-index)**")
-        ctx.add(f"- `{path}` is main's, unchanged; no part of the reviewer's diff was applied. Reasons:")
-        ctx.lines += [f"  - {x}" for x in problems]
-        ctx.add("- refused lines, verbatim:")
-        ctx.lines += ["", "```", *ctx.refused_lines, "```", ""]
-        ctx.add("- the navigation rows and any finding-state changes follow by 5.12 (owner-authorised)")
+        report_refused_index(ctx, path, problems)
     else:
         ctx.checks["index rows"] = "PASS"
         ctx.add(
@@ -1170,6 +1190,68 @@ def step_verify_existing(ctx: Ctx) -> None:
             raise Stop(f"the blob of {rel} on {MAIN} is {on_main}, T's is {at_t}")
     ctx.checks["blob identity"] = "PASS"
     ctx.add(f"- blobs on `{MAIN}` equal T's for {len(ctx.added)} file(s)")
+    step_verify_existing_index(ctx)
+
+
+def step_verify_existing_index(ctx: Ctx) -> None:
+    """5.6 on a restart: the existing import's README handling must match the reviewer's diff.
+
+    The refused-index disclosure is rebuilt from git (the import's `Index-Diff` trailer, its README
+    change and the reviewer's diff), never from a flag that only the failed attempt held.
+    """
+    g, a, path = ctx.g, ctx.args, ctx.prefix + README
+    imp = ctx.import_commit
+    ctx.sec("Existing import: index")
+    msg = g.out("log", "-1", "--format=%B", imp)
+    tagged = [ln for ln in msg.splitlines() if ln.startswith("Index-Diff:")]
+    if len(tagged) > 1 or any(not ln.startswith("Index-Diff: refused (") for ln in tagged):
+        raise Stop(f"the import {imp} has a malformed Index-Diff trailer: {tagged}")
+    parents = g.out("rev-list", "--parents", "-n1", imp).split()[1:]
+    if not parents:
+        raise Stop(f"the import {imp} has no parent commit")
+    changed = bool(g.raw("diff", "--name-only", "--no-renames", "-z", f"{imp}^1", imp, "--", path))
+    if not tagged:
+        if changed != ctx.readme_modified:
+            raise Stop(
+                f"the import {imp} {'changes' if changed else 'does not change'} {path}, but the reviewer's "
+                f"diff {'does' if ctx.readme_modified else 'does not'} modify it, and the import carries no "
+                "Index-Diff trailer"
+            )
+        ctx.add(f"- `{path}` " + ("was imported with the reviewer's diff" if changed else "is unchanged"))
+        return
+    if changed:
+        raise Stop(f"the import {imp} carries '{tagged[0]}' yet changes {path}")
+    if not ctx.readme_modified:
+        raise Stop(f"the import {imp} carries '{tagged[0]}' but the reviewer's diff does not modify {path}")
+    if not a.without_index:
+        raise Stop(
+            f"the import {imp} carries '{tagged[0]}': restart with --without-index (the same go-ahead as "
+            "the first attempt) so the refused index is disclosed"
+        )
+    patch, ctx.refused_lines = reviewer_readme_diff(ctx)
+    wt = Path(tempfile.mkdtemp(prefix="hio-receive-")) / "wt"
+    ctx.wt = wt
+    try:
+        g.out("worktree", "add", "-q", "--detach", str(wt), f"{imp}^1")
+        w = Git(wt)
+        problems = apply_readme_diff(w, patch)
+        if not problems:
+            problems = check_index(
+                g.raw("show", f"{imp}^1:{path}").decode(),
+                w.raw("show", f":{path}").decode(),
+                ctx.records,
+                a.assignment_source,
+                a.od,
+            )
+    finally:
+        cleanup_worktree(ctx)
+    if not problems:
+        raise Stop(
+            f"the import {imp} refused the index, but the reviewer's diff passes 5.6 against its parent"
+        )
+    if index_diff_trailer(problems) != tagged[0]:
+        raise Stop(f"the import's '{tagged[0]}' differs from the recomputed '{index_diff_trailer(problems)}'")
+    report_refused_index(ctx, path, problems)
 
 
 # --- driver -----------------------------------------------------------------------------------------

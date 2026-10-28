@@ -539,6 +539,69 @@ def test_without_index_publish_receives_the_records_but_not_the_index(make_world
     assert r.code == 0 and "already imported" in r.out and received_main(w) == main
 
 
+REFUSED_LINES = (
+    "-| F-OLD-1-1 | OLD-1 | high | **remediation_claimed** | remediation_claimed: fix `abc1234` |",
+    "+| F-OLD-1-1 | OLD-1 | high | **verified_closed** at",
+)
+
+
+def assert_partial_disclosure(w: World, out: str) -> None:
+    """What a receipt OD may be built from: PARTIAL, the reasons and the refused lines, verbatim."""
+    assert "PARTIAL" in out and "INDEX DIFF REFUSED" in out and "index rows REFUSED" in out
+    assert "refused lines, verbatim" in out
+    assert all(x in out for x in REFUSED_LINES)
+    assert f"+| {w.rec_id} | `r` | `{w.base}` | `{w.head}` | scope |" in out
+    assert "a removed or changed line" in out  # the reasons, recomputed on the restart
+
+
+def test_restart_after_a_failed_main_push_still_discloses_the_refused_index(make_world):
+    w = make_world(kind="verify")  # its README diff rewrites F-OLD-1-1's state: refused
+    before = w.origin_git("show", "main:reviews/README.md")
+    (w.origin / "deny-main").write_text("")
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1 and "STATUS: receipt incomplete" in r.out
+    assert "refused lines, verbatim" in r.out and received_main(w) == w.head
+    (w.origin / "deny-main").unlink()
+    # attempt 2 publishes the import and merge made by attempt 1; its summary is the receipt's source
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 0, r.err
+    assert "STATUS: received" in r.out
+    assert_partial_disclosure(w, r.out)
+    main = received_main(w)
+    assert main != w.head and w.origin_git("show", f"{main}:reviews/README.md") == before
+    imp = w.origin_git("rev-list", "--parents", "-n1", main).split()[2]
+    assert "Index-Diff: refused (" in w.origin_git("log", "-1", "--format=%B", imp)
+    # a later idempotent run discloses the same
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 0, r.err
+    assert "already imported" in r.out and "STATUS: received" in r.out
+    assert_partial_disclosure(w, r.out)
+    assert received_main(w) == main and w.origin_git("show", f"{main}:reviews/README.md") == before
+    assert git(w.recv, "worktree", "list").count("\n") == 0
+
+
+def test_dry_run_after_the_import_exists_discloses_the_refused_index(make_world):
+    w = make_world(kind="verify")
+    assert w.run(publish=True, without_index=True).code == 0
+    r = w.run(without_index=True)
+    assert r.code == 0, r.err
+    assert "checks passed (dry run" in r.out
+    assert_partial_disclosure(w, r.out)
+    assert git(w.recv, "worktree", "list").count("\n") == 0
+
+
+def test_restart_without_the_go_ahead_stops_after_a_refused_index_import(make_world):
+    w = make_world(kind="verify")
+    (w.origin / "deny-main").write_text("")
+    assert w.run(publish=True, without_index=True).code == 1
+    (w.origin / "deny-main").unlink()
+    for publish in (True, False):
+        r = w.run(publish=publish)
+        assert r.code == 1 and "restart with --without-index" in r.err
+        assert "STATUS: received" not in r.out
+    assert received_main(w) == w.head  # nothing was published without the flag
+
+
 def test_without_index_is_ignored_when_the_index_diff_is_acceptable(make_world):
     w = make_world()  # a Class N review receipt
     r = w.run(publish=True, without_index=True)
