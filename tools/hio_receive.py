@@ -3,6 +3,16 @@
 NOT ACTIVATED: nothing in the operating model, CI or hooks references this tool. Run it in a
 scratch clone of the repository, on a clean `main`, never in a reviewer's worktree.
 
+Implements the DRAFT amendment HIO-H6-OPTION-B (OD-0100; not approved): 5.6 is navigation only. The
+reviewer's `reviews/README.md` may differ from `main`'s only by ADDED Class N lines; any removed or
+changed line, and any added row whose state cell is verified_closed, remediation_rejected, waived,
+accepted or approved, refuses the index diff. The receiver never changes a finding's state. With
+`--without-index` (the owner's go-ahead for that receipt) a refused diff is left out entirely, the
+record files are received, the import commit carries `Index-Diff: refused (<reason>)` and the
+summary lists the refused lines verbatim. The summary also lists "index reconciliation pending" for
+every outcome an imported VERIFY record states (exact bold token in its per-finding table) that the
+index on main does not show (5.12); that is informational and changes nothing.
+
 Without --publish it performs every check that needs no remote write (5.0 to 5.3, a read-only look
 at the provenance tag, and the 5.5 to 5.7 import in a throwaway worktree) and prints a summary
 suitable as the body of the receipt's OD. With --publish it also does 5.4 (provenance tag), 5.8
@@ -21,7 +31,8 @@ Usage:
   python tools/hio_receive.py --review-id ID --base SHA --head SHA --branch review/<x>-codex \
       --assignment-source "<5.0.1 location>" --report report.json \
       --second-assignment-checked "<where the receiver looked>" [--scope-terms T ...] \
-      [--remote origin] [--od OD-NNNN] [--actor ROLE] [--co-authored-by "Name <email>"] [--publish]
+      [--remote origin] [--od OD-NNNN] [--actor ROLE] [--co-authored-by "Name <email>"] [--publish] \
+      [--without-index]
 
 The report is JSON from the reviewer's own final message, held outside the repository:
   {"branch_tip": "<40 hex>", "files": {"<path>": "<sha256>", ...}, "supplied_by": "<how supplied>"}
@@ -51,6 +62,9 @@ ADD_DIRS = ("reviews/records/", "reviews/handoffs/", "reviews/reports/")
 README = "reviews/README.md"
 STATE_WORDS = ("verified_closed", "remediation_rejected", "open")
 FORBIDDEN_STATES = ("accepted", "waived", "approved")  # owner ODs only: the receiver cites, never creates
+# receipt never sets a finding's state: no added finding row may carry any of these in its state cell
+FINDING_STATE_WORDS = ("verified_closed", "remediation_rejected", *FORBIDDEN_STATES)
+FINDING_ID_RE = re.compile(r"F-[\w.-]+")
 PLACEHOLDERS = {"", "—", "–", "-"}
 SHORT_FINDING_CELLS = 6  # the ADR-0012 rows on main omit the verification cell
 STATE_BEARING = ("status", "verdict", "state", "reviewer outcome")  # header prefixes of the state cells
@@ -94,6 +108,8 @@ class Ctx:
     tip: str = ""
     added: list[str] = field(default_factory=list)
     readme_modified: bool = False
+    index_refused: list[str] = field(default_factory=list)  # 5.6 problems, when received --without-index
+    refused_lines: list[str] = field(default_factory=list)  # the reviewer's diff lines, verbatim
     records: list[Record] = field(default_factory=list)
     inventory: dict[str, list[str]] = field(default_factory=dict)
     checks: dict[str, str] = field(default_factory=dict)
@@ -122,6 +138,16 @@ class Ctx:
     @property
     def publish(self) -> bool:
         return bool(self.args.publish)
+
+    @property
+    def index_applied(self) -> bool:
+        return self.readme_modified and not self.index_refused
+
+    @property
+    def index_diff_trailer(self) -> str:
+        first = _norm(self.index_refused[0])
+        more = f"; and {len(self.index_refused) - 1} more" if len(self.index_refused) > 1 else ""
+        return f"Index-Diff: refused ({first[:160]}{more})"
 
     def sec(self, title: str) -> None:
         self.lines += ["", f"### {title}"]
@@ -390,87 +416,71 @@ def _check_finding_n(header: list[str], cells: list[str], recs: list[Record]) ->
     return probs
 
 
-def _check_finding_s(
-    old: list[str], new: list[str], header: list[str], recs: list[Record], od: str | None
-) -> list[str]:
-    fid = norm_cell(new[0])
-    shape = finding_header(header, len(new)) if len(old) == len(new) else None
-    if shape is None:
-        return [f"{fid}: finding row cell count differs from its header (or from the old row)"]
-    header = shape
-    probs = []
-    ci = {
-        n: col(header, p)
-        for n, p in (
-            ("review", "from review"),
-            ("severity", "severity"),
-            ("state", "state"),
-            ("claim", "remediation"),
-            ("verification", "verification"),
-            ("waiver", "waiver"),
-        )
-    }
-    short = len(header) == SHORT_FINDING_CELLS and ci["verification"] is None
-    if any(v is None for n, v in ci.items() if not (short and n == "verification")):
-        return [f"{fid}: the findings table lacks an expected column"]
-    for name in ("review", "severity", "claim", "waiver"):
-        i = ci[name]
-        if old[i] != new[i]:  # type: ignore[index]
-            probs.append(f"{fid}: the {name} cell changed (only the state and verification cells may)")
-    if old[0] != new[0]:
-        probs.append(f"{fid}: the id cell changed")
-    state = norm_cell(new[ci["state"]]).lower()  # type: ignore[index]
-    m = re.match(rf"({'|'.join(STATE_WORDS)})\b", state)
-    if not m:
-        probs.append(f"{fid}: the state cell {state[:40]!r} does not begin with {', '.join(STATE_WORDS)}")
-        return probs
-    word = m.group(1)
-    stated = {r.id: record_outcome(r, fid) for r in recs if r.kind == "VERIFY"}
-    verifying = [r for r in recs if stated.get(r.id) == word]
-    if not verifying:
-        others = sorted({s for s in stated.values() if s})
-        probs.append(
-            f"{fid}: no imported VERIFY record states {word} for this finding"
-            + (f" (its outcome table states {', '.join(others)})" if others else "")
-        )
-        return probs
-    rec = verifying[0]
-    cites = [new[i] for i in (ci["state"], ci["verification"]) if i is not None]  # type: ignore[index]
-    vcell = norm_cell(cites[-1])  # the verification cell, or the state cell in a six-cell row
-    if rec.id not in vcell:
-        where = "state" if short else "verification"
-        probs.append(f"{fid}: the {where} cell does not cite the imported record {rec.id}")
-    allowed_hex = [rec.fm.get("reviewed_head", ""), rec.fm.get("reviewed_base", "")]
-    for cell in cites:
-        for tok in re.findall(r"\b[0-9a-f]{7,40}\b", norm_cell(cell)):
-            if not any(a.startswith(tok) for a in allowed_hex if a):
-                probs.append(f"{fid}: commit {tok} in the row is not the record's reviewed head or base")
-        for rid in re.findall(r"\b(?:VERIFY|REVIEW)-[\w.-]+", norm_cell(cell)):
-            if rid.rstrip(".,;:") not in (rec.id, norm_cell(new[ci["review"]])):  # type: ignore[index]
-                probs.append(f"{fid}: {rid} in the row is not traceable to the imported record")
-        for odid in re.findall(r"\bOD-\d+\b", norm_cell(cell)):
-            if odid != od and odid not in rec.text:
-                probs.append(f"{fid}: {odid} in the row is not traceable to the record")
-    return probs
+def record_outcomes(rec: Record) -> dict[str, str | None]:
+    """The state a VERIFY record affirmatively states for each finding in its per-finding outcome table.
 
-
-def record_outcome(rec: Record, fid: str) -> str | None:
-    """The state a VERIFY record affirmatively states for `fid` in its per-finding outcome table.
-
-    Only a table row counts: the first cell is exactly the finding id (bold or code allowed) and the
+    Only a table row counts: the first cell is exactly a finding id (bold or code allowed) and the
     second cell begins with the bold token `**<state>.**` or `**<state>**`, followed by the end of the
     cell or whitespace. A bare state word, one inside a longer bold phrase, in prose, negated or
-    quoted, or in any other cell never counts. Rows that disagree state nothing.
+    quoted, or in any other cell never counts. A finding whose rows disagree maps to None.
+
+    The receiver only reports these outcomes (5.12, "index reconciliation pending"); it never acts on one.
     """
-    found = set()
+    found: dict[str, set[str]] = {}
     for line in rec.text.splitlines():
         cells = split_row(line)
-        if not cells or len(cells) < 2 or cells[0].strip("*` ") != fid:
+        if not cells or len(cells) < 2:
+            continue
+        fid = cells[0].strip("*` ")
+        if not FINDING_ID_RE.fullmatch(fid):
             continue
         m = re.match(rf"\*\*({'|'.join(STATE_WORDS)})\.?\*\*(?:\s|$)", cells[1])
         if m:
-            found.add(m.group(1))
-    return found.pop() if len(found) == 1 else None
+            found.setdefault(fid, set()).add(m.group(1))
+    return {fid: (next(iter(s)) if len(s) == 1 else None) for fid, s in found.items()}
+
+
+def record_outcome(rec: Record, fid: str) -> str | None:
+    return record_outcomes(rec).get(fid)
+
+
+def pending_reconciliation(main_text: str, recs: list[Record]) -> list[str]:
+    """5.12 / 5.10: every outcome an imported VERIFY record states that the index on main does not show.
+
+    Informational only: nothing is changed, and a state cell is compared by its leading state word.
+    """
+    shown: dict[str, str] = {}
+    for header, body in parse_tables(main_text.splitlines()):
+        if table_kind(header) != "findings":
+            continue
+        for _line, cells in body:
+            shape = finding_header(header, len(cells))
+            i = col(shape, "state") if shape else None
+            if i is not None:
+                shown.setdefault(norm_cell(cells[0]), norm_cell(cells[i]).lower())
+    out = []
+    for rec in recs:
+        if rec.kind != "VERIFY":
+            continue
+        for fid, outcome in sorted(record_outcomes(rec).items()):
+            if outcome is None:
+                out.append(
+                    f"index reconciliation pending: {fid}: {rec.id} has conflicting outcome rows; "
+                    "it states nothing the receiver can report"
+                )
+                continue
+            state = shown.get(fid)
+            if state is None:
+                out.append(
+                    f"index reconciliation pending: {fid}: {rec.id} states {outcome}; "
+                    "the index on main has no row for this finding"
+                )
+            elif not re.match(rf"{outcome}\b", state):
+                out.append(
+                    f"index reconciliation pending: {fid}: {rec.id} states {outcome}; "
+                    f"the index on main shows {state[:40]!r}"
+                )
+    return out
 
 
 def state_cells(kind: str | None, header: list[str], cells: list[str]) -> list[str]:
@@ -482,9 +492,13 @@ def state_cells(kind: str | None, header: list[str], cells: list[str]) -> list[s
 
 
 def check_index(
-    main_text: str, staged_text: str, recs: list[Record], source: str, od: str | None
+    main_text: str, staged_text: str, recs: list[Record], source: str, od: str | None = None
 ) -> list[str]:
-    """5.6: the staged README may differ from main's only by Class N and Class S lines."""
+    """5.6 (navigation only): the staged README may differ from main's only by added Class N lines.
+
+    `od` is unused: receipt never changes a finding's state, so no row cites an OD for one.
+    """
+    del od
     main_lines, staged_lines = main_text.splitlines(), staged_text.splitlines()
     problems = duplicate_problems(staged_lines)
     if main_lines == staged_lines:
@@ -493,43 +507,29 @@ def check_index(
     ad = Counter(staged_lines) - Counter(main_lines)
     if _residual(main_lines, rm) != _residual(staged_lines, ad):
         problems.append("unchanged lines were reordered or moved")
-    main_rows, staged_rows = row_index(main_lines), row_index(staged_lines)
-    removed: dict[str, tuple[list[str], list[str]]] = {}
+    staged_rows = row_index(staged_lines)
     for line in rm.elements():
-        info = main_rows.get(line)
-        if info is None or info[0] != "findings":
-            problems.append(
-                f"a removed or changed line is not the superseded version of a Class S row: {line[:90]!r}"
-            )
-        else:
-            removed[norm_cell(info[2][0])] = (info[2], info[1])
-    imported_text = "\n".join(r.text for r in recs)
+        problems.append(
+            f"a removed or changed line (receipt only adds Class N lines and never changes a finding's "
+            f"state; that is 5.12): {line[:90]!r}"
+        )
     for line in ad.elements():
         info = staged_rows.get(line)
         if info is None or info[0] is None:
-            problems.append(f"an added line is neither a Class N nor a Class S row: {line[:90]!r}")
+            problems.append(f"an added line is not a Class N row: {line[:90]!r}")
             continue
         kind, header, cells = info
         fid = norm_cell(cells[0])
-        for word in FORBIDDEN_STATES:
+        words = FINDING_STATE_WORDS if kind == "findings" else FORBIDDEN_STATES
+        for word in words:
             if any(re.search(rf"\b{word}\b", c, re.I) for c in state_cells(kind, header, cells)):
-                problems.append(
-                    f"{word} in an added row: it exists only as an owner OD, which the receiver "
-                    f"cites and never creates: {line[:90]!r}"
+                why = (
+                    "it exists only as an owner OD, which the receiver cites and never creates"
+                    if word in FORBIDDEN_STATES
+                    else "receipt never sets a finding's state; that is 5.12"
                 )
-        if re.search(r"\bverified_closed\b", line, re.I) and not re.search(
-            r"\bverified_closed\b", imported_text, re.I
-        ):
-            problems.append(
-                f"verified_closed in an added row that no imported record supports: {line[:90]!r}"
-            )
-        if kind == "findings" and fid in removed:
-            old, old_header = removed.pop(fid)
-            if old_header != header:
-                problems.append(f"{fid}: the row moved to another table")
-            else:
-                problems += _check_finding_s(old, cells, header, recs, od)
-        elif kind == "findings":
+                problems.append(f"{word} in the state cell of an added row: {why}: {line[:90]!r}")
+        if kind == "findings":
             problems += _check_finding_n(header, cells, recs)
         else:
             owner = [r for r in recs if r.id == fid]
@@ -537,7 +537,6 @@ def check_index(
                 problems.append(f"{fid}: row {kind} matches no imported record's id")
             else:
                 problems += _check_record_row(kind or "", header, cells, owner[0], source)
-    problems += [f"{fid}: the old row was removed with no superseding Class S row" for fid in removed]
     return sorted(set(problems))
 
 
@@ -931,33 +930,55 @@ def step_import(ctx: Ctx) -> None:
     for path in ctx.added:
         w.out("checkout", ctx.tip, "--", path)
     ctx.add(f"- `git checkout T -- <file>` for {len(ctx.added)} added file(s)")
+    path = ctx.prefix + README
+    problems: list[str] = []
     if ctx.readme_modified:
-        patch = g.raw("diff", "--no-renames", a.head, ctx.tip, "--", ctx.prefix + README)
+        patch = g.raw("diff", "--no-renames", a.head, ctx.tip, "--", path)
         p = w.run("apply", "--index", "-", input=patch)
         if p.returncode:
-            raise Stop(
-                f"5.5: the reviewer's README diff does not apply cleanly to {MAIN}: "
+            problems.append(
+                f"the reviewer's README diff does not apply cleanly to {MAIN}: "
                 f"{p.stderr.decode(errors='replace').strip()}"
             )
-        ctx.add("- the reviewer's `reviews/README.md` diff applied cleanly")
+            if not a.without_index:
+                raise Stop(f"5.5: {problems[0]}")
+        else:
+            ctx.add("- the reviewer's `reviews/README.md` diff applied cleanly")
+        body = patch.decode(errors="replace").splitlines()
+        first_hunk = next((i for i, ln in enumerate(body) if ln.startswith("@@")), len(body))
+        ctx.refused_lines = [ln for ln in body[first_hunk:] if ln[:1] in ("+", "-")]
 
-    ctx.sec("5.6 Index-row semantics")
-    path = ctx.prefix + README
-    main_text = g.raw("show", f"{MAIN}:{path}").decode()
-    staged_text = w.raw("show", f":{path}").decode()
-    problems = check_index(main_text, staged_text, ctx.records, a.assignment_source, a.od)
-    if problems:
+    ctx.sec("5.6 Index-row semantics (navigation only)")
+    if ctx.readme_modified and not problems:
+        main_text = g.raw("show", f"{MAIN}:{path}").decode()
+        staged_text = w.raw("show", f":{path}").decode()
+        problems = check_index(main_text, staged_text, ctx.records, a.assignment_source, a.od)
+    if problems and not a.without_index:
         ctx.checks["index rows"] = "FAIL"
         raise Stop(
             "5.6: refused (the reviewer's README diff is not applied; report the discrepancy to the "
-            "owner):\n  - " + "\n  - ".join(problems)
+            "owner, who may authorise receiving the record files with --without-index):\n  - "
+            + "\n  - ".join(problems)
         )
-    ctx.checks["index rows"] = "PASS"
-    ctx.add(
-        "- README differs from main only by Class N / Class S lines supported by the imported records"
-        if ctx.readme_modified
-        else "- README unchanged"
-    )
+    if problems:
+        w.out("checkout", "HEAD", "--", path)  # discard every part of the reviewer's diff
+        if w.out("rev-parse", f":{path}") != g.out("rev-parse", f"{MAIN}:{path}"):
+            raise Stop(f"5.6: {path} is not main's after discarding the refused diff")
+        ctx.index_refused = problems
+        ctx.checks["index rows"] = "REFUSED"
+        ctx.add("- **INDEX DIFF REFUSED: the record files are received WITHOUT the index (--without-index)**")
+        ctx.add(f"- `{path}` is main's, unchanged; no part of the reviewer's diff was applied. Reasons:")
+        ctx.lines += [f"  - {x}" for x in problems]
+        ctx.add("- refused lines, verbatim:")
+        ctx.lines += ["", "```", *ctx.refused_lines, "```", ""]
+        ctx.add("- the navigation rows and any finding-state changes follow by 5.12 (owner-authorised)")
+    else:
+        ctx.checks["index rows"] = "PASS"
+        ctx.add(
+            "- README differs from main only by added Class N lines supported by the imported records"
+            if ctx.readme_modified
+            else "- README unchanged"
+        )
 
     ctx.sec("5.7 Verify")
     for rel in ctx.added:
@@ -970,7 +991,7 @@ def step_import(ctx: Ctx) -> None:
     outside = [n for n in names if not n.startswith(ctx.prefix + "reviews/")]
     if outside:
         raise Stop(f"5.7: paths outside reviews/ are staged: {outside}")
-    want = set(ctx.added) | ({path} if ctx.readme_modified else set())
+    want = set(ctx.added) | ({path} if ctx.index_applied else set())
     if set(names) != want:
         raise Stop(f"5.7: the staged set {sorted(names)} differs from the inventory {sorted(want)}")
     ctx.add(f"- nothing outside `{ctx.prefix}reviews/` is staged ({len(names)} path(s))")
@@ -1010,6 +1031,7 @@ def step_commit(ctx: Ctx) -> None:
         f"Reviewer-Report: {_norm(str(ctx.report['supplied_by']))}",
         *records,
         "Inventory: complete",
+        *([ctx.index_diff_trailer] if ctx.index_refused else []),
         f"Receipt-Checks: {receipt_checks(ctx)}",
         actor(ctx),
     ]
@@ -1040,6 +1062,16 @@ def step_commit(ctx: Ctx) -> None:
     ctx.add(f"- `tools/check_repo.py trailers {ctx.remote}/{MAIN} HEAD`: PASS")
     ctx.import_commit = sha
     ctx.pushed_commits.append(sha)
+
+
+def step_reconciliation(ctx: Ctx) -> None:
+    """5.12 is the owner's; here the receiver only lists what the index on main does not yet show."""
+    main_text = ctx.g.raw("show", f"{MAIN}:{ctx.prefix + README}").decode()
+    pending = pending_reconciliation(main_text, ctx.records)
+    ctx.sec("Index reconciliation pending (5.12; informational, nothing is changed)")
+    ctx.lines += [f"- {x}" for x in pending] or [
+        "- none: every outcome an imported VERIFY record states is shown"
+    ]
 
 
 def cleanup_worktree(ctx: Ctx) -> None:
@@ -1150,6 +1182,7 @@ def flow(ctx: Ctx) -> None:
     step_main_state(ctx)
     step_inventory(ctx)
     step_checks(ctx)
+    step_reconciliation(ctx)
     if ctx.import_commit:
         if not ctx.publish:
             tag_precheck(ctx)
@@ -1175,14 +1208,17 @@ def flow(ctx: Ctx) -> None:
 
 
 def status_word(ctx: Ctx, stop: str | None) -> str:
+    partial = "; PARTIAL: the index diff was refused and not received (--without-index)"
     if not ctx.publish:
         return (
             "checks FAILED (dry run; nothing was published)"
             if stop
-            else "checks passed (dry run; nothing was published)"
+            else "checks passed (dry run; nothing was published)" + (partial if ctx.index_refused else "")
         )
     if ctx.completed:
-        return "received (5.10 passed; the index status cell is a separate administrative commit)"
+        return "received (5.10 passed; the index status cell is a separate administrative commit)" + (
+            partial if ctx.index_refused else ""
+        )
     if ctx.touched:
         return "receipt incomplete"
     return "not started (nothing was pushed or merged; 5.11: nothing has changed)"
@@ -1213,6 +1249,12 @@ def receive(argv: list[str], hooks: dict[str, Callable[[Ctx], None]] | None = No
     ap.add_argument("--actor", default="claude/implementation-agent", help="role in the HIO-Actor trailer")
     ap.add_argument("--co-authored-by", help="'Name <email>' for a Co-Authored-By trailer (agent receivers)")
     ap.add_argument("--publish", action="store_true", help="also do 5.4 and 5.8 to 5.10 (writes the remote)")
+    ap.add_argument(
+        "--without-index",
+        action="store_true",
+        help="only when the README diff is refused (5.6): receive the record files without any part of it "
+        "(needs the owner's go-ahead for that receipt); the import commit carries 'Index-Diff: refused'",
+    )
     args = ap.parse_args(argv)
     top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
     if top.returncode:

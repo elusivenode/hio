@@ -298,7 +298,7 @@ class World:
     def origin_git(self, *args: str) -> str:
         return git(self.tmp, "--git-dir", str(self.origin), *args)
 
-    def run(self, *, publish: bool = False, hooks=None, **over):
+    def run(self, *, publish: bool = False, without_index: bool = False, hooks=None, **over):
         vals = {
             "--review-id": self.rec_id,
             "--base": self.base,
@@ -316,6 +316,8 @@ class World:
                 argv += [k, *v] if isinstance(v, list) else [k, v]
         if publish:
             argv.append("--publish")
+        if without_index:
+            argv.append("--without-index")
         code = hio.receive(argv, hooks=hooks)
         cap = self.capsys.readouterr()
         return SimpleNamespace(code=code, out=cap.out, err=cap.err)
@@ -475,13 +477,117 @@ def test_publish_is_idempotent_after_completion(make_world):
     assert r.code == 0 and "already imported" in r.out
 
 
-def test_verification_record_with_class_s_transition(make_world):
+def test_verification_record_with_class_s_transition_is_refused(make_world):
+    # option B (OD-0100): receipt never changes a finding's state, so the former Class S receipt is refused
     w = make_world(kind="verify")
     r = w.run(publish=True)
+    assert r.code == 1 and "5.6" in r.err and "removed or changed line" in r.err, r.err
+    assert "never sets a finding's state" in r.err
+    assert received_main(w) == w.head
+
+
+# --- option B: --without-index and index reconciliation pending -----------------------------------
+
+
+def test_without_index_dry_run_leaves_the_refused_diff_out_and_reports_it(make_world):
+    w = make_world(kind="verify")  # its README diff rewrites F-OLD-1-1's state: refused
+    r = w.run()
+    assert r.code == 1 and "--without-index" in r.err  # without the flag a refused diff is a STOP
+    r = w.run(without_index=True)
     assert r.code == 0, r.err
+    assert "checks passed (dry run" in r.out and "PARTIAL" in r.out
+    assert "INDEX DIFF REFUSED" in r.out and "index rows REFUSED" in r.out
+    # the refused lines are listed verbatim
+    assert (
+        "-| F-OLD-1-1 | OLD-1 | high | **remediation_claimed** | remediation_claimed: fix `abc1234` |"
+        in r.out
+    )
+    assert f"+| {w.rec_id} | `r` | `{w.base}` | `{w.head}` | scope |" in r.out
+    assert "+| F-OLD-1-1 | OLD-1 | high | **verified_closed** at" in r.out
+    assert received_main(w) == w.head and git(w.recv, "worktree", "list").count("\n") == 0
+    # 5.12: the VERIFY record's outcome is reported as pending reconciliation, and nothing else changes
+    assert "index reconciliation pending: F-OLD-1-1: VERIFY-T-2 states verified_closed" in r.out
+    assert "the index on main shows 'remediation_claimed'" in r.out
+
+
+def test_without_index_publish_receives_the_records_but_not_the_index(make_world):
+    w = make_world(kind="verify")
+    before = w.origin_git("show", "main:reviews/README.md")
+    assert w.run(publish=True).code == 1 and received_main(w) == w.head  # no flag: a STOP, nothing merged
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 0, r.err
+    assert "STATUS: received" in r.out and "PARTIAL" in r.out
+    main = received_main(w)
+    assert main != w.head
+    assert w.origin_git("show", f"{main}:reviews/README.md") == before  # README untouched
+    assert w.origin_git("show", f"{main}:{w.rec_path}") == w.files[w.rec_path].rstrip("\n")
+    parents = w.origin_git("rev-list", "--parents", "-n1", main).split()
+    imp = parents[2]
+    body = w.origin_git("log", "-1", "--format=%B", imp)
+    trailer = next(x for x in body.splitlines() if x.startswith("Index-Diff: refused ("))
+    assert trailer.endswith(")") and "\n" not in trailer
+    assert "Receipt-Checks: scope PASS; assignment PASS; index rows REFUSED; blob identity PASS" in body
+    assert set(w.origin_git("diff", "--name-only", imp + "^", imp).splitlines()) == {
+        w.rec_path,
+        w.handoff_path,
+    }
+    assert f"Record: {w.rec_path} blob " in body
+    assert "index reconciliation pending: F-OLD-1-1: VERIFY-T-2 states verified_closed" in r.out
+    assert w.origin_git("rev-parse", f"refs/tags/reviews/{w.rec_id}^{{commit}}") == w.tip
+    # a rerun after completion is idempotent
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 0 and "already imported" in r.out and received_main(w) == main
+
+
+def test_without_index_is_ignored_when_the_index_diff_is_acceptable(make_world):
+    w = make_world()  # a Class N review receipt
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 0, r.err
+    assert "PARTIAL" not in r.out and "INDEX DIFF REFUSED" not in r.out and "index rows PASS" in r.out
+    main = received_main(w)
+    imp = w.origin_git("rev-list", "--parents", "-n1", main).split()[2]
+    assert "Index-Diff" not in w.origin_git("log", "-1", "--format=%B", imp)
+    assert f"| {w.rec_id} |" in w.origin_git("show", f"{main}:reviews/README.md")
+
+
+def test_without_index_does_not_apply_the_acceptable_part_of_a_refused_diff(make_world):
+    def waive(readme: str, _w: World) -> str:
+        return replace_line(
+            readme, "| F-OLD-1-2 |", "| F-OLD-1-2 | OLD-1 | medium | **waived** (OD-0001) | — | — | — |"
+        )
+
+    w = make_world(readme_fn=waive)  # its Class N rows are fine; the waived row refuses the whole diff
+    before = w.origin_git("show", "main:reviews/README.md")
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 0, r.err
+    assert w.origin_git("show", f"{received_main(w)}:reviews/README.md") == before
+    assert "+| F-OLD-1-2 | OLD-1 | medium | **waived** (OD-0001)" in r.out
+
+
+def test_class_n_verify_receipt_passes_and_reports_the_pending_outcome(make_world):
+    def navigation_only(readme: str, _w: World) -> str:
+        # keep the assigned and rounds rows; leave the finding row exactly as on main
+        return replace_line(
+            readme,
+            "| F-OLD-1-1 |",
+            "| F-OLD-1-1 | OLD-1 | high | **remediation_claimed** | remediation_claimed: fix `abc1234` "
+            "| — | — |",
+        )
+
+    w = make_world(kind="verify", readme_fn=navigation_only)
+    r = w.run(publish=True)
+    assert r.code == 0, r.err
+    assert "PARTIAL" not in r.out and "index rows PASS" in r.out
+    # the index on main still shows remediation_claimed, so the record's outcome is pending (5.12)
+    assert "index reconciliation pending: F-OLD-1-1: VERIFY-T-2 states verified_closed" in r.out
     text = w.origin_git("show", f"{received_main(w)}:reviews/README.md")
-    assert "| F-OLD-1-1 | OLD-1 | high | **verified_closed** at" in text
-    assert "F-OLD-1-2 | OLD-1 | medium | **open**" in text
+    assert "| F-OLD-1-1 | OLD-1 | high | **remediation_claimed** |" in text and f"| {w.rec_id} |" in text
+
+
+def test_review_receipt_reports_no_pending_reconciliation(make_world):
+    r = make_world().run()  # a REVIEW record states no outcomes
+    assert r.code == 0, r.err
+    assert "none: every outcome an imported VERIFY record states is shown" in r.out
 
 
 # --- design failure cases -----------------------------------------------------------------------
@@ -587,7 +693,7 @@ def test_unsupported_verified_closed_in_the_index(make_world):
 
     w = make_world(readme_fn=flip)
     r = w.run(publish=True)
-    assert r.code == 1 and "5.6" in r.err and "no imported VERIFY record" in r.err
+    assert r.code == 1 and "5.6" in r.err and "never sets a finding's state" in r.err  # was: no VERIFY record
     assert received_main(w) == w.head
     assert "receipt incomplete" in r.out and "tag pushed, no import" in r.out
     assert w.origin_git("rev-parse", f"refs/tags/reviews/{w.rec_id}^{{commit}}") == w.tip
@@ -604,9 +710,8 @@ def test_verify_record_cannot_close_another_finding(make_world):
 
     w = make_world(kind="verify", readme_fn=flip)
     r = w.run()
-    assert (
-        r.code == 1 and "F-OLD-1-2" in r.err and "no imported VERIFY record states verified_closed" in r.err
-    )
+    # option B: the VERIFY record states nothing for F-OLD-1-2, and no record could make this row receivable
+    assert r.code == 1 and "F-OLD-1-2" in r.err and "removed or changed line" in r.err
 
 
 def test_waiver_is_never_created_by_the_receiver(make_world):
@@ -715,14 +820,17 @@ def record(rid: str, kind: str, body: str, **fm: str) -> object:
     return hio.Record(f"reviews/records/{rid}.md", rid, kind, front, text)
 
 
-def test_check_index_accepts_class_n_and_s_and_refuses_the_rest():
+def test_check_index_accepts_class_n_and_refuses_class_s_and_the_rest():
     rec = record("VERIFY-X-1", "VERIFY", "| F-OLD-1-1 | **verified_closed.** ok |\n")
     s_new = (
         "| F-OLD-1-1 | OLD-1 | high | **verified_closed** at `bbbbbbb` | "
         "remediation_claimed: fix `abc1234` | [VERIFY-X-1](records/VERIFY-X-1.md) | — |"
     )
     good = replace_line(README_BASE, "| F-OLD-1-1 |", s_new)
-    assert hio.check_index(README_BASE, good, [rec], SOURCE, OD) == []
+    # option B: even a Class S row the old receiver accepted (affirmative, cited, exact head) is refused
+    problems = hio.check_index(README_BASE, good, [rec], SOURCE, OD)
+    assert any("removed or changed line" in p for p in problems), problems
+    assert any("verified_closed in the state cell" in p for p in problems), problems
     assert hio.check_index(README_BASE, README_BASE, [rec], SOURCE, OD) == []
 
     def refused(text: str, recs=None, needle: str = "") -> None:
@@ -737,18 +845,18 @@ def test_check_index_accepts_class_n_and_s_and_refuses_the_rest():
         add_row(README_BASE, H_FINDINGS, "| F-NEW-1 | NEW | high | **open** | — | — | — |"),
         needle="no imported REVIEW",
     )
-    refused(README_BASE.replace("States:", "Extra prose.\nStates:"), needle="neither a Class N nor a Class S")
+    refused(README_BASE.replace("States:", "Extra prose.\nStates:"), needle="not a Class N row")
     refused(
         README_BASE.replace(
             "| OLD-1 | s | `1111111..2222222` | Codex | **READY** |",
             "| OLD-1 | s | `1111111..2222222` | Codex | **BLOCKED** |",
         ),
-        needle="Class S",
+        needle="removed or changed line",
     )
     changed_claim = s_new.replace("fix `abc1234`", "fix `ffffff1`")
-    refused(replace_line(README_BASE, "| F-OLD-1-1 |", changed_claim), needle="claim cell changed")
+    refused(replace_line(README_BASE, "| F-OLD-1-1 |", changed_claim), needle="removed or changed line")
     removed = "\n".join(line for line in README_BASE.split("\n") if not line.startswith("| F-OLD-1-2"))
-    refused(removed, needle="no superseding Class S row")
+    refused(removed, needle="removed or changed line")
     reordered = README_BASE.split("\n")
     reordered[-4], reordered[-5] = reordered[-5], reordered[-4]
     refused("\n".join(reordered), needle="reordered")
@@ -759,13 +867,13 @@ def test_check_index_accepts_class_n_and_s_and_refuses_the_rest():
     wrong_cite = replace_line(
         README_BASE, "| F-OLD-1-1 |", s_new.replace("[VERIFY-X-1](records/VERIFY-X-1.md)", "none")
     )
-    refused(wrong_cite, needle="does not cite")
+    refused(wrong_cite, needle="removed or changed line")
     untraceable = replace_line(
         README_BASE, "| F-OLD-1-1 |", s_new.replace("at `bbbbbbb`", "at `bbbbbbb` (merge `1234567`)")
     )
-    refused(untraceable, needle="1234567")
+    refused(untraceable, needle="removed or changed line")
     review_only = record("REVIEW-X-1", "REVIEW", "### F-OLD-1-1 — high, open: x\n")
-    refused(good, recs=[review_only], needle="no imported VERIFY record")
+    refused(good, recs=[review_only], needle="removed or changed line")
 
 
 def test_check_index_class_n_rows_are_checked_against_the_record():
@@ -861,12 +969,12 @@ def test_check_index_verdict_in_a_rounds_row_is_the_outcome_not_a_substring():
         f"| VERIFY-X-1 | OLD-1, finding 1 | `{'a' * 7}..{'b' * 7}` | `abc1234` | "
         "**F-OLD-1-1 verified_closed**; READY | [record](records/VERIFY-X-1.md) |"
     )
-    with_s = replace_line(README_BASE, "| F-OLD-1-1 |", S_NEW)
-    assert problems_for(add_row(with_s, H_ROUNDS, row), [rec]) == []
+    # option B: the rounds row is a Class N row on its own; the finding row is not rewritten with it
+    assert problems_for(add_row(README_BASE, H_ROUNDS, row), [rec]) == []
     not_ready = row.replace("; READY", "; NOT READY")
-    assert any("outcome cell" in p for p in problems_for(add_row(with_s, H_ROUNDS, not_ready), [rec]))
+    assert any("outcome cell" in p for p in problems_for(add_row(README_BASE, H_ROUNDS, not_ready), [rec]))
     buried = row.replace("; READY", "; ready is not claimed here; BLOCKED")
-    assert any("outcome cell" in p for p in problems_for(add_row(with_s, H_ROUNDS, buried), [rec]))
+    assert any("outcome cell" in p for p in problems_for(add_row(README_BASE, H_ROUNDS, buried), [rec]))
 
 
 def test_receive_publish_refuses_an_unsupported_accepted_assigned_row(make_world):
@@ -889,41 +997,74 @@ def outcome_record(body: str, rid: str = "VERIFY-X-1") -> object:
     return record(rid, "VERIFY", body)
 
 
-def test_class_s_needs_an_affirmative_outcome_row_for_that_finding():
-    to_closed = replace_line(README_BASE, "| F-OLD-1-1 |", S_NEW)
+def test_class_s_rewrites_are_refused_whatever_the_record_states():
+    # option B: the receiver never changes a finding's state, however affirmative the record's outcome row is
     good = outcome_record("| F-OLD-1-1 | **verified_closed.** the fix holds |\n")
-    assert problems_for(to_closed, [good]) == []
-    # adjusted in round 3: this case used the bare word `verified_closed`, which the old parser accepted;
-    # only the bold token `**verified_closed**` (or `**verified_closed.**`) now counts
-    assert problems_for(to_closed, [outcome_record("| `F-OLD-1-1` | **verified_closed** |\n")]) == []
-    # the reviewer's exact case: prose that negates the state word
-    prose = outcome_record("F-OLD-1-1 remains open; do not mark verified_closed.\n")
-    for rec in (
-        prose,
-        outcome_record("| F-OLD-1-1 | not verified_closed: still open |\n"),
-        outcome_record('| F-OLD-1-1 | "verified_closed" is the claim, not the outcome |\n'),
-        outcome_record("| F-OLD-1-1 | the author says verified_closed |\n"),
-        outcome_record("| Finding | Outcome |\n|---|---|\n| F-OLD-1-1-extra | **verified_closed.** |\n"),
-        outcome_record("| notes | F-OLD-1-1 | verified_closed |\n"),
-        outcome_record("| F-OLD-1-1 | **open.** a | \n| F-OLD-1-1 | **verified_closed.** b |\n"),
-    ):
-        problems = problems_for(to_closed, [rec])
-        assert any("no imported VERIFY record states verified_closed" in p for p in problems), (
-            rec.text,
-            problems,
-        )
-    problems = problems_for(to_closed, [outcome_record("| F-OLD-1-1 | **open.** not fixed |\n")])
-    assert any("states open" in p for p in problems), problems
-    # the target state must equal the stated outcome, in both directions
-    to_open = replace_line(README_BASE, "| F-OLD-1-1 |", S_NEW.replace("**verified_closed**", "**open**"))
-    assert problems_for(to_open, [outcome_record("| F-OLD-1-1 | **open.** not fixed |\n")]) == []
-    problems = problems_for(to_open, [good])
-    assert any("no imported VERIFY record states open" in p for p in problems), problems
-    rejected = replace_line(
-        README_BASE, "| F-OLD-1-1 |", S_NEW.replace("**verified_closed**", "**remediation_rejected**")
+    recs = [
+        good,
+        outcome_record("| `F-OLD-1-1` | **verified_closed** |\n"),
+        outcome_record("F-OLD-1-1 remains open; do not mark verified_closed.\n"),
+        outcome_record("| F-OLD-1-1 | verified_closed was NOT reached; the finding remains open. |\n"),
+        outcome_record("| F-OLD-1-1 | **open.** not fixed |\n"),
+        outcome_record("| F-OLD-1-1 | **remediation_rejected.** x |\n"),
+    ]
+    for state in ("verified_closed", "open", "remediation_rejected", "waived", "accepted"):
+        staged = replace_line(README_BASE, "| F-OLD-1-1 |", S_NEW.replace("verified_closed", state))
+        for rec in recs:
+            problems = problems_for(staged, [rec])
+            assert any("removed or changed line" in p for p in problems), (state, rec.text, problems)
+    # a new row cannot carry such a state either, whether or not a record states it
+    for state in ("verified_closed", "remediation_rejected", "waived", "accepted", "approved"):
+        row = f"| F-OLD-1-9 | OLD-1 | high | **{state}** | — | — | — |"
+        problems = problems_for(add_row(README_BASE, H_FINDINGS, row), [good])
+        assert any(f"{state} in the state cell of an added row" in p for p in problems), (state, problems)
+
+
+def test_codexs_contradictory_state_cell_is_refused():
+    cell = "**verified_closed.** was NOT reached; the finding remains open."
+    rec = record("REVIEW-X-1", "REVIEW", "### F-X-1-1 — high, open: a\n")
+    row = f"| F-X-1-1 | REVIEW-X-1 | high | {cell} | — | — | — |"
+    problems = problems_for(add_row(README_BASE, H_FINDINGS, row), [rec])
+    assert any("verified_closed in the state cell of an added row" in p for p in problems), problems
+    # the same text as a rewrite of an existing finding's state cell
+    rewrite = replace_line(
+        README_BASE, "| F-OLD-1-2 |", f"| F-OLD-1-2 | OLD-1 | medium | {cell} | — | — | — |"
     )
-    assert problems_for(rejected, [outcome_record("| F-OLD-1-1 | **remediation_rejected.** x |\n")]) == []
-    assert problems_for(rejected, [good]) != []
+    outcome = outcome_record("| F-OLD-1-2 | verified_closed was NOT reached; the finding remains open. |\n")
+    problems = problems_for(rewrite, [outcome])
+    assert any("removed or changed line" in p for p in problems) and any(
+        "verified_closed" in p for p in problems
+    )
+    # a plain new `open` finding row for a finding the REVIEW record defines is still Class N
+    ok = "| F-X-1-1 | REVIEW-X-1 | high | **open** | — | — | — |"
+    assert problems_for(add_row(README_BASE, H_FINDINGS, ok), [rec]) == []
+
+
+def test_pending_reconciliation_lists_outcomes_the_index_does_not_show():
+    rec = outcome_record(
+        "| F-OLD-1-1 | **verified_closed.** the fix holds |\n"
+        "| F-OLD-1-2 | **open.** not fixed |\n"
+        "| F-GONE-1 | **remediation_rejected.** x |\n"
+        "| F-OLD-1-3 | verified_closed was NOT reached; the finding remains open. |\n"
+        "| F-OLD-1-4 | **open.** a |\n| F-OLD-1-4 | **verified_closed.** b |\n"
+        "F-OLD-1-1 remains open; do not mark verified_closed.\n"
+    )
+    pending = hio.pending_reconciliation(README_BASE, [rec])
+    assert all(p.startswith("index reconciliation pending: ") for p in pending)
+    joined = "\n".join(pending)
+    assert "F-OLD-1-1: VERIFY-X-1 states verified_closed; the index on main shows" in joined
+    assert "F-GONE-1: VERIFY-X-1 states remediation_rejected; the index on main has no row" in joined
+    assert "F-OLD-1-4: VERIFY-X-1 has conflicting outcome rows" in joined
+    assert "F-OLD-1-2" not in joined  # the index already shows open
+    assert "F-OLD-1-3" not in joined  # a negated cell states nothing
+    assert len(pending) == 3
+    # a REVIEW record states no outcomes
+    assert (
+        hio.pending_reconciliation(
+            README_BASE, [record("REVIEW-X-1", "REVIEW", "| F-OLD-1-1 | **verified_closed.** |\n")]
+        )
+        == []
+    )
 
 
 def with_blank_in_findings(text: str) -> str:
@@ -944,16 +1085,15 @@ def test_findings_table_continues_across_a_blank_separator_line():
     )
     staged = replace_line(main, "| F-OLD-1-2 |", after)
     rec = outcome_record("| F-OLD-1-2 | **verified_closed.** ok |\n")
-    assert problems_for(staged, [rec], main=main) == []
-    # the later row is still held to Class S
-    for bad in (
-        after.replace("| medium |", "| low |"),
-        after.replace("[VERIFY-X-1](records/VERIFY-X-1.md)", "none"),
-    ):
-        assert problems_for(replace_line(main, "| F-OLD-1-2 |", bad), [rec], main=main) != []
-    unsupported = outcome_record("F-OLD-1-2 stays open; do not mark verified_closed.\n")
-    problems = problems_for(staged, [unsupported], main=main)
-    assert any("no imported VERIFY record states verified_closed" in p for p in problems), problems
+    # option B: the later row is recognised as a finding row, and rewriting its state is refused
+    problems = problems_for(staged, [rec], main=main)
+    assert any("removed or changed line" in p for p in problems), problems
+    assert any("verified_closed in the state cell" in p for p in problems), problems
+    # a new `open` finding row after the blank line is still Class N
+    review = record("REVIEW-X-1", "REVIEW", "### F-X-1-1 — high, open: a\n")
+    new_row = "| F-X-1-1 | REVIEW-X-1 | high | **open** | — | — | — |"
+    last = "| F-OLD-1-2 | OLD-1 | medium | **open** | — | — | — |"
+    assert problems_for(main.replace(last, last + "\n" + new_row, 1), [review], main=main) == []
     assert hio.duplicate_problems(staged.splitlines()) == []
 
 
@@ -972,7 +1112,7 @@ def test_blank_separated_table_with_its_own_header_stays_a_separate_table():
     assert shape(odd) == [(["a", "b"], ["1", "6"]), (["3", "4", "5"], [])]
 
 
-def test_real_index_shape_accepts_a_class_s_transition_after_its_blank_line():
+def test_real_index_shape_refuses_a_class_s_transition_after_its_blank_line():
     main = (REPO / "reviews" / "README.md").read_text()
     lines = main.splitlines()
     index = hio.row_index(lines)
@@ -992,9 +1132,10 @@ def test_real_index_shape_accepts_a_class_s_transition_after_its_blank_line():
     staged = main.replace(old, new, 1)
     fid = hio.norm_cell(cells[0])
     rec = outcome_record(f"| {fid} | **open.** not fixed at the reviewed head |\n")
-    assert problems_for(staged, [rec], main=main) == []
+    # option B: even this affirmative, cited, same-state-word rewrite of an existing row is refused
+    assert any("removed or changed line" in p for p in problems_for(staged, [rec], main=main))
     unsupported = outcome_record(f"{fid} is verified_closed in prose only\n")
-    assert any("no imported VERIFY record" in p for p in problems_for(staged, [unsupported], main=main))
+    assert any("removed or changed line" in p for p in problems_for(staged, [unsupported], main=main))
 
 
 def test_real_index_has_no_duplicate_ids_and_every_table_is_recognised():
@@ -1038,8 +1179,8 @@ def test_outcome_cell_counts_only_with_the_exact_bold_state_token():
     verifier_case = outcome_record(
         "| F-OLD-1-1 | verified_closed was NOT reached; the finding remains open. |\n"
     )
-    problems = problems_for(to_closed, [verifier_case])
-    assert any("no imported VERIFY record states verified_closed" in p for p in problems), problems
+    problems = problems_for(to_closed, [verifier_case])  # option B: refused, whatever the record says
+    assert any("removed or changed line" in p for p in problems), problems
 
 
 FINDING_6 = (
@@ -1069,36 +1210,32 @@ def test_header_less_run_after_blank_lines_continues_the_findings_table_with_six
     assert "| F-OLD-1-4 | OLD-1 | low | **open** |" not in hio.row_index(odd.splitlines())
     staged = main.replace(FINDING_6, FINDING_6_DONE, 1)
     rec = outcome_record("| F-OLD-1-3 | **verified_closed.** the fix holds |\n")
-    assert problems_for(staged, [rec], main=main) == []
     assert hio.duplicate_problems(staged.splitlines()) == []
 
     def refused(new_row: str, recs: list, needle: str) -> None:
         problems = problems_for(main.replace(FINDING_6, new_row, 1), recs, main=main)
         assert any(needle in p for p in problems), (new_row, problems)
 
-    refused(
+    # option B: every rewrite of the six-cell row is refused as a changed line, the record notwithstanding
+    for new_row in (
         FINDING_6_DONE,
-        [outcome_record("F-OLD-1-3 stays open; do not mark verified_closed.\n")],
-        "no imported VERIFY",
-    )
-    refused(
-        FINDING_6_DONE,
-        [outcome_record("| F-OLD-1-3 | verified_closed was NOT reached |\n")],
-        "no imported VERIFY",
-    )
-    refused(FINDING_6_DONE.replace("VERIFY-X-1", "none"), [rec], "does not cite")
-    refused(FINDING_6_DONE.replace("fix `abc1234`", "fix `ffffff1`"), [rec], "claim cell changed")
-    refused(FINDING_6_DONE.replace("| high |", "| low |"), [rec], "severity cell changed")
-    refused(FINDING_6_DONE.replace("`bbbbbbb`", "`1234567`"), [rec], "1234567")
-    # a Class S row keeps its shape: the six-cell row cannot become a seven-cell one
-    refused(FINDING_6_DONE + " — |", [rec], "cell count")
+        FINDING_6_DONE.replace("VERIFY-X-1", "none"),
+        FINDING_6_DONE.replace("fix `abc1234`", "fix `ffffff1`"),
+        FINDING_6_DONE + " — |",
+    ):
+        for recs in (
+            [rec],
+            [outcome_record("F-OLD-1-3 stays open; do not mark verified_closed.\n")],
+            [outcome_record("| F-OLD-1-3 | verified_closed was NOT reached |\n")],
+        ):
+            refused(new_row, recs, "removed or changed line")
     # a new six-cell row is not a Class N row
     new_rows = main.replace(FINDING_7, FINDING_7 + "\n" + FINDING_6.replace("F-OLD-1-3", "F-OLD-1-5"), 1)
     problems = problems_for(new_rows, [rec], main=main)
     assert any("F-OLD-1-5" in p and "cells" in p for p in problems), problems
 
 
-def test_real_index_adr0012_six_cell_row_accepts_a_class_s_transition():
+def test_real_index_adr0012_six_cell_row_refuses_a_class_s_transition():
     main = (REPO / "reviews" / "README.md").read_text()
     old = next(line for line in main.splitlines() if line.startswith("| F-REVIEW-2026-10-25-adr0012-1 |"))
     cells = hio.split_row(old)
@@ -1109,10 +1246,11 @@ def test_real_index_adr0012_six_cell_row_accepts_a_class_s_transition():
     staged = main.replace(old, new, 1)
     fid = hio.norm_cell(cells[0])
     rec = outcome_record(f"| {fid} | **verified_closed.** closed at the reviewed head |\n")
-    assert problems_for(staged, [rec], main=main) == []
+    problems = problems_for(staged, [rec], main=main)  # option B: refused, however affirmative the record
+    assert any("removed or changed line" in p for p in problems), problems
     unsupported = outcome_record(f"| {fid} | verified_closed was NOT reached; still open |\n")
     problems = problems_for(staged, [unsupported], main=main)
-    assert any("no imported VERIFY record states verified_closed" in p for p in problems), problems
+    assert any("removed or changed line" in p for p in problems), problems
     altered = staged.replace("| high |", "| low |", 1)
     assert problems_for(altered, [rec], main=main) != []
 
@@ -1129,12 +1267,14 @@ def test_forbidden_state_guard_reads_state_cells_never_scope_or_prose():
         bad = row.replace("**received**; verdict NOT READY", f"**{word}**")
         problems = problems_for(add_row(README_BASE, H_ASSIGNED, bad), [rec])
         assert any(word in p and "owner OD" in p for p in problems), (word, problems)
-    # a Class S row may repeat prose that mentions approval in a cell it does not rewrite
+    # option B: a rewrite is refused as a changed line; the guard still names an `accepted` state cell
     claim = "remediation_claimed: the design was approved by the owner; fix `abc1234`"
     main = README_BASE.replace("remediation_claimed: fix `abc1234`", claim)
     s_new = S_NEW.replace("remediation_claimed: fix `abc1234`", claim)
     good = outcome_record("| F-OLD-1-1 | **verified_closed.** ok |\n")
-    assert problems_for(replace_line(main, "| F-OLD-1-1 |", s_new), [good], main=main) == []
+    problems = problems_for(replace_line(main, "| F-OLD-1-1 |", s_new), [good], main=main)
+    assert any("removed or changed line" in p for p in problems), problems
+    assert not any("approved in the state cell" in p for p in problems), problems  # prose in a claim cell
     accepted = s_new.replace("**verified_closed**", "**accepted**")
     problems = problems_for(replace_line(main, "| F-OLD-1-1 |", accepted), [good], main=main)
     assert any("accepted" in p and "owner OD" in p for p in problems), problems
