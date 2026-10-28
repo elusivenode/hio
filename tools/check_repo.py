@@ -343,19 +343,30 @@ def check_imports(files: list[str]) -> None:
 # --- OBS-INV-005 lint ----------------------------------------------------------------------------------
 
 
+# Files allowed exactly this many `.date()` calls, each on a zone-converted instant that is never a
+# valid_time. Every entry is reviewable; a new call in the file still fails.
+VALID_TIME_EXEMPT = {
+    # T-0009 F-7: the due gate's local wall-clock date ("is today a RITS day in Sydney?").
+    "src/hio/sources/schedule.py": 1,
+}
+
+
 def check_valid_time(files: list[str]) -> None:
     """valid_time is never derived from a UTC instant: no `.date()` on a datetime, no
     `date.fromtimestamp`/`utcfromtimestamp` in src/. Market-local dates are parsed from source
     fields as dates."""
     for f in (x for x in files if x.startswith("src/hio/") and x.endswith(".py")):
         tree = ast.parse((ROOT / f).read_text(), filename=f)
+        calls = []
         for node in ast.walk(tree):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
                 if node.func.attr == "date" and not node.args:
-                    line = getattr(node, "lineno", 0)
-                    fail("valid_time", f"{f}:{line}: .date() on an instant (OBS-INV-005)")
+                    calls.append(getattr(node, "lineno", 0))
                 if node.func.attr in {"fromtimestamp", "utcfromtimestamp"}:
                     fail("valid_time", f"{f}:{getattr(node, 'lineno', 0)}: {node.func.attr} (OBS-INV-005)")
+        if calls and len(calls) != VALID_TIME_EXEMPT.get(f, 0):
+            for line in calls:
+                fail("valid_time", f"{f}:{line}: .date() on an instant (OBS-INV-005)")
 
 
 # --- commit trailers ---------------------------------------------------------------------------------

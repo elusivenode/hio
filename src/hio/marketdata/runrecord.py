@@ -26,6 +26,7 @@ from hio.contracts.temporal import require_utc_instant
 from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
 OUTCOMES = ("verified_changed", "verified_unchanged", "failed")
+SLOT_NAMES = ("first", "final")  # HIO-ADR-0012 §4.3: a first check and a final check per day
 ERROR_CLASSES = ("network", "http_status", "parse", "schema", "key_missing", "clock_order", "store")
 WITHHELD = "[withheld]"
 _WITHHELD_HEADERS = {"set-cookie", "authorization", "proxy-authenticate", "www-authenticate"}
@@ -82,7 +83,7 @@ class RunRecord:
     outcome: str
     receipt_id: str | None = None
     error_class: str | None = None
-    slot: str | None = None  # the intended slot, e.g. "first" or "final"
+    slot: str | None = None  # the intended slot: "first" or "final" (hio.sources.schedule)
     slot_due_at: datetime | None = None
     datasets: Sequence[str] = ()  # the datasets this publication serves (rights subjects), if shared
     # HIO-ADR-0012 §4.3.3, F-REVIEW-2026-10-25-t0009-6: for a verified outcome, every key the run
@@ -103,6 +104,16 @@ class RunRecord:
         require_utc_instant("completed_at", self.completed_at)
         if self.completed_at < self.attempted_at:
             raise ValueError("completed_at precedes attempted_at")
+        # A scheduled run names its slot and the due instant the gate computed, together; it cannot
+        # start before that instant (F-REVIEW-2026-10-25-t0009-7). A manual run names neither.
+        if (self.slot is None) != (self.slot_due_at is None):
+            raise ValueError("slot and slot_due_at are recorded together or not at all")
+        if self.slot is not None and self.slot_due_at is not None:
+            if self.slot not in SLOT_NAMES:
+                raise ValueError(f"unknown slot {self.slot!r}")
+            require_utc_instant("slot_due_at", self.slot_due_at)
+            if self.attempted_at < self.slot_due_at:
+                raise ValueError("a scheduled run cannot start before its slot is due")
         if self.outcome not in OUTCOMES:
             raise ValueError(f"unknown outcome {self.outcome!r}")
         if self.outcome == "failed":

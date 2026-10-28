@@ -19,7 +19,7 @@ from hio.contracts.observation import Receipt
 from hio.contracts.rights import Operation, RightsGate
 from hio.contracts.temporal import require_utc_instant
 from hio.marketdata.capture import latest_capture, receipt_bytes
-from hio.marketdata.runrecord import Execution, RunRecord, envelope_headers, value_digest
+from hio.marketdata.runrecord import SLOT_NAMES, Execution, RunRecord, envelope_headers, value_digest
 from hio.sources.datasets import MalformedPayload, Parsed, Publication
 from hio.sources.transport import HttpResponse, Transport, TransportError
 from hio.storage.objectstore import LocalObjectStore
@@ -59,6 +59,11 @@ def run_capture(
 
     attempted_at = clock()
     require_utc_instant("attempted_at", attempted_at)
+    # The slot facts the record will carry are checked before any request (F-REVIEW-2026-10-25-t0009-7).
+    if (slot is None) != (slot_due_at is None) or (slot is not None and slot not in SLOT_NAMES):
+        raise ValueError("a scheduled run names a known slot and its due instant together")
+    if slot_due_at is not None and attempted_at < slot_due_at:
+        raise ValueError("a scheduled run cannot start before its slot is due")
     request = {"method": "GET", "url": target, "final_url": None, "user_agent": user_agent}
 
     def failed(error_class: str, response: HttpResponse | None, completed_at: datetime) -> RunResult:
