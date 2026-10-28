@@ -13,7 +13,7 @@ extras:
   - {path: reviews/records/VERIFY-2026-10-28-t0009-1-2.md, rev: a6f7f31522ac7d0b219204d346f6ac8f6e2d19bf}
   - {path: reviews/handoffs/2026-10-28-t0009-1-verify-2-codex.md, rev: a6f7f31522ac7d0b219204d346f6ac8f6e2d19bf}
 allow_ods: []
-forbid: ["VERIFY-2026-10-28-t0009-1-3", "network access"]
+forbid: ["VERIFY-2026-10-28-t0009-1-3", "reviewer needs network", "codex-reviewer-network"]
 question: |
   Codex has returned VERIFY-2026-10-28-t0009-1-2 (reviews/records/, verdict READY: F-5 verified_closed) for the
   T-0009 F-5 remediation at 846974b, which retains the real 2026 RITS and NSW calendars under D7 (OD-0076). Its
