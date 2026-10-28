@@ -1,0 +1,33 @@
+# REFERENCE calendar (real data; not synthetic): RITS settlement days, 2026. Dated, cited extract (T-0009 §2.7; owner decision D7, OD-0076).
+# Source: Reserve Bank of Australia 2026. Facts only, extracted by hand; RBA copyright §5 Financial Data conditions apply; no endorsement by the RBA is implied.
+calendar_id: rits
+kind: reference
+as_of: 2026-10-28
+source:
+  citation: >-
+    Source: Reserve Bank of Australia 2026. "RITS Business Hours" (rule) and "Public & Bank Holidays – 2026" (dates),
+    read once by hand on 2026-10-28 05:30 UTC under OD-0076. Rule, verbatim: RITS "is closed for the settlement of such
+    transactions on weekends and on the following public holidays where they are observed in NSW and Victoria: New
+    Year's Day, Australia Day, Good Friday, Easter Monday, Anzac Day, King's Birthday, Christmas Day and Boxing Day."
+    (The RITS Fast Settlement Service runs every day and is not this calendar.)
+  url: https://www.rba.gov.au/payments-and-infrastructure/rits/business-hours.html
+  dates_url: https://www.rba.gov.au/schedules-events/bank-holidays/
+  page_sha256:
+    rule: ac946ce4f476421a75a35ead9ed115992671e64cb9ec5e730325b82696fd067b
+    dates: b027fedddb12140a7e1e1bc46d16d36e304aa9f84bba8d9e59c9058e23e9294d
+  rights_source_id: rba_calendar_pages
+  interpretation: >-
+    A named holiday closes RITS when the dates page lists it for both New South Wales and Victoria. Anzac Day
+    (Saturday 25 April) falls on a weekend; the NSW "Additional Day" on Monday 27 April is not a named holiday and is
+    not listed for Victoria, so RITS is read as open. "Boxing Day Observed" (Monday 28 December, all states) is read
+    as Boxing Day observed. Both readings are Claude's, from the two pages only; no RITS Advice was read.
+coverage: {start: 2026-01-01, end: 2026-12-31}
+weekend: [5, 6]
+closed:
+  - {date: 2026-01-01, reason: "New Year's Day (all states)"}
+  - {date: 2026-01-26, reason: "Australia Day (all states)"}
+  - {date: 2026-04-03, reason: "Good Friday (all states)"}
+  - {date: 2026-04-06, reason: "Easter Monday (all states)"}
+  - {date: 2026-06-08, reason: "King's Birthday (NSW and Victoria)"}
+  - {date: 2026-12-25, reason: "Christmas Day (all states)"}
+  - {date: 2026-12-28, reason: "Boxing Day Observed (all states; Boxing Day 26 December is a Saturday)"}

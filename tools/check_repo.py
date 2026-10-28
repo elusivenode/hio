@@ -160,7 +160,14 @@ def check_yaml(files: list[str]) -> None:
             fail("yaml", f"{f}: missing sections {missing}")
             continue
         ident = spec["identity"]
-        if Path(f).stem != ident.get("factor_id"):
+        # specs/factors/archive/<factor_id>@<version>.yaml keeps a superseded version that a release
+        # still cites (T-0009, F-REVIEW-2026-10-25-t0009-4); every other spec is named by its factor id.
+        expected = (
+            f"{ident.get('factor_id')}@{ident.get('version')}"
+            if f.startswith("specs/factors/archive/")
+            else ident.get("factor_id")
+        )
+        if Path(f).stem != expected:
             fail("yaml", f"{f}: factor_id {ident.get('factor_id')!r} does not match the file name")
         if not re.match(r"^\d+\.\d+\.\d+$", str(ident.get("version", ""))):
             fail("yaml", f"{f}: version is not semver")
@@ -238,6 +245,10 @@ FORBIDDEN_PATHS = [
     (r"\.(parquet|feather|arrow|h5|hdf5|pkl|pickle|npz?)$", "binary data or artefact"),
     (r"\.(xlsx?|zip|gz|tgz|bz2|7z)$", "archive or spreadsheet"),
     (r"^(data|receipts|releases|artefacts|catalogue|\.hio-store)/", "object-store or data directory"),
+    (
+        r"\.tfstate(\.|$)|\.tfplan$|(^|/)\.terraform(/|$)|\.tfvars(\.json)?$",
+        "infrastructure state, plan or variables",
+    ),
 ]
 DATA_SUFFIXES = (".csv", ".json", ".jsonl", ".xml", ".txt", ".tsv")
 SYNTHETIC_DIR = "tests/fixtures/synthetic/"
@@ -279,13 +290,14 @@ ALLOWED_IMPORTS = {
     "storage": {"contracts"},
     "rights": {"contracts"},
     "marketdata": {"contracts", "reference", "storage", "rights"},
+    "sources": {"contracts", "reference", "storage", "rights", "marketdata"},  # S1b-1 adapters, T-0009
     "library": {"contracts", "reference"},  # pure compute: no storage, no writes
     "publish": {"contracts", "storage", "rights"},  # the only writer of releases and artefacts
     "models": {"contracts"},
     "portfolio": {"contracts"},
     "taa": {"contracts"},
     "implementation": {"contracts"},
-    "jobs": {"contracts", "reference", "storage", "rights", "marketdata", "library", "publish"},
+    "jobs": {"contracts", "reference", "storage", "rights", "marketdata", "library", "publish", "sources"},
 }
 # Network clients are forbidden in src/: S1a has no source-data network access (OD-0017).
 FORBIDDEN_MODULES = {
@@ -331,19 +343,30 @@ def check_imports(files: list[str]) -> None:
 # --- OBS-INV-005 lint ----------------------------------------------------------------------------------
 
 
+# Files allowed exactly this many `.date()` calls, each on a zone-converted instant that is never a
+# valid_time. Every entry is reviewable; a new call in the file still fails.
+VALID_TIME_EXEMPT = {
+    # T-0009 F-7: the due gate's local wall-clock date ("is today a RITS day in Sydney?").
+    "src/hio/sources/schedule.py": 1,
+}
+
+
 def check_valid_time(files: list[str]) -> None:
     """valid_time is never derived from a UTC instant: no `.date()` on a datetime, no
     `date.fromtimestamp`/`utcfromtimestamp` in src/. Market-local dates are parsed from source
     fields as dates."""
     for f in (x for x in files if x.startswith("src/hio/") and x.endswith(".py")):
         tree = ast.parse((ROOT / f).read_text(), filename=f)
+        calls = []
         for node in ast.walk(tree):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
                 if node.func.attr == "date" and not node.args:
-                    line = getattr(node, "lineno", 0)
-                    fail("valid_time", f"{f}:{line}: .date() on an instant (OBS-INV-005)")
+                    calls.append(getattr(node, "lineno", 0))
                 if node.func.attr in {"fromtimestamp", "utcfromtimestamp"}:
                     fail("valid_time", f"{f}:{getattr(node, 'lineno', 0)}: {node.func.attr} (OBS-INV-005)")
+        if calls and len(calls) != VALID_TIME_EXEMPT.get(f, 0):
+            for line in calls:
+                fail("valid_time", f"{f}:{line}: .date() on an instant (OBS-INV-005)")
 
 
 # --- commit trailers ---------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 # HIO source register. Rights model: docs/standards/rights-and-licensing.md.
-# EVERY entry is unverified. Coverage, timing, terms and prices are hypotheses until owner-verified.
+# EVERY entry is unverified unless it states verification: owner_verified with verified_by: OD-NNNN. Coverage, timing, terms and prices are hypotheses until owner-verified.
 # Default rights: every permission `unknown` (= deny).
 defaults: &unverified
   verification: unverified
@@ -28,6 +28,17 @@ sources:
       cash_rate_tri: {rights_proposed: "RBA-sourced (FIRMMCTRI); §4 Cash Rate or §5 Financial Data, ambiguous; both need attribution and no implied endorsement", automated_retrieval: unknown, timing: "labelled by publication date (base 2011-01-04 = 100); published with the cash rate before 09:20 Sydney"}
       f2_yields: {timing: "weekly on Fridays, for daily yields up to 2 business days earlier"}
     rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown, post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown, audit_retention: unknown, attribution_required: "Source: Reserve Bank of Australia [year]"}   # effective values stay unknown (= deny) until owner_verified
+  - id: rba_calendar_pages
+    name: RBA RITS business-hours and public and bank holiday pages (calendar reference data; T-0002 matrix row D7)
+    home: https://www.rba.gov.au/schedules-events/bank-holidays/
+    intended_use: [S1b-1 RITS and NSW reference calendars (T-0009 §2.7, HIO-ADR-0012 gate (c))]
+    task: T-0009
+    verification: owner_verified
+    verified_by: OD-0076               # the owner approved D7 at the matrix's recommended values: retain and cite as reference data, manual read only
+    evidence: [https://www.rba.gov.au/copyright/, https://www.rba.gov.au/payments-and-infrastructure/rits/business-hours.html, https://www.rba.gov.au/schedules-events/bank-holidays/, docs/research/T-0002-owner-verification-matrix.md (row D7)]
+    retrieved: "2026-10-28 05:30 UTC, once, by hand (Claude, under OD-0076); extracts in src/hio/reference/calendars/"
+    review_due: 2027-01-31             # the 2027 holiday page; also recheck the terms (U7)
+    rights: {automated_retrieval: deny, raw_retention: "conditional(attribution 'Source: Reserve Bank of Australia [year]'; no implied RBA endorsement; RBA copyright §5 Financial Data conditions)", internal_compute: "conditional(attribution 'Source: Reserve Bank of Australia [year]'; no implied RBA endorsement; RBA copyright §5 Financial Data conditions)", derivation: "conditional(attribution 'Source: Reserve Bank of Australia [year]'; no implied RBA endorsement; RBA copyright §5 Financial Data conditions)", derived_storage: "conditional(attribution 'Source: Reserve Bank of Australia [year]'; no implied RBA endorsement; RBA copyright §5 Financial Data conditions)", post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: "conditional(attribution 'Source: Reserve Bank of Australia [year]'; no implied RBA endorsement; RBA copyright §5 Financial Data conditions)", smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: "conditional(attribution 'Source: Reserve Bank of Australia [year]'; no implied RBA endorsement; RBA copyright §5 Financial Data conditions)", external_processing: "conditional(attribution 'Source: Reserve Bank of Australia [year]'; no implied RBA endorsement; RBA copyright §5 Financial Data conditions)", audit_retention: unknown, attribution_required: "Source: Reserve Bank of Australia [year]"}
   - id: nyfed_reference_rates
     name: Federal Reserve Bank of New York reference rates (SOFR, SOFR Index)
     home: https://www.newyorkfed.org/markets/reference-rates

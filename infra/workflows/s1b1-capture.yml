@@ -1,0 +1,50 @@
+# S1b-1.0 scheduled capture: a DEFINITION, NOT ENABLED (T-0009 §2.5; F-REVIEW-2026-10-25-t0009-7).
+#
+# This file is kept outside .github/workflows/ on purpose, so GitHub never runs it. Enabling it means
+# moving it there, which is live operation and needs Authorisation B (T-0009 §8): rights per dataset
+# and operation, the network and credential-control decision, storage and an explicit owner
+# instruction. Until then the step below can only print the due slots: `hio.jobs.s1b1_capture`
+# makes no request and refuses anything but --dry-run.
+#
+# The UTC cron slots equal hio.sources.schedule.CRON_UTC (checked by
+# tests/test_s1b1_remediation_schedule.py): each local check in both daylight-saving regimes plus a
+# same-day retry. The local-time due gate decides what runs; idempotence makes extra firings no-ops.
+name: s1b1-capture (disabled definition)
+on:
+  schedule:
+    - cron: "45 22 * * *"
+    - cron: "45 23 * * *"
+    - cron: "45 0 * * *"
+    - cron: "30 5 * * *"
+    - cron: "30 6 * * *"
+    - cron: "30 7 * * *"
+    - cron: "30 12 * * *"
+    - cron: "30 13 * * *"
+    - cron: "30 14 * * *"
+    - cron: "0 19 * * *"
+    - cron: "0 20 * * *"
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: s1b1-capture
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
+        with:
+          version: "0.11.19"
+          enable-cache: false
+      - name: Due-time gate (dry run; no request is made)
+        # Authorisation B replaces --dry-run with a live run and adds the OIDC store login. Not now.
+        run: uv run --frozen python -m hio.jobs.s1b1_capture --dry-run --rits-calendar "$RITS_CALENDAR"
+        env:
+          RITS_CALENDAR: reference/calendars/rits.yaml   # the dated, cited RITS file; not yet retained (D7)

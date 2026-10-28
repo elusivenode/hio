@@ -1,0 +1,10 @@
+F1 INTEREST RATES AND YIELDS - MONEY MARKET (SYNTHETIC FIXTURE; invented values; layout ASSUMED),,,,
+Title,Interbank Overnight Cash Rate,Cash Rate Total Return Index,1-month BAB (third-party column),Cash Rate Target
+Frequency,Daily,Daily,Daily,Daily
+Units,Per cent per annum,Index,Per cent per annum,Per cent per annum
+Source,RBA,RBA,ASX,RBA
+Publication date,23-Oct-2026,24-Oct-2026,23-Oct-2026,23-Oct-2026
+Series ID,FIRMMCRID,FIRMMCTRI,FIRMMBAB30D,FIRMMCRTD
+21-Oct-2026,3.60,100.50,3.70,3.60
+22-Oct-2026,3.61,100.60,3.71,3.60
+23-Oct-2026,3.62,100.70,3.72,3.60

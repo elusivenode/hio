@@ -14,6 +14,10 @@ from hio.reference.calendar import BusinessCalendar
 class CaptureMode(StrEnum):
     SCHEDULED = "scheduled"  # HIO's own capture after a documented release
     BACKFILL = "backfill"  # history fetched later: the current value of each key, which may be a revision
+    # HIO's own live capture placed by HIO-ADR-0012 P3 (T-0009, OD-0063): knowable_at is the
+    # documented release instant and the basis is always schedule_only, never market evidence.
+    # Opt-in; S1a does not use it.
+    SCHEDULED_P3 = "scheduled_p3"
 
 
 @dataclass(frozen=True)
@@ -45,3 +49,11 @@ class SeriesDef:
     schedule: ReleaseSchedule | None
     jump_threshold: Decimal | None = None  # absolute change between consecutive keys that quarantines
     rule_lag: timedelta | None = None  # a spec-declared lag: basis rule_inferred, never market evidence
+    # The dataset whose rights govern this series when one published file (a shared receipt) serves
+    # several datasets. None (S1a, and every single-dataset source): the receipt's source_id is the
+    # rights subject, exactly as before. When set, source_id names the published file.
+    dataset_id: str | None = None
+
+    @property
+    def rights_id(self) -> str:
+        return self.dataset_id or self.source_id
