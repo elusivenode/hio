@@ -38,7 +38,7 @@ ROW_1 = (
 ROW_2 = (
     f"| REVIEW-X-2 | `elusivenode/hio` | `{A}` | `{C}` | Review: old scope. "
     "Review branch `review/REVIEW-X-2-codex`. Reviewer: codex | OD-0002 | "
-    "**not received; superseded** by X-3 |"
+    "**superseded** by X-3 |"
 )
 README = f"""# HIO review index
 
@@ -136,8 +136,15 @@ def test_od_link_when_the_record_exists(readme):
     (owner / "OD-0099-something.md").write_text("x")
     row = assign.build_row(
         assign.argparse.Namespace(
-            review_id="R", repo="r", base=A, head=D, scope=["s"], branch="b",
-            reviewer="codex", kind="verify", od="OD-0099",
+            review_id="R",
+            repo="r",
+            base=A,
+            head=D,
+            scope=["s"],
+            branch="b",
+            reviewer="codex",
+            kind="verify",
+            od="OD-0099",
         ),
         owner,
     )
@@ -213,10 +220,25 @@ def test_cli_same_target_and_scope_exits_nonzero_and_leaves_readme(readme, tmp_p
     text = with_active_row(readme)
     proc = subprocess.run(
         [
-            sys.executable, str(TOOL), "--review-id", "REVIEW-N-9", "--repo", "elusivenode/hio",
-            "--base", A, "--head", E, "--scope", "active scope", "--readme", str(readme), "--apply",
+            sys.executable,
+            str(TOOL),
+            "--review-id",
+            "REVIEW-N-9",
+            "--repo",
+            "elusivenode/hio",
+            "--base",
+            A,
+            "--head",
+            E,
+            "--scope",
+            "active scope",
+            "--readme",
+            str(readme),
+            "--apply",
         ],
-        capture_output=True, text=True, cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
     )
     assert proc.returncode != 0
     assert "REFUSED" in proc.stderr
@@ -225,6 +247,45 @@ def test_cli_same_target_and_scope_exits_nonzero_and_leaves_readme(readme, tmp_p
 
 @pytest.mark.parametrize("status", ["**received** at `abc`", "withdrawn", "superseded by X-5"])
 def test_inactive_assignment_does_not_block_its_head(readme, status):
+    with_active_row(readme, status=status)
+    assert run(readme, head=E, scope=("anything",)) == 0
+
+
+@pytest.mark.parametrize(
+    "status",
+    ["assigned; not received", "**assigned** (not received)", "not received", "assigned; superseded by X-5"],
+)
+def test_cli_status_with_inactive_word_but_active_leading_token_still_blocks(readme, tmp_path, status):
+    text = with_active_row(readme, status=status)
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(TOOL),
+            "--review-id",
+            "REVIEW-N-9",
+            "--repo",
+            "elusivenode/hio",
+            "--base",
+            A,
+            "--head",
+            E,
+            "--scope",
+            "active scope",
+            "--readme",
+            str(readme),
+            "--apply",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+    assert proc.returncode != 0
+    assert "second assignment for the same target" in proc.stderr
+    assert readme.read_text() == text
+
+
+@pytest.mark.parametrize("status", ["received; reviewed", "Withdrawn (owner)", "**superseded**"])
+def test_leading_inactive_token_with_suffix_does_not_block(readme, status):
     with_active_row(readme, status=status)
     assert run(readme, head=E, scope=("anything",)) == 0
 
@@ -257,9 +318,7 @@ def test_pipe_in_scope_is_refused(readme, capsys):
 
 
 def git(root, *args):
-    return subprocess.run(
-        ["git", *args], cwd=root, capture_output=True, text=True, check=True
-    ).stdout.strip()
+    return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=True).stdout.strip()
 
 
 def make_repo(root):

@@ -8,7 +8,7 @@ the row: the tool transcribes an assignment, it does not make one.
 It refuses a second assignment for the same target (step 1, "conflicting channels"):
   - the review id is already assigned or recorded (index tables or reviews/records/);
   - another active assignment exists for the same repository and head, whatever its scope or id
-    (active: the status cell does not mark it received, withdrawn or superseded);
+    (inactive only if the status cell's leading state token is received, withdrawn or superseded);
   - a SHA is not 40 lowercase hex characters;
   - inside a repository holding both commits, the head is not a descendant of the base.
 
@@ -35,7 +35,14 @@ HEADING = "## Assigned reviews"
 RECORDED_HEADING = "## Reviewed revisions and review records"
 SCOPE_END = ". Review branch `"
 INITIAL_STATUS = "assigned"
-INACTIVE = re.compile(r"received|withdrawn|superseded", re.IGNORECASE)
+INACTIVE_STATES = {"received", "withdrawn", "superseded"}
+STATE_TOKEN = re.compile(r"[^;(\s]*")
+
+
+def is_inactive(status_cell: str) -> bool:
+    """True only if the leading state token (before any ';' or '(') is a terminal state."""
+    text = status_cell.replace("`", "").replace("*", "").strip()
+    return STATE_TOKEN.match(text).group(0).lower() in INACTIVE_STATES
 
 
 class Refusal(Exception):
@@ -154,12 +161,7 @@ def check_values(a: argparse.Namespace) -> None:
 
 
 def commit_exists(sha: str) -> bool:
-    return (
-        subprocess.run(
-            ["git", "cat-file", "-e", f"{sha}^{{commit}}"], capture_output=True
-        ).returncode
-        == 0
-    )
+    return subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"], capture_output=True).returncode == 0
 
 
 def check_ancestry(base: str, head: str) -> str | None:
@@ -196,7 +198,7 @@ def check_conflicts(a: argparse.Namespace, lines: list[str], readme: Path) -> No
         row = cells(lines[i])
         if len(row) < 7 or plain(row[3]) != a.head or plain(row[1]) != a.repo.strip():
             continue
-        if INACTIVE.search(row[6]):
+        if is_inactive(row[6]):
             continue
         raise Refusal(
             f"second assignment for the same target (operating model §6.2 step 1): "
