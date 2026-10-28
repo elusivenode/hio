@@ -80,3 +80,6 @@ related: {adrs: [HIO-ADR-0008], tasks: [], findings: [F-REVIEW-2026-10-28-h6-1-1
 - Its verification needs a new owner assignment.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, commit id corrected.** The completing import commit is **`4a02564`**, not `5fdc0cd` as written above
+   (merge `558f444` is right). Claude wrote the id before the commit existed.
