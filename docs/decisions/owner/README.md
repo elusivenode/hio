@@ -107,6 +107,7 @@ are in operating model §1.1; the template is
 | [OD-0090](OD-0090-fable-analysis.md) | authorise_work | **Fable for analysis**: Claude may engage Fable (subagent) on challenging questions or decisions it has reservations about; read-only advice, reported to the owner; not an independent review | — | recorded |
 | [OD-0091](OD-0091-approve-harness-0.9a.md) | approve | **harness-0.9a approved**: Phase A Appendix A with seed `MAP.md` and `knowledge/findings.md` at `2df83b4`; applied verbatim to `main` | `docs/decisions/harness-0.9-proposal.md@2df83b4` | recorded |
 | [OD-0092](OD-0092-distil-and-phase-b.md) | authorise_work | **First distil** (prepared for owner acceptance), **architect-manifest fix drafted**, **Phase B H6 then H11** implementation (activation needs Codex review and approval) | `knowledge/findings.md`; Phase B branches | recorded |
+| [OD-0093](OD-0093-accept-distil-1-and-manifest-v0.2.md) | approve | **Distil 1 accepted** (46 Settled findings, rank 5, at `8393552`); **architect context manifest v0.2 approved** (`1ebcffe`: MAP and findings from its own checkout); push authorised | `knowledge/findings.md`; `docs/agents/solution-architect/context-manifest.yaml` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
