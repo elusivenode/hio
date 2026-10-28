@@ -51,3 +51,31 @@ Two yeses, both to take effect after the OD-0087 runs finish:
 - anything in the repository's harness.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, done after the OD-0087 runs.**
+   - **Results page:** https://claude.ai/artifact/QpVsm3fXGGYPKpWaAtEApV (private).
+   - **hiomux:** additions only, with no existing line changed (backup `notes/hiomux.pre-reading.bak`):
+     - `hiomux feed architect|workers`: a formatted, word-wrapped feed per Warp tab, outside tmux;
+     - `hiomux page`;
+     - `render_architect_page`, called after every `sa` call, writes `~/.hio-runs/architect.html`. It is
+       self-contained, has no network dependency and reloads every 15 s, keeping scroll position and open
+       sections.
+   - **Launch configuration `hio-workers`:** two full-width tabs, `architect` and `workers & codex`; the
+     `architect` tab also opens the page.
+   - **PROTOCOL.md:** the view paragraph is rewritten to match.
+   - **orch-prompt:** the view check is now `pgrep -f "hiomux feed architect"`, and the hash check points to
+     this record.
+   - **Tests:**
+     - the feed rendered at 72 columns with word wrap;
+     - the page rendered all consultations;
+     - both tabs launched and both feed processes are running;
+     - the old split view was detached;
+     - `hiomux sa probe` ALL PASS after the change.
+   - **New hashes (supersede OD-0085 and its correction 1):**
+
+     | File | sha256 |
+     |---|---|
+     | `~/.hio-runs/bin/hiomux` | `4e1b31336e00c405c92df2742a3731b9e5b00e4db9c861bc3757c792588bbf58` |
+     | `~/.hio-runs/PROTOCOL.md` | `881e4b4e75da92e4d411e4d4c399cb2bc40a806a3911474ed72a128c2fbb6179` |
+     | `~/.warp/launch_configurations/hio-workers.yaml` | `4eddadead695d41ca9d2da3d5999ffeb19ab134803182d30f47fecaade18fa5c` |
+     | `~/.hio-runs/orch-prompt.md` | `77f701bb97161aabc50b0684446f4b63daccb1166875335dbc93875891bdf85b` |
