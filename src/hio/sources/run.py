@@ -13,14 +13,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from hio.contracts.canonical import canonical_json, sha256_hex
+from hio.contracts.canonical import canonical_json, decimal_str, sha256_hex
 from hio.contracts.layout import capture_record_key, link_record_key, receipt_key
 from hio.contracts.observation import Receipt
 from hio.contracts.rights import Operation, RightsGate
 from hio.contracts.temporal import require_utc_instant
-from hio.marketdata.capture import latest_capture
-from hio.marketdata.runrecord import Execution, RunRecord, envelope_headers
-from hio.sources.datasets import MalformedPayload, Publication
+from hio.marketdata.capture import latest_capture, receipt_bytes
+from hio.marketdata.runrecord import Execution, RunRecord, envelope_headers, value_digest
+from hio.sources.datasets import MalformedPayload, Parsed, Publication
 from hio.sources.transport import HttpResponse, Transport, TransportError
 from hio.storage.objectstore import LocalObjectStore
 from hio.storage.staging import staged_writes
@@ -91,7 +91,7 @@ def run_capture(
     if response.status != 200:
         return failed("http_status", response, completed_at)
     try:
-        spec.parse(response.body)
+        keys = checked_keys(spec.parse(response.body))
     except MalformedPayload as exc:
         return failed(exc.error_class, response, completed_at)
 
@@ -100,6 +100,9 @@ def run_capture(
     previous = latest_capture(store, spec.publication_id)
     if previous is not None and completed_at <= previous.captured_at:
         return failed("clock_order", response, completed_at)
+    held = checked_keys(spec.parse(receipt_bytes(store, previous))) if previous is not None else []
+    if missing_keys(spec, keys, held):
+        return failed("key_missing", response, completed_at)
 
     def record_for(outcome: str) -> RunRecord:
         return RunRecord(
@@ -117,6 +120,7 @@ def run_capture(
             slot=slot,
             slot_due_at=slot_due_at,
             datasets=subjects,
+            keys_checked=keys,
         )
 
     if previous is not None and previous.receipt_id == rid:
@@ -144,3 +148,32 @@ def run_capture(
     staged.add(record.key, record.canonical())
     staged.commit()
     return RunResult(record, receipt, True)
+
+
+def checked_keys(parsed: Parsed) -> list[tuple[str, str, str]]:
+    """Every key the run parsed, with the digest of its value (HIO-ADR-0012 §4.3.3;
+    F-REVIEW-2026-10-25-t0009-6). A rate or index is digested as its canonical decimal text, an
+    expert-judgement flag as its fallback type under the key `rba.expert_judgement.fallback_type`."""
+    keys = {(r.series_id, r.valid_time.isoformat(), value_digest(decimal_str(r.value))) for r in parsed.rows}
+    keys |= {
+        ("rba.expert_judgement.fallback_type", f.valid_time.isoformat(), value_digest(f.kind))
+        for f in parsed.flags
+    }
+    return sorted(keys)
+
+
+def missing_keys(
+    spec: Publication, keys: list[tuple[str, str, str]], held: list[tuple[str, str, str]]
+) -> list[tuple[str, str]]:
+    """Keys a response should hold but does not: a series the publication serves with no key at all,
+    or a key of the held capture that lies inside the new response's span for its series (on or after
+    its first date) and is absent. A key that rolled off the start of a publisher's window is not
+    missing; a changed value is a revision, recorded by the vintages, not a missing key."""
+    present: dict[str, set[str]] = {}
+    for sid, day, _ in keys:
+        present.setdefault(sid, set()).add(day)
+    missing = [(sid, "*") for d in spec.datasets for sid in d.series if sid not in present]
+    for sid, day, _ in held:
+        if sid in present and day >= min(present[sid]) and day not in present[sid]:
+            missing.append((sid, day))
+    return missing

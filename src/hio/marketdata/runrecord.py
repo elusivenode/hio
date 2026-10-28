@@ -26,7 +26,7 @@ from hio.contracts.temporal import require_utc_instant
 from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
 OUTCOMES = ("verified_changed", "verified_unchanged", "failed")
-ERROR_CLASSES = ("network", "http_status", "parse", "schema", "clock_order", "store")
+ERROR_CLASSES = ("network", "http_status", "parse", "schema", "key_missing", "clock_order", "store")
 WITHHELD = "[withheld]"
 _WITHHELD_HEADERS = {"set-cookie", "authorization", "proxy-authenticate", "www-authenticate"}
 
@@ -85,9 +85,20 @@ class RunRecord:
     slot: str | None = None  # the intended slot, e.g. "first" or "final"
     slot_due_at: datetime | None = None
     datasets: Sequence[str] = ()  # the datasets this publication serves (rights subjects), if shared
+    # HIO-ADR-0012 §4.3.3, F-REVIEW-2026-10-25-t0009-6: for a verified outcome, every key the run
+    # parsed from the body, each with the digest of its value, as (series_id, valid_time, digest)
+    # sorted. None only for a failed run. Replayable by C3, which is not implemented here (OD-0063).
+    keys_checked: Sequence[Sequence[str]] | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "datasets", tuple(self.datasets))
+        if self.keys_checked is not None:
+            keys = tuple(tuple(k) for k in self.keys_checked)
+            if any(len(k) != 3 or not all(isinstance(x, str) for x in k) for k in keys):
+                raise ValueError("keys_checked entries are (series_id, valid_time, digest) strings")
+            if list(keys) != sorted(set(keys)):
+                raise ValueError("keys_checked must be sorted and free of duplicates")
+            object.__setattr__(self, "keys_checked", keys)
         require_utc_instant("attempted_at", self.attempted_at)
         require_utc_instant("completed_at", self.completed_at)
         if self.completed_at < self.attempted_at:
@@ -99,6 +110,10 @@ class RunRecord:
                 raise ValueError("a failed run needs an error class")
             if self.receipt_id is not None:
                 raise ValueError("a failed run has no receipt")
+            if self.keys_checked is not None:
+                raise ValueError("a failed run claims no checked keys")
+        elif self.keys_checked is None:
+            raise ValueError("a verified run records the keys it checked (HIO-ADR-0012 §4.3.3)")
         elif self.receipt_id is None or self.response_sha256 is None:
             raise ValueError("a successful run names its receipt and body hash")
         elif self.receipt_id != self.response_sha256:
@@ -120,6 +135,7 @@ class RunRecord:
             "slot": self.slot,
             "slot_due_at": self.slot_due_at,
             "datasets": list(self.datasets),
+            "keys_checked": None if self.keys_checked is None else [list(k) for k in self.keys_checked],
         }
 
     def canonical(self) -> bytes:
@@ -164,4 +180,11 @@ def _decode(data: bytes) -> RunRecord:
         slot=r["slot"],
         slot_due_at=parse_instant(r["slot_due_at"]) if r["slot_due_at"] else None,
         datasets=tuple(r["datasets"]),
+        keys_checked=r["keys_checked"],
     )
+
+
+def value_digest(text: str) -> str:
+    """The digest of one checked value, over its canonical text (decimal_str for a number), so a
+    value parsed as '100.1200' and the stored vintage '100.12' give the same digest (C3)."""
+    return "sha256:" + sha256_hex(text.encode("utf-8"))
