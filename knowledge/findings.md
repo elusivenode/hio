@@ -1,7 +1,7 @@
 ---
 id: HIO-FINDINGS-INDEX
 title: Findings index (findings, dead ends and settled assessments, one line each)
-status: proposed   # seed for harness-0.9 H2 (OD-0068, OD-0070), revision 3 (Appendix A2); no authority. Every line cites its source; the source wins
+status: proposed   # seed for harness-0.9 H2 (OD-0068, OD-0070, OD-0080), revision 4 (Appendix A2); no authority. Every line cites its source; the source wins
 owner: owner (approves Settled lines at distil); any agent appends to the Inbox
 last_reviewed: 2026-10-28
 ---
@@ -36,13 +36,13 @@ _(None yet. Every line below is an Inbox candidate for the first distil.)_
 
 ### Releases and specs
 - [releases] `spec_ref` is `factor_id@identity.version`. Editing an S1a spec either bumps its version (changing S1a release ids, whose outputs OD-0067 requires preserved) or silently changes a spec at an unchanged version. S1b releases need their own accurately versioned specs. Source: `src/hio/jobs/s1a.py:192-194`; `F-REVIEW-2026-10-25-t0009-4`; OD-0067.
-- [releases] Count decimal places from the canonical string, not from a parsed `Decimal`: a parsed-then-reloaded value can lose trailing zeros. Source: `src/hio/jobs/s1b1.py:140` `_places` (branch `impl/t0009-shared-receipt-and-storage`, not on `main`).
-- [releases] One shared RBA F1 receipt serves `rba.cash_rate` and `rba.cash_rate_tri`. The receipt belongs to publication `rba.f1`, and each series carries its own `dataset_id`. A shared receipt with no link must not fall back to its publication id as the rights subject. Source: OD-0065; `F-REVIEW-2026-10-25-t0009-1`. Applies to: T-0009 at `ce0c3b5` (F-1 open).
+- [releases] Count decimal places from the canonical string, not from a parsed `Decimal`: a parsed-then-reloaded value can lose trailing zeros. Source: `src/hio/jobs/s1b1.py` `_places` (on `main` since `7eba3f9`, OD-0079).
+- [releases] One shared RBA F1 receipt serves `rba.cash_rate` and `rba.cash_rate_tri`. The receipt belongs to publication `rba.f1`, and each series carries its own `dataset_id`. A shared receipt with no link must not fall back to its publication id as the rights subject. Source: OD-0065; `F-REVIEW-2026-10-25-t0009-1`. Applies to: T-0009 at `ce0c3b5`. superseded by: the fixed publication mapping in `hio.contracts.publications` (F-1 `verified_closed` at `76539b5`, OD-0075).
 
 ### Rights and sources
-- [rights] Every source permission is `unverified`; the genuine rights register refuses every operation. A design direction such as OD-0064 (F1 file retention) is not a rights verification. Source: `registers/sources.yaml`; OD-0013; OD-0064. Applies to: all sources as of `16ea0c6`.
+- [rights] Every source permission is `unverified`; the genuine rights register refuses every operation. A design direction such as OD-0064 (F1 file retention) is not a rights verification. Source: `registers/sources.yaml`; OD-0013; OD-0064. Applies to: all sources as of `16ea0c6`. superseded by: OD-0076 (D7 `rba_calendar_pages` is `owner_verified` for retain-and-cite only; every other source is still `unverified`).
 - [rights] A caller-supplied link record is not trustworthy evidence of which dataset a series belongs to: a substituted link authorised an unrelated dataset. Pin the series-to-dataset mapping in code. Source: `F-REVIEW-2026-10-25-t0009-2`.
-- [sources] The US observation calendar can be derived from verified NY Fed publication dates, which avoids a SIFMA dependency. Source: `registers/tasks/T-0009-s1b1-cash-capture-and-research.md` §2 item 7 (a design intent, not yet verified).
+- [sources] The US observation calendar can be derived from verified NY Fed publication dates, which avoids a SIFMA dependency. Source: `registers/tasks/T-0009-s1b1-cash-capture-and-research.md` §2 item 7; implemented as `calendar_from_observations` in `src/hio/reference/calendar.py` (accepted with T-0009, OD-0079; on synthetic data only).
 
 ### Review practice (useful to Codex and Claude)
 - [review] Two probes found the T-0009 high findings: allow the publication id but deny the true dataset; substitute a single-owner link with the true dataset denied. Reuse both as standing adversarial tests for any change to the rights subject. Source: `reviews/records/REVIEW-2026-10-25-t0009-1.md` F-1, F-2.
@@ -54,3 +54,37 @@ _(None yet. Every line below is an Inbox candidate for the first distil.)_
 - [harness] Authority records left on an unmerged implementation branch make `main` contradict itself: at `eb19ef7`, `STATUS.md` did not mention T-0009 while OD-0067 authorised its remediation. Resolved for T-0009 by OD-0069 (merge `16ea0c6`); the failure mode remains possible (harness-0.9 H7). Source: `STATUS.md` and OD-0067 at `eb19ef7`; OD-0069.
 - [harness] The HIO-ADR-0012 findings read three ways on `main` at `eb19ef7`: "3 findings open" (`STATUS.md` l.39), "technically verified closed" (`STATUS.md` l.47; OD-0054), and `remediation_claimed` for -1 and -3 (`reviews/README.md`), because `VERIFY-2026-10-25-adr0012-1` was disposed unreceived. Read OD-0054 before relying on any of them. Source: OD-0053; OD-0054; OD-0057. Applies to: `main` at `16ea0c6` (`STATUS.md` now states the discrepancy).
 - [harness] A same-vendor sub-agent standing in for Codex is an unverified dry run, and never satisfies an independent-review gate. Sub-agents return text and cannot write report files; the receiver transcribes. Source: operating model §10; `reviews/reports/REPORT-2026-10-28-harness-0.9-fable-dryrun-1.md`.
+
+### From the 2026-10-28 T-0009 remediation, verification and acceptance session (handoff `handoffs/2026-10-28-t0009-acceptance-and-knowledge.md`)
+
+#### Shell and git mechanics
+- [repo] [rediscovery] The zsh `:r` trap (above) recurred three more times in one session, including `${T}:reviews/...` written as `$T:reviews/...`. Always brace and quote: `git show "${T}:${path}"`. Source: reproducible; session 2026-10-28.
+- [repo] [rediscovery] The `| tail` exit-status trap (above) recurred: `check_review_assignment.py … | tail` reported exit 0 on a FAIL. Never pipe a gate. Source: reproducible; session 2026-10-28 (OD-0075 notes the rerun).
+- [repo] `git merge -F -` does not read a message from stdin (`git commit -F -` does). Write the message to a file. Source: reproducible (git 2.x, 2026-10-28).
+- [repo] In a fresh scratch clone, `tools/check_review_assignment.py` fails "review branch … does not resolve to a commit" until a local branch exists: `git branch review/<id>-codex <T>` first. Source: OD-0075 table, 5.3.
+- [repo] A YAML flow mapping cannot hold a double-quoted value containing double quotes: write `conditional(attribution 'Source: …')` with single quotes inside. Source: reproducible; `registers/sources.yaml` entry `rba_calendar_pages`.
+- [repo] When an author branch carries authority records that were imported to `main` byte-identically, the PR's merge conflicts in the OD index (`main`'s rows are a superset). Integrate by merging the exact head into `main`, keeping `main`'s index; GitHub marks the PR merged once its head is reachable. Never merge `main` into a verified head. Source: OD-0079 (merge `7eba3f9`).
+- [repo] The owner's global git config rewrites `https://github.com/` to SSH (`url.git@github.com:.insteadOf`). A sandboxed process with SSH blocked needs `GIT_CONFIG_GLOBAL=/dev/null` to read public refs over HTTPS. Source: OD-0077 tests.
+
+#### External data and rights
+- [rights] D7 (RBA RITS and holiday pages) is the first `owner_verified` source: manual retrieval only, retain and cite on conditions. The pattern for a "facts, no judgement" source: one manual read, commit a dated, attributed extract with the page sha256, never the page. Source: OD-0076; `registers/sources.yaml` `rba_calendar_pages`; `src/hio/reference/calendars/`.
+- [data] The RBA "Public & Bank Holidays" page lists one year only (2026 on 2026-10-28). RITS closes on named holidays "where they are observed in NSW and Victoria", so in 2026 RITS is open on three NSW-only weekdays (27 April, 3 August, 5 October). A 2027 calendar needs a new manual read (register `review_due: 2027-01-31`). Source: `src/hio/reference/calendars/*-2026.yaml`; VERIFY-2026-10-28-t0009-1-3.
+- [data] RITS Advice 02/2026 (about the 27 April 2026 NSW Additional Day) has never been read; the calendar's RITS-open reading rests on the two pages only, and Codex confirmed it from them. Source: `RESPONSE-REVIEW-2026-10-25-t0009-1-2.md`; VERIFY-2026-10-28-t0009-1-3.
+- [tools] WebFetch returns a small model's summary, not the page: unusable for exact facts (dates, quotations, hashes). For a source fact, fetch the bytes (`curl`), hash them, and parse locally. Source: session 2026-10-28 (OD-0076 read).
+
+#### Review and receipt practice
+- [review] An offline reviewer cannot verify external facts: a recorded page hash authenticates nothing without the bytes. Either retain the bytes in the repository or give the reviewer network; HIO chose network (OD-0077). With network, the reviewer's own fetch matched the author's recorded hashes, which made the data check independent. Source: VERIFY-2026-10-28-t0009-1-2 (limit) and -3; OD-0077.
+- [review] Codex may write its record's `assignment` as `<path> on main at <sha>`; the checker compares the exact string and fails. Either state the exact expected string in the assignment, or treat a revision-pinned citation as an owner decision (OD-0078). Source: OD-0078.
+- [review] Under OD-0061, every receipt in this session needed an owner go-ahead, for two reasons: each had a Class S row, and each report came through hiomux's run files, which OD-0061 does not list. Source: OD-0075, OD-0078. A candidate standing decision for the owner.
+- [review] Cycle cost, measured: one Codex verification at `gpt-6-sol`/`high` took about 5 to 6 minutes; push, verify, remediate, re-verify and accept T-0009 took one session. The records dominate the effort: each receipt costs a tag, an import, a merge, an OD, a transcript, index rows and STATUS. Source: OD-0074 to OD-0079; hiomux run `20261028T043057Z-e4d8`.
+
+#### hiomux (outside the repository; `~/.hio-runs`)
+- [hiomux] macOS refuses a sandbox inside a non-trivial sandbox (`sandbox_apply: Operation not permitted`): a networked Codex reviewer runs under hiomux's profile with Codex's own sandbox off (`danger-full-access`). Source: OD-0077 tests.
+- [hiomux] Denying the macOS security mach services breaks Codex's own TLS ("workspace routing discovery failed"). Denying file reads of `~/Library/Keychains` blocks keychain lookups just as well. Source: OD-0077 tests.
+- [hiomux] Claude workers can look up the `gh` token in the login keychain (their profile does not block it, because Claude's own login lives there). Accepted residual. Source: OD-0077 correction 1.
+- [hiomux] hiomux changed between OD-0073 (sha256 `752d2cec…`) and this session (`63c997b3…`, modified 14:40 local) with no record. Nothing checks an out-of-repository tool against its recorded hash at session start. Source: OD-0077 finding 1 (open).
+- [hiomux] Codex task results carry token usage but `cost_usd: null`, so the run budget does not count Codex. Source: `~/.hio-runs/20261028T043057Z-e4d8/tasks/C1..C3/attempt-1/result.json`.
+
+#### Owner interaction
+- [process] The owner's answers in a question dialog are recorded verbatim in `docs/history/` together with the question text, because the selection alone ("Yes, push and receive (Recommended)") is meaningless without it. Source: the history files behind OD-0074 to OD-0079.
+- [process] The owner wants a pending decision stated as one precise yes/no question naming exactly what the yes authorises. A table row reading "judgement: none" next to an unasked question cost a round trip. Source: `docs/history/2026-10-28-owner-d7-approval.md` messages 5 and 6.

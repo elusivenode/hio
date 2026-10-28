@@ -1,7 +1,7 @@
 ---
 id: HIO-MAP
 title: HIO map (purpose, architecture, threads, settled facts, open questions)
-status: proposed   # seed for harness-0.9 H1 (OD-0068, OD-0070), revision 3 (Appendix A1); no effect and no authority until the owner approves it
+status: proposed   # seed for harness-0.9 H1 (OD-0068, OD-0070, OD-0080), revision 4 (Appendix A1); no effect and no authority until the owner approves it
 owner: owner (approves changes); drafted by claude/implementation-agent
 last_reviewed: 2026-10-28
 max_length: 110 lines
@@ -43,20 +43,21 @@ Two research pillars stay visible in every phase (charter §2):
 | | Current | Target (Year 1) | Undecided |
 |---|---|---|---|
 | Shape | one repository, modular monolith, import rules in CI ([architecture](docs/architecture.md) §1) | same | services only on a measured trigger (architecture §5) |
-| Storage | local filesystem store; no cloud storage (STATUS one-line state) | object store as system of record for receipts, releases, artefacts and catalogue; DuckDB index rebuilt from manifests (architecture §2; HIO-ADR-0009) | provider subscription named `hnf-prod` ([OD-0066](docs/decisions/owner/OD-0066-assign-t0009-review-and-name-subscription.md)); immutability period, replication and second copy (branch `impl/t0009-shared-receipt-and-storage`, `infra/tofu/README.md`, not on `main`) |
-| Data | synthetic fixtures only (OD-0019; `tools/check_repo.py` `check_public`) | RBA and NY Fed official data, captured daily ([roadmap](docs/roadmap.md) §1) | every source right unverified (`registers/sources.yaml`; OD-0013) |
+| Storage | local filesystem store; no cloud storage (STATUS one-line state) | object store as system of record for receipts, releases, artefacts and catalogue; DuckDB index rebuilt from manifests (architecture §2; HIO-ADR-0009) | provider subscription named `hnf-prod` ([OD-0066](docs/decisions/owner/OD-0066-assign-t0009-review-and-name-subscription.md)); immutability period, replication and second copy (`infra/tofu/README.md`; authored, never applied, OD-0063, OD-0079) |
+| Data | synthetic fixtures (OD-0019; `tools/check_repo.py` `check_public`), plus the dated 2026 RITS and NSW reference calendars from the RBA (`src/hio/reference/calendars/`; D7, OD-0076) | RBA and NY Fed official data, captured daily ([roadmap](docs/roadmap.md) §1) | every source right unverified except D7, retain-and-cite only (`registers/sources.yaml`; OD-0013; OD-0076) |
 | Consumers | none | contract-only clients; the SMSF reads pinned artefacts (HIO-ADR-0002) | consumer contract A05 not started (roadmap §1) |
 
 ## Threads (state lives in `STATUS.md`)
 
 | Thread | Serves | Detail |
 |---|---|---|
-| S1b-1 cash capture (T-0009) | starting the PIT capture clock | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md); OD-0062 to OD-0065, [OD-0067](docs/decisions/owner/OD-0067-receive-t0009-review-and-authorise-remediation.md); `reviews/records/REVIEW-2026-10-25-t0009-1.md`; code on branch `impl/t0009-shared-receipt-and-storage` (not on `main`) |
+| S1b-1 cash capture (T-0009) | starting the PIT capture clock | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (S1b-1.0 accepted, [OD-0079](docs/decisions/owner/OD-0079-accept-t0009.md)); OD-0062 to OD-0067, OD-0074 to OD-0078; `reviews/records/REVIEW-2026-10-25-t0009-1.md` and its `VERIFY-2026-10-28-*` records; next: finality staging (card §7) and Authorisation B (card §8) |
 | T-0002 source rights | every live operation | `registers/tasks/T-0002-verify-s1-source-rights.md`; `docs/research/T-0002-owner-verification-matrix.md` |
 | T-0003 equity TR source | S2 and gate G3 | `registers/tasks/T-0003-equity-total-return-source.md` |
 | Futures data procurement | S4 and gate G4 | roadmap §1 (task not yet raised) |
 | Research memory | both pillars | `registers/hypotheses.yaml`, `registers/experiments.yaml` |
 | Harness-0.9 | long-term context for Claude and Codex | `docs/decisions/harness-0.9-proposal.md` |
+| hiomux orchestration pilot | parallel workers and Codex runs from one orchestrator | outside the repository (`~/.hio-runs/PROTOCOL.md`); [OD-0072](docs/decisions/owner/OD-0072-hiomux-orchestration-pilot.md), OD-0073, [OD-0077](docs/decisions/owner/OD-0077-codex-reviewer-network.md) |
 
 ## Settled facts worth knowing before you start
 
@@ -75,9 +76,9 @@ Two research pillars stay visible in every phase (charter §2):
 
 | Question | Blocks | Source |
 |---|---|---|
-| Source rights per dataset and operation (RBA, NY Fed) | all live capture | T-0002; OD-0013 |
+| Source rights per dataset and operation (RBA, NY Fed; D7 done) | all live capture | T-0002; OD-0013; OD-0076 |
 | Network and credential controls (successor to OD-0038) | provisioning, live runs | OD-0038 |
-| Storage immutability, replication, second copy, network default | provisioning | branch `impl/t0009-shared-receipt-and-storage`, `infra/tofu/README.md` (not on `main`) |
+| Storage immutability, replication, second copy, network default | provisioning | `infra/tofu/README.md` |
 | Q-013: capture-time knowability for unevidenced publication instants | `as_known_by_market` claims | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 | Q-003, Q-004, Q-005b, Q-006, Q-010 | research use, S1b design, consumers | `open-decisions.md` |
 | Q-014: harness-0.9 | how agents keep context | `open-decisions.md`; `docs/decisions/harness-0.9-proposal.md` |

@@ -1,11 +1,11 @@
 ---
 id: HIO-HARNESS-0.9-PROPOSAL
-title: "Decision package: harness-0.9, a knowledge layer and lighter mechanics for a long-lived two-agent project, proposed, revision 3"
+title: "Decision package: harness-0.9, a knowledge layer and lighter mechanics for a long-lived two-agent project, proposed, revision 4"
 status: proposed   # no effect until the owner approves an exact revision (operating model §6; AGENTS.md rule 3)
 owner: owner (decides); drafted by claude/implementation-agent
 created_at: 2026-10-28
-drafted_under: [OD-0068, OD-0070]
-revision: 3   # rev 1 = 5f55cc7 (dry-run reviewed); rev 2 = f5ce1b8beaaaed59fbcbccf586892ac9ae1cf261 (solution-architect assessed); rev 3 drafts the owner's adopted direction (OD-0070)
+drafted_under: [OD-0068, OD-0070, OD-0080]
+revision: 4   # rev 1 = 5f55cc7 (dry-run reviewed); rev 2 = f5ce1b8beaaaed59fbcbccf586892ac9ae1cf261 (solution-architect assessed); rev 3 = 50e7229 (the owner's adopted direction, OD-0070); rev 4 refreshes the seeds and adds the 2026-10-28 session evidence (OD-0080, §14)
 amends: "Phase A: AGENTS.md, operating model §1, §1.1, §2.1, §3, §4, §8, §12, templates/handoff.md, the hio-session skill, README.md; adds MAP.md and knowledge/findings.md. Phase B (later, separately approved): operating model §2.2, §6.2, tools/, CI"
 ---
 
@@ -462,8 +462,8 @@ Only genuine, unresolved choices. Direction is settled by OD-0070.
 1. **Approve Phase A**: Appendix A of this package at an exact commit, which applies as
    `harness-0.9a`. The approval covers the `MAP.md` text and the mechanical-correction rule.
    Findings Inbox lines need no approval: they are claims.
-2. **When to apply Phase A**: recommended during Codex's verification of T-0009 (§8).
-3. **Phase B work authorisation**: one instruction, after T-0009 remediation is submitted.
+2. **When to apply Phase A**: now. T-0009 was accepted (OD-0079), so Phase A competes with nothing (§8, §14).
+3. **Phase B work authorisation**: one instruction. Its gate (T-0009 remediation submitted) is met; §14 adds candidate items.
 4. **H7 timing**: the default is fourth in Phase B; earlier is possible, but never above T-0009 and
    never a prerequisite for Phase A. Its approval follows Codex's adversarial review in any case.
 5. **Branch protection on `main`**: a GitHub settings change; the prerequisite for H8, and useful
@@ -493,6 +493,41 @@ Not decisions now: H5 (deferred by OD-0070), H10 and vector search (removed), th
 | Sequencing | decision 0 first | **T-0009 first; Phase A in the verification gap**; Phase B after submission | response §3.6; OD-0070 pt 10 |
 | Owner decisions | 0 to 7 | five, all genuine (§12) | OD-0070 deliverables |
 | Seed files | MAP and findings, rev 2 | `MAP.md` and findings updated for OD-0069 (records now on `main`); findings carry applicability | OD-0069; SA §5 |
+
+
+## 14. Revision 4: evidence from the 2026-10-28 session
+
+Drafted on the owner's instruction "distill learnings and context from this session. this is the long run
+context we need to develop. we need mechanisms to track it and allow agents to access it" (OD-0080). It
+changes no Phase A rule. Appendix A still names the seed files "at this revision", so approving this
+revision approves the refreshed seeds.
+
+### 14.1 What changed in the seeds
+
+- **`knowledge/findings.md`:** four seed lines marked `superseded by …` or updated, never deleted (F-1 fixed;
+  D7 verified; code now on `main`; the US calendar implemented). Twenty-two Inbox lines added from the session
+  that took T-0009 from submission to acceptance (OD-0074 to OD-0079) and gave the Codex reviewer network
+  (OD-0077). The index now holds 42 lines, past the 25-line housekeeping signal, so **a first distil is due**.
+- **`MAP.md`:** T-0009 accepted; the D7 calendars added as real data; the OpenTofu files are on `main`;
+  a hiomux thread row added.
+
+### 14.2 Gaps the session exposed that Phase A does not close
+
+| # | Gap | Evidence | Proposed home |
+|---|---|---|---|
+| G1 | **Codex cannot reach the findings.** The reviewer re-derived conventions that the Inbox already holds, such as the exact `assignment` string and confirming the head with `ls-remote` | OD-0078; VERIFY-2026-10-28-t0009-1-1 deviations | H11 (Phase B), unchanged in design. Evidence that it pays for itself |
+| G2 | **Operational knowledge lives outside the repository.** hiomux's protocol, tool, notes and run summaries are in `~/.hio-runs`; a fresh agent finds them only through Claude's auto-memory, which is not a record (`CLAUDE.md`) | OD-0072, OD-0073, OD-0077 | now: `MAP.md` thread row and `[hiomux]` findings (done); Phase B: bring hiomux and its protocol into the repository (OD-0073 already defers this to Phase B) |
+| G3 | **No integrity check for out-of-repository tools.** hiomux changed after OD-0073 recorded its hash, and nothing noticed until a later edit | OD-0077 finding 1 | Phase B (H6 family): `hiomux` prints its own sha256 at `up`, and the orchestrator compares it with the latest OD before delegating. One line in PROTOCOL until then |
+| G4 | **Distil has no owner moment.** The Inbox has grown with no scheduled distil | §14.1 | Phase A, unchanged; schedule the first distil when Phase A is applied |
+| G5 | **Every receipt needed an owner question.** Class S rows, and reports through hiomux, fall outside OD-0061 | OD-0075; OD-0078 | not a harness change: a candidate standing owner decision extending OD-0061 to hiomux `result.json` reports with `report_ok: true`. Class S transitions stay with the owner |
+
+### 14.3 What did not need a mechanism
+
+- **Context within the session** was held by the conversation.
+- **Context across sessions** was held by the handoff, STATUS and the OD chain.
+
+The cost was not lost information but **finding it**. Thirteen ODs on one day (OD-0068 to OD-0080), each read in full, are the
+reconstruction burden that Phase A (MAP and findings) and H4 (a handoff stream) target.
 
 ---
 
@@ -558,7 +593,7 @@ Unchanged: the Codex bullet, the reviewer ending bullet, and everything else.
 **A4.1 front matter.** `version: harness-0.9a`, and a changelog line, first in the list:
 
 ```
-  - "harness-0.9a (YYYY-MM-DD, APPROVED by OD-NNNN at <commit>; docs/decisions/harness-0.9-proposal.md revision 3, Appendix A): knowledge layer for non-reviewer agents. Adds MAP.md and knowledge/findings.md (navigation, precedence ranks 5 and 6), per-stream handoffs with Didn't work and For the index, current-state-only STATUS rules, §4.1 maintenance rules. Codex's bootstrap (§2.2) and the review protocol (§6.2) are unchanged. No tool, CI or hook changed"
+  - "harness-0.9a (YYYY-MM-DD, APPROVED by OD-NNNN at <commit>; docs/decisions/harness-0.9-proposal.md revision 4, Appendix A): knowledge layer for non-reviewer agents. Adds MAP.md and knowledge/findings.md (navigation, precedence ranks 5 and 6), per-stream handoffs with Didn't work and For the index, current-state-only STATUS rules, §4.1 maintenance rules. Codex's bootstrap (§2.2) and the review protocol (§6.2) are unchanged. No tool, CI or hook changed"
 ```
 
 **A4.2 §1 table.** Insert after the row beginning `| Mission, philosophy, trajectory |`:
