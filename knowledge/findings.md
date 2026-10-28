@@ -84,3 +84,13 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 _(Empty after distil 1. Append new candidate lines below this note.)_
 - [repo] [rediscovery] zsh does not word-split an unquoted variable: `F="a b c"; git checkout T -- $F` passes one path "a b c". Write each path out (or use an array), and run receipt chains under `set -e` so a failing check stops them; a FAIL from `check_repo` was ignored and a broken import pushed. Source: OD-0098.
 - [repo] CI's "Lint and format" step runs `ruff check .` **and** `ruff format --check .`; a worker contract or local check that runs only `ruff check` passes while CI fails (all H6 branches, 2026-10-28). Put CI's exact lint commands in every acceptance list. Source: `.github/workflows/ci.yml` (Lint and format); CI runs 40669141245, 40673974716.
+- [process] In Claude Code's Bash tool, `set -e` did not stop a `;` chain: gate every step with `|| exit 1`. Source: OD-0101 correction 1.
+- [repo] `check_repo`'s link scanner ignores code spans: quoting a Markdown link in an OD, even in backticks, fails the links check; fence it or avoid link syntax. Source: OD-0101 correction 1.
+- [review] A reviewer branch cut from an author branch lacks `main`'s newer index rows: its README patch may not apply, and it cannot write state rows. Receipt then needs option B handling. Source: OD-0098; OD-0101.
+- [review] Automated authority decisions from prose (word, token or shape matching) failed three adversarial rounds; remove the interpretation from automation instead of patching the parser. Source: OD-0100; VERIFY-2026-10-28-h6-1-1, -2.
+- [review] Prove a regression test catches a defect by running the new tests against the pre-fix tools in a worktree (with braced refs). Source: RESPONSE-REVIEW-2026-10-28-h6-1-1, -2.
+- [hiomux] Worker `result.json` summaries can be empty; read the transcript's `result` event. Source: hiomux run `20261028T081310Z-d55d`, H6R2, H6R3.
+- [hiomux] A per-lock pre-built uv cache with a copy-on-write clone per review gives offline `uv sync` plus tests in about 4 s. Source: OD-0095 correction 1.
+- [hiomux] A Codex reviewer needs network or a pre-built environment to run the pinned suite; without either it hunts for unrelated local interpreters. Source: OD-0094 correction 1.
+- [process] Each push question names the exact commit range, and nothing beyond it is pushed: two overreaches. Source: OD-0093 correction 1; OD-0099 correction 1.
+- [ops] The owner prefers to follow agents from the orchestrator session: relay Codex and worker messages with the Monitor tool. Source: session 2026-10-28.
