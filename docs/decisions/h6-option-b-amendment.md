@@ -43,8 +43,10 @@ New text:
    **Refuse and stop** on any of these:
    - a duplicate id: a first-column id appearing twice in one table, or a finding id appearing twice
      anywhere in the file;
-   - a state cell of `verified_closed`, `remediation_rejected`, `waived` or `accepted` in any added row.
-     A waiver or acceptance exists only as an owner OD, which the receiver may cite and never creates;
+   - an added **finding** row whose state cell is anything but `open`, or any added row whose status
+     cell claims `accepted`, `approved` or `waived`. A waiver or acceptance exists only as an owner OD,
+     which the receiver may cite and never creates. (A verification row's verdict cell may summarise
+     outcomes; it is navigation, checked against its record's front matter, and changes no finding's state);
    - any removed or changed line;
    - any other change.
 
