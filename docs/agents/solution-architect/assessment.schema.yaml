@@ -1,0 +1,28 @@
+# HIO solution-architect formal assessment schema, version 0.1 (proposed; OD-0082). Stored as YAML because the
+# repository check admits .json only as synthetic fixtures; hiomux converts it to JSON Schema for
+# `codex exec --output-schema`. Every property is required (strict structured output).
+type: object
+additionalProperties: false
+required: [assessment_id, repository, revision, question, evidence, uncertainties, assessment, recommendation, owner_decisions, next_actor, next_instruction, stop_conditions]
+properties:
+  assessment_id: {type: string}
+  repository: {type: string}
+  revision: {type: string, description: "the exact commit or package the assessment examined"}
+  question: {type: string}
+  evidence:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [claim, status, source]
+      properties:
+        claim: {type: string}
+        status: {type: string, enum: [verified, reported, owner_decided, judgement, unknown]}
+        source: {type: string, description: "path with commit or blob, OD id, or 'none'"}
+  uncertainties: {type: array, items: {type: string}}
+  assessment: {type: string, description: "problem, alternatives, trade-offs and failure analysis, proportionate to the decision"}
+  recommendation: {type: string}
+  owner_decisions: {type: array, items: {type: string, description: "one precise yes/no naming what a yes authorises"}}
+  next_actor: {type: string, enum: [owner, claude, codex, none]}
+  next_instruction: {type: string}
+  stop_conditions: {type: array, items: {type: string}}

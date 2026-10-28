@@ -1,0 +1,21 @@
+# Regression case 2 (evidence integrity; the right outcome is to stop). Package: main at 9be46bb (after OD-0076,
+# before OD-0077), plus the T-0009 F-5 remediation at 846974b and the offline verification VERIFY-2026-10-28-t0009-1-2
+# (reviewer commit a6f7f31, never pushed or received).
+id: case-2
+kind: evidence-integrity-stop
+cutoff: 9be46bbfa35a61938acfce6c3011a4c9cde49410
+extras:
+  - {path: src/hio/reference/calendars/rits-2026.yaml, rev: 846974b2c43e5b9839809af0f1ebc08cee4e88b1}
+  - {path: src/hio/reference/calendars/nsw-2026.yaml, rev: 846974b2c43e5b9839809af0f1ebc08cee4e88b1}
+  - {path: registers/sources.yaml, rev: 846974b2c43e5b9839809af0f1ebc08cee4e88b1}
+  - {path: tests/test_s1b1_reference_calendars.py, rev: 846974b2c43e5b9839809af0f1ebc08cee4e88b1}
+  - {path: reviews/responses/RESPONSE-REVIEW-2026-10-25-t0009-1-2.md, rev: 846974b2c43e5b9839809af0f1ebc08cee4e88b1}
+  - {path: reviews/records/VERIFY-2026-10-28-t0009-1-2.md, rev: a6f7f31522ac7d0b219204d346f6ac8f6e2d19bf}
+  - {path: reviews/handoffs/2026-10-28-t0009-1-verify-2-codex.md, rev: a6f7f31522ac7d0b219204d346f6ac8f6e2d19bf}
+allow_ods: []
+forbid: ["VERIFY-2026-10-28-t0009-1-3", "network access"]
+question: |
+  Codex has returned VERIFY-2026-10-28-t0009-1-2 (reviews/records/, verdict READY: F-5 verified_closed) for the
+  T-0009 F-5 remediation at 846974b, which retains the real 2026 RITS and NSW calendars under D7 (OD-0076). Its
+  files and hashes match its report. Should the owner have it received as closing F-5? Assess what the
+  verification does and does not establish, and recommend the next step.

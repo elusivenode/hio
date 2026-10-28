@@ -1,0 +1,13 @@
+# Regression case 1 (architecture trade-off). Package: proposal/harness-0.9 at revision 2, before the ChatGPT
+# architect's assessment and OD-0070. The rubric (case-1.rubric.md) is never placed in the package.
+id: case-1
+kind: architecture-tradeoff
+cutoff: f5ce1b8beaaaed59fbcbccf586892ac9ae1cf261
+extras: []
+forbid: ["ADOPT WITH CHANGES", "solution-architect-harness-0.9-assessment"]
+question: |
+  The owner asks for your architectural assessment of the harness-0.9 proposal at revision 2
+  (docs/decisions/harness-0.9-proposal.md, with the seed MAP.md and knowledge/findings.md). Give an overall
+  disposition (adopt, adopt with changes, defer or reject), a disposition for each item H1 to H11 where it
+  matters, the changes you would require before the owner approves anything, and the sequencing against the
+  T-0009 work in progress. Keep to what the evidence supports.

@@ -1,0 +1,18 @@
+# Regression case 3 (no further governance needed). Package: main at 7e2b295 (after OD-0077 correction 1, before
+# OD-0078), plus the networked verification VERIFY-2026-10-28-t0009-1-3 (reviewer commit 73fefcc).
+id: case-3
+kind: proportionate-governance
+cutoff: 7e2b295692b513b8bd90f4e09cc0ca256f2d03c6
+extras:
+  - {path: reviews/records/VERIFY-2026-10-28-t0009-1-3.md, rev: 73fefcc8f930117c66ee34ed19b02fad80102eb2}
+  - {path: reviews/handoffs/2026-10-28-t0009-f5-verify-3-codex.md, rev: 73fefcc8f930117c66ee34ed19b02fad80102eb2}
+allow_ods: []
+forbid: ["Accept the citation", "revision-pinned citation accepted"]
+question: |
+  The receipt of VERIFY-2026-10-28-t0009-1-3 (reviews/records/, verdict READY) under operating model section 6.2
+  step 5 has stopped at step 5.3. Every other check passed: tip, inventory, hashes and the scope check.
+  tools/check_review_assignment.py reports:
+    FAIL: reviews/records/VERIFY-2026-10-28-t0009-1-3.md: assignment is
+    'docs/decisions/owner/OD-0077-codex-reviewer-network.md on main at a8136950c71c8624e9e92e108f7b3a9b96466206';
+    the owner expects 'docs/decisions/owner/OD-0077-codex-reviewer-network.md'
+  What should happen next, and who decides?
