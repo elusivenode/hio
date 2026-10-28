@@ -1,10 +1,10 @@
-# HIO solution-architect context manifest, version 0.1 (proposed; OD-0081 direction, OD-0082 slice 1).
+# HIO solution-architect context manifest, version 0.2 (proposed; OD-0081 direction, OD-0082 slice 1; v0.2 drafted under OD-0092).
 # hiomux assembles the context bundle from these EXISTING records, in this order, at the session's revision.
 # No new knowledge store (OD-0081 boundary 6). MACSMSF is never listed (boundary 3).
 # Each entry: path; ref (optional: read from that branch instead, marked as its status); required (a missing
 # required file refuses the session); note (why the architect gets it). Everything else is read on demand from the
 # read-only checkout.
-version: "0.1"
+version: "0.2"
 budget_bytes: 90000        # about 22k tokens; the bundle refuses rather than truncates past this
 entries:
   - {path: AGENTS.md, required: true, note: "authority rules and roles; context, not your role instructions"}
@@ -14,8 +14,8 @@ entries:
   - {path: docs/roadmap.md, required: false, note: "sequencing hypothesis"}
   - {path: docs/decisions/README.md, required: false, note: "what is approved and not"}
   - {path: docs/decisions/open-decisions.md, required: false, note: "open owner questions"}
-  - {path: MAP.md, ref: proposal/harness-0.9, required: false, note: "project map; PROPOSED until harness-0.9 Phase A is applied"}
-  - {path: knowledge/findings.md, ref: proposal/harness-0.9, required: false, note: "findings index; Inbox lines are claims; PROPOSED until Phase A"}
+  - {path: MAP.md, required: false, note: "project map (harness-0.9a, OD-0091); navigation only, the cited source wins"}
+  - {path: knowledge/findings.md, required: false, note: "findings index (harness-0.9a): Settled lines are navigational (rank 5), Inbox lines are claims (rank 6)"}
 on_demand:   # named so the architect knows where to look; read from the checkout, never bundled
   - docs/decisions/owner/README.md       # the OD index; each OD is the authority for its act
   - reviews/README.md                    # review state and findings
