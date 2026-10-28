@@ -16,3 +16,11 @@ Approve this assignment as written? A yes authorises me to record it as OD-0094 
 **Message I**
 
 yes
+
+**Claude's question** (after CH6 could not build its test environment offline)
+
+Stop task `CH6` and relaunch it with network, all else unchanged? A yes authorises that relaunch, plus a correction to OD-0094 recording the change and why.
+
+**Message J**
+
+I would rather is had network access and install the tools needed to do a good job.
