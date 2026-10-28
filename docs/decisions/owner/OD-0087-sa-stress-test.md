@@ -118,3 +118,24 @@ related: {adrs: [], tasks: [], findings: [], ods: [OD-0081, OD-0082, OD-0083, OD
      - `stress-6.yaml` `585a6e984b16df9aa696e07948914aed1dfec6dc3c04d239c0f58cfb0991329d`
    - **Cutoff:** every case uses `cab174713cf4980bbb009da70bd283da864d6b9a` (main with OD-0087), used exactly as
      supplied. No case names extras, forbidden phrases or allowed later ODs.
+
+2. **2026-10-28, twelve runs complete; responses returned for independent grading.**
+   - **Probe:** `hiomux sa probe` ALL PASS immediately before the runs.
+   - **Runs:** `hiomux sa eval stress-1` … `stress-6`, two runs each, 18:23–18:54 AEST, run
+     `20261028T081310Z-d55d`. All 12 have status `ok`: schema-valid, with no problems. Every run applied
+     `gpt-6.1-sol`/`high`, `codex-cli 0.164.0`, identity v0.2 (blob as on `main`), no auto-loaded `AGENTS.md`,
+     cutoff `cab1747`, and a clean leak scan. Every run had an identical context bundle (manifest blob `e8600c1f`,
+     schema blob `33caa5a3`).
+   - **Network:** no run executed a network command; there was no `curl`, `wget`, URL fetch, `git` remote
+     command or web-search item. `origin/main` equalled the cutoff throughout.
+   - **Citations:** all cited paths exist in the package, and all cited ODs are OD-0087 or earlier. The flags
+     were each resolved:
+     - `a82aa0d` is quoted from `AGENTS.md`; it is a pre-migration `macsmsf` id;
+     - `2df83b4` is the `proposal/harness-0.9` head, cited from `STATUS.md` and committed before the cutoff;
+     - `MAP.md` and `knowledge/findings.md` are correctly named as absent;
+     - three hex-like strings are decimal digits.
+   - **Disclosed:** the cutoff includes OD-0087 and `STATUS.md`, so the architect could know a stress test was
+     under way. It had no expected findings and nothing later.
+   - **Returned:** the complete responses and mechanical evidence, ungraded, on a private claude.ai page,
+     https://claude.ai/artifact/QpVsm3fXGGYPKpWaAtEApV (OD-0088). The run records stay in `~/.hio-runs`, which is
+     operational evidence. Claude graded nothing and recommends nothing about promotion.
