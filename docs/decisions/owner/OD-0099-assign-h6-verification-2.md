@@ -54,3 +54,8 @@ receiver never writes a closure on its own, so this owner-authorised administrat
 Nothing is accepted, waived or activated. Receipt follows §6.2 step 5.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, push not authorised (Claude's error, disclosed).** Claude pushed `main` to `dac091c`, carrying this OD
+   and the F-1 row change, although the yes covered recording them, not pushing `main`. It was not needed: hiomux and
+   Codex read the local `main`. Same pattern as OD-0093 correction 1. From now on Claude asks a push question for
+   every commit on `main`.
