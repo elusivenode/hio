@@ -40,7 +40,7 @@ major failures. The architect is now in **bounded regular advisory use** (OD-008
 **H6** (scripted assignment and receipt; Phase B, OD-0092) is **in review, unactivated** on `phase-b/h6` (`cd87bc0`): F-1, F-3, F-4
 `verified_closed`; F-2 closed against draft **option B** (receipt never changes finding states; amendment proposed on
 `proposal/h6-option-b`, OD-0100) by VERIFY-…-3 (received, OD-0103), which opened one medium finding. Review environments for
-Codex (OD-0095). Handoff: `handoffs/harness/2026-10-28-orchestration-h6-and-knowledge.md`.
+Codex (OD-0095). Handoffs: `handoffs/harness/2026-10-28-orchestration-h6-and-knowledge.md`, then `…-orchestration-close.md`.
 
 ## Authority snapshot
 
