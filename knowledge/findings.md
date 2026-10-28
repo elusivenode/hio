@@ -82,4 +82,5 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 ## Inbox
 
 _(Empty after distil 1. Append new candidate lines below this note.)_
+- [repo] [rediscovery] zsh does not word-split an unquoted variable: `F="a b c"; git checkout T -- $F` passes one path "a b c". Write each path out (or use an array), and run receipt chains under `set -e` so a failing check stops them; a FAIL from `check_repo` was ignored and a broken import pushed. Source: OD-0098.
 - [repo] CI's "Lint and format" step runs `ruff check .` **and** `ruff format --check .`; a worker contract or local check that runs only `ruff check` passes while CI fails (all H6 branches, 2026-10-28). Put CI's exact lint commands in every acceptance list. Source: `.github/workflows/ci.yml` (Lint and format); CI runs 40669141245, 40673974716.
