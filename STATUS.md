@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-10-28
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0102"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0103"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -39,7 +39,7 @@ adopted (OD-0087): 12 runs, mechanically clean; ChatGPT's independent grading: a
 major failures. The architect is now in **bounded regular advisory use** (OD-0089; two held-out cases to name). Architect reading view (OD-0088; tool hashes there).
 **H6** (scripted assignment and receipt; Phase B, OD-0092) is **in review, unactivated** on `phase-b/h6` (`cd87bc0`): F-1, F-3, F-4
 `verified_closed`; F-2 closed against draft **option B** (receipt never changes finding states; amendment proposed on
-`proposal/h6-option-b`, OD-0100) by VERIFY-…-3 (**not received**), which opened one medium finding. Review environments for
+`proposal/h6-option-b`, OD-0100) by VERIFY-…-3 (received, OD-0103), which opened one medium finding. Review environments for
 Codex (OD-0095). Handoff: `handoffs/harness/2026-10-28-orchestration-h6-and-knowledge.md`.
 
 ## Authority snapshot
@@ -57,7 +57,7 @@ use under its protocol, outside the repository (OD-0072, OD-0073). Routine deleg
 
 | Review | State |
 |---|---|
-| **REVIEW-2026-10-28-h6-1** (H6) | NOT READY at `9e07b8b` (OD-0096); VERIFY-…-1 (OD-0098) and -2 (OD-0101) received: F-1, F-3, F-4 `verified_closed`; VERIFY-…-3 (OD-0102) **not received**: F-2 closed against draft option B, new F-VERIFY-…-3-1 open |
+| **REVIEW-2026-10-28-h6-1** (H6) | NOT READY at `9e07b8b` (OD-0096); VERIFY-…-1 (OD-0098) and -2 (OD-0101) received: F-1, F-3, F-4 `verified_closed`; VERIFY-…-3 received (OD-0103): F-2 `verified_closed` against draft option B; new F-VERIFY-…-3-1 open |
 | **REVIEW-2026-10-25-t0009-1** | **NOT READY** at `ce0c3b5` (merge `9efabbe`, tag `reviews/REVIEW-2026-10-25-t0009-1`, OD-0067); after verification: **all seven `verified_closed`** (OD-0075, OD-0078) |
 | **VERIFY-2026-10-28-t0009-1-3** | **READY** at `76539b5..846974b`: F-5 verified_closed (RBA pages read live); **received** (merge `72908c5`, tag `reviews/VERIFY-2026-10-28-t0009-1-3`, OD-0078) |
 | VERIFY-2026-10-28-t0009-1-2 | READY (offline) but **not received; superseded** by `-3` (OD-0077) |
@@ -76,7 +76,7 @@ No finding is waived.
 | Phase | S1b-1.0 **accepted** (OD-0079); next stage: finality staging and Authorisation B, staged by HIO-ADR-0012 (approved rev 3) |
 | Current gate | T-0009 **accepted** and integrated (OD-0079, `7eba3f9`); the next gate is Authorisation B (below) |
 | Gate to live S1b-1 (Authorisation B) | T-0002 `owner_verified` rights per dataset and operation; the network and credential-control decision (OD-0038 successor); storage selection and verification; Q-013 decided or P3 in force; an explicit live authorisation (T-0009 card, `depends_on`) |
-| Next permissible actions | **Owner:** the VERIFY-2026-10-28-h6-1-3 receipt (pending question); later, approve option B (harness-0.9b) and H6 at exact revisions. **Claude (OD-0092, OD-0100):** fix F-VERIFY-2026-10-28-h6-1-3-1, response 4, then ask for verification 4; H11 after H6. **Owner, also:** name the two held-out stress cases (OD-0089); optionally, a held-out external-data case for the architect (OD-0084); the Authorisation B prerequisites (below); optionally an OD assigning a Codex smoke review to test hiomux end to end. Also harness-0.9: H7 timing; branch protection on `main`; whether OD-0061 covers hiomux-delivered reports (§14 G5); the unrecorded hiomux change (OD-0077 finding 1). Also: the T-0002 rights reading (U1 to U7); the controls decision; observations v0.3 (blob `61ddd58e`) approve or defer; the run-1 stale-line candidates |
+| Next permissible actions | **Owner:** later, approve option B (harness-0.9b) and H6 at exact revisions. **Claude (OD-0092, OD-0100):** fix F-VERIFY-2026-10-28-h6-1-3-1, response 4, then ask for verification 4; H11 after H6. **Owner, also:** name the two held-out stress cases (OD-0089); optionally, a held-out external-data case for the architect (OD-0084); the Authorisation B prerequisites (below); optionally an OD assigning a Codex smoke review to test hiomux end to end. Also harness-0.9: H7 timing; branch protection on `main`; whether OD-0061 covers hiomux-delivered reports (§14 G5); the unrecorded hiomux change (OD-0077 finding 1). Also: the T-0002 rights reading (U1 to U7); the controls decision; observations v0.3 (blob `61ddd58e`) approve or defer; the run-1 stale-line candidates |
 
 ## Branches holding work not on `main`
 
@@ -84,7 +84,6 @@ No finding is waived.
 |---|---|---|
 | `phase-b/h6` | `cd87bc0` (pushed) | H6 tools and tests, responses 1 to 3; unactivated (OD-0092, OD-0100) |
 | `proposal/h6-option-b` | `d26c2fa` (pushed) | the option B amendment draft (proposed, OD-0100) |
-| `review/h6-1-verify-3-codex` | `740b13c` (local) | VERIFY-2026-10-28-h6-1-3, awaiting the receipt decision |
 | `proposal/harness-0.9` | `2df83b4` (pushed) | harness-0.9 revision 4: the design record for Phase B (§6) and H7 (§7), and the Fable dry-run report. Phase A is applied on `main` (OD-0091) |
 
 ## Work cards
