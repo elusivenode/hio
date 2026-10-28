@@ -116,6 +116,7 @@ are in operating model §1.1; the template is
 | [OD-0099](OD-0099-assign-h6-verification-2.md) | authorise_work | **Codex verification VERIFY-2026-10-28-h6-1-2 assigned** (H6 round 2 at `5b9e49c`, base `ab0288f`); **F-1 index row updated to verified_closed** per VERIFY-2026-10-28-h6-1-1 | `phase-b/h6` at `5b9e49c`; `reviews/README.md` | recorded |
 | [OD-0100](OD-0100-h6-option-b.md) | authorise_work | **H6 option B**: draft the §6.2 amendment (receipt Class N only; separate owner-authorised finding reconciliation) and change the receiver on `phase-b/h6`; nothing approved or activated | proposal branch; `phase-b/h6` | recorded |
 | [OD-0101](OD-0101-receive-h6-verification-2.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-2** (NOT READY: F-2 open; F-3, F-4 verified_closed) without its index diff (patch context predated main); reviewer row and F-3, F-4 reconciled administratively | `review/h6-1-verify-2-codex` at `9006d1f` | recorded |
+| [OD-0102](OD-0102-assign-h6-verification-3.md) | authorise_work | **Codex verification VERIFY-2026-10-28-h6-1-3 assigned**: option B receiver at `cd87bc0` and its consistency with the draft amendment at `d26c2fa`; nothing approved or activated | `phase-b/h6` at `cd87bc0` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
