@@ -160,7 +160,14 @@ def check_yaml(files: list[str]) -> None:
             fail("yaml", f"{f}: missing sections {missing}")
             continue
         ident = spec["identity"]
-        if Path(f).stem != ident.get("factor_id"):
+        # specs/factors/archive/<factor_id>@<version>.yaml keeps a superseded version that a release
+        # still cites (T-0009, F-REVIEW-2026-10-25-t0009-4); every other spec is named by its factor id.
+        expected = (
+            f"{ident.get('factor_id')}@{ident.get('version')}"
+            if f.startswith("specs/factors/archive/")
+            else ident.get("factor_id")
+        )
+        if Path(f).stem != expected:
             fail("yaml", f"{f}: factor_id {ident.get('factor_id')!r} does not match the file name")
         if not re.match(r"^\d+\.\d+\.\d+$", str(ident.get("version", ""))):
             fail("yaml", f"{f}: version is not semver")

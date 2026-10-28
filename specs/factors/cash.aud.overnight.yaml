@@ -1,7 +1,8 @@
-# Draft for HIO-S1. External facts are marked [EXT] and are unverified (see registers/sources.yaml).
+# Draft for HIO-S1b-1.0 (T-0009). External facts are marked [EXT] and are unverified (see registers/sources.yaml).
+# Version 0.2.0, which the accepted S1a releases cite, is kept byte-identical in archive/cash.aud.overnight@0.2.0.yaml.
 identity:
   factor_id: cash.aud.overnight
-  version: 0.2.0
+  version: 0.3.0
   status: draft
   owner: quantitative researcher
   family: cash
@@ -14,33 +15,38 @@ classification:
   investability: replicable_with_basis   # the interbank overnight rate is not directly accessible to most investors
 return_convention:
   return_type: simple
-  period: Sydney business day
+  period: RITS business day
   compounding: "RA §3.2: Π_b (1 + rate_b × n_b / 365) − 1 within each period; periods chained"
   numeraire: AUD
   hedging: n/a
   cash_leg: n/a
   excess_definition: n/a
 observations:
-  - series_id: rba.cash_rate.overnight
-    source_id: rba_statistical_tables
+  - series_id: rba.cash_rate.aonia
+    source_id: rba.cash_rate   # the dataset (rights subject); read from the shared publication rba.f1, column FIRMMCRID (OD-0065)
     unit: percent per annum
-    knowledge_mode_required: "as_captured_by_hio or as_known_by_market for point-in-time releases; descriptive history may use reconstructed(T), labelled"
+    knowledge_mode_required: "as_captured_by_hio in S1b-1.0 (every vintage schedule_only under HIO-ADR-0012 P3); descriptive history may use reconstructed(T), labelled"
 availability:
   knowable_rule: >-
-    Per vintage (observations standard §3). Captured vintages: captured_on_schedule, with
-    knowable_at = the documented RBA publication instant for rate_b [EXT, verify in T-0002].
-    Whether the regime is ex-ante or in arrears (RA §3.2) follows from that timing, and is
-    recorded by spec patch after T-0002. Backfill without vintage evidence: schedule_only.
-    Period knowable_at = max over the rate_b used.
+    Per vintage (observations standard §3), placed by HIO-ADR-0012 P3 in S1b-1.0: knowable_at =
+    the documented publication instant P_doc (before 09:20 Sydney on the next RITS day after b
+    [EXT, HIO-ADR-0012 §4.3]) and basis schedule_only, never market evidence; Q-013 stays open.
+    Regime: IN ARREARS (RA §3.2): rate_b for day b is published on the next RITS day, so the period
+    rate is known only after the period ends. Period knowable_at = max over the rate_b used.
+  publication_window: "P_doc before 09:20 Sydney; W_doc 16:00 Sydney on the same day [EXT, HIO-ADR-0012 §4.3]"
   earliest_history: "the earliest date the RBA source provides [EXT, unverified]; recorded at first capture, not assumed here"
   capture_clock_dependency: point-in-time use starts at the S1 capture start
 construction:
-  calendar: XSYD business days (Sydney), holiday calendar from reference data
+  calendar: >-
+    RITS business days, from dated, cited reference data (T-0009 §2.7; HIO-ADR-0012 gate (c)).
+    RITS days select rate_b and end periods. A date outside the calendar's stated coverage
+    refuses; it is never assumed to be a business day.
+  regime: in_arrears
   day_count: ACT/365F
   algorithm: |
     For each period (t-1, t] on the calendar:
       window W = calendar dates d with t-1 <= d < t
-      for each d in W: b(d) = latest Sydney business day <= d     # the rate for d's overnight
+      for each d in W: b(d) = latest RITS business day <= d       # the rate for d's overnight
       n_b = count of days using rate_b
       r_t = prod_b (1 + rate_b/100 * n_b / 365) - 1               # RA §3.2, exact
       knowable_at(t) = max_b knowable_at(rate_b)
@@ -55,6 +61,26 @@ invariants:
     - id: CASH-AUD-INV-2
       statement: "RA §3.2 fixture: Fri→Mon (Fri 3.60% x 3) = 0.000295890411; one ordinary day at 3.60% = 0.000098630137"
 triangulation:
+  - reference: RBA Cash Rate Total Return Index (rba.cash_rate.tri, dataset rba.cash_rate_tri, F1 column FIRMMCTRI)
+    kind: publisher_index   # HIO-ADR-0012 §4.4; recorded, classified, never pass or fail on agreement
+    quantity_compared: "per period (t-1, t]: (1 + r_t) against TRI_t / TRI_{t-1}"
+    series_class_of_reference: total_return
+    reference_decimals: 4   # [EXT, unverified] published precision of the TRI; to confirm at the first authorised structure check
+    rate_decimals: 2        # [EXT, unverified] published precision of AONIA; same
+    expected_differences:
+      - mechanism: >-
+          publisher rounding only. Model: the publisher compounds the same legs exactly from the
+          unrounded rates, then rounds the index half-way to reference_decimals; HIO compounds the
+          published rates, rounded half-way to rate_decimals. The bound is the exact interval sum:
+          max |ours - ours(rate +/- half ulp)| + max |theirs - (TRI_t +/- half ulp)/(TRI_{t-1} -/+ half ulp)|.
+        predicted_sign: either
+        predicted_magnitude: "within the bound; about 0"
+    classification: >-
+      within_expected_bound | outside_expected_bound (residual unexplained by the model) |
+      precision_exceeds_declared (an observed value has more places than declared: the model does
+      not apply, so the residual is unexplained) | not_compared (with its cause: cash period absent,
+      or the reference missing at the period start, end or both). Every eligible period is reported.
+    metrics: [periods, periods_compared, not_compared_by_cause, within_expected_bound, outside_expected_bound, precision_exceeds_declared]
   - reference: RBA 1-month bank-accepted bill (BAB) rate [EXT availability and licensing]
     quantity_compared: >-
       A RATE triangulation, not a return comparison: (1) the 1-month BAB yield at t against the
@@ -72,6 +98,8 @@ triangulation:
     metrics: [mean_level_difference_bp, max_level_difference_bp, horizon_aligned_difference_bp]
 limitations:
   - overnight interbank rate, not a retail-accessible deposit rate
+  - "benchmark accrual; not an achievable deposit or fund return; replicable only with a basis"
+  - "S1b-1.0 releases are exploratory: placed schedule_only (HIO-ADR-0012 P3), never final (OD-0063)"
 rights_required:   # per operation (rights standard §3)
   automated_retrieval: allow
   raw_retention: allow
@@ -83,3 +111,4 @@ rights_required:   # per operation (rights standard §3)
 changelog:
   - 0.1.0 (2026-10-18): draft
   - "0.2.0 (2026-10-18): window and applicable-rate rule aligned to RA §3.2 (the overnight starting on b, exact compounding); vintage-specific basis; triangulation restated as a rate comparison (T-0008: F-REVIEW-2026-10-18-a01-2, -6, -1)"
+  - "0.3.0 (2026-10-28): S1b-1.0 construction (T-0009 §2.6, HIO-ADR-0012 gate (d); F-REVIEW-2026-10-25-t0009-4): input rba.cash_rate.aonia from dataset rba.cash_rate (F1, shared publication); RITS selection and period ends from dated, cited reference data; regime in arrears; P3 placement; the TRI comparison model pre-registered with declared precisions (F-REVIEW-2026-10-25-t0009-3). The accepted S1a releases keep citing 0.2.0"

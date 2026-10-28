@@ -21,8 +21,8 @@ from hio.contracts.canonical import decimal_str, instant_str
 from hio.contracts.layout import CAPTURES_PREFIX
 from hio.contracts.rights import Operation, RightsGate
 from hio.contracts.temporal import KnowledgeMode, weakest
-from hio.jobs.s1a import _cash_release, input_record, spec_ref
-from hio.library.cash import ACT_360, ACT_365F, chain_index, overnight_series
+from hio.jobs.s1a import _cash_release, input_record, spec_document, spec_ref
+from hio.library.cash import ACT_360, ACT_365F, CashSeries, overnight_series
 from hio.library.numeric import CTX
 from hio.marketdata.capture import load_receipt_record, receipt_bytes
 from hio.marketdata.parse import MalformedReceipt, RawRow
@@ -145,10 +145,82 @@ def _places(value: Decimal) -> int:
     return len(text.split(".")[1]) if "." in text else 0
 
 
-def _decimals(view) -> int:
-    """The finest precision seen in a series: the best available estimate of its publisher rounding
-    (values are stored without trailing zeros, so this is a lower bound on the published precision)."""
-    return max((_places(v.value) for v in view.values.values()), default=0)
+# The spec versions S1b-1.0 releases cite: they describe its actual inputs, calendars and in-arrears
+# accrual (F-REVIEW-2026-10-25-t0009-4). S1a keeps citing 0.2.0 (hio.jobs.s1a.S1A_SPECS).
+S1B_SPECS = {"cash.aud.overnight": "0.3.0", "cash.usd.overnight": "0.3.0"}
+
+
+@dataclass(frozen=True)
+class RoundingModel:
+    """The pre-registered publisher-rounding model of one index comparison (HIO-ADR-0012 §4.4), read
+    from the cited spec: the declared published precision of the reference index and of the rates.
+    Declared, not inferred: the precision visible in stored values is only a lower bound on it
+    (F-REVIEW-2026-10-25-t0009-3)."""
+
+    reference_series: str
+    reference_decimals: int
+    rate_decimals: int
+
+
+def rounding_model(factor_id: str, reference_series: str) -> RoundingModel:
+    spec = spec_document(factor_id, S1B_SPECS[factor_id])
+    entries = [
+        t
+        for t in spec["triangulation"]
+        if t.get("kind") == "publisher_index" and reference_series in t["reference"]
+    ]
+    if len(entries) != 1:
+        raise LookupError(
+            f"{factor_id}@{S1B_SPECS[factor_id]}: no single publisher_index model for {reference_series}"
+        )
+    return RoundingModel(
+        reference_series, int(entries[0]["reference_decimals"]), int(entries[0]["rate_decimals"])
+    )
+
+
+def _half_ulp(places: int) -> Decimal:
+    return Decimal(1).scaleb(-places) / 2
+
+
+def rounding_bound(
+    legs, base: int, rate_decimals: int, ref_start: Decimal, ref_end: Decimal, reference_decimals: int
+) -> Decimal:
+    """The largest |ours - theirs| publisher rounding alone can produce under the model: the publisher
+    compounds the same legs exactly from unrounded rates and rounds its index half-way; HIO compounds
+    the published (half-way rounded) rates. Exact interval arithmetic, not a first-order estimate:
+    |ours - truth| <= max over rates +/- half an ulp, and |truth - theirs| <= max over the index
+    endpoints +/- half an ulp (an end up and a start down, or the reverse)."""
+    rate_u, ref_u = _half_ulp(rate_decimals), _half_ulp(reference_decimals)
+    if ref_start <= ref_u:
+        raise ValueError("a reference level within rounding of zero has no ratio bound")
+
+    def growth(shift: Decimal) -> Decimal:
+        g = Decimal(1)
+        for _b, rate, n in legs:
+            g = CTX.multiply(
+                g, CTX.add(Decimal(1), CTX.divide(CTX.multiply(CTX.add(rate, shift), n), 100 * base))
+            )
+        return g
+
+    ours = growth(Decimal(0))
+    theirs = CTX.divide(ref_end, ref_start)
+    ours_err = max(abs(CTX.subtract(growth(rate_u), ours)), abs(CTX.subtract(growth(-rate_u), ours)))
+    theirs_err = max(
+        abs(CTX.subtract(CTX.divide(ref_end + ref_u, ref_start - ref_u), theirs)),
+        abs(CTX.subtract(CTX.divide(ref_end - ref_u, ref_start + ref_u), theirs)),
+    )
+    return CTX.add(ours_err, theirs_err)
+
+
+def cash_series(view, rate_cal: BusinessCalendar, end_cal: BusinessCalendar, base) -> CashSeries:
+    """The overnight periods of one cash factor: ends on end_cal from the first fixing to the
+    business day after the last, rates selected on rate_cal (RA §3.2)."""
+    fix = _fixings(view)
+    if not fix:
+        return overnight_series([], fix, rate_cal, base)
+    last = rate_cal.add_business_days(rate_cal.latest_on_or_before(max(fix)), 1)
+    ends = [d for d in end_cal.business_days(min(fix), last) if d <= last]
+    return overnight_series(ends, fix, rate_cal, base)
 
 
 CASH = {
@@ -211,18 +283,12 @@ def build_releases(
         ):
             sid, rate_key, end_key, base = CASH[dataset_id]
             subjects = authorised(sid)
-            fix = _fixings(view(sid))
-            rate_cal, end_cal = calendars[rate_key], calendars[end_key]
-            if fix:
-                last = rate_cal.add_business_days(rate_cal.latest_on_or_before(max(fix)), 1)
-                ends = [d for d in end_cal.business_days(min(fix), last) if d <= last]
-            else:
-                ends = []
-            series[dataset_id] = overnight_series(ends, fix, rate_cal, base)
+            series[dataset_id] = cash_series(view(sid), calendars[rate_key], calendars[end_key], base)
             built = _cash_release(
                 dataset_id, series[dataset_id], view(sid), common, propagate([rights[s] for s in subjects])
             )
             core = {k: v for k, v in built.core.items() if k != "files"}
+            core["spec_ref"] = spec_ref(dataset_id, S1B_SPECS[dataset_id])
             core["quality_summary"] = {**core["quality_summary"], "limitations": LIMITATIONS}
             releases[dataset_id] = make_release(core, built.files)
         elif dataset_id in COMPARISON and dataset_id in wanted:
@@ -235,34 +301,57 @@ def build_releases(
     return {k: v for k, v in releases.items() if k in wanted}
 
 
+COMPARISON_CLASSES = (
+    "within_expected_bound",
+    "outside_expected_bound",
+    "precision_exceeds_declared",
+    "not_compared",
+)
+
+
 def _comparison(cash: Release, cash_series, ref_view, out_id: str, common, base: int, rights) -> Release:
-    """Our compounded index against the publisher's index over each consecutive period: ratios,
-    the difference, the expected bound from the publishers' own rounding, and a classification.
-    The classification is a record, never a pass or fail on agreement (HIO-ADR-0012 4.4)."""
-    periods = cash_series.periods
-    levels = dict(chain_index([(p.end, p.r) for p in periods])) if periods else {}
+    """Our period growth against the publisher's index over every eligible cash period (each period
+    the cash release reports, and each it reports absent): ratios, the difference, the expected bound
+    under the spec's pre-registered rounding model, and a classification. Nothing is dropped
+    silently: a period that cannot be compared is a `not_compared` row with its cause
+    (F-REVIEW-2026-10-25-t0009-3). The classification is a record, never a pass or fail on agreement
+    (HIO-ADR-0012 4.4)."""
+    factor_id = "cash.aud.overnight" if out_id.startswith("cash.aud") else "cash.usd.overnight"
+    model = rounding_model(factor_id, COMPARISON[out_id][1])
     ref = {d: v.value for d, v in ref_view.values.items()}
-    ref_dp = _decimals(ref_view)
     rows = []
-    for p in periods:
+    for p in cash_series.periods:
         s, t = p.start, p.end
-        if s not in levels or t not in ref or s not in ref:
+        ours = CTX.add(Decimal(1), p.r)  # exact: the cash release's own r_t, no index anchor needed
+        missing = [name for name, d in (("start", s), ("end", t)) if d not in ref]
+        if missing:
+            cause = "reference_missing_at_" + "_and_".join(missing)
+            rows.append([s.isoformat(), t.isoformat(), decimal_str(ours), "", "", "", "not_compared", cause])
             continue
-        ours = CTX.divide(levels[t], levels[s])
         theirs = CTX.divide(ref[t], ref[s])
         diff = CTX.subtract(ours, theirs)
-        ulp = Decimal(1).scaleb(-ref_dp) / 2
-        rate_dp = max((_places(r) for _, r, _ in p.legs), default=0)
-        rate_ulp = Decimal(1).scaleb(-rate_dp) / 2 / 100 / base
-        bound = ulp / ref[s] + ulp / ref[t] + sum((rate_ulp * n for _, _, n in p.legs), Decimal(0))
+        declared = all(_places(r) <= model.rate_decimals for _, r, _ in p.legs) and all(
+            _places(ref[d]) <= model.reference_decimals for d in (s, t)
+        )
+        if not declared:
+            cause = "an observed value has more places than the model declares"
+            rows.append([s.isoformat(), t.isoformat(), decimal_str(ours), decimal_str(theirs),
+                         decimal_str(diff), "", "precision_exceeds_declared", cause])  # fmt: skip
+            continue
+        bound = rounding_bound(p.legs, base, model.rate_decimals, ref[s], ref[t], model.reference_decimals)
         klass = "within_expected_bound" if abs(diff) <= bound else "outside_expected_bound"
+        cause = "" if klass == "within_expected_bound" else "residual not explained by publisher rounding"
         rows.append([s.isoformat(), t.isoformat(), decimal_str(ours), decimal_str(theirs),
-                     decimal_str(diff), decimal_str(bound), klass])  # fmt: skip
-    counts = {
-        k: sum(1 for r in rows if r[6] == k) for k in ("within_expected_bound", "outside_expected_bound")
-    }
+                     decimal_str(diff), decimal_str(bound), klass, cause])  # fmt: skip
+    for s, t, _reason in cash_series.gaps:
+        rows.append([s.isoformat(), t.isoformat(), "", "", "", "", "not_compared", "cash_period_absent"])
+    counts = {k: sum(1 for r in rows if r[6] == k) for k in COMPARISON_CLASSES}
+    not_compared: dict[str, int] = {}
+    for r in rows:
+        if r[6] == "not_compared":
+            not_compared[r[7]] = not_compared.get(r[7], 0) + 1
+    periods = cash_series.periods
     basis = [p.weakest_basis for p in periods] + ([ref_view.weakest_basis] if ref_view.weakest_basis else [])
-    spec = "cash.aud.overnight" if out_id.startswith("cash.aud") else "cash.usd.overnight"
     columns = [
         "period_start",
         "period_end",
@@ -271,12 +360,13 @@ def _comparison(cash: Release, cash_series, ref_view, out_id: str, common, base:
         "difference",
         "expected_bound",
         "classification",
+        "cause",
     ]
     return make_release(
         {
             **common,
             "dataset_id": out_id,
-            "spec_ref": spec_ref(spec),
+            "spec_ref": spec_ref(factor_id, S1B_SPECS[factor_id]),
             "inputs": [
                 input_record(ref_view),
                 {"upstream": {"dataset_id": cash.core["dataset_id"], "content_sha256": cash.content_sha256}},
@@ -288,8 +378,13 @@ def _comparison(cash: Release, cash_series, ref_view, out_id: str, common, base:
             },
             "quality_summary": {
                 "periods": len(rows),
-                "periods_compared": len(rows),
+                "periods_compared": len(rows) - counts["not_compared"],
                 **counts,
+                "not_compared_by_cause": dict(sorted(not_compared.items())),
+                "rounding_model": {
+                    "reference_decimals": model.reference_decimals,
+                    "rate_decimals": model.rate_decimals,
+                },
                 "limitations": LIMITATIONS,
             },
         },

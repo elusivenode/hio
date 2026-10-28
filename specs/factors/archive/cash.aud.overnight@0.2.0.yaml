@@ -1,0 +1,85 @@
+# Draft for HIO-S1. External facts are marked [EXT] and are unverified (see registers/sources.yaml).
+identity:
+  factor_id: cash.aud.overnight
+  version: 0.2.0
+  status: draft
+  owner: quantitative researcher
+  family: cash
+economics:
+  exposure: return on AUD overnight cash; the AUD home-currency cash leg for every AUD excess return
+  rationale: the financing and collateral reference for AUD-numeraire excess returns
+  is_not: a bank deposit rate, a bank-bill (term) rate or a cash ETF return
+classification:
+  series_class: total_return
+  investability: replicable_with_basis   # the interbank overnight rate is not directly accessible to most investors
+return_convention:
+  return_type: simple
+  period: Sydney business day
+  compounding: "RA §3.2: Π_b (1 + rate_b × n_b / 365) − 1 within each period; periods chained"
+  numeraire: AUD
+  hedging: n/a
+  cash_leg: n/a
+  excess_definition: n/a
+observations:
+  - series_id: rba.cash_rate.overnight
+    source_id: rba_statistical_tables
+    unit: percent per annum
+    knowledge_mode_required: "as_captured_by_hio or as_known_by_market for point-in-time releases; descriptive history may use reconstructed(T), labelled"
+availability:
+  knowable_rule: >-
+    Per vintage (observations standard §3). Captured vintages: captured_on_schedule, with
+    knowable_at = the documented RBA publication instant for rate_b [EXT, verify in T-0002].
+    Whether the regime is ex-ante or in arrears (RA §3.2) follows from that timing, and is
+    recorded by spec patch after T-0002. Backfill without vintage evidence: schedule_only.
+    Period knowable_at = max over the rate_b used.
+  earliest_history: "the earliest date the RBA source provides [EXT, unverified]; recorded at first capture, not assumed here"
+  capture_clock_dependency: point-in-time use starts at the S1 capture start
+construction:
+  calendar: XSYD business days (Sydney), holiday calendar from reference data
+  day_count: ACT/365F
+  algorithm: |
+    For each period (t-1, t] on the calendar:
+      window W = calendar dates d with t-1 <= d < t
+      for each d in W: b(d) = latest Sydney business day <= d     # the rate for d's overnight
+      n_b = count of days using rate_b
+      r_t = prod_b (1 + rate_b/100 * n_b / 365) - 1               # RA §3.2, exact
+      knowable_at(t) = max_b knowable_at(rate_b)
+    Index: I_t = I_{t-1} * (1 + r_t), I_base = 100 on the first valid date.
+  rebalancing_and_rolls: n/a
+  costs: none
+invariants:
+  standard: [RA-INV-003, RA-INV-018, OBS-INV-001, OBS-INV-002, OBS-INV-003, OBS-INV-007]
+  spec_specific:
+    - id: CASH-AUD-INV-1
+      statement: "the index ratio I_t/I_{t-1} - 1 equals r_t exactly"
+    - id: CASH-AUD-INV-2
+      statement: "RA §3.2 fixture: Fri→Mon (Fri 3.60% x 3) = 0.000295890411; one ordinary day at 3.60% = 0.000098630137"
+triangulation:
+  - reference: RBA 1-month bank-accepted bill (BAB) rate [EXT availability and licensing]
+    quantity_compared: >-
+      A RATE triangulation, not a return comparison: (1) the 1-month BAB yield at t against the
+      cash rate level at t; (2) horizon-aligned: the BAB yield at t against the realised
+      compounded cash rate over [t, t+1 month), annualised ACT/365F. No bill total return is
+      claimed.
+    series_class_of_reference: state_indicator
+    expected_differences:
+      - mechanism: term and bank-credit premium
+        predicted_sign: "bills above overnight, usually"
+        predicted_magnitude: "0 to a few tens of bp p.a.; larger around expected policy changes"
+      - mechanism: expected cash-rate changes within the bill term (comparison 1 only)
+        predicted_sign: either
+        predicted_magnitude: depends on the policy path
+    metrics: [mean_level_difference_bp, max_level_difference_bp, horizon_aligned_difference_bp]
+limitations:
+  - overnight interbank rate, not a retail-accessible deposit rate
+rights_required:   # per operation (rights standard §3)
+  automated_retrieval: allow
+  raw_retention: allow
+  external_processing: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - 0.1.0 (2026-10-18): draft
+  - "0.2.0 (2026-10-18): window and applicable-rate rule aligned to RA §3.2 (the overnight starting on b, exact compounding); vintage-specific basis; triangulation restated as a rate comparison (T-0008: F-REVIEW-2026-10-18-a01-2, -6, -1)"

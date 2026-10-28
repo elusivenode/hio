@@ -189,9 +189,35 @@ def verify_release_inputs(vs: VintageStore, core: dict[str, Any]) -> None:
 # --- build -------------------------------------------------------------------------------------------
 
 
-def spec_ref(factor_id: str) -> str:
-    spec = yaml.safe_load((REPO / "specs" / "factors" / f"{factor_id}.yaml").read_text())
-    return f"{factor_id}@{spec['identity']['version']}"
+# The spec versions the accepted S1a releases cite (OD-0042). Pinned, so a later version of a spec
+# (S1b-1.0 uses cash.*.overnight@0.3.0, F-REVIEW-2026-10-25-t0009-4) never changes an S1a identity.
+S1A_SPECS = {
+    "cash.aud.overnight": "0.2.0",
+    "cash.usd.overnight": "0.2.0",
+    "fx.usd_cash_vs_aud.excess": "0.2.0",
+}
+
+
+def spec_document(factor_id: str, version: str) -> dict:
+    """The spec at exactly this version: the current file if it is that version, otherwise the
+    byte-preserved copy in specs/factors/archive/. A version that exists in neither refuses."""
+    for path in (
+        REPO / "specs" / "factors" / f"{factor_id}.yaml",
+        REPO / "specs" / "factors" / "archive" / f"{factor_id}@{version}.yaml",
+    ):
+        if path.exists():
+            spec = yaml.safe_load(path.read_text())
+            ident = spec["identity"]
+            if ident["factor_id"] == factor_id and str(ident["version"]) == version:
+                return spec
+    raise LookupError(f"no spec {factor_id}@{version}")
+
+
+def spec_ref(factor_id: str, version: str | None = None) -> str:
+    """A reference to a spec that exists at that version; S1a's pinned version by default."""
+    version = version or S1A_SPECS[factor_id]
+    spec_document(factor_id, version)
+    return f"{factor_id}@{version}"
 
 
 def _gaps(gaps) -> list[list[str]]:

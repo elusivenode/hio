@@ -191,7 +191,8 @@ def test_us_periods_use_the_derived_holiday_and_nsw_period_ends(world):
 def test_index_comparisons_are_recorded_and_agree_within_publisher_rounding(world, dataset):
     cmp = world[6][dataset]
     data = rows(cmp)
-    assert data and {r["classification"] for r in data} == {"within_expected_bound"}
+    compared = [r for r in data if r["classification"] != "not_compared"]
+    assert compared and {r["classification"] for r in compared} == {"within_expected_bound"}
     assert cmp.core["quality_summary"]["outside_expected_bound"] == 0
     assert "no pass or fail" in next(iter(cmp.core["invariant_results"].values()))
 
