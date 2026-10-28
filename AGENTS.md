@@ -2,9 +2,9 @@
 id: HIO-AGENTS
 title: Agent and collaborator onboarding
 status: current
-approved_by: OD-0056   # harness-0.7.1 C2 at 8461e99639f0ee7bc8cb9de2895d00d257d12974, blob 6eb9f76668149986c8a0fb0677b1e55218334719 (earlier: OD-0021, harness-0.7 rev 3 at 9b58811, blob a2dc93d335105; before that OD-0008 at a82aa0d, blob 4000ab1895ee)
+approved_by: OD-0091   # harness-0.9a, Appendix A of docs/decisions/harness-0.9-proposal.md at 2df83b427896cf5ce413e8cee76f809a267687f6 (earlier: OD-0056, harness-0.7.1 C2 at 8461e99639f0ee7bc8cb9de2895d00d257d12974, blob 6eb9f76668149986c8a0fb0677b1e55218334719; OD-0021, harness-0.7 rev 3 at 9b58811, blob a2dc93d335105; before that OD-0008 at a82aa0d, blob 4000ab1895ee)
 owner: HIO architecture lead (owner)
-version: harness-0.7.1
+version: harness-0.9a
 last_reviewed: 2026-10-18
 ---
 
@@ -59,9 +59,12 @@ canonical documents and does not restate them. The detailed procedures are in
 Record `git rev-parse HEAD`.
 
 **Then, by role** (detail in operating model §2):
-- **Claude:** identify your instructed scope, the files you may change, the blocking findings,
-  the acceptance tests and the handoff you owe. A proposed ADR is not approved because you
-  wrote it.
+- **Claude** (and other non-reviewer agents): after `STATUS.md`, read [`MAP.md`](MAP.md) and the
+  newest handoff in your stream (`handoffs/<stream>/`). Before deriving anything non-trivial,
+  `grep` [`knowledge/findings.md`](knowledge/findings.md) and say what you found; its Inbox lines
+  are claims, not facts. Then identify your instructed scope, the files you may change, the
+  blocking findings, the acceptance tests and the handoff you owe. A proposed ADR is not approved
+  because you wrote it.
 - **Codex (independent reviewer):** find your assignment in one owner-authored source: an
   *Assigned reviews* row in the review index, an owner comment on the author's PR, or a direct
   owner instruction (operating model §2.2; harness-0.7).
@@ -104,8 +107,9 @@ Record `git rev-parse HEAD`.
 ## Ending a session
 
 - **Claude and other non-reviewer agents:** write a handoff from
-  [`templates/handoff.md`](templates/handoff.md) into `handoffs/`, and update `STATUS.md` if
-  the current state changed.
+  [`templates/handoff.md`](templates/handoff.md) into `handoffs/<stream>/`, add its *For the
+  index* lines to the Inbox of `knowledge/findings.md`, and update `STATUS.md` if the current
+  state changed.
 - **Reviewer (Codex), on a review branch:** write your handoff into `reviews/handoffs/`. **Do
   not** touch `handoffs/` or `STATUS.md`. The owner or Claude updates STATUS after receipt
   (operating model §6.2).

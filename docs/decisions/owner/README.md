@@ -105,6 +105,8 @@ are in operating model §1.1; the template is
 | [OD-0088](OD-0088-architect-reading.md) | authorise_work | **Readable architect view** for every interaction (after the OD-0087 runs): full-width tabs instead of the split, a word-wrapped formatted feed, a local auto-refreshing HTML page of full answers; stress-test results as a private claude.ai page; view code only | `~/.hio-runs` (hashes pending) | recorded |
 | [OD-0089](OD-0089-sa-regular-use.md) | authorise_work | **Solution architect: bounded regular advisory use** (ChatGPT's grading of OD-0087: 12/12 pass, no critical or major failures; recommendation adopted); consult before substantial recommendations; powers, identity v0.2, standards and Codex path unchanged; two held-out cases to be named; review after five genuine consultations | `~/.hio-runs/PROTOCOL.md` sha256 `13a45eb7…` | recorded |
 | [OD-0090](OD-0090-fable-analysis.md) | authorise_work | **Fable for analysis**: Claude may engage Fable (subagent) on challenging questions or decisions it has reservations about; read-only advice, reported to the owner; not an independent review | — | recorded |
+| [OD-0091](OD-0091-approve-harness-0.9a.md) | approve | **harness-0.9a approved**: Phase A Appendix A with seed `MAP.md` and `knowledge/findings.md` at `2df83b4`; applied verbatim to `main` | `docs/decisions/harness-0.9-proposal.md@2df83b4` | recorded |
+| [OD-0092](OD-0092-distil-and-phase-b.md) | authorise_work | **First distil** (prepared for owner acceptance), **architect-manifest fix drafted**, **Phase B H6 then H11** implementation (activation needs Codex review and approval) | `knowledge/findings.md`; Phase B branches | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

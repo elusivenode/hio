@@ -1,13 +1,14 @@
 ---
 id: HIO-HARNESS
 title: Agentic operating model and harness specification
-status: approved      # harness-0.7.1 approved by OD-0056 at 552d4fb (blob a74a41453d10). Adoption is conditional on a supervised first receipt recorded in an OD; routine delegated receipt is NOT authorised until then
-approved_by: OD-0056   # harness-0.7.1 at 552d4fbde6f4256bf969b908d721a765aae84e17, blob a74a41453d10b54161136ff08ac36e6ca86f33bc (earlier: OD-0021, harness-0.7 rev 3 at 9b58811, blob 90e2565fe814; before that OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
+status: approved      # harness-0.9a approved by OD-0091 (Appendix A at 2df83b4); harness-0.7.1 approved by OD-0056 at 552d4fb (blob a74a41453d10). Adoption is conditional on a supervised first receipt recorded in an OD; routine delegated receipt is NOT authorised until then
+approved_by: OD-0091   # harness-0.9a, Appendix A of docs/decisions/harness-0.9-proposal.md at 2df83b427896cf5ce413e8cee76f809a267687f6 (earlier: OD-0056, harness-0.7.1 at 552d4fbde6f4256bf969b908d721a765aae84e17, blob a74a41453d10b54161136ff08ac36e6ca86f33bc; OD-0021, harness-0.7 rev 3 at 9b58811, blob 90e2565fe814; before that OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
 owner: HIO architecture lead (owner)
-version: harness-0.7.1
+version: harness-0.9a
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
+  - "harness-0.9a (2026-10-28, APPROVED by OD-0091 at 2df83b4; docs/decisions/harness-0.9-proposal.md revision 4, Appendix A): knowledge layer for non-reviewer agents. Adds MAP.md and knowledge/findings.md (navigation, precedence ranks 5 and 6), per-stream handoffs with Didn't work and For the index, current-state-only STATUS rules, §4.1 maintenance rules. Codex's bootstrap (§2.2) and the review protocol (§6.2) are unchanged. No tool, CI or hook changed"
   - "harness-0.7.1 correction 1 (2026-10-25, APPROVED by OD-0059; docs/decisions/harness-0.7.1-trailer-correction-proposal.md revision 1, blob b8d2fac0dc18): section 6.2 steps 5.7, 5.8 and 5.10 only. Requires the HIO-Actor trailer on each receipt import commit, runs tools/check_repo.py trailers on the import commit before the 5.9 recheck, and makes CI status a mandatory reported result kept separate from the evidence-integrity checks. Tested by a bounded scratch-clone regression (OD-0059). No tool, workflow or hook changed"
   - "harness-0.7.1 (2026-10-25, APPROVED by OD-0056 at 552d4fb, blob a74a41453d10; STATUS-ONLY edits follow): review evidence is delivered by a pushed review branch with no reviewer PR, and received by a byte-identical import with a verified provenance tag (docs/decisions/harness-0.7.1-proposal.md revision 3 at 8ed13fd, blob 72deffc37a4c; verified by VERIFY-2026-10-25-harness-0.7.1-1). Content change: the section 6.2 preamble sentence and steps 3, 4, 5 and 6 only. Adoption condition (OD-0056): the first receipt is supervised and its result recorded in an OD before routine delegated receipt is enabled; until then each receipt needs the owner's explicit go-ahead before anything is pushed to main"
   - "harness-0.7 rev 3 (2026-10-24): APPROVED by OD-0021 at 9b58811 (blob 90e2565fe814); integrated by merge 910c5d5; later edits record status only. Adoption condition: the CI reviewer-PR gate is not an established control until the first reviewer PR validates it. Content: step 4a compares the record's assignment source with an owner-supplied expected source. Rev 2 (fcabd7f): adds assignment verification (step 4a), the trusted-base CI gate, the remediation-before-receipt exception, conflicting-channel handling, and a pointer-only decisions queue. Rev 1: integrated review flow after REVIEW-2026-10-24-s1a-1 exposed handoff gaps. §2.2 and the review index reconcile the assignment sources; §6.2 adds PRs as the visible surface (records stay authoritative), CI scope check of reviewer PRs against the pinned head, CI-run citations, an explicit completion block in every handoff, and standalone-repository paths; §6.3 adds the open-decisions queue"
@@ -58,6 +59,8 @@ Everything below was observed in the `macsmsf` repository on 2026-10-18 [OBS].
 | Knowledge | Canonical home | Format |
 |---|---|---|
 | Mission, philosophy, trajectory | `docs/charter.md` | Markdown + front matter |
+| Project map: purpose, pillars, architecture, threads, settled facts, open questions (navigation; no operational state) | `MAP.md` | Markdown + front matter, ≤110 lines |
+| Engineering knowledge: findings, dead ends, settled assessments (navigation) | `knowledge/findings.md` | Markdown, one line per entry |
 | Decisions | `docs/decisions/HIO-ADR-*.md` + register | Markdown + front matter |
 | Architecture, triggers | `docs/architecture.md` | Markdown |
 | Return mathematics | `docs/standards/return-accounting-and-factor-construction.md` | Markdown (versioned) |
@@ -65,11 +68,11 @@ Everything below was observed in the `macsmsf` repository on 2026-10-18 [OBS].
 | Factor definitions | `specs/factors/*.yaml` | YAML (machine-checked from S1) |
 | Programme | `docs/roadmap.md`, `docs/implementation-plan.md` | Markdown |
 | Risks and open decisions | `docs/risks-and-open-decisions.md` | Markdown |
-| Current state | `STATUS.md` | Markdown, ≤150 lines |
+| Current state only: live work and its authority, blockers, open findings, next actions, branches. Rewritten, not appended; no lists of records inside table cells | `STATUS.md` | Markdown, ≤150 lines |
 | Work items | `registers/tasks/T-*.md` | Markdown from template |
 | Research memory | `registers/hypotheses.yaml`, `registers/experiments.yaml` | YAML |
 | Sources and rights | `registers/sources.yaml` | YAML |
-| Session history | `handoffs/YYYY-MM-DD-<slug>.md` | Markdown from template |
+| Session history | `handoffs/<stream>/YYYY-MM-DD-<slug>.md` (handoffs before harness-0.9a stay at `handoffs/YYYY-MM-DD-<slug>.md`) | Markdown from template |
 | Superseded inputs | `docs/history/` | verbatim + index |
 | Owner decisions (approvals, rejections, authorisations, acceptances, waivers) | `docs/decisions/owner/OD-*.md` | Markdown + front matter |
 | Reviews, findings, remediation claims, verification, waivers | `reviews/README.md` (index) + `reviews/records/*.md` | Markdown |
@@ -122,8 +125,8 @@ Everything below was observed in the `macsmsf` repository on 2026-10-18 [OBS].
 | 2 | approved standards and specs (by version) | governs |
 | 3 | `proposed` ADRs, charter, architecture, roadmap, plans | recommendation only |
 | 4 | task cards, with the recorded owner instruction | limit execution to the instructed scope |
-| 5 | `STATUS.md` | navigational snapshot; **no independent authority** |
-| 6 | handoffs, chat, model memory, meeting notes, collaborator drafts | historical context only |
+| 5 | `STATUS.md`; `MAP.md`; the *Settled* section of `knowledge/findings.md` | navigational; **no independent authority**; the cited source wins |
+| 6 | handoffs, the *Inbox* of `knowledge/findings.md`, chat, model memory, meeting notes, collaborator drafts | historical context or unverified claims only |
 
 **Conflict rule.** If two authoritative sources conflict, or a referenced approved revision is
 missing or does not match, **stop and flag**. Record the conflict in the handoff and ask the
@@ -155,6 +158,11 @@ approved decision.
   description.
 
 ### 2.1 Claude (implementation or documentation agent)
+
+**Knowledge layer** (harness-0.9a; non-reviewer agents). After `STATUS.md`, read `MAP.md` and
+the newest handoff in your stream (`handoffs/<stream>/`). Before deriving anything non-trivial,
+`grep` `knowledge/findings.md` and say what you found. Inbox lines are claims, not facts. Codex's
+bootstrap (§2.2) is unchanged.
 
 Before changing anything, write down:
 1. the owner instruction that authorised the card (its OD record, or, if it is not yet
@@ -247,7 +255,7 @@ There is no tracking database: these are Markdown and YAML files under git.
 - **Task card** ([`../../templates/task-card.md`](../../templates/task-card.md)). See also §5.1
   for what an authorised card must capture. **Implementation requires an `authorised` card.**
 - **Handoff** ([`../../templates/handoff.md`](../../templates/handoff.md)), written at the end
-  of every session that changed anything. Non-reviewers write to `handoffs/`; a reviewer on a
+  of every session that changed anything. Non-reviewers write to `handoffs/<stream>/` (one immutable file per session); a reviewer on a
   review branch writes to `reviews/handoffs/` (§6.2). It contains:
   - base and head revisions. `head_revision: self` means the commit that adds the handoff,
     resolved with `git log -n1 --format=%H -- <handoff path>`. Earlier commits are listed by id;
@@ -258,6 +266,9 @@ There is no tracking database: these are Markdown and YAML files under git.
   - open findings;
   - the next *authorised* action;
   - **an explicit statement of what was not approved.**
+  - **Didn't work:** approaches tried and abandoned, with the reason;
+  - **For the index:** short candidate lines for the findings Inbox, each citing existing
+    evidence. They are not repeated at length.
 
   A handoff that relies on conversational knowledge fails review.
 
@@ -282,6 +293,30 @@ There is no tracking database: these are Markdown and YAML files under git.
   - follow-up.
 - **Failed and abandoned experiments are never deleted.** The variant count per hypothesis is
   the input to multiple-testing haircuts.
+- **Boundary with engineering knowledge.** Experiment outcomes and negative research results
+  live here, with the reasons and assumptions behind a rejection. `knowledge/findings.md` may
+  point to an experiment, and never restates its conclusion.
+
+### 4.1 Engineering knowledge and the project map (harness-0.9a)
+
+- **`MAP.md`** is a navigational projection of other records. It holds no task status, findings,
+  instructions, branch heads or blocker lists. A substantive change (any claim about purpose,
+  pillars, architecture, threads, settled facts or open questions) needs the owner's approval. A
+  mechanical correction (a link, path or citation that changes no claim) is committed with the
+  subject prefix `MAP-mechanical:` and listed at the next distil.
+- **`knowledge/findings.md`** holds one line per engineering finding, dead end or settled
+  assessment. Each line cites evidence and, where material, the revision or component it applies
+  to.
+  - **Inbox:** any agent appends; claims, not facts (precedence rank 6). Tag a line
+    `[rediscovery]` when re-deriving it cost real time.
+  - **Settled:** accepted by the owner at a distil (rank 5). A Settled line contradicted by newer
+    authoritative evidence is marked `superseded by …` or `flagged: …`, never deleted. Settled
+    lines describe; they never govern a later implementation revision.
+  - **Distil:** at existing task boundaries, or when retrieval visibly suffers. Claude proposes a
+    place for each Inbox line; the owner decides; every line leaves the Inbox. Twenty-five Inbox
+    lines is a housekeeping signal, not a trigger for an owner event.
+- **Measures** (reviewed after meaningful use): `[rediscovery]` lines, and owner minutes per
+  review cycle. Elements that show no benefit are simplified or removed.
 
 ## 5. Roles and permissions
 
@@ -703,6 +738,7 @@ resolved G1 history.
 - **Quarterly harness review** (a task card each quarter):
   - check STATUS length and accuracy;
   - check stale `last_reviewed` (>180 days for current documents);
+  - check `MAP.md` against its sources, and *Settled* findings for staleness;
   - check broken links;
   - check duplicated content;
   - check expired blockers;
@@ -846,7 +882,7 @@ the owner. Until then the test status is **pending**.
 
 | Durable (committed) | Ephemeral (not committed) |
 |---|---|
-| ADRs, standards, specs, registers, STATUS, task cards, handoffs, review records | scratch analysis, intermediate notebooks, transcripts, agent working notes |
+| ADRs, standards, specs, registers, STATUS, MAP, the findings index, task cards, handoffs, review records | scratch analysis, intermediate notebooks, transcripts, agent working notes |
 
 Ephemeral work lives in the session's scratch space. Anything worth keeping is distilled into
 a handoff or register entry.

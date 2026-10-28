@@ -18,7 +18,8 @@ last_reviewed: 2026-10-24
 > id dated before the migration refers to `macsmsf` history (`macsmsf@<sha>`). No `macsmsf`
 > code, test, pipeline or deployment reads HIO.
 
-**Start here:** read [`AGENTS.md`](AGENTS.md), then [`STATUS.md`](STATUS.md).
+**Start here:** read [`AGENTS.md`](AGENTS.md), then [`STATUS.md`](STATUS.md). Non-reviewer
+agents then read [`MAP.md`](MAP.md).
 
 ## Document index (the one current plan)
 

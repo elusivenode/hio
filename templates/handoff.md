@@ -7,6 +7,7 @@ base_revision: <git sha>
 head_revision: self       # a file cannot contain its own commit id; resolve with: git log -n1 --format=%H -- <this file>
 work_commits: [<sha>, ...]   # earlier commits of this session, by id
 work_card: T-NNNN
+stream: <t0009 | harness | research | rights | …>   # the handoff lives in handoffs/<stream>/
 ---
 
 # Handoff: <slug>
@@ -26,6 +27,13 @@ work_card: T-NNNN
 
 ## Known limitations and not verified
 - …
+
+## Didn't work
+- … (approaches tried and abandoned, with the reason; or "nothing")
+
+## For the index
+- `[area] the finding. Source: <path:line, commit, test or record>.` (short candidate lines for
+  the Inbox of `knowledge/findings.md`; or "nothing")
 
 ## Open findings (from `reviews/README.md`)
 - … (or "none recorded")
