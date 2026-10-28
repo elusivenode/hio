@@ -50,6 +50,7 @@ SHA256_RE = re.compile(r"[0-9a-f]{64}")
 ADD_DIRS = ("reviews/records/", "reviews/handoffs/", "reviews/reports/")
 README = "reviews/README.md"
 STATE_WORDS = ("verified_closed", "remediation_rejected", "open")
+FORBIDDEN_STATES = ("accepted", "waived", "approved")  # owner ODs only: the receiver cites, never creates
 PLACEHOLDERS = {"", "—", "–", "-"}
 
 
@@ -175,20 +176,47 @@ def _is_separator(cells: list[str]) -> bool:
     return all(re.fullmatch(r":?-{3,}:?", c) for c in cells)
 
 
+def _has_header(block: list[tuple[str, list[str]]]) -> bool:
+    return len(block) > 1 and _is_separator(block[1][1])
+
+
 def parse_tables(lines: list[str]) -> list[tuple[list[str], list[tuple[str, list[str]]]]]:
-    """Contiguous runs of table lines: (normalised lower-case header cells, [(line, cells)] body rows)."""
+    """Table blocks: (normalised lower-case header cells, [(line, cells)] body rows).
+
+    A block is a contiguous run of table lines. A header-less run that follows a table across blank
+    lines only (the real index has one inside the findings register) continues that table, row by
+    row, for each row with the table's column count; a row with another count stays in a header-less
+    block of its own, which has no body and so is never classified.
+    """
     blocks: list[list[tuple[str, list[str]]]] = []
     cur: list[tuple[str, list[str]]] = []
-    for line in lines:
+    orphans: list[tuple[str, list[str]]] = []
+    blank = cont = False
+    for i, line in enumerate(lines):
         cells = split_row(line)
         if cells is None:
-            if cur:
+            if line.strip():
+                blocks += [b for b in (cur, orphans) if b]
+                cur, orphans, blank, cont = [], [], False, False
+            else:
+                if orphans:
+                    blocks.append(orphans)
+                    orphans = []
+                blank, cont = bool(cur), False
+            continue
+        if blank:
+            blank = False
+            nxt = split_row(lines[i + 1]) if i + 1 < len(lines) else None
+            if (nxt is not None and _is_separator(nxt)) or not _has_header(cur):
                 blocks.append(cur)
                 cur = []
+            else:
+                cont = True
+        if cont and len(cells) != len(cur[0][1]):
+            orphans.append((line, cells))
         else:
             cur.append((line, cells))
-    if cur:
-        blocks.append(cur)
+    blocks += [b for b in (cur, orphans) if b]
     tables = []
     for b in blocks:
         header = [norm_cell(c).lower() for c in b[0][1]]
@@ -301,8 +329,19 @@ def _check_record_row(kind: str, header: list[str], cells: list[str], rec: Recor
         cell = norm_cell(cells[i if i is not None else j]).lower()  # type: ignore[index]
         if not verdict:
             probs.append(f"{rec.id}: the record has no verdict in its front matter")
-        elif (i is not None and cell != verdict) or (i is None and verdict not in cell):
+        elif i is not None and cell != verdict:
             probs.append(f"{rec.id}: verdict cell {cell!r} does not equal the record's {verdict!r}")
+        elif i is None and cell.rsplit(";", 1)[-1].strip() != verdict:
+            probs.append(f"{rec.id}: the outcome cell {cell!r} does not end with the record's {verdict!r}")
+    i = col(header, "status")
+    if kind == "assigned" and i is not None:
+        status = norm_cell(cells[i]).lower()
+        if not re.match(r"received\b", status):
+            probs.append(f"{rec.id}: the status cell must begin with received, not {status[:40]!r}")
+        stated = re.search(r"\bverdict\s+([^;,.()]+)", status)
+        claimed = stated.group(1).strip() if stated else verdict
+        if claimed != verdict:
+            probs.append(f"{rec.id}: status cell verdict {claimed!r} does not equal the record's {verdict!r}")
     i = col(header, "assigned by")
     if i is not None and not _matches_assignment(cells[i], source):
         probs.append(f"{rec.id}: assignment cell does not match the 5.0.1 source {source!r}")
@@ -365,9 +404,14 @@ def _check_finding_s(
         probs.append(f"{fid}: the state cell {state[:40]!r} does not begin with {', '.join(STATE_WORDS)}")
         return probs
     word = m.group(1)
-    verifying = [r for r in recs if r.kind == "VERIFY" and _record_states(r, fid, word)]
+    stated = {r.id: record_outcome(r, fid) for r in recs if r.kind == "VERIFY"}
+    verifying = [r for r in recs if stated.get(r.id) == word]
     if not verifying:
-        probs.append(f"{fid}: no imported VERIFY record states {word} for this finding")
+        others = sorted({s for s in stated.values() if s})
+        probs.append(
+            f"{fid}: no imported VERIFY record states {word} for this finding"
+            + (f" (its outcome table states {', '.join(others)})" if others else "")
+        )
         return probs
     rec = verifying[0]
     vcell = norm_cell(new[ci["verification"]])  # type: ignore[index]
@@ -387,8 +431,22 @@ def _check_finding_s(
     return probs
 
 
-def _record_states(rec: Record, fid: str, word: str) -> bool:
-    return any(fid in line and re.search(rf"\b{word}\b", line) for line in rec.text.splitlines())
+def record_outcome(rec: Record, fid: str) -> str | None:
+    """The state a VERIFY record affirmatively states for `fid` in its per-finding outcome table.
+
+    Only a table row counts: the first cell is exactly the finding id (bold or code allowed) and the
+    second cell begins with a state word (bold allowed). A state word in prose, negated or quoted, or
+    in any other cell never counts. Rows that disagree state nothing.
+    """
+    found = set()
+    for line in rec.text.splitlines():
+        cells = split_row(line)
+        if not cells or len(cells) < 2 or cells[0].strip("*` ") != fid:
+            continue
+        m = re.match(rf"\**({'|'.join(STATE_WORDS)})\b", cells[1])
+        if m:
+            found.add(m.group(1))
+    return found.pop() if len(found) == 1 else None
 
 
 def check_index(
@@ -420,10 +478,24 @@ def check_index(
             problems.append(f"an added line is neither a Class N nor a Class S row: {line[:90]!r}")
             continue
         kind, header, cells = info
-        for word in ("verified_closed", "waived", "accepted"):
-            if re.search(rf"\b{word}\b", line, re.I) and not re.search(rf"\b{word}\b", imported_text, re.I):
-                problems.append(f"{word} in an added row that no imported record supports: {line[:90]!r}")
         fid = norm_cell(cells[0])
+        scanned = line
+        if kind == "findings" and fid in removed:
+            # a Class S row repeats main's other cells verbatim; only the cells it rewrites are scanned
+            rewritten = (col(header, "state"), col(header, "verification"))
+            scanned = " ".join(cells[i] for i in rewritten if i is not None and i < len(cells))
+        for word in FORBIDDEN_STATES:
+            if re.search(rf"\b{word}\b", scanned, re.I):
+                problems.append(
+                    f"{word} in an added row: it exists only as an owner OD, which the receiver "
+                    f"cites and never creates: {line[:90]!r}"
+                )
+        if re.search(r"\bverified_closed\b", line, re.I) and not re.search(
+            r"\bverified_closed\b", imported_text, re.I
+        ):
+            problems.append(
+                f"verified_closed in an added row that no imported record supports: {line[:90]!r}"
+            )
         if kind == "findings" and fid in removed:
             old, old_header = removed.pop(fid)
             if old_header != header:
