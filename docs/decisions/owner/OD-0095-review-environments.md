@@ -36,3 +36,28 @@ related: {adrs: [], tasks: [], findings: [], ods: [OD-0072, OD-0077, OD-0094]}
 - Credentials boundaries.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, done (after CH6N finished).**
+   - **hiomux changes** (backup `notes/hiomux.pre-review-env.bak`; one line replaced, the rest added):
+     - `review_env` builds a base uv cache per `uv.lock` (keyed by its sha256) under `~/.hio-runs/envs/<hash>/`,
+       outside any sandbox, with `uv sync --frozen --python 3.13`;
+     - `prepare_review_cache` gives each Codex review a copy-on-write clone of it at
+       `/private/tmp/hiomux-<run>-<task>-uv`, its `UV_CACHE_DIR`;
+     - one reviewer-prompt line tells the reviewer the environment is there, that it may extend it, and to
+       list what it adds.
+   - **Unchanged:**
+     - the sandbox profiles (`/private/tmp` was already writable in both);
+     - the network default;
+     - the reviewer's repository write paths and authority;
+     - Claude workers (still the run's uv cache).
+   - **Tests:**
+     - base build 1.4 s; reuse 0.01 s; clone 0.12 s;
+     - a fresh checkout synced **offline** from the clone and ran `tests/test_hio_assign.py` (27 passed) in 4 s
+       in total;
+     - `hiomux sa probe` ALL PASS after the change.
+   - **New hashes:**
+
+     | File | sha256 |
+     |---|---|
+     | `~/.hio-runs/bin/hiomux` | `25f7b2722daa70003b73e9f90513ba602f1129bb097129f2b8e8885c4230665f` (supersedes `052a63f5…`, OD-0088 correction 2) |
+     | `~/.hio-runs/orch-prompt.md` | `d2ae1f8e130d4c8dba25414b40be000316868dbf1e614e9f83b74d23924d50c7` (now points to this correction) |
