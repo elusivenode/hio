@@ -79,3 +79,22 @@ Two yeses, both to take effect after the OD-0087 runs finish:
      | `~/.hio-runs/PROTOCOL.md` | `881e4b4e75da92e4d411e4d4c399cb2bc40a806a3911474ed72a128c2fbb6179` |
      | `~/.warp/launch_configurations/hio-workers.yaml` | `4eddadead695d41ca9d2da3d5999ffeb19ab134803182d30f47fecaade18fa5c` |
      | `~/.hio-runs/orch-prompt.md` | `77f701bb97161aabc50b0684446f4b63daccb1166875335dbc93875891bdf85b` |
+
+2. **2026-10-28, ticker fix.**
+   - **What the owner said:** "this is not ergonomic. I cannot scroll or page up in the architect pain in warp.
+     is this is a tmux pane?" It is not a tmux pane. A Warp tab running one long-lived command cannot be
+     scrolled while it runs, and the full answers showed raw markdown.
+   - **Change (view code only; backup `notes/hiomux.pre-ticker.bak`):** each feed entry is now a compact
+     ticker:
+     - the header;
+     - the question, up to 240 characters;
+     - the recommendation, or the first two paragraphs of a free-text answer, with **bold** and `code`
+       rendered;
+     - the number of owner decisions proposed;
+     - a link to `~/.hio-runs/architect.html`.
+
+     The browser page is the reading surface.
+   - **Afterwards:** the tabs were relaunched and `hiomux sa probe` passed in full.
+   - **New hiomux sha256:** `052a63f5977a5b98ccc3afb4cc5e047a70b9b2eabf90f6499052a3b2231a1fd5`. It supersedes
+     `4e1b3133…` (correction 1). PROTOCOL and the launch configuration are unchanged. The orchestrator prompt now
+     names where the latest hashes are recorded: sha256 `64ecc07ec713894e2f607c48f8582f9a8c9d9e1d3c12a9679efbffd8d81fbfe1`.
