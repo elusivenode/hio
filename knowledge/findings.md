@@ -88,3 +88,20 @@ _(None yet. Every line below is an Inbox candidate for the first distil.)_
 #### Owner interaction
 - [process] The owner's answers in a question dialog are recorded verbatim in `docs/history/` together with the question text, because the selection alone ("Yes, push and receive (Recommended)") is meaningless without it. Source: the history files behind OD-0074 to OD-0079.
 - [process] The owner wants a pending decision stated as one precise yes/no question naming exactly what the yes authorises. A table row reading "judgement: none" next to an unasked question cost a round trip. Source: `docs/history/2026-10-28-owner-d7-approval.md` messages 5 and 6.
+
+### From the 2026-10-28 solution-architect, hiomux and harness sessions (handoff `handoffs/2026-10-28-solution-architect-and-hiomux-layout.md`; OD-0081 to OD-0092)
+- [hiomux] Codex CLI 0.164's read-only sandbox reads the whole disk, and Codex auto-loads `AGENTS.md` unless `project_doc_max_bytes=0`; folder trust is read from `config.toml` before any `-c` override. Source: OD-0081; OD-0082.
+- [hiomux] An architect sandbox profile must deny file reads under `$HOME` except its session directory and its own `CODEX_HOME`, and needs a full (not `--shared`) clone. Source: OD-0082.
+- [review] A leak-free historical evaluation needs `git archive` at the cutoff plus named extra files, with "later" defined by commit time, not reachability. Source: OD-0082.
+- [process] Tuning an identity on an evaluation case spends that case. Keep held-out cases, and re-run them only at their original cutoff: the stress cases and their grading are public in the repository. Source: OD-0083; OD-0084; OD-0089 correction 1.
+- [ops] The owner uses Warp, which intercepts tmux prefix keys: the orchestrator runs outside tmux, and the owner's view is a Warp launch configuration. Source: OD-0085.
+- [ops] A Warp tab running one long-lived command cannot be scrolled while it runs. Long answers belong on a page (`~/.hio-runs/architect.html`); the terminal tab is a ticker. Source: OD-0088 correction 2.
+- [review] An evaluation whose cutoff contains its own records (the authorising OD, STATUS) lets the subject infer it is being tested. Choose an earlier cutoff, or disclose it. Source: OD-0087 correction 1; `docs/history/2026-10-28-chatgpt-sa-grading-report.md` §5.5.
+- [review] To show whether an agent used the network, inspect its transcript for remote commands and web-search items; a regex over command strings gives false positives (`rg` globs, `uv.lock`, `.git`). Source: OD-0087 correction 2.
+- [review] Not every hex-looking string is a commit id: pre-migration `macsmsf` ids (for example `a82aa0d` in `AGENTS.md`) do not resolve in this repository, and long decimals look like hex. Source: OD-0087 correction 2; `MIGRATION-MAP.md`.
+- [repo] [rediscovery] In zsh, an argument starting with `=` (for example `echo ======`) is command-path expansion and fails ("= not found"). Quote it. Source: reproducible (session 2026-10-28, twice).
+- [repo] [rediscovery] The `HIO-Actor` trailer trap (above) recurred: four pushes to `main` failed CI's harness job although this index listed it. Run `check_repo.py trailers origin/main HEAD` before every push. Source: OD-0092 correction 1.
+- [hiomux] Every hiomux change needs a fresh `hiomux sa probe` and its new sha256 recorded in an OD; the orchestrator's session-start check compares the tool against the latest OD. Source: OD-0085; OD-0086; OD-0088.
+- [hiomux] `hiomux up --no-orch` reuses an open run or opens a new one, so a `hio-orch` session can open a run that later needs `close` and `cleanup`. Source: OD-0086.
+- [hiomux] The architect's context manifest reads `MAP.md` and the findings index from `proposal/harness-0.9`, which is stale now that Phase A is on `main`; a fix is to be drafted. Source: `docs/agents/solution-architect/context-manifest.yaml` (the two `ref: proposal/harness-0.9` entries); OD-0092.
+- [ops] `/remote-control` connects a Claude Code session to the Claude app, and push notifications to the phone need `/config agentPushNotifEnabled=true`. Source: session 2026-10-28.
