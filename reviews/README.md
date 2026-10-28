@@ -82,6 +82,7 @@ Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
 | VERIFY-2026-10-24-s1a-1-11 | REVIEW-2026-10-24-s1a-1, finding(s) 7 | `21e4a07..084154c` | `6b0c0b3` | **F7 verified_closed**; F4 held; READY | [record](records/VERIFY-2026-10-24-s1a-1-11.md) |
 | VERIFY-2026-10-28-t0009-1-1 | REVIEW-2026-10-25-t0009-1, findings 1–7 | `ce0c3b5..76539b5` | `c5d4421`, `d85b1c3`, `42ad1b8`, `fe7e244`, `30c7b68` | **Six verified_closed** (F-1, F-2, F-3, F-4, F-6, F-7); F-5 part verified, **open**; NOT READY | [record](records/VERIFY-2026-10-28-t0009-1-1.md) |
 | VERIFY-2026-10-28-t0009-1-3 | REVIEW-2026-10-25-t0009-1, finding 5 | `76539b5..846974b` | `4f7943f` | **F-5 verified_closed** (RBA pages read live); READY | [record](records/VERIFY-2026-10-28-t0009-1-3.md) |
+| VERIFY-2026-10-28-h6-1-2 | REVIEW-2026-10-28-h6-1, findings 2–4 and F-1-fix regression | `ab0288f..5b9e49c` | `fb9b456`, `e4fff98` | F-2 open; F-3 and F-4 verified_closed; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-2.md) |
 
 All S1a verification records V1–V11 were **received into `main`** on 2026-10-25 under OD-0037,
 after PR #2 was integrated at the reviewed head `084154c` (merge `773a557`). Receipt is not
