@@ -101,6 +101,7 @@ are in operating model §1.1; the template is
 | [OD-0084](OD-0084-approve-sa-identity-v0.2.md) | approve | **Solution-architect identity v0.2 approved** at `72c0eaf` (blob `5592dbf2`), merged into `main`; status line updated only; new sessions use v0.2; held-out case still outstanding | `docs/agents/solution-architect/identity.md` | recorded |
 | [OD-0085](OD-0085-hiomux-layout-and-hashes.md) | authorise_work | **hiomux layout**: orchestrator outside tmux; read-only two-pane `view` (architect feed and workers-and-Codex feed) in a separate Warp window; hiomux, PROTOCOL and launch-config **hashes recorded** | `~/.hio-runs` (by sha256) | recorded |
 | [OD-0086](OD-0086-orch-autostart.md) | authorise_work | **hio-orch starts itself**: each orchestrator session runs the bootstrap and, after the hash checks pass, brings up hiomux (`up --no-orch`) and its Warp view unless already up; orch prompt and alias changed; hiomux and PROTOCOL hashes unchanged | `~/.hio-runs/orch-prompt.md` sha256 `5f75f210…` | recorded |
+| [OD-0087](OD-0087-sa-stress-test.md) | authorise_work | **Solution-architect stress test adopted**: six cases × two runs in the read-only pilot; ChatGPT writes cases and sealed expected findings (owner holds them, Claude gets sha256 only); evidence-based cutoffs; Claude mechanical checks only, no grading, tuning or promotion; boundary probe ALL PASS at adoption | `docs/agents/solution-architect/evals/` (cases pending) | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
