@@ -52,6 +52,8 @@ README = "reviews/README.md"
 STATE_WORDS = ("verified_closed", "remediation_rejected", "open")
 FORBIDDEN_STATES = ("accepted", "waived", "approved")  # owner ODs only: the receiver cites, never creates
 PLACEHOLDERS = {"", "—", "–", "-"}
+SHORT_FINDING_CELLS = 6  # the ADR-0012 rows on main omit the verification cell
+STATE_BEARING = ("status", "verdict", "state", "reviewer outcome")  # header prefixes of the state cells
 
 
 class Stop(Exception):
@@ -180,13 +182,29 @@ def _has_header(block: list[tuple[str, list[str]]]) -> bool:
     return len(block) > 1 and _is_separator(block[1][1])
 
 
+def finding_header(header: list[str], n: int) -> list[str] | None:
+    """The findings header that describes a row of n cells, or None.
+
+    That is the full header, or, for the six-cell rows the ADR-0012 findings use on main, the header
+    without its verification column (such a row cites its verifying record in the state cell).
+    """
+    if n == len(header):
+        return header
+    if n == SHORT_FINDING_CELLS and header and header[0] == "finding":
+        short = [h for h in header if not h.startswith("verification")]
+        if len(short) == n:
+            return short
+    return None
+
+
 def parse_tables(lines: list[str]) -> list[tuple[list[str], list[tuple[str, list[str]]]]]:
     """Table blocks: (normalised lower-case header cells, [(line, cells)] body rows).
 
     A block is a contiguous run of table lines. A header-less run that follows a table across blank
     lines only (the real index has one inside the findings register) continues that table, row by
-    row, for each row with the table's column count; a row with another count stays in a header-less
-    block of its own, which has no body and so is never classified.
+    row, for each row with the table's column count or, in the findings table, the six-cell shape
+    (`finding_header`); a row with another count stays in a header-less block of its own, which has
+    no body and so is never classified.
     """
     blocks: list[list[tuple[str, list[str]]]] = []
     cur: list[tuple[str, list[str]]] = []
@@ -212,7 +230,7 @@ def parse_tables(lines: list[str]) -> list[tuple[list[str], list[tuple[str, list
                 cur = []
             else:
                 cont = True
-        if cont and len(cells) != len(cur[0][1]):
+        if cont and finding_header([norm_cell(c).lower() for c in cur[0][1]], len(cells)) is None:
             orphans.append((line, cells))
         else:
             cur.append((line, cells))
@@ -376,8 +394,10 @@ def _check_finding_s(
     old: list[str], new: list[str], header: list[str], recs: list[Record], od: str | None
 ) -> list[str]:
     fid = norm_cell(new[0])
-    if len(old) != len(header) or len(new) != len(header):
-        return [f"{fid}: finding row cell count differs from its header"]
+    shape = finding_header(header, len(new)) if len(old) == len(new) else None
+    if shape is None:
+        return [f"{fid}: finding row cell count differs from its header (or from the old row)"]
+    header = shape
     probs = []
     ci = {
         n: col(header, p)
@@ -390,7 +410,8 @@ def _check_finding_s(
             ("waiver", "waiver"),
         )
     }
-    if any(v is None for v in ci.values()):
+    short = len(header) == SHORT_FINDING_CELLS and ci["verification"] is None
+    if any(v is None for n, v in ci.items() if not (short and n == "verification")):
         return [f"{fid}: the findings table lacks an expected column"]
     for name in ("review", "severity", "claim", "waiver"):
         i = ci[name]
@@ -414,11 +435,13 @@ def _check_finding_s(
         )
         return probs
     rec = verifying[0]
-    vcell = norm_cell(new[ci["verification"]])  # type: ignore[index]
+    cites = [new[i] for i in (ci["state"], ci["verification"]) if i is not None]  # type: ignore[index]
+    vcell = norm_cell(cites[-1])  # the verification cell, or the state cell in a six-cell row
     if rec.id not in vcell:
-        probs.append(f"{fid}: the verification cell does not cite the imported record {rec.id}")
+        where = "state" if short else "verification"
+        probs.append(f"{fid}: the {where} cell does not cite the imported record {rec.id}")
     allowed_hex = [rec.fm.get("reviewed_head", ""), rec.fm.get("reviewed_base", "")]
-    for cell in (new[ci["state"]], new[ci["verification"]]):  # type: ignore[index]
+    for cell in cites:
         for tok in re.findall(r"\b[0-9a-f]{7,40}\b", norm_cell(cell)):
             if not any(a.startswith(tok) for a in allowed_hex if a):
                 probs.append(f"{fid}: commit {tok} in the row is not the record's reviewed head or base")
@@ -435,18 +458,27 @@ def record_outcome(rec: Record, fid: str) -> str | None:
     """The state a VERIFY record affirmatively states for `fid` in its per-finding outcome table.
 
     Only a table row counts: the first cell is exactly the finding id (bold or code allowed) and the
-    second cell begins with a state word (bold allowed). A state word in prose, negated or quoted, or
-    in any other cell never counts. Rows that disagree state nothing.
+    second cell begins with the bold token `**<state>.**` or `**<state>**`, followed by the end of the
+    cell or whitespace. A bare state word, one inside a longer bold phrase, in prose, negated or
+    quoted, or in any other cell never counts. Rows that disagree state nothing.
     """
     found = set()
     for line in rec.text.splitlines():
         cells = split_row(line)
         if not cells or len(cells) < 2 or cells[0].strip("*` ") != fid:
             continue
-        m = re.match(rf"\**({'|'.join(STATE_WORDS)})\b", cells[1])
+        m = re.match(rf"\*\*({'|'.join(STATE_WORDS)})\.?\*\*(?:\s|$)", cells[1])
         if m:
             found.add(m.group(1))
     return found.pop() if len(found) == 1 else None
+
+
+def state_cells(kind: str | None, header: list[str], cells: list[str]) -> list[str]:
+    """The cells of a row that carry a status, verdict or state; scope, claim and prose cells never do."""
+    if kind == "findings":
+        header = finding_header(header, len(cells)) or header
+    found = (col(header, p) for p in STATE_BEARING)
+    return [cells[i] for i in found if i is not None and i < len(cells)]
 
 
 def check_index(
@@ -479,13 +511,8 @@ def check_index(
             continue
         kind, header, cells = info
         fid = norm_cell(cells[0])
-        scanned = line
-        if kind == "findings" and fid in removed:
-            # a Class S row repeats main's other cells verbatim; only the cells it rewrites are scanned
-            rewritten = (col(header, "state"), col(header, "verification"))
-            scanned = " ".join(cells[i] for i in rewritten if i is not None and i < len(cells))
         for word in FORBIDDEN_STATES:
-            if re.search(rf"\b{word}\b", scanned, re.I):
+            if any(re.search(rf"\b{word}\b", c, re.I) for c in state_cells(kind, header, cells)):
                 problems.append(
                     f"{word} in an added row: it exists only as an owner OD, which the receiver "
                     f"cites and never creates: {line[:90]!r}"

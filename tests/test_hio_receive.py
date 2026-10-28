@@ -893,7 +893,9 @@ def test_class_s_needs_an_affirmative_outcome_row_for_that_finding():
     to_closed = replace_line(README_BASE, "| F-OLD-1-1 |", S_NEW)
     good = outcome_record("| F-OLD-1-1 | **verified_closed.** the fix holds |\n")
     assert problems_for(to_closed, [good]) == []
-    assert problems_for(to_closed, [outcome_record("| `F-OLD-1-1` | verified_closed |\n")]) == []
+    # adjusted in round 3: this case used the bare word `verified_closed`, which the old parser accepted;
+    # only the bold token `**verified_closed**` (or `**verified_closed.**`) now counts
+    assert problems_for(to_closed, [outcome_record("| `F-OLD-1-1` | **verified_closed** |\n")]) == []
     # the reviewer's exact case: prose that negates the state word
     prose = outcome_record("F-OLD-1-1 remains open; do not mark verified_closed.\n")
     for rec in (
@@ -1000,3 +1002,139 @@ def test_real_index_has_no_duplicate_ids_and_every_table_is_recognised():
     assert hio.duplicate_problems(lines) == []
     kinds = {hio.table_kind(h) for h, _body in hio.parse_tables(lines)}
     assert {"assigned", "reviewed", "rounds", "findings"} <= kinds
+
+
+# --- round 3: VERIFY-2026-10-28-h6-1-1 (F-2, F-4 and the F-1-fix regression) ----------------------
+
+
+def test_outcome_cell_counts_only_with_the_exact_bold_state_token():
+    def stated(cell: str) -> str | None:
+        return hio.record_outcome(outcome_record(f"| F-OLD-1-1 | {cell} |\n"), "F-OLD-1-1")
+
+    for cell, state in (
+        ("**verified_closed.** the fix holds", "verified_closed"),
+        ("**verified_closed**", "verified_closed"),
+        ("**verified_closed.**", "verified_closed"),
+        ("**verified_closed** at `bbbbbbb`", "verified_closed"),
+        ("**remediation_rejected.** x", "remediation_rejected"),
+        ("**open.** not fixed", "open"),
+    ):
+        assert stated(cell) == state, cell
+    for cell in (
+        "verified_closed was NOT reached; the finding remains open.",  # the verifier's exact case
+        "verified_closed",
+        "open",
+        "**verified_closed was NOT reached**",
+        "**not verified_closed**",
+        "*verified_closed.* ok",
+        "**verified_closed.**x",
+        "**verified_closed**; later",
+        "**verified_closed.**. later",
+        "the **verified_closed.** claim is rejected",
+        "",
+    ):
+        assert stated(cell) is None, cell
+    to_closed = replace_line(README_BASE, "| F-OLD-1-1 |", S_NEW)
+    verifier_case = outcome_record(
+        "| F-OLD-1-1 | verified_closed was NOT reached; the finding remains open. |\n"
+    )
+    problems = problems_for(to_closed, [verifier_case])
+    assert any("no imported VERIFY record states verified_closed" in p for p in problems), problems
+
+
+FINDING_6 = (
+    "| F-OLD-1-3 | OLD-1 | high | **remediation_claimed** (still open): late | "
+    "remediation_claimed (round 1): fix `abc1234` | — |"
+)
+FINDING_7 = "| F-OLD-1-4 | OLD-1 | low | **open** | — | — | — |"
+FINDING_6_DONE = (
+    "| F-OLD-1-3 | OLD-1 | high | **verified_closed** at `bbbbbbb` ([VERIFY-X-1](records/VERIFY-X-1.md)) | "
+    "remediation_claimed (round 1): fix `abc1234` | — |"
+)
+
+
+def with_six_cell_rows(text: str) -> str:
+    """The shape of main's real index: after a blank line, six-cell rows (no verification cell) then seven."""
+    return text.replace("| F-OLD-1-2 |", f"\n{FINDING_6}\n{FINDING_7}\n| F-OLD-1-2 |", 1)
+
+
+def test_header_less_run_after_blank_lines_continues_the_findings_table_with_six_cell_rows():
+    main = with_six_cell_rows(README_BASE)
+    lines = main.splitlines()
+    rows = hio.row_index(lines)
+    for line in (FINDING_6, FINDING_7, "| F-OLD-1-2 | OLD-1 | medium | **open** | — | — | — |"):
+        assert rows[line][0] == "findings", line
+    # a row with any other cell count is still not folded in
+    odd = main.replace(FINDING_7, "| F-OLD-1-4 | OLD-1 | low | **open** |", 1)
+    assert "| F-OLD-1-4 | OLD-1 | low | **open** |" not in hio.row_index(odd.splitlines())
+    staged = main.replace(FINDING_6, FINDING_6_DONE, 1)
+    rec = outcome_record("| F-OLD-1-3 | **verified_closed.** the fix holds |\n")
+    assert problems_for(staged, [rec], main=main) == []
+    assert hio.duplicate_problems(staged.splitlines()) == []
+
+    def refused(new_row: str, recs: list, needle: str) -> None:
+        problems = problems_for(main.replace(FINDING_6, new_row, 1), recs, main=main)
+        assert any(needle in p for p in problems), (new_row, problems)
+
+    refused(
+        FINDING_6_DONE,
+        [outcome_record("F-OLD-1-3 stays open; do not mark verified_closed.\n")],
+        "no imported VERIFY",
+    )
+    refused(
+        FINDING_6_DONE,
+        [outcome_record("| F-OLD-1-3 | verified_closed was NOT reached |\n")],
+        "no imported VERIFY",
+    )
+    refused(FINDING_6_DONE.replace("VERIFY-X-1", "none"), [rec], "does not cite")
+    refused(FINDING_6_DONE.replace("fix `abc1234`", "fix `ffffff1`"), [rec], "claim cell changed")
+    refused(FINDING_6_DONE.replace("| high |", "| low |"), [rec], "severity cell changed")
+    refused(FINDING_6_DONE.replace("`bbbbbbb`", "`1234567`"), [rec], "1234567")
+    # a Class S row keeps its shape: the six-cell row cannot become a seven-cell one
+    refused(FINDING_6_DONE + " — |", [rec], "cell count")
+    # a new six-cell row is not a Class N row
+    new_rows = main.replace(FINDING_7, FINDING_7 + "\n" + FINDING_6.replace("F-OLD-1-3", "F-OLD-1-5"), 1)
+    problems = problems_for(new_rows, [rec], main=main)
+    assert any("F-OLD-1-5" in p and "cells" in p for p in problems), problems
+
+
+def test_real_index_adr0012_six_cell_row_accepts_a_class_s_transition():
+    main = (REPO / "reviews" / "README.md").read_text()
+    old = next(line for line in main.splitlines() if line.startswith("| F-REVIEW-2026-10-25-adr0012-1 |"))
+    cells = hio.split_row(old)
+    assert cells is not None and len(cells) == 6
+    assert hio.row_index(main.splitlines())[old][0] == "findings"
+    cells[3] = "**verified_closed** at `bbbbbbb` ([VERIFY-X-1](records/VERIFY-X-1.md))"
+    new = "| " + " | ".join(cells) + " |"
+    staged = main.replace(old, new, 1)
+    fid = hio.norm_cell(cells[0])
+    rec = outcome_record(f"| {fid} | **verified_closed.** closed at the reviewed head |\n")
+    assert problems_for(staged, [rec], main=main) == []
+    unsupported = outcome_record(f"| {fid} | verified_closed was NOT reached; still open |\n")
+    problems = problems_for(staged, [unsupported], main=main)
+    assert any("no imported VERIFY record states verified_closed" in p for p in problems), problems
+    altered = staged.replace("| high |", "| low |", 1)
+    assert problems_for(altered, [rec], main=main) != []
+
+
+def test_forbidden_state_guard_reads_state_cells_never_scope_or_prose():
+    prose = "Review whether the work was accepted by the owner"
+    rec = record("REVIEW-X-1", "REVIEW", "### F-X-1-1 — high, open: a\n", verdict="NOT READY")
+    row = (
+        f"| REVIEW-X-1 | `r` | `{'a' * 40}` | `{'b' * 40}` | {prose} | [{SOURCE}](../{SOURCE}) | "
+        "**received**; verdict NOT READY |"
+    )
+    assert problems_for(add_row(README_BASE, H_ASSIGNED, row), [rec]) == []
+    for word in ("accepted", "waived", "approved"):
+        bad = row.replace("**received**; verdict NOT READY", f"**{word}**")
+        problems = problems_for(add_row(README_BASE, H_ASSIGNED, bad), [rec])
+        assert any(word in p and "owner OD" in p for p in problems), (word, problems)
+    # a Class S row may repeat prose that mentions approval in a cell it does not rewrite
+    claim = "remediation_claimed: the design was approved by the owner; fix `abc1234`"
+    main = README_BASE.replace("remediation_claimed: fix `abc1234`", claim)
+    s_new = S_NEW.replace("remediation_claimed: fix `abc1234`", claim)
+    good = outcome_record("| F-OLD-1-1 | **verified_closed.** ok |\n")
+    assert problems_for(replace_line(main, "| F-OLD-1-1 |", s_new), [good], main=main) == []
+    accepted = s_new.replace("**verified_closed**", "**accepted**")
+    problems = problems_for(replace_line(main, "| F-OLD-1-1 |", accepted), [good], main=main)
+    assert any("accepted" in p and "owner OD" in p for p in problems), problems
