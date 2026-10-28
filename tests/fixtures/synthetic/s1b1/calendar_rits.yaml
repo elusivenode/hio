@@ -1,0 +1,10 @@
+# SYNTHETIC calendar fixture: invented closures, NOT RITS facts. Shape of a dated, cited calendar (T-0009 §2.7).
+calendar_id: rits
+kind: synthetic
+as_of: 2026-10-28
+source:
+  citation: "SYNTHETIC: invented for tests; no RITS calendar has been read or retained (real data needs the D7 rights decision)"
+coverage: {start: 2026-09-01, end: 2026-12-31}
+weekend: [5, 6]
+closed:
+  - {date: 2026-11-03, reason: "SYNTHETIC RITS-only closure: an NSW business day on which RITS is closed"}

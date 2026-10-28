@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
@@ -16,7 +17,7 @@ from hio.contracts.temporal import KnowledgeMode
 from hio.jobs.s1a import JOB_ACTOR  # noqa: F401
 from hio.jobs.s1b1 import Calendars, build_releases, ingest_pending, sofr_calendar, vintage_store
 from hio.publish.release import verify_release
-from hio.reference.calendar import BusinessCalendar
+from hio.reference.calendar import BusinessCalendar, load_reference_calendar
 from hio.rights.gate import RightsGate
 from hio.rights.model import ALL_PERMISSIONS, Permission, RightsRecord, Verification
 from hio.rights.register import load_genuine
@@ -35,8 +36,10 @@ def days(start: date, end: date, cal: BusinessCalendar) -> list[date]:
     return cal.business_days(start, end)
 
 
-RITS = BusinessCalendar("rits")  # weekends only: RITS is open on NSW-only holidays
-NSW = BusinessCalendar("nsw", frozenset({D(2026, 10, 5)}))  # NSW Labour Day
+# Dated, cited calendar fixtures (SYNTHETIC: invented closures, not RITS or NSW facts; F-5).
+CAL_FX = Path(__file__).parent / "fixtures" / "synthetic" / "s1b1"
+RITS = load_reference_calendar(CAL_FX / "calendar_rits.yaml", allow_synthetic=True)
+NSW = load_reference_calendar(CAL_FX / "calendar_nsw.yaml", allow_synthetic=True)  # closed 2026-10-05
 SIFMA = BusinessCalendar("sifma", frozenset({D(2026, 10, 12)}))  # Columbus Day
 AUD_DAYS = days(D(2026, 10, 19), D(2026, 10, 30), RITS)
 US_DAYS = days(D(2026, 10, 5), D(2026, 10, 23), SIFMA)

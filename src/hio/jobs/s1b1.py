@@ -57,6 +57,19 @@ class Calendars:
     nsw: BusinessCalendar  # period ends for cash.usd until S1b-2 supplies fixings
     ny: BusinessCalendar  # derived from published SOFR dates, for rate selection
 
+    def __post_init__(self) -> None:
+        # RITS and NSW must be dated, cited reference calendars with a stated coverage
+        # (T-0009 §2.7; F-REVIEW-2026-10-25-t0009-5); an ad hoc calendar refuses.
+        for name in ("rits", "nsw"):
+            if not getattr(self, name).is_cited:
+                raise ValueError(f"the {name} calendar must be dated, cited reference data")
+
+    def identity(self, key: str) -> str:
+        cal = getattr(self, key)
+        if cal.is_cited:
+            return cal.identity
+        return f"{cal.calendar_id} (derived from captured publication dates)"
+
 
 def sofr_calendar(store: LocalObjectStore, cutoff: datetime) -> BusinessCalendar:
     """The US observation calendar from the SOFR receipts captured at or before the cutoff."""
@@ -289,7 +302,14 @@ def build_releases(
             )
             core = {k: v for k, v in built.core.items() if k != "files"}
             core["spec_ref"] = spec_ref(dataset_id, S1B_SPECS[dataset_id])
-            core["quality_summary"] = {**core["quality_summary"], "limitations": LIMITATIONS}
+            core["quality_summary"] = {
+                **core["quality_summary"],
+                "calendars": {
+                    "rate_selection": cals.identity(rate_key),
+                    "period_ends": cals.identity(end_key),
+                },
+                "limitations": LIMITATIONS,
+            }
             releases[dataset_id] = make_release(core, built.files)
         elif dataset_id in COMPARISON and dataset_id in wanted:
             cash_id, ref_sid, base = COMPARISON[dataset_id]
