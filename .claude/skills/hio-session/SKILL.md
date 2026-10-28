@@ -11,6 +11,9 @@ A checklist that points to the canonical rules: `AGENTS.md` (short) and
 ## Start
 1. `git rev-parse HEAD`: record it.
 2. Read `AGENTS.md` (the authority rules and the bootstrap by role), then `STATUS.md`.
+   **Non-reviewers** then read `MAP.md` and the newest handoff in their stream
+   (`handoffs/<stream>/`), and `grep` `knowledge/findings.md` before deriving anything
+   non-trivial.
 3. Find your task card and the recorded owner instruction behind it. If there is none, read and
    draft only. **Reviewer:** check *Assigned reviews* in `reviews/README.md`. If it is
    empty, your answer is "No review target has been assigned."
@@ -18,7 +21,8 @@ A checklist that points to the canonical rules: `AGENTS.md` (short) and
 
 ## End
 Write a handoff from `templates/handoff.md`, including what was **not** approved.
-- **Non-reviewers:** put it in `handoffs/`; update `STATUS.md` if the state changed (150
+- **Non-reviewers:** put it in `handoffs/<stream>/`, add its *For the index* lines to the
+  findings Inbox, and update `STATUS.md` if the state changed (150
   lines or fewer).
 - **Reviewer on a review branch:** put it in `reviews/handoffs/`; never touch
   `handoffs/` or `STATUS.md` (operating model §6.2).
