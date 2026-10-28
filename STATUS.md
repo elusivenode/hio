@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-10-28
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0078"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0079"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -18,14 +18,12 @@ max_length: 150 lines (move history to handoffs; keep this file current-state on
 
 ## One-line state
 
-**S1a is accepted** (OD-0042). **S1b-1.0 (T-0009) is in development on synthetic fixtures only**
-(Authorisation A, OD-0062). Its implementation at `ce0c3b5` was reviewed **NOT READY**, with
-seven findings (`REVIEW-2026-10-25-t0009-1`, received by OD-0067). **Remediation** (OD-0067): all seven findings are claimed, F-5 in part, on `impl/t0009-remediation-1` at
-`76539b5`, **pushed and submitted as PR #6** (OD-0074). Codex verification `VERIFY-2026-10-28-t0009-1-1` at that head
-is **NOT READY** and **received** (OD-0075): F-1, F-2, F-3, F-4, F-6 and F-7 are `verified_closed`. D7 was approved (OD-0076) and F-5 completed with real 2026
-RBA calendars at `846974b`; `VERIFY-2026-10-28-t0009-1-3` (reviewer with network, OD-0077) verified F-5 closed,
-received by OD-0078. **All seven findings are `verified_closed`.** T-0009 is **not accepted** and PR #6 is not merged. No live operation is authorised: HIO has no cloud
-storage, no real data and no credentials, so the point-in-time capture clock has not started.
+**S1a is accepted** (OD-0042). **S1b-1.0 (T-0009) is accepted** (OD-0079) at `846974b` and integrated into
+`main` as `7eba3f9` (PR #6): the synthetic-fixture slice of Authorisation A (OD-0062). All seven findings of
+`REVIEW-2026-10-25-t0009-1` are `verified_closed` (OD-0075, OD-0078). Still owed before S1b-1 completion: the
+finality staging (C1–C7, finality, the soak; T-0009 §7) and **Authorisation B**. No live operation is authorised:
+HIO has no cloud storage, no real data beyond the D7 calendars (OD-0076) and no credentials, so the
+point-in-time capture clock has not started.
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
 revision 3 is drafted and **not approved** (branch `proposal/harness-0.9`, Q-014). **hiomux** is a tmux
 orchestration pilot (an Opus orchestrator, Sonnet workers, Codex) kept **outside the repository**
@@ -36,9 +34,9 @@ orchestration pilot (an Opus orchestrator, Sonnet workers, Codex) kept **outside
 | Item | State | Record |
 |---|---|---|
 | Approved | charter, architecture, HIO-ADR-0001…0009, six standards, `AGENTS.md` (OD-0008); HIO-ADR-0010 rev 3 (OD-0011); **HIO-ADR-0012 rev 3** at `d0965cc` (OD-0055); operating model **harness-0.7.1** at `552d4fb` (OD-0056) with correction 1 (OD-0059); OpenTofu as IaC authoring tool and the S1b-1.0 finality staging (OD-0063) | per-file blobs in the OD records |
-| Accepted | **S1a** at `084154c`, integrated as `773a557` (OD-0042); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
-| Authorised, in progress | **T-0009** under Authorisation A only: synthetic-fixture development, a documentation-only storage check, IaC authoring (OD-0062, OD-0063, OD-0065). **Remediation** of the seven findings (OD-0067; submitted as PR #6, OD-0074). **Codex verification** of it (OD-0074). **hiomux pilot**
-use under its protocol, outside the repository (OD-0072, OD-0073). Routine delegated receipt (OD-0061). Harness-0.9: drafting only (OD-0068, OD-0070; done to revision 3) | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (`status: proposed`; `authorised_by: OD-0062`) |
+| Accepted | **S1a** at `084154c`, integrated as `773a557` (OD-0042); **T-0009 S1b-1.0** at `846974b`, integrated as `7eba3f9` (OD-0079); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
+| Authorised, in progress | **hiomux pilot**
+use under its protocol, outside the repository (OD-0072, OD-0073). Routine delegated receipt (OD-0061). Harness-0.9: drafting only (OD-0068, OD-0070; done to revision 3) | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (`status: accepted`; `accepted_by: OD-0079`) |
 | Not authorised | S1b-1 live operation (Authorisation B), S1b-2; provisioning, credentials, real fetches, enabled schedules; every source permission except D7 (unverified, OD-0013; OD-0064 is a design direction, not a verification; D7 `rba_calendar_pages` is owner_verified for retain-and-cite only, OD-0076); factor specs (drafts); the harness-0.9 text, including Phase A, `MAP.md` and the findings index (direction adopted by OD-0070; nothing approved) | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Open owner questions | Q-013 (capture-time knowability), Q-003, Q-004, Q-005b, Q-006, Q-010, Q-014 (harness-0.9) | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 
@@ -61,17 +59,15 @@ No finding is waived.
 
 | Item | State |
 |---|---|
-| Phase | S1b-1.0 under Authorisation A, staged by HIO-ADR-0012 (approved rev 3) |
-| Current gate | T-0009 remediation **submitted** (PR #6, `Submission-Head` `846974b`; previously `76539b5`); verification `VERIFY-2026-10-28-t0009-1-1` NOT READY, **received** (OD-0075); F-5 then verified closed at `846974b` (`VERIFY-2026-10-28-t0009-1-3`, OD-0078): **all seven findings verified_closed**; next: the owner's T-0009 acceptance decision and the PR #6 merge |
+| Phase | S1b-1.0 **accepted** (OD-0079); next stage: finality staging and Authorisation B, staged by HIO-ADR-0012 (approved rev 3) |
+| Current gate | T-0009 **accepted** and integrated (OD-0079, `7eba3f9`); the next gate is Authorisation B (below) |
 | Gate to live S1b-1 (Authorisation B) | T-0002 `owner_verified` rights per dataset and operation; the network and credential-control decision (OD-0038 successor); storage selection and verification; Q-013 decided or P3 in force; an explicit live authorisation (T-0009 card, `depends_on`) |
-| Next permissible actions | **Claude:** nothing new without an owner instruction. **Owner:** T-0009 acceptance and the PR #6 merge after F-5 is verified; optionally an OD assigning a Codex smoke review to test hiomux end to end. Also harness-0.9 (Q-014): approve Phase A (Appendix A at an exact revision), when to apply it (recommended during Codex's T-0009 verification), the Phase B work authorisation (after T-0009 remediation is submitted), H7 timing, branch protection on `main`. Also: the T-0002 rights reading (U1 to U7); the controls decision; observations v0.3 (blob `61ddd58e`) approve or defer; the run-1 stale-line candidates |
+| Next permissible actions | **Claude:** nothing new without an owner instruction. **Owner:** the Authorisation B prerequisites (below); optionally an OD assigning a Codex smoke review to test hiomux end to end. Also harness-0.9 (Q-014): approve Phase A (Appendix A at an exact revision), when to apply it (recommended during Codex's T-0009 verification), the Phase B work authorisation (after T-0009 remediation is submitted), H7 timing, branch protection on `main`. Also: the T-0002 rights reading (U1 to U7); the controls decision; observations v0.3 (blob `61ddd58e`) approve or defer; the run-1 stale-line candidates |
 
 ## Branches holding work not on `main`
 
 | Branch | Head | Holds |
 |---|---|---|
-| `impl/t0009-shared-receipt-and-storage` | `ce0c3b5` (pushed; reviewed head, never rebase) | T-0009 code, tests, specs, `infra/tofu/`, its handoff; **not accepted, not merged** |
-| `impl/t0009-remediation-1` | `846974b` (pushed; PR #6; submission head; all seven findings verified_closed; not merged, not accepted) | T-0009 remediation of F-1 to F-7 (5 fix commits; 408 tests; S1a hashes and release identities unchanged), the response and its handoff; all seven findings verified_closed (OD-0075, OD-0078) |
 | `proposal/harness-0.9` | `50e7229` (pushed) | harness-0.9 revision 3 with Appendix A (exact Phase A text), seed `MAP.md` and `knowledge/findings.md`, the Fable dry-run report; the records OD-0068 and OD-0070 are also on `main` (OD-0071) |
 
 ## Work cards
@@ -83,7 +79,7 @@ No finding is waived.
 | Equity total-return source | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: scorecard drafted; vendor questions need owner approval |
 | HIO-001 boundary (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review; review READY, received (OD-0040); **not accepted, not merged** |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | S1a stage **accepted** (OD-0042); S1b staged under HIO-ADR-0012 |
-| S1b-1.0 cash capture | [T-0009](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) | Authorisation A; review NOT READY; remediation submitted (PR #6); all seven findings verified_closed (OD-0075, OD-0078); not accepted |
+| S1b-1.0 cash capture | [T-0009](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) | **accepted** (OD-0079) at `846974b`, integrated `7eba3f9`; finality staging and Authorisation B remain |
 | T-0006, T-0007, T-0008 | in `registers/tasks/` | **accepted** (OD-0007, OD-0004, OD-0006) |
 | ETF diagnostic (lives in `macsmsf`) | `macsmsf` branch `docs/etf-diagnostic-card` | proposed; not authorised (OD-0018); not an HIO dependency |
 
