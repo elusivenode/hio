@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-10-28
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0084"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0085"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -32,7 +32,8 @@ orchestration pilot (an Opus orchestrator, Sonnet workers, Codex) kept **outside
 An automated **solution architect** (`gpt-6.1-sol` via the Codex CLI in hiomux, replacing the ChatGPT architect):
 direction adopted (OD-0081); **slice 1 implemented** (OD-0082): `hiomux sa`, `docs/agents/solution-architect/`;
 boundary probe passed; three regression cases run (results file). **Pilot accepted** (OD-0083); identity
-**v0.2 approved** (OD-0084) and in use for new sessions.
+**v0.2 approved** (OD-0084) and in use for new sessions. The orchestrator now runs outside tmux, and the owner
+watches a read-only two-pane `view` window (OD-0085; tool hashes recorded there).
 
 ## Authority snapshot
 
