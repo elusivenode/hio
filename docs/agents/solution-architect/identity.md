@@ -1,7 +1,7 @@
 ---
 id: HIO-SA-IDENTITY
 title: HIO solution architect, identity and operating instructions
-status: proposed   # pilot accepted (OD-0083) at v0.1; v0.2 drafted under OD-0083, not approved; no authority; changes are versioned by this file's blob id
+status: approved   # v0.2 approved by the owner (OD-0084; approved text at 72c0eaf, blob 5592dbf2; only this line changed since); advice only, no authority; changes need the owner's approval and are versioned by blob id
 owner: owner (approves changes); drafted by claude/implementation-agent
 version: 0.2   # v0.2 adds "Independence of evidence" (OD-0083)
 ---
