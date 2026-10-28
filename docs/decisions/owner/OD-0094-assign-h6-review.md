@@ -53,3 +53,20 @@ use; it creates no commit), with `--branch review/h6-1-codex`.
 - Make the tools part of any receipt. Receipt of this review follows §6.2 step 5 manually (OD-0061).
 
 ## Corrections (append-only)
+
+1. **2026-10-28, delivery changed to network (owner instruction).**
+   - **What happened:** under `--no-network`, the first run (hiomux task `CH6`) could not build the pinned test
+     environment. uv could not download packages, and the sandbox blocked uv's install directories. It tried
+     unrelated local Python environments, including one of the owner's pyenv virtualenvs; none had the project's
+     dependencies. **No such run counts as test evidence.**
+   - **Cause:** Claude chose `--no-network` without accounting for the test environment.
+   - **The owner's words (message J, source file):** "I would rather is had network access and install the tools
+     needed to do a good job."
+   - **Change:** `CH6` was stopped (reset to `failed`; kept as a failed attempt, never hidden). The review was
+     relaunched as task `CH6N`:
+     - **with network:** the default under OD-0077, with the same boundary;
+     - **told to:** build the pinned environment (Python 3.13, uv), install any tools it needs, run the full suite
+       and its own adversarial tests there, and verify the head with `ls-remote`;
+     - **unchanged:** every other value (id, base, head, scope, branch, model `gpt-6-sol`, effort `xhigh`).
+   - **Check:** Claude re-ran `git ls-remote origin refs/heads/phase-b/h6` before the relaunch, and it returned the
+     head.
