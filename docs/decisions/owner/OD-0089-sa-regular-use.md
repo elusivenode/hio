@@ -63,3 +63,15 @@ ChatGPT's recommendation: "yes, adopted".
   autonomous architectural authority".
 
 ## Corrections (append-only)
+
+1. **2026-10-28, full grading report recorded** (OD-0087 correction 3;
+   `docs/history/2026-10-28-chatgpt-sa-grading-report.md`).
+   - **Its conditions** (§7) match what was adopted: advisory-only authority, repository-first evidence, no parallel
+     authority store, held-out cases, and no premature expansion.
+   - **Advice, not adopted:** its condition 4 suggests that the observed real consultations include a substantive
+     disagreement with Claude and at least one case where proceeding is preferable to stopping. Claude will note
+     whether the five consultations before the review include these.
+   - **Still pending:** naming the two held-out cases.
+   - **Leak note:** the stress cases, the full answers' summary and this report are now in the repository. A
+     held-out case therefore stays clean only if it is re-run at its original cutoff, `cab1747`, which predates
+     them all. Any later cutoff would expose them.

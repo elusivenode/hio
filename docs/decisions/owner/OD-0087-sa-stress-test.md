@@ -139,3 +139,19 @@ related: {adrs: [], tasks: [], findings: [], ods: [OD-0081, OD-0082, OD-0083, OD
    - **Returned:** the complete responses and mechanical evidence, ungraded, on a private claude.ai page,
      https://claude.ai/artifact/QpVsm3fXGGYPKpWaAtEApV (OD-0088). The run records stay in `~/.hio-runs`, which is
      operational evidence. Claude graded nothing and recommends nothing about promotion.
+
+3. **2026-10-28, independent grading received.**
+   - **The report:** ChatGPT's full grading, supplied by the owner as
+     `~/Downloads/hio-solution-architect-independent-grading-report-2026-10-28.md`. It is recorded byte-identical as
+     `docs/history/2026-10-28-chatgpt-sa-grading-report.md`, sha256
+     `86f013f72bf5ee21527a814db70eebd5090f8ed4eb35f54fde11ff9f6dcb0972`.
+   - **Its findings:**
+     - integrity: the seals and the results-file hash (`870938d1…`) matched;
+     - **12/12 pass Score A, with zero critical and zero major findings**;
+     - five minor findings: case 2 runs 1 and 2, case 5 run 2, case 6 runs 1 and 2;
+     - critical items stable in all six pairs;
+     - Score B was High except case 6 run 2 (Medium).
+   - **ChatGPT's own limits:** it did not replay the CLI sessions. The mechanical record is reported by Claude, and
+     ChatGPT checked the key approved sources at the cutoff itself.
+   - **Claude's cross-check:** the identity blob it quotes (`25272b1a…`) matches `main` and every run record.
+   - **The report is advice.** The owner's adoption is OD-0089.
