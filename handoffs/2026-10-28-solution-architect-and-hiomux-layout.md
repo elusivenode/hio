@@ -132,7 +132,7 @@ None beyond orchestration on the owner's instruction. Owner decisions available:
 | Field | Value |
 |---|---|
 | Branch and full SHA | `main` at the commit adding this handoff |
-| Pushed? PR link | yes; no PR (documentation records) |
+| Pushed? PR link | yes; no PR (documentation records). hiomux run `20261028T043057Z-e4d8` closed and cleaned up (OD-0085 correction 1) |
 | Received into `main`? | not applicable: no review evidence this stream. Local-only `review/t0009-1-verify-2-codex` (`a6f7f31`) is superseded and deliberately unpushed (OD-0077) |
 | Next actor | owner |
-| Prompt for the next actor | "Read `AGENTS.md`, `STATUS.md` and this handoff. Stop if `main` lacks OD-0085. Run outside tmux. Before any hiomux use, check `bin/hiomux` against sha256 `fbc60850…` and `PROTOCOL.md` against `b4e81ff4…` (OD-0085); a mismatch is a stop. Consult the architect only via `hiomux sa ask`, and summarise each consultation to the owner." |
+| Prompt for the next actor | "Read `AGENTS.md`, `STATUS.md` and this handoff. Stop if `main` lacks OD-0085. Run outside tmux. Before any hiomux use, check `bin/hiomux` against sha256 `e659b0bc…` (OD-0085 correction 1) and `PROTOCOL.md` against `b4e81ff4…` (OD-0085); a mismatch is a stop. Consult the architect only via `hiomux sa ask`, and summarise each consultation to the owner." |

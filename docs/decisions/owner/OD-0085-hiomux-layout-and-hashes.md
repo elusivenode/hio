@@ -72,4 +72,12 @@ No repository harness, tool, CI or authority. hiomux remains outside the reposit
 
 ## Corrections (append-only)
 
-None.
+1. **2026-10-28, run close.** The owner instructed "yes, close the run and clean up".
+   - **Result:** run `20261028T043057Z-e4d8` closed (`summary.md`), the tmux session stopped, and the task clones
+     removed.
+   - **A gap in slice 1:** `cleanup` did not remove the architect's per-session checkouts and packages (81 MB).
+     It now removes each session's `repo/`, `package/` and `tmp/`, and keeps the consultation records. The run is
+     now 4.8 MB.
+   - **New hiomux hash:** `e659b0bcca7960bba88e3ca89621af47df45850e8d427f87e6ca0dd280f2a1cd` **supersedes**
+     `fbc60850…` above (backup of the prior version: none; the change is the eight-line block in `cleanup`).
+   - **Unchanged:** `PROTOCOL.md` (`b4e81ff4…`) and the launch configuration.
