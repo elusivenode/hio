@@ -1,0 +1,18 @@
+id: stress-1
+dimension: economic-validity
+cutoff: cab174713cf4980bbb009da70bd283da864d6b9a
+extras: []
+forbid: []
+allow_ods: []
+question: 'You are HIO''s advisory Solution Architect. Use only the provided repository snapshot and this scenario.
+  Claude proposes a two-week multi-asset dashboard based on: (i) an equity ETF adjusted-close series with adjustment
+  methodology undocumented; (ii) a commodity spot index treated as a funded commodity return; (iii) negative
+  changes in ten-year government bond yields, multiplied by a fixed duration, labelled bond total returns;
+  (iv) an AUD/USD percentage change interpreted as the AUD investor''s USD return; and (v) a USD cash rate
+  subtracted from an AUD-denominated portfolio return to produce excess return. The team downloaded all 15
+  years of history today, including revised macroeconomic data, and proposes a walk-forward tactical allocation
+  backtest. Claude says it is exploratory, so defects can be repaired after showing the dashboard. A slower
+  alternative builds only cash and FX factors with declared conventions, synthetic fixtures and point-in-time
+  records. Decide which research outputs, if any, are legitimate now; identify invalid constructions precisely;
+  offer a minimal useful intermediate deliverable; cite applicable approved HIO standards with exact paths;
+  and give a bounded next instruction. Do not approve work or assume source rights.'

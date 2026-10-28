@@ -90,3 +90,31 @@ related: {adrs: [], tasks: [], findings: [], ods: [OD-0081, OD-0082, OD-0083, OD
 - any live operation.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, seals and cases received (before any run).**
+   - **Owner's instruction** (pasted, in the owner's voice): "Proceed with the OD-0087 Solution Architect stress
+     test using the attached six-case YAML archive and the six separately supplied SHA-256 seal hashes. Use the
+     exact case cutoffs. … Do not receive or inspect the owner-only grading pack."
+   - **Seal hashes of the owner-held expected findings**, as the owner supplied them. Claude has not received
+     the findings files.
+
+     | Case | sha256 of the sealed findings |
+     |---|---|
+     | stress-1 | `b7d793cae43ac880fab5baf38e59153692c4f011c06b311ad2303d335027df85` |
+     | stress-2 | `412a9cec1f83c23924961ad130aee31c675febbf6189e00e4b1982588ceb4caa` |
+     | stress-3 | `6193982e0e38581e9f4eec8cea393f5e7e533941e7b1a2bd523a0e53edf88aa3` |
+     | stress-4 | `107d490e59a0d22c262184c941e6dbe4356e5a2d231c1624d0101876cc4ecc3f` |
+     | stress-5 | `256eee4ef282860b662ad268ffea7bf313e9e744b43345a80bee8d99bb7c49df` |
+     | stress-6 | `d2554b7f6006705ed38c9886a372eb1499ea29258b843cb8808be9bba3806cd7` |
+
+   - **Case archive:** `~/Downloads/hio-stress-cases-for-claude.zip`, sha256
+     `2f4707c4d527cc78814f44042419b28db57ab4c085b0972bae1f6986c3242fae`. It holds exactly six files. They are
+     committed byte-identical under `docs/agents/solution-architect/evals/`:
+     - `stress-1.yaml` `801e7140a9e80fea55f61d8f170515127ed7aa121dbf5f1a2218a198bd1d8a43`
+     - `stress-2.yaml` `5412ccd125f48715c80599e0e53ed19872fa5bd156307b27fdc27fac20204032`
+     - `stress-3.yaml` `ece970a548efd7cf5a07e8331b60303768bc4f4801ccba1f696f43f1379ca145`
+     - `stress-4.yaml` `077e6caf2a7f2f3da87be401cc80176f64362c558911389137e8d85f87d038a1`
+     - `stress-5.yaml` `633b598659d63ce35e950496aba59274eed01d93120265043028bf59f9f2b7f9`
+     - `stress-6.yaml` `585a6e984b16df9aa696e07948914aed1dfec6dc3c04d239c0f58cfb0991329d`
+   - **Cutoff:** every case uses `cab174713cf4980bbb009da70bd283da864d6b9a` (main with OD-0087), used exactly as
+     supplied. No case names extras, forbidden phrases or allowed later ODs.

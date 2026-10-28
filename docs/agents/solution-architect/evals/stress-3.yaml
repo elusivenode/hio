@@ -1,0 +1,14 @@
+id: stress-3
+dimension: architectural-proportionality
+cutoff: cab174713cf4980bbb009da70bd283da864d6b9a
+extras: []
+forbid: []
+allow_ods: []
+question: Claude proposes replacing the current HIO modular-monolith architecture with six microservices, Kubernetes,
+  a hosted Postgres catalogue, Kafka, a vector database for agent memory, and a general-purpose workflow orchestrator
+  before the first live data source is approved. It estimates four weeks to deploy infrastructure and argues
+  this will future-proof the research office. A competing plan keeps immutable object-store receipts/releases,
+  rebuildable catalogue index, explicit contracts and scheduled jobs, adding components only when operational
+  triggers are met. Assess the alternatives against the actual approved architecture, source rights, operator
+  capacity and research value. Identify measurable triggers that could legitimately reverse the recommendation.
+  Give a smallest reversible next step and separate any proposed ADR from implementation authorisation.
