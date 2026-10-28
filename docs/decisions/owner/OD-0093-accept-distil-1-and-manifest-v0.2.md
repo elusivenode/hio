@@ -37,3 +37,13 @@ related: {adrs: [], tasks: [], findings: [], ods: [OD-0089, OD-0091, OD-0092]}
 Claude merges both branches into `main`. The only edit after acceptance is the Settled section's status line.
 
 ## Corrections (append-only)
+
+1. **2026-10-28, push wider than authorised (Claude's error, disclosed).**
+   - **Authorised:** the yes covered `624db08` on `main` and the two branches.
+   - **Pushed:** Claude pushed `main` to `fc4750c`, which also carried:
+     - this record;
+     - the three authorised merges (`c38d527`, `01ca446`, `c1fe48a`; blobs equal to `8393552` and `1ebcffe`);
+     - one status-only commit.
+   - **Also outside "only the Settled status line":** that status-only commit edited the front-matter status of
+     `MAP.md` (current, OD-0091), `knowledge/findings.md` and `docs/decisions/distil-1-proposal.md`, the Settled
+     note and two STATUS lines. No content changed. Each push now names its exact commit range in the question.
