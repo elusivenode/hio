@@ -73,6 +73,7 @@ Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
 
 | Verification | Original review | Base..submission head | Fix commit | Reviewer outcome | Record |
 |---|---|---|---|---|---|
+| VERIFY-2026-10-28-h6-1-3 | REVIEW-2026-10-28-h6-1, F-2 and option B recovery | `5b9e49c..cd87bc0` | `428081b` | F-2 verified_closed; F-VERIFY-2026-10-28-h6-1-3-1 open; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-3.md) |
 | VERIFY-2026-10-18-a01-1 | REVIEW-2026-10-18-a01, findings 1–8 | `35c9821..0c74686` | `0e3de4b` | **Eight verified_closed** | [record](records/VERIFY-2026-10-18-a01-1.md) |
 | VERIFY-2026-10-24-s1a-1-1 | REVIEW-2026-10-24-s1a-1, findings 1, 2, 3, 5, 6 | `98e6a8e..18c80f2` | `39d37da`, `6bbf562`, `3185443`, `7076452`, `1c117e6` | **Four verified_closed; F6 remediation_rejected; REQUEST CHANGES** | [record](records/VERIFY-2026-10-24-s1a-1-1.md) |
 | VERIFY-2026-10-24-s1a-1-2 | REVIEW-2026-10-24-s1a-1, finding(s) 6 | `18c80f2..759ddf7` | `45dd538` | F6 remediation_rejected; REQUEST CHANGES | [record](records/VERIFY-2026-10-24-s1a-1-2.md) |
