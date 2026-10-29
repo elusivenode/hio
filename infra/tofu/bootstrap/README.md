@@ -50,8 +50,9 @@ handoff, a review record or any published artefact.
    ```
 
    The owner reviews the plan before apply. The plan file and the `.terraform/` directory are not committed.
-2. **Read the backend values:** `tofu -chdir=infra/tofu/bootstrap output` gives the resource group, account name
-   and container name (no secrets).
+2. **Read the backend values:** `tofu -chdir=infra/tofu/bootstrap output -state=<STATE_DIR>/bootstrap.tfstate` gives
+   the resource group, account name and container name (no secrets). The same `-state` path is used for `plan`,
+   `apply` and `output`; without it `output` reads an empty default state in the module directory.
 3. **Write a backend config file outside the repository**, `<STATE_DIR>/backend.hcl`, never committed:
 
    ```

@@ -189,6 +189,18 @@ def test_the_readme_declares_its_front_matter_and_the_runbook():
         assert needle in readme, needle
 
 
+def test_every_bootstrap_plan_apply_and_output_command_uses_the_same_state_path():
+    readme = (BOOT / "README.md").read_text()
+    commands = re.findall(r"tofu -chdir=infra/tofu/bootstrap (plan|apply|output)\b([^\n]*)", readme)
+    assert sorted(verb for verb, _ in commands) == ["apply", "output", "plan"]
+    paths = set()
+    for verb, rest in commands:
+        found = re.findall(r"-state=([^\s`]+)", rest)
+        assert len(found) == 1, f"{verb} must carry exactly one -state path"
+        paths.update(found)
+    assert paths == {"<STATE_DIR>/bootstrap.tfstate"}
+
+
 @pytest.mark.skipif(shutil.which("tofu") is None, reason="OpenTofu is not installed")
 def test_the_bootstrap_is_formatted():
     result = subprocess.run(

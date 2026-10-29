@@ -160,6 +160,8 @@ def test_blob_audit_logs_go_to_a_workspace_in_the_hio_resource_group():
     diag = _resource("azurerm_monitor_diagnostic_setting", "evidence_blob", "monitoring.tf")
     assert '"${azurerm_storage_account.evidence.id}/blobServices/default"' in diag
     assert "log_analytics_workspace_id = azurerm_log_analytics_workspace.hio.id" in diag
+    # Dedicated: logs land in the resource-specific StorageBlobLogs table the soak alert queries.
+    assert re.search(r'^\s*log_analytics_destination_type\s+= "Dedicated"$', diag, re.M)
     assert re.findall(r'enabled_log \{\s*category = "(\w+)"', diag) == [
         "StorageRead",
         "StorageWrite",
@@ -176,10 +178,25 @@ def test_the_soak_alert_watches_the_attempts_prefix_and_emails_the_owner():
     assert "azurerm_monitor_action_group.owner.id" in alert
     assert "azurerm_resource_group.hio.name" in alert
     assert 'operator                = "LessThan"' in alert and "threshold               = 1" in alert
-    assert 'Category == "StorageWrite"' in monitoring
-    assert 'Uri contains "catalogue/attempts/"' in monitoring
-    assert "ago(${var.missing_write_window_hours}h)" in monitoring
+    query = re.search(r"<<-QUERY\n(.*?)\n\s*QUERY", monitoring, re.S).group(1)
+    assert query.lstrip().startswith("StorageBlobLogs")  # named directly: a missing table must error
+    assert "isfuzzy" not in monitoring and "datatable" not in monitoring and "union" not in query
+    assert 'Category == "StorageWrite"' in query and 'OperationName == "PutBlob"' in query
+    assert 'StatusText == "Success"' in query
+    assert 'ObjectKey contains "/catalogue/attempts/"' in query
+    assert "ago(${var.missing_write_window_hours}h)" in query
+    assert "summarize WriteCount = count()" in query
     assert re.search(r"default\s+= 26$", _variable("missing_write_window_hours"), re.M)
+
+
+def test_the_readme_specifies_the_github_failure_notification_and_its_verification():
+    readme = " ".join((TF / "README.md").read_text().split())
+    assert "Send notifications for failed workflows only" in readme
+    assert "last edited the cron schedule" in readme
+    assert "The **owner** must have the setting on" in readme
+    assert "deliberate-failure test" in readme and "S1-A13" in readme
+    assert "the soak does not count" in readme
+    assert "Dedicated" in readme and "StorageBlobLogs" in readme
 
 
 def test_the_budget_covers_the_hio_resource_group_and_notifies_the_owner_at_80_and_100():

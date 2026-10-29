@@ -41,13 +41,27 @@ variable with no default (`subscription_id`, `reader_principal_object_id`, `gith
 | Separate reader | `Storage Blob Data Reader` on the container, for `reader_principal_object_id` only | the writer identity never reads as the owner and the owner never writes |
 | Conditional create | the backend contract is create-if-absent | Put Blob supports `If-None-Match: *`; an unmet condition returns 412 |
 | No public access | `allow_nested_items_to_be_public = false`, private container | azurerm argument exists |
-| Audit logging | `azurerm_monitor_diagnostic_setting` on the blob service: `StorageRead`, `StorageWrite`, `StorageDelete` logs and `Transaction` metrics, to a Log Analytics workspace (`log_retention_days`, default 90) | supports the C5/C6 audit (HIO-ADR-0012 section 4.3.3) |
-| Soak alert | `azurerm_monitor_scheduled_query_rules_alert_v2`: fires when no successful `StorageWrite` to `catalogue/attempts/` occurs in `missing_write_window_hours` (default 26); action group emails `owner_email` | absence of an attempt record is a missed capture |
+| Audit logging | `azurerm_monitor_diagnostic_setting` on the blob service: `StorageRead`, `StorageWrite`, `StorageDelete` logs and `Transaction` metrics, to a Log Analytics workspace (`log_retention_days`, default 90), `log_analytics_destination_type = "Dedicated"` so logs land in `StorageBlobLogs` | supports the C5/C6 audit (HIO-ADR-0012 section 4.3.3) |
+| Soak alert | `azurerm_monitor_scheduled_query_rules_alert_v2`: fires when no successful `StorageWrite` `PutBlob` to `catalogue/attempts/` occurs in `missing_write_window_hours` (default 26); action group emails `owner_email` | absence of an attempt record is a missed capture |
 | Budget | `azurerm_consumption_budget_resource_group` on `rg-hio-evidence`, `budget_amount` (default 20) per month; notifications at 80% and 100% of actual spend to `owner_email` | cost guard |
 
-**GitHub workflow failure notification is configured in GitHub** (repository or account notification
-settings), not in this directory. The Azure alert covers a workflow that never ran or never wrote; it
-does not replace the GitHub notification for a workflow that ran and failed.
+### GitHub workflow-failure notification (T-0011 I-5; not narrowed)
+
+The Azure alert covers a workflow that never ran or never wrote. It does **not** replace the GitHub
+notification for a workflow that ran and failed. That notification is configured in GitHub, not in this
+directory, and is specified here so it is not left to memory:
+
+- **Setting:** in GitHub, *Settings > Notifications > System > Actions*, tick **Email** and choose
+  **Send notifications for failed workflows only**. It is an account setting, not a repository setting.
+- **Whose account:** GitHub sends the failure notice for a *scheduled* workflow to the user who **last
+  edited the cron schedule** in the workflow file, not to the repository owner by default. The **owner**
+  must have the setting on, and the owner (or whoever the owner names, with the setting on for that
+  account) must be the last editor of the schedule. If anyone else edits the `schedule:` line, the
+  notification moves to that user's account and the setting must be checked for that user.
+- **Verification before the soak counts:** the deliberate-failure test in the soak (S1-A13) must make a
+  scheduled-or-dispatched run fail on purpose and the owner must receive the GitHub failure email. Until
+  that email is received, the soak does not count and this notification is **unverified**. The same test
+  proves the Azure alert fires (see "Not confirmed" below).
 
 ## Not confirmed (do not rely on until `tofu validate`/`plan` after authorisation)
 
@@ -61,10 +75,14 @@ does not replace the GitHub notification for a workflow that ran and failed.
   default policy is used instead;
 - whether a create-only identity can use every operation the client library issues (listing versions,
   large uploads via Put Block List). The objects are small and written with Put Blob;
-- the log fields of the soak alert: the query assumes `StorageBlobLogs` columns `Category`, `Uri` and
-  `StatusText` (`Success` for a created blob), and that `Uri` contains `catalogue/attempts/`. Not
-  checked against a live log record; `skip_query_validation = true` lets the rule be created before the
-  table exists. The deliberate-failure test (S1-A13) must prove the alert fires;
+- the log fields of the soak alert: the query reads `StorageBlobLogs` directly and assumes the columns
+  `Category`, `OperationName` (`PutBlob`), `StatusText` (`Success` for a created blob) and `ObjectKey`
+  containing `/catalogue/attempts/`. The diagnostic setting uses `log_analytics_destination_type =
+  "Dedicated"` so logs land in `StorageBlobLogs`. Not checked against a live log record. The query has no
+  placeholder for a missing table: if `StorageBlobLogs` does not exist the query errors rather than
+  reading as zero writes, which is intended; `skip_query_validation = true` only lets the rule be
+  created before the table exists. The deliberate-failure test (S1-A13) must prove the alert fires and
+  must also show that a query error is visible to the owner;
 - the diagnostic setting's `enabled_log` and `enabled_metric` categories on `blobServices/default`
   (`StorageRead`, `StorageWrite`, `StorageDelete`, `Transaction`), and the alert `window_duration`
   value `P2D` with `evaluation_frequency` `PT1H`;
