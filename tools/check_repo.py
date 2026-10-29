@@ -10,7 +10,8 @@ Static checks:
     yaml          factor specs and registers parse and satisfy their schemas
     status        STATUS.md is within its line limit
     public        no secrets, no downloaded data, no local databases, no non-releasable artefacts
-    imports       architecture §1 import rules, plus no network client and no macsmsf import in src/
+    imports       architecture §1 import rules, plus no macsmsf import and no network client in src/
+                  (the one exception: src/hio/sources/http_transport.py, OD-0115/T-0010)
     valid_time    OBS-INV-005 lint: no UTC-instant-to-date conversion in src/
 
 Exit status 1 on any failure. Reads tracked and staged files only (git ls-files).
@@ -299,20 +300,12 @@ ALLOWED_IMPORTS = {
     "implementation": {"contracts"},
     "jobs": {"contracts", "reference", "storage", "rights", "marketdata", "library", "publish", "sources"},
 }
-# Network clients are forbidden in src/: S1a has no source-data network access (OD-0017).
-FORBIDDEN_MODULES = {
-    "socket",
-    "ssl",
-    "http",
-    "urllib",
-    "requests",
-    "httpx",
-    "aiohttp",
-    "urllib3",
-    "ftplib",
-    "smtplib",
-    "macsmsf",
-}
+# Network clients are forbidden in src/: S1a has no source-data network access (OD-0017). OD-0115
+# (T-0010) authorises one exception: the real HTTP transport, in exactly one module. Every other
+# src/ file still may not import a network client, and `macsmsf` is forbidden everywhere.
+NETWORK_MODULES = {"socket", "ssl", "http", "urllib", "urllib3", "requests", "httpx", "aiohttp"}
+NETWORK_ALLOWED_IN = {"src/hio/sources/http_transport.py"}
+FORBIDDEN_MODULES = NETWORK_MODULES | {"ftplib", "smtplib", "macsmsf"}
 
 
 def check_imports(files: list[str]) -> None:
@@ -330,7 +323,7 @@ def check_imports(files: list[str]) -> None:
                 fail("imports", f"{f}:{node.lineno}: use absolute imports")
             for name in names:
                 top = name.split(".")[0]
-                if top in FORBIDDEN_MODULES:
+                if top in FORBIDDEN_MODULES and not (top in NETWORK_MODULES and f in NETWORK_ALLOWED_IN):
                     fail("imports", f"{f}:{node.lineno}: forbidden import {name}")
                 if top == "hio" and pkg is not None:
                     target = name.split(".")[1] if "." in name else None
