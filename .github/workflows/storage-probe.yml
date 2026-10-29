@@ -1,0 +1,56 @@
+# B-2 storage-validation probe (T-0012 P-3; OD-0127). Manual dispatch ONLY: nothing runs it automatically.
+#
+# Running it is Authorisation B stage B-2, a separate owner action that needs the probe account (infra/tofu/probe)
+# to exist first. It writes only to the short-lived PROBE account, never to the evidence store.
+#
+# The account URL, container and the tenant and client ids of the probe's federated identity come from the
+# `capture` Environment's variables (vars.*), never as literals here. The job has `id-token: write` only to
+# obtain a GitHub OIDC token for that federated identity; nothing is stored.
+#
+# TODO (orchestrator): the upload-artifact pin below is NOT a real commit SHA. It could not be verified offline
+# and none is committed anywhere in this repository. Replace it with the full commit SHA of a v4 release
+# (verify it against github.com/actions/upload-artifact) before the first dispatch; until then the workflow
+# fails at that step, by design, and the report is still printed in the step log.
+name: storage-probe
+on:
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: Number of fresh creates for the C5 timing check
+        type: number
+        default: 20
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: storage-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    environment: capture
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
+        with:
+          version: "0.11.19"
+          enable-cache: false
+      - name: Run the storage probe
+        run: uv run --frozen python tools/storage_probe.py --repeats "$PROBE_REPEATS" --report-file storage-probe-report.json
+        env:
+          PROBE_REPEATS: ${{ inputs.repeats }}
+          HIO_PROBE_ACCOUNT_URL: ${{ vars.HIO_PROBE_ACCOUNT_URL }}
+          HIO_PROBE_CONTAINER: ${{ vars.HIO_PROBE_CONTAINER }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_PROBE_CLIENT_ID: ${{ vars.AZURE_PROBE_CLIENT_ID }}
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@TODO-PIN-V4-FULL-COMMIT-SHA
+        with:
+          name: storage-probe-report
+          path: storage-probe-report.json
+          if-no-files-found: warn
+          retention-days: 30
