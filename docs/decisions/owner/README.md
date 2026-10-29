@@ -119,6 +119,7 @@ are in operating model §1.1; the template is
 | [OD-0102](OD-0102-assign-h6-verification-3.md) | authorise_work | **Codex verification VERIFY-2026-10-28-h6-1-3 assigned**: option B receiver at `cd87bc0` and its consistency with the draft amendment at `d26c2fa`; nothing approved or activated | `phase-b/h6` at `cd87bc0` | recorded |
 | [OD-0103](OD-0103-receive-h6-verification-3.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-3** (NOT READY: F-2 verified_closed against draft option B; new medium F-VERIFY-…-3-1 open); owner ruling on the 'on local main' assignment string; F-2 reconciled, new finding indexed | `review/h6-1-verify-3-codex` at `740b13c` | recorded |
 | [OD-0104](OD-0104-approve-option-b-and-start-h6-fix.md) | approve | **H6 option B amendment approved** at `d26c2fa`; F-VERIFY-…-3-1 fix and response 4 started on `phase-b/h6`; applying the amendment not yet authorised | `proposal/h6-option-b` at `d26c2fa` | recorded |
+| [OD-0105](OD-0105-assign-h6-verification-4.md) | authorise_work | **VERIFY-2026-10-28-h6-1-4 assigned** (F-VERIFY-…-3-1 at `41e0840`; F-1 to F-4 regression against approved option B); `main` and `phase-b/h6` pushed | `phase-b/h6` at `41e0840` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
