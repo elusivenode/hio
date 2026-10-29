@@ -77,6 +77,7 @@ Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
 
 | Verification | Original review | Base..submission head | Fix commit | Reviewer outcome | Record |
 |---|---|---|---|---|---|
+| VERIFY-2026-10-28-h6-1-7 | REVIEW-2026-10-28-h6-1, F-VERIFY-2026-10-28-h6-1-6-1 and regression | `3d376ba..655335c` | `2393280` | F-VERIFY-2026-10-28-h6-1-6-1 open; no new finding; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-7.md) |
 | VERIFY-2026-10-28-h6-1-6 | REVIEW-2026-10-28-h6-1, F-VERIFY-2026-10-28-h6-1-5-1 and regression | `5e15829..3d376ba` | `9b57116` | F-VERIFY-2026-10-28-h6-1-5-1 verified_closed; F-VERIFY-2026-10-28-h6-1-6-1 open; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-6.md) |
 | VERIFY-2026-10-28-h6-1-5 | REVIEW-2026-10-28-h6-1, F-VERIFY-2026-10-28-h6-1-4-1 and regression | `41e0840..5e15829` | `a6e449b` | F-VERIFY-2026-10-28-h6-1-4-1 verified_closed; F-VERIFY-2026-10-28-h6-1-5-1 open; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-5.md) |
 | VERIFY-2026-10-28-h6-1-4 | REVIEW-2026-10-28-h6-1, F-VERIFY-2026-10-28-h6-1-3-1 and F-1 to F-4 regression | `cd87bc0..41e0840` | `01a4d2a` | F-VERIFY-2026-10-28-h6-1-3-1 verified_closed; F-VERIFY-2026-10-28-h6-1-4-1 open; NOT READY | [record](records/VERIFY-2026-10-28-h6-1-4.md) |
