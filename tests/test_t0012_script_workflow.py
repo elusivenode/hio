@@ -15,9 +15,6 @@ WORKFLOW = REPO / ".github" / "workflows" / "storage-probe.yml"
 CAPTURE = REPO / "infra" / "workflows" / "s1b1-capture.yml"
 
 SHA_PIN = re.compile(r"^[\w.-]+/[\w.-]+@[0-9a-f]{40}$")
-# The upload-artifact commit SHA could not be verified offline, so it is a marked placeholder for the
-# orchestrator to replace (see the TODO in the workflow). No other action may be unpinned.
-UPLOAD_PLACEHOLDER = "actions/upload-artifact@TODO-PIN-V4-FULL-COMMIT-SHA"
 
 
 def code(source: str) -> str:
@@ -64,7 +61,7 @@ def test_actions_are_pinned_by_commit_sha_like_the_capture_definition():
     for pin in uses[:2]:  # the very same pins, with the same version comments
         assert pin in capture
     for pin in uses:
-        assert SHA_PIN.match(pin) or pin == UPLOAD_PLACEHOLDER, pin
+        assert SHA_PIN.match(pin), pin
     assert uses[2].startswith("actions/upload-artifact@")
 
 

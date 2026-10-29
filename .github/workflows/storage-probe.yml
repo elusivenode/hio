@@ -7,10 +7,8 @@
 # `capture` Environment's variables (vars.*), never as literals here. The job has `id-token: write` only to
 # obtain a GitHub OIDC token for that federated identity; nothing is stored.
 #
-# TODO (orchestrator): the upload-artifact pin below is NOT a real commit SHA. It could not be verified offline
-# and none is committed anywhere in this repository. Replace it with the full commit SHA of a v4 release
-# (verify it against github.com/actions/upload-artifact) before the first dispatch; until then the workflow
-# fails at that step, by design, and the report is still printed in the step log.
+# The upload-artifact pin is v7.0.2 (commit cf430e0, resolved from github.com/actions/upload-artifact tag v7.0.2 on
+# 2026-10-29 by the orchestrator).
 name: storage-probe
 on:
   workflow_dispatch:
@@ -48,7 +46,7 @@ jobs:
           AZURE_PROBE_CLIENT_ID: ${{ vars.AZURE_PROBE_CLIENT_ID }}
       - name: Upload the report
         if: always()
-        uses: actions/upload-artifact@TODO-PIN-V4-FULL-COMMIT-SHA
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: storage-probe-report
           path: storage-probe-report.json
