@@ -131,6 +131,7 @@ are in operating model §1.1; the template is
 | [OD-0114](OD-0114-receive-h6-verification-7-and-park-h6.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-7** (NOT READY; no new finding; F-VERIFY-…-6-1 open); **H6 parked** (unactivated, nothing approved or waived; receipts stay manual) | `phase-b/h6` at `655335c` | recorded |
 | [OD-0115](OD-0115-authorise-t0010-non-live-integration.md) | authorise_work | **T-0010 authorised**: non-live S1b-1 integration (real transport confined to the adapters, Azure blob backend on the emulator, OIDC and disabled workflow, C1–C7 finality on synthetic inputs, 2027 calendars, draft H3/H4 packs); nothing live | base `a56462c` | recorded |
 | [OD-0116](OD-0116-rights-answers-u1-u6.md) | authorise_work | **T-0002 U1–U6 answered** for D1, D2, D3, D8, D9 (Claude's proposals adopted); D5, D6 blocked; **not yet owner_verified** (U7 live-clause reading unconfirmed; gate still refuses) | matrix §4 at `a56462c` | recorded |
+| [OD-0117](OD-0117-authorise-azure-assessment-tofu-validate-t0011-sdks.md) | authorise_work | **Read-only `az` assessment of `hnf-prod`**, `tofu init -backend=false` + `validate`, **T-0011 drafting**, **Azure SDKs** for T-0010 (hash-locked, confined imports); nothing provisioned. OD-0116 correction 1: **U7 confirmed; five S1b-1 datasets owner_verified for capture** (derivation awaits release notices) | `infra/tofu/`, `registers/sources.yaml` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
