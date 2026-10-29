@@ -1,7 +1,7 @@
 ---
 id: T-0010
 title: "S1b-1 non-live integration: real transport confined to the adapters, Azure blob backend, OIDC and disabled workflow wiring, C1–C7 finality on synthetic inputs, 2027 calendars, draft H3/H4 evidence"
-status: authorised
+status: submitted_for_review   # W-1 to W-4, W-6 done; W-5 a recorded gap; extended by OD-0117 (Azure SDKs) and OD-0118 (release notices)
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator with hiomux Sonnet workers; independent reviewer: Codex, when assigned)"
 created_at: 2026-10-29
@@ -65,5 +65,23 @@ H1 (owner rights reading, T-0002 U1–U7), H3, H4, H5 and Authorisation B, all o
 A branch `feat/t0010` with W-1 to W-6; a handoff; then the owner may assign a Codex review. Acceptance is a separate act.
 
 ## Submission (filled by the implementer)
+
+Branch `feat/t0010`, base `150f813`; head: the commit adding this section. hiomux run `20261029T020010Z-e5b6`, Sonnet
+workers W1–W4, W7, each `hiomux check`ed and integrated at its `checked_sha`.
+
+| Item | Delivered | Evidence |
+|---|---|---|
+| W-1 transport | `src/hio/sources/http_transport.py` (stdlib, https only, no proxy/cookies/credentials, bounded redirects, size and time); `check_repo` network allowance for that file only | `tests/test_t0010_transport*.py` (loopback only) |
+| W-2 Azure backend (OD-0117) | `src/hio/storage/azure_blob.py`, `azure_auth.py`; `azure-storage-blob`, `azure-identity` hash-locked; `azure` imports confined by `check_repo` | `tests/test_t0010_azure*.py` (offline fakes). **Unverified until H4 S-6:** Azure immutability enforcement; C5 with whole-second `Last-Modified` |
+| W-3 wiring | live path in `src/hio/jobs/s1b1_capture.py` behind `LIVE_AUTHORISATION = None`; `infra/workflows/s1b1-capture.yml` in live shape, still outside `.github/` | `tests/test_t0010_capture_cli.py`; `tests/test_s1b1_remediation_schedule.py` |
+| W-4 finality | `src/hio/marketdata/finality.py` (C1–C7, vintage and release finality, fail closed); not called by any build | `tests/test_t0010_finality.py` |
+| Notices (OD-0118) | `quality_summary.notices` on every S1b-1 release; register derivation conditions satisfied | `tests/test_t0010_notices.py`; A-2 and build tests updated |
+| W-5 calendars | **Gap:** the RBA 2027 holiday page is not published (2026-10-29); review moved to 2026-12-01 | `registers/sources.yaml` `rba_calendar_pages` |
+| W-6 packs | `docs/evidence/S1B1-H3-H4-decision-pack.md`, adopted by OD-0119 | — |
+
+Full suite 747 passed; `ruff`, `ruff format`, `check_repo` and trailers PASS. Known issues (low): finality re-reads per key;
+an SDK retry can turn a lost create response into `BlobExists` for this caller's own bytes (resolved by the store's
+identical-bytes check). **Owed for Authorisation B, not this card:** the five data-source URLs (unset by design;
+approved with the rights); `LIVE_AUTHORISATION`; moving the workflow; the 2027 calendars.
 
 ## Review and acceptance
