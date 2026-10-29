@@ -51,17 +51,23 @@ The Azure alert covers a workflow that never ran or never wrote. It does **not**
 notification for a workflow that ran and failed. That notification is configured in GitHub, not in this
 directory, and is specified here so it is not left to memory:
 
-- **Setting:** in GitHub, *Settings > Notifications > System > Actions*, tick **Email** and choose
-  **Send notifications for failed workflows only**. It is an account setting, not a repository setting.
-- **Whose account:** GitHub sends the failure notice for a *scheduled* workflow to the user who **last
-  edited the cron schedule** in the workflow file, not to the repository owner by default. The **owner**
-  must have the setting on, and the owner (or whoever the owner names, with the setting on for that
-  account) must be the last editor of the schedule. If anyone else edits the `schedule:` line, the
-  notification moves to that user's account and the setting must be checked for that user.
+- **Setting:** in GitHub, go to *Settings > Notifications > System > Actions* (the dropdown), choose
+  **Email**, tick **Only notify for failed workflows**, and **Save**. It is an account setting, not a
+  repository setting. Procedure per GitHub:
+  <https://docs.github.com/en/subscriptions-and-notifications/how-tos/managing-github-actions-notifications>.
+- **Whose account (GitHub's recipient rule):** GitHub sends notifications for *scheduled* workflow runs to
+  the user who **created or last modified the cron schedule**, or who **re-enabled a disabled workflow**,
+  not to the repository owner by default. Rule per GitHub:
+  <https://docs.github.com/en/actions/concepts/workflows-and-actions/notifications-for-workflow-runs>.
+  The owner's account must therefore be that user, with the setting above on for that account. Any change
+  of who last edits the `schedule:` line, or who re-enables the workflow, moves the notice to another
+  account and **requires the verification below to be repeated**.
 - **Verification before the soak counts:** the deliberate-failure test in the soak (S1-A13) must make a
-  scheduled-or-dispatched run fail on purpose and the owner must receive the GitHub failure email. Until
-  that email is received, the soak does not count and this notification is **unverified**. The same test
-  proves the Azure alert fires (see "Not confirmed" below).
+  **scheduled** run fail on purpose, and the owner's account must receive the GitHub failure email. This
+  must happen before the soak counts. A `workflow_dispatch` failure may be run as supplementary evidence
+  but is never sufficient, because a manual run notifies whoever triggered it, not the schedule's user.
+  Until the scheduled-run failure email is received, the soak does not count and this notification is
+  **unverified**. The same test proves the Azure alert fires (see "Not confirmed" below).
 
 ## Not confirmed (do not rely on until `tofu validate`/`plan` after authorisation)
 

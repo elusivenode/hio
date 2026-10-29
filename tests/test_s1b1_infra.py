@@ -191,10 +191,21 @@ def test_the_soak_alert_watches_the_attempts_prefix_and_emails_the_owner():
 
 def test_the_readme_specifies_the_github_failure_notification_and_its_verification():
     readme = " ".join((TF / "README.md").read_text().split())
-    assert "Send notifications for failed workflows only" in readme
-    assert "last edited the cron schedule" in readme
-    assert "The **owner** must have the setting on" in readme
+    assert (
+        "Settings > Notifications > System > Actions* (the dropdown), choose **Email**, "
+        "tick **Only notify for failed workflows**, and **Save**"
+    ) in readme
+    assert "Send notifications for failed workflows only" not in readme
+    assert "managing-github-actions-notifications" in readme
+    assert "notifications-for-workflow-runs" in readme
+    assert "**created or last modified the cron schedule**" in readme
+    assert "**re-enabled a disabled workflow**" in readme
+    assert "The owner's account must therefore be that user" in readme
+    assert "requires the verification below to be repeated" in readme
     assert "deliberate-failure test" in readme and "S1-A13" in readme
+    assert "must make a **scheduled** run fail on purpose" in readme
+    assert "workflow_dispatch" in readme and "never sufficient" in readme
+    assert "scheduled-or-dispatched" not in readme
     assert "the soak does not count" in readme
     assert "Dedicated" in readme and "StorageBlobLogs" in readme
 
