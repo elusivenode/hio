@@ -95,3 +95,9 @@ _(Empty after distil 1. Append new candidate lines below this note.)_
 - [process] Each push question names the exact commit range, and nothing beyond it is pushed: two overreaches. Source: OD-0093 correction 1; OD-0099 correction 1.
 - [ops] The owner prefers to follow agents from the orchestrator session: relay Codex and worker messages with the Monitor tool. Source: session 2026-10-28.
 - [review] Push the assignment OD before launching a Codex reviewer: a source named "on local main" fails check_review_assignment's exact match and needs an owner ruling. Source: OD-0103.
+- [review] A reviewer's README diff often fails to apply on main, because review branches lack main's newer index rows; under harness-0.9b, receive without the index and add the navigation row by §5.12. Source: OD-0107.
+- [review] Tell the Codex reviewer that every file under reviews/ needs front matter and that check_repo must pass; hiomux does not run check_repo on Codex output. Source: OD-0109, OD-0111.
+- [process] A YAML front-matter value written as two quoted strings joined by ';' is invalid; write one string. Source: OD-0113 correction 1.
+- [process] [rediscovery] '| tail -1' and 'set -e' hide a failing check's exit status in Claude Code's Bash tool; run check_repo alone and read its exit code before committing or pushing. Source: OD-0113 correction 1; OD-0110.
+- [hiomux] A Codex task resuming on its own existing branch needs the runner fix of OD-0111 (update-ref expected old value). Source: OD-0110, OD-0111.
+- [harness] Recovery code that reconstructs trust from local or published history it did not build keeps leaking; prefer a narrow boundary (publish only what this run built from a fresh remote main). Source: OD-0109, VERIFY-2026-10-28-h6-1-3 to -7.
