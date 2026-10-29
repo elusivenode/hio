@@ -1,14 +1,14 @@
 ---
 id: T-0011
 title: "S1b-1 infrastructure as code: state bootstrap, evidence store, identities, GitHub Environment and branch protection, alerting, budget and the second copy, authored and validated for hnf-prod; never applied without Authorisation B"
-status: authorised   # I-1 to I-6 authoring and offline validation, and I-7 GitHub settings (OD-0118); I-8 not authorised
+status: accepted   # OD-0125 at c69df9e (I-1 to I-6; I-7 applied by OD-0118; I-8 not built); B-1 authorised by OD-0125
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, when assigned"
 created_at: 2026-10-29
 updated_at: 2026-10-29
 authorised_by: OD-0118   # drafting by OD-0117
 base_revision: e829c83
-accepted_by: null
+accepted_by: OD-0125   # at c69df9e982a81e87a8fdb208ba4c66771b9664d5, merged into main as 09d4886
 review_required: independent (Codex), assigned separately by the owner
 links:
   adrs_governing_approved: [HIO-ADR-0012, HIO-ADR-0002]
@@ -77,3 +77,8 @@ should name the exact apply steps: bootstrap, evidence store, identities, alerti
 ## Submission (filled by the implementer)
 
 ## Review and acceptance
+
+- REVIEW-2026-10-29-t0011-1 (OD-0120): NOT READY at `2cc7362`; one high and two medium findings; received by OD-0121.
+- VERIFY-2026-10-29-t0011-1-1 (OD-0122): F-1 and F-3 verified_closed at `0c44b18`; F-2 open; received by OD-0123.
+- VERIFY-2026-10-29-t0011-1-2 (OD-0124): READY; F-2 verified_closed at `c69df9e`; received by OD-0125.
+- **Accepted by OD-0125** at `c69df9e982a81e87a8fdb208ba4c66771b9664d5`; merged into `main` as `09d4886` (PR #8).

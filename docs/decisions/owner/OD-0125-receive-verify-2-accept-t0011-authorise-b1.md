@@ -53,3 +53,19 @@ Any data capture or write to the evidence store; B-2; B-3; setting `LIVE_AUTHORI
 the `capture` Environment's reviewer rule; locking the immutability policy.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): receipt completed; §5.12; T-0011 accepted and merged
+
+**Receipt:** T `f504833144a5d8c24f3792270b21113ed2bb955c` (tip = fetch = report); 3 added files, sha256 reconciled both
+ways; README unchanged; assignment check passed as written; tag `reviews/VERIFY-2026-10-29-t0011-1-2` peels to T; import
+`912bdbc`; merged as `0a47384` (PR #25); 5.10 verified (remote `main` = local; blobs equal T). **Received.**
+
+The receipt was interrupted once by the owner after the tag was pushed and before the import (5.11, "tag pushed, no
+import"); on the owner's "please continue where you got to" it resumed at 5.5 with the same T.
+
+**§5.12 (this commit):** the *Assigned reviews* row set to received; a *Verification rounds* row;
+F-REVIEW-2026-10-29-t0011-1-2: open → **verified_closed** at `c69df9e`. All five findings of REVIEW-2026-10-29-t0010-1 and
+-t0011-1 are now verified_closed.
+
+**Decision 2 effective:** T-0011 accepted at `c69df9e`; PR #8 merged into `main` as `09d4886`; `infra/tofu` on `main` is
+identical to `c69df9e`. The T-0011 card is set to accepted in this commit. **B-1 may now proceed** as authorised.
