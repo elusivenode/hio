@@ -1,7 +1,7 @@
 ---
 id: T-0014
 title: "Base-camp completion build (criteria 3-6, non-live): cash evidence and comparison dispositions, external finality evaluation records, second-copy and restore exercise, minimal consumer contract test; executed on real receipts only later, under B-3 and the soak"
-status: authorised   # OD-0132 item 3; non-live build on feat/t0014; no real data, no Azure, no CI activation
+status: submitted_for_review   # non-live build on feat/t0014; no real data, no Azure, no CI activation
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-10-29
@@ -57,5 +57,19 @@ after real evidence); choosing the second-copy destination.
    ADR-0012's full finality obligations stay owed" is an owner decision.
 
 ## Submission (filled by the implementer)
+
+Branch `feat/t0014`, base `651eb95`. hiomux workers W3 (`cba9c43`, P-1), W4 (`3fffe40`, P-2), W5 (`572a16d`, P-3) and W6
+(`4501ffc`, P-4), each `check`ed and integrated by cherry-pick.
+
+| Item | Delivered | Evidence |
+|---|---|---|
+| P-1 | `src/hio/jobs/s1b1_cash_evidence.py`: every eligible period of both currencies in exactly one of five classes, with a disposition slot for each non-agreeing class; canonical JSON and a Markdown template; no pass or fail | `tests/test_t0014_cash_evidence.py` (13) |
+| P-2 | `src/hio/marketdata/finality_record.py`, `src/hio/jobs/s1b1_finality.py`: a content-addressed record at `catalogue/finality/<release_id>/<sha>.json`, verified on read; C1–C7 outcomes and the aggregate verdict; a missing record blocks a final claim; manifests byte-unchanged | `tests/test_t0014_finality*.py` (28) |
+| P-3 | `tools/second_copy.py`, `tools/restore_exercise.py`, `docs/engineering/recovery-runbook.md` (proposed): copy with a hash inventory; restore without the primary; byte-identical rebuild; tamper, missing and unlisted objects detected; provider metadata preserved | `tests/test_t0014_recovery*.py` (35) |
+| P-4 | `tests/test_t0014_consumer*.py` (23 cases through `resolve_for_use`); `infra/workflows/consumer-contract.yml`, inactive and manual-only, with no secrets | the tests |
+
+Full suite: **966 passed**, plus one local failure that is T-0013's A-4 defect (an ignored `.terraform/` directory). It is
+fixed on `feat/t0013` and absent in CI. `ruff`, `ruff format` and `check_repo` pass. **No criterion is established**:
+each needs the execution checklist.
 
 ## Review and acceptance
