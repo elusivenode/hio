@@ -144,6 +144,7 @@ are in operating model §1.1; the template is
 | [OD-0127](OD-0127-authorise-t0012-b2-probe-build.md) | authorise_work | **T-0012 authorised**: build the B-2 storage probe (probe OpenTofu, dispatch-only workflow, script, tests); session handoff and STATUS; nothing created or run | `d3ae240` | recorded |
 | [OD-0128](OD-0128-accept-t0012-architect-review-material.md) | authorise_work | **T-0012 accepted** at `efb6fa1`, merge into `main` by PR; read-only assembly of the architect performance-review material; nothing created, applied or dispatched | `698066f` | recorded |
 | [OD-0129](OD-0129-basecamp-architecture-review.md) | authorise_work | **Base-camp architecture review**: architect report of current state and roadmap, then a Fable review; advice only | `aa05fd0` | recorded |
+| [OD-0130](OD-0130-basecamp-drafts-alert-fix-b2-plan-rights-rows.md) | authorise_work | **Base-camp items 1–4**: draft base-camp definition; T-0013 alert and test fix (no apply); draft B-2 plan; draft free-source rights rows | `01120e9` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
