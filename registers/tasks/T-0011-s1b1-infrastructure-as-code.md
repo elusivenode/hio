@@ -1,12 +1,12 @@
 ---
 id: T-0011
 title: "S1b-1 infrastructure as code: state bootstrap, evidence store, identities, GitHub Environment and branch protection, alerting, budget and the second copy, authored and validated for hnf-prod; never applied without Authorisation B"
-status: proposed   # drafting authorised by OD-0117 decision 3; the IaC work itself needs an owner instruction
+status: authorised   # I-1 to I-6 authoring and offline validation, and I-7 GitHub settings (OD-0118); I-8 not authorised
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, when assigned"
 created_at: 2026-10-29
 updated_at: 2026-10-29
-authorised_by: null       # OD-0117 authorises drafting this card only
+authorised_by: OD-0118   # drafting by OD-0117
 base_revision: e829c83
 accepted_by: null
 review_required: independent (Codex), assigned separately by the owner
