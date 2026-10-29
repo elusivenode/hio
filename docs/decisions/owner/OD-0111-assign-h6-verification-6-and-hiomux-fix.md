@@ -64,3 +64,14 @@ the next session checks this OD's hash instead.
 Receipt of the result (a separate owner yes); adopting the clarification; H6 approval or activation.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29, owner instruction recorded in OD-0112, decision 3)
+
+`~/.hio-runs/orch-prompt.md` now names this OD as the hiomux hash record: one reference, "OD-0095 correction 1" →
+"OD-0111", changed in the start-of-session step 2.
+
+| File | sha256 |
+|---|---|
+| `~/.hio-runs/orch-prompt.md` | `f68cb55eb88a06ca3b980dc70c52a35bdf912c6791c3f45db04063afbd90325b` (supersedes `d2ae1f8e…`, OD-0095 correction 1) |
+| `~/.hio-runs/bin/hiomux` | unchanged: `54fe4e863a1e48b101d3241e6506b4d873d21177a379996409f124151454ceac` |
+| `~/.hio-runs/PROTOCOL.md` | unchanged: `13a45eb7…` (OD-0089) |
