@@ -109,3 +109,15 @@ _(Empty after distil 1. Append new candidate lines below this note.)_
 - [infra] A required reviewer on a GitHub Environment pauses every job in it, scheduled ones included. Source: OD-0119 C-4.
 - [infra] A stateless scheduled-query alert (auto_mitigation off) fires on every evaluation; gate it until there is something to monitor. Source: OD-0126 correction 1.
 - [infra] A workflow_dispatch workflow can be dispatched only once it exists on the default branch. Source: T-0012 submission.
+- [infra] Azure, a conditional create (If-None-Match: *) by a create-only role (blobs/add/action, blobs/read) on an existing key returns 403 UnauthorizedBlobOverwrite, not 409 BlobAlreadyExists. Source: docs/evidence/b2/README.md (run 40853094503).
+- [infra] Azure Last-Modified is whole seconds (floored); HIO-ADR-0012 C5's lower bound completed_at <= s cannot be tested by a probe that takes completed_at after the write. Source: docs/evidence/b2/README.md; architect consultation 20261029T202344-ask-4dcb.
+- [infra] A no-write alert counting all datasets over a fixed window fires every weekend and masks one source's silence: detect per slot in the job; keep the alert as a weekend-aware dead-man. Source: OD-0129 correction 1; T-0013.
+- [repo] Tests that inspect a module directory must read git-tracked files only; ignored .terraform/, tfvars and state break them locally. Source: F-REVIEW-2026-10-29-t0013-1-1.
+- [repo] check_repo refuses data files (.json) outside tests/fixtures/synthetic/; retain JSON evidence verbatim in a fenced block in Markdown, with its sha256. Source: docs/evidence/b2/README.md.
+- [process] [rediscovery] A pipe to tail hides a failing exit: never write "check_repo | tail -1 &&"; run the check unpiped. Source: this session (PR #38).
+- [rights] FRED/ALFRED terms forbid storing, caching or archiving without permission: not a retained source; take series from the public-domain originator (Treasury, the Board). Source: docs/research/T-0002-free-history-sources-matrix.md.
+- [review] A restore or rebuild comparison must compare against the pinned release hash and require the running code to equal the pin; reading at the rebuilt hash's own path proves nothing. Source: F-REVIEW-2026-10-29-t0014-1-1, -2.
+- [hiomux] The Codex reviewer cannot push: push review/<id>-codex before receipt 5.1. Two Codex tasks with reviews/** contracts need spawn --allow-overlap. Source: OD-0133 correction 1; this session.
+- [process] The auto-mode classifier blocks merging PRs and editing permission settings; the owner grants Bash(gh pr merge *) with /permissions (local settings). Source: OD-0131.
+- [infra] A workflow dispatch into an Environment with a required reviewer waits for the owner's approval in GitHub; say so when dispatching. Source: B-2 run 40853094503.
+- [review] In this session Codex found a real defect in every task it reviewed (T-0013, T-0014), and Fable found the alert defect the T-0011 review had missed. Source: OD-0129, OD-0133, OD-0134.
