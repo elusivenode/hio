@@ -139,6 +139,7 @@ are in operating model §1.1; the template is
 | [OD-0122](OD-0122-assign-t0010-t0011-verifications.md) | authorise_work | **VERIFY-2026-10-29-t0010-1-1** (`f345d1e..62adccd`) and **VERIFY-2026-10-29-t0011-1-1** (`2cc7362..0c44b18`) **assigned** to Codex; nothing received or accepted | `62adccd`, `0c44b18` | recorded |
 | [OD-0123](OD-0123-receive-verifications-fix-t0011-f2-accept-t0010.md) | accept_work | **Receive** VERIFY-2026-10-29-t0010-1-1 (READY) and -t0011-1-1 (NOT READY) with §5.12; **fix t0011 F-2**; **T-0010 accepted** at `62adccd` once receipt completes; nothing live | `c8e5f60`, `ff911d7`, `62adccd` | recorded |
 | [OD-0124](OD-0124-assign-t0011-verification-2.md) | authorise_work | **VERIFY-2026-10-29-t0011-1-2 assigned** (`0c44b18..c69df9e`, F-REVIEW-2026-10-29-t0011-1-2); nothing received or accepted | `c69df9e` | recorded |
+| [OD-0125](OD-0125-receive-verify-2-accept-t0011-authorise-b1.md) | authorise_work | **Receive** VERIFY-2026-10-29-t0011-1-2 (READY); **T-0011 accepted** at `c69df9e` on receipt; **Authorisation B stage B-1** (infrastructure in `hnf-prod`, each apply on the owner's go); no capture | `f504833`, `c69df9e` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
