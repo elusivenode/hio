@@ -14,7 +14,7 @@ from hio.contracts.layout import ATTEMPTS_PREFIX, CAPTURES_PREFIX
 from hio.contracts.rights import Operation, RightsRefused
 from hio.marketdata.capture import latest_capture, load_receipt_record, receipt_bytes
 from hio.marketdata.runrecord import Execution, IntegrityError, envelope_headers, load_run_record
-from hio.rights.gate import RightsGate
+from hio.rights.gate import GateContext, RightsGate
 from hio.rights.register import load_genuine
 from hio.sources.datasets import DATASETS, PUBLICATIONS, MalformedPayload
 from hio.sources.run import run_capture
@@ -81,14 +81,23 @@ def attempts(store):
 
 
 @pytest.mark.parametrize("sid", sorted(PUBLICATIONS))
-def test_genuine_register_refuses_every_dataset_before_any_request(sid, store):
-    """A-2: no rights are verified, so each adapter refuses before it requests or writes anything."""
-    gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"))
-    transport = FixtureTransport({URL.format(sid): [resp(FILES[sid])]})
-    before = store.snapshot()
+def test_genuine_register_clears_capture_and_refuses_build(sid):
+    """A-2 after OD-0116 correction 1: the five datasets are owner_verified for capture (fetch and raw
+    retention, on an external host too), while build stays refused until releases carry their notices."""
+    gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"), GateContext(on_external_host=True))
+    subjects = [d.source_id for d in PUBLICATIONS[sid].datasets]
+    gate.authorise(Operation.FETCH, subjects)
+    gate.authorise(Operation.STORE_RAW, subjects)
     with pytest.raises(RightsRefused):
-        go(sid, transport, store, clock(t(1), t(2)), gate=gate)
-    assert transport.requests == [] and store.snapshot() == before
+        gate.authorise(Operation.BUILD, subjects)
+
+
+@pytest.mark.parametrize("sid", ["rba_statistical_tables", "nyfed_reference_rates", "rba.cash_rate_target"])
+def test_genuine_register_still_refuses_unverified_sources(sid):
+    """A-2: a source or dataset without an owner_verified record (parents, D4) is refused."""
+    gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"))
+    with pytest.raises(RightsRefused):
+        gate.authorise(Operation.FETCH, [sid])
 
 
 def test_gate_runs_before_the_request(store):
