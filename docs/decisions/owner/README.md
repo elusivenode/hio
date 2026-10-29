@@ -141,6 +141,7 @@ are in operating model §1.1; the template is
 | [OD-0124](OD-0124-assign-t0011-verification-2.md) | authorise_work | **VERIFY-2026-10-29-t0011-1-2 assigned** (`0c44b18..c69df9e`, F-REVIEW-2026-10-29-t0011-1-2); nothing received or accepted | `c69df9e` | recorded |
 | [OD-0125](OD-0125-receive-verify-2-accept-t0011-authorise-b1.md) | authorise_work | **Receive** VERIFY-2026-10-29-t0011-1-2 (READY); **T-0011 accepted** at `c69df9e` on receipt; **Authorisation B stage B-1** (infrastructure in `hnf-prod`, each apply on the owner's go); no capture | `f504833`, `c69df9e` | recorded |
 | [OD-0126](OD-0126-b1-values-and-backend-block.md) | authorise_work | B-1 values approved (state dir, account names, budget start); **empty azurerm backend block** in `infra/tofu/versions.tf`; alert email still to be named | `0d909e5` | recorded |
+| [OD-0127](OD-0127-authorise-t0012-b2-probe-build.md) | authorise_work | **T-0012 authorised**: build the B-2 storage probe (probe OpenTofu, dispatch-only workflow, script, tests); session handoff and STATUS; nothing created or run | `d3ae240` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
