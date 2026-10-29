@@ -148,6 +148,7 @@ are in operating model §1.1; the template is
 | [OD-0131](OD-0131-merge-basecamp-proposals.md) | authorise_work | **Merge #37–#39** (B-2 plan, base camp, rights rows) as proposals; Claude sets the pace; nothing approved | `b1fc6b4` | recorded |
 | [OD-0132](OD-0132-close-basecamp-gap.md) | authorise_work | **Close the gap to base camp**: B-2 per plan (owner "go" at each write), Codex review of T-0013, non-live build for criteria 3–6 and 9; approvals, rights, go-live stay owner acts | `2765811` | recorded |
 | [OD-0133](OD-0133-receive-t0013-review-assign-verify-and-t0014-review.md) | authorise_work | **Receive REVIEW-…-t0013-1** (NOT READY); assign **VERIFY-…-t0013-1-1** at `39747c5` and **REVIEW-…-t0014-1** at `13d2ea5`; nothing accepted | `651eb95` | recorded |
+| [OD-0134](OD-0134-accept-t0013-verify-t0014-build-t0015-distil.md) | accept / authorise_work | **T-0013 accepted** at `39747c5`; receive VERIFY-…-t0013-1-1 and REVIEW-…-t0014-1; assign VERIFY-…-t0014-1-1; T-0015 (B-2 follow-up); hold the probe; session distil | `3dfcf85` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
