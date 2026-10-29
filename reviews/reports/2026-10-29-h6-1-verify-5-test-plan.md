@@ -1,3 +1,7 @@
+---
+id: VERIFY-2026-10-28-h6-1-5-TEST-PLAN
+status: fixed_before_author_response
+---
 # VERIFY-2026-10-28-h6-1-5: fixed test plan
 
 Fixed before reading `reviews/responses/RESPONSE-REVIEW-2026-10-28-h6-1-5.md` or any author handoff. Independent reviewer: Codex. Work status: `in_review`; H6 remains unactivated. Assignment source: OD-0108 on `main`, corroborated by the owner's verbatim message and `main`'s Assigned reviews row. Repository `elusivenode/hio`; base `41e0840224fa60b0c68f6db9860bc6facfe104ce`; head `5e1582934e1ef88198ff59ffd7b8c947c1ba693b`; review branch `review/h6-1-verify-5-codex`. The checkout and public HTTPS `phase-b/h6` tip equal the head; the base is an ancestor. No conflicting owner-authored assignment found in OD-0108, the owner message, or the Assigned reviews table. OD-0104 approved option B and OD-0106 applied it as harness-0.9b on `main`.
