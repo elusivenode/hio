@@ -42,8 +42,24 @@ variable with no default (`subscription_id`, `reader_principal_object_id`, `gith
 | Conditional create | the backend contract is create-if-absent | Put Blob supports `If-None-Match: *`; an unmet condition returns 412 |
 | No public access | `allow_nested_items_to_be_public = false`, private container | azurerm argument exists |
 | Audit logging | `azurerm_monitor_diagnostic_setting` on the blob service: `StorageRead`, `StorageWrite`, `StorageDelete` logs and `Transaction` metrics, to a Log Analytics workspace (`log_retention_days`, default 90), `log_analytics_destination_type = "Dedicated"` so logs land in `StorageBlobLogs` | supports the C5/C6 audit (HIO-ADR-0012 section 4.3.3) |
-| Soak alert | `azurerm_monitor_scheduled_query_rules_alert_v2`: fires when no successful `StorageWrite` `PutBlob` to `catalogue/attempts/` occurs in `missing_write_window_hours` (default 26); action group emails `owner_email` | absence of an attempt record is a missed capture |
+| Soak alert | `azurerm_monitor_scheduled_query_rules_alert_v2`, a weekend-aware dead-man: fires when no successful `StorageWrite` `PutBlob` to `catalogue/attempts/` occurs in `missing_write_window_hours` (default 26), except in the quiet window Sat 00:00 UTC to Mon 18:00 UTC, when the query returns no row and the rule cannot breach; `auto_mitigation_enabled = true`; off until B-3 (`alert_enabled = false`); action group emails `owner_email` | proves only the **absence of writes**, not that capture is healthy or complete (see below) |
 | Budget | `azurerm_consumption_budget_resource_group` on `rg-hio-evidence`, `budget_amount` (default 20) per month; notifications at 80% and 100% of actual spend to `owner_email` | cost guard |
+
+### What the soak alert does and does not prove (T-0013 A-2)
+
+- **It proves the absence of writes, nothing more.** Captures run on business days only, across
+  publications, so the alert counts writes to `catalogue/attempts/` over all publications together. It
+  cannot see one publication going silent while another still writes, and it says nothing about the health
+  of capture. Per-slot completeness is checked by the capture job, and the soak's gap record is the
+  reconciliation report (T-0013 A-1, A-3).
+- **Quiet window:** Saturday 00:00 UTC to Monday 18:00 UTC (end exclusive). The legitimate weekend gap is
+  about 50 hours, and the New York winter first slot is Monday 13:30 UTC, plus 3 h `LATENESS`, plus an
+  ingestion allowance. In the window the query returns no row, so the rule does not breach.
+- **A resolution inside the quiet window is a suppression, not a recovery.** With
+  `auto_mitigation_enabled = true` a fired alert resolves when a later evaluation no longer breaches, and
+  that includes the evaluation that merely entered the quiet window. Treat the silence as recovered only
+  after an attempt record is seen written, not because the alert resolved.
+- The window variable `missing_write_window_hours` keeps its bounds (1 to 48, Azure's two-day query limit).
 
 ### GitHub workflow-failure notification (T-0011 I-5; not narrowed)
 
