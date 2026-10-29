@@ -1,14 +1,14 @@
 ---
 id: T-0013
 title: "Soak monitoring fix before B-3: per-slot completeness in the capture job, a weekend-aware dead-man alert, a soak reconciliation report, and the probe test's hermeticity"
-status: submitted_for_review   # built on feat/t0013; no tofu plan/apply, no Azure write
+status: accepted   # OD-0134 at 39747c5, merged into main as ae84ac6; the alert stays disabled until B-3
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-10-29
 updated_at: 2026-10-29
 authorised_by: OD-0130
 base_revision: b1fc6b4
-accepted_by: null
+accepted_by: OD-0134   # at 39747c511a5267e80520ca75f3479102e17d1a1f, merged into main as ae84ac6
 review_required: owner (Codex review if the owner assigns one)
 links:
   adrs_governing_approved: [HIO-ADR-0012]
@@ -82,3 +82,6 @@ breaching, and the `dayofweek` conversion, are confirmed only against live Azure
 intended case.
 
 ## Review and acceptance
+
+Reviewed by REVIEW-2026-10-29-t0013-1 (NOT READY at `caf44da`; F-1 medium). Remediated at `39747c5`; VERIFY-2026-10-29-t0013-1-1
+READY (F-1 verified_closed). **Accepted** by the owner (OD-0134) at `39747c5`, merged as `ae84ac6` (PR #40).

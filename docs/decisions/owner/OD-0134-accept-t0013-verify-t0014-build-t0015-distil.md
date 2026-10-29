@@ -63,3 +63,23 @@ Any C5 amendment; B-3; enabling the alert; the re-run or 7b without a "go"; acce
 findings without the owner's acceptance of a distil; any waiver.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): receipts complete; §5.12; T-0013 accepted and merged; C4 launched
+
+Both receipts ran with the same procedure (§6.2 5.0–5.10, in scratch clones). Each assignment source is its
+*Assigned reviews* row plus OD-0133. Each reviewer report is the hiomux result (C2, C3). No second owner-authored
+assignment was found.
+
+| Receipt | T | Inventory | Index lines | Merge (PR) | 5.10 |
+|---|---|---|---|---|---|
+| VERIFY-2026-10-29-t0013-1-1 (READY) | `26df7ef6be8dd189aa7417ee328db8cac186fe17` | 3 expected, 3 found, 0 missing, 0 extra, sha256 equal | one verification row (Class N) | `900c948` (#50) | PASS; tag peels to T; CI pass |
+| REVIEW-2026-10-29-t0014-1 (NOT READY) | `c4ecac2c6ed6fad54171672788cee86452f17618` | 4 expected, 4 found, 0 missing, 0 extra, sha256 equal | one review row and two finding rows, `open` (Class N) | `5cb5b4b` (#51) | PASS; tag peels to T; CI pass |
+
+**§5.12 (this commit):** F-REVIEW-2026-10-29-t0013-1-1, open → **verified_closed** at `39747c5`, per
+VERIFY-2026-10-29-t0013-1-1 (outcome: "technically verified_closed; READY"). Only the state cell and its citation
+changed. The two *Assigned reviews* rows are set to received.
+
+**Decision 2 effective:** T-0013 is accepted at `39747c5`; PR #40 merged as `ae84ac6` with the head match enforced;
+`src/`, `tools/`, `tests/` and `infra/` on `main` are identical to `39747c5`. The card is set to accepted in this commit.
+
+**Item 4 launched:** hiomux Codex task C4 (`VERIFY-2026-10-29-t0014-1-1`, head `e0aaa4d`).
