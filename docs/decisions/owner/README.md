@@ -137,6 +137,7 @@ are in operating model §1.1; the template is
 | [OD-0120](OD-0120-assign-t0010-t0011-reviews.md) | authorise_work | **REVIEW-2026-10-29-t0010-1** (`feat/t0010` `150f813..f345d1e`) and **REVIEW-2026-10-29-t0011-1** (`infra/t0011` `4bce6ae..2cc7362`) **assigned** to Codex; nothing received or accepted | `f345d1e`, `2cc7362` | recorded |
 | [OD-0121](OD-0121-receive-t0010-t0011-reviews-and-remediate.md) | authorise_work | **Go-ahead to receive** REVIEW-2026-10-29-t0010-1 and -t0011-1 (both NOT READY; five findings open), receipts merged **by PR** (main protected); **remediation of all five authorised**; nothing accepted or waived | `17cab48`, `8f469d3` | recorded |
 | [OD-0122](OD-0122-assign-t0010-t0011-verifications.md) | authorise_work | **VERIFY-2026-10-29-t0010-1-1** (`f345d1e..62adccd`) and **VERIFY-2026-10-29-t0011-1-1** (`2cc7362..0c44b18`) **assigned** to Codex; nothing received or accepted | `62adccd`, `0c44b18` | recorded |
+| [OD-0123](OD-0123-receive-verifications-fix-t0011-f2-accept-t0010.md) | accept_work | **Receive** VERIFY-2026-10-29-t0010-1-1 (READY) and -t0011-1-1 (NOT READY) with §5.12; **fix t0011 F-2**; **T-0010 accepted** at `62adccd` once receipt completes; nothing live | `c8e5f60`, `ff911d7`, `62adccd` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
