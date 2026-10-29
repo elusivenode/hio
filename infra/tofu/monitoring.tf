@@ -68,16 +68,18 @@ locals {
 # Fires when no successful write to the attempts prefix occurs in the window: a missed capture, a
 # broken identity or a stopped workflow. The window is in the query; the rule looks back two days.
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "no_attempt_write" {
-  name                    = "alert-hio-no-attempt-write"
-  resource_group_name     = azurerm_resource_group.hio.name
-  location                = azurerm_resource_group.hio.location
-  display_name            = "HIO: no capture attempt record written"
-  description             = "No successful StorageWrite to catalogue/attempts/ in the configured window."
-  scopes                  = [azurerm_log_analytics_workspace.hio.id]
-  severity                = 2
-  evaluation_frequency    = "PT1H"
-  window_duration         = "P2D"
-  enabled                 = true
+  name                 = "alert-hio-no-attempt-write"
+  resource_group_name  = azurerm_resource_group.hio.name
+  location             = azurerm_resource_group.hio.location
+  display_name         = "HIO: no capture attempt record written"
+  description          = "No successful StorageWrite to catalogue/attempts/ in the configured window."
+  scopes               = [azurerm_log_analytics_workspace.hio.id]
+  severity             = 2
+  evaluation_frequency = "PT1H"
+  window_duration      = "P2D"
+  # Off until capture is live (OD-0126 correction 1): before B-3 nothing is written, so an enabled rule
+  # would fire on every hourly evaluation. B-3 sets alert_enabled = true.
+  enabled                 = var.alert_enabled
   auto_mitigation_enabled = false
   skip_query_validation   = true
 

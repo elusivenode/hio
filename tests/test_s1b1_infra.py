@@ -262,3 +262,14 @@ def test_infrastructure_state_and_variables_cannot_be_committed(tmp_path, monkey
     joined = "\n".join(check_repo.errors)
     assert joined.count("infrastructure state, plan or variables") == len(bad)
     assert not any("infra/tofu/variables.tf" in e for e in check_repo.errors)
+
+
+def test_the_no_capture_alert_is_off_until_live():
+    """OD-0126 correction 1: the rule is created disabled and switched on at go-live (B-3)."""
+    monitoring = (TF / "monitoring.tf").read_text()
+    variables = (TF / "variables.tf").read_text()
+    assert re.search(r"^\s*enabled\s+= var\.alert_enabled$", monitoring, re.M)
+    block = variables[variables.index('variable "alert_enabled"') :]
+    block = block[: block.index("\n}\n")]
+    assert re.search(r"^\s*type\s+= bool$", block, re.M)
+    assert re.search(r"^\s*default\s+= false$", block, re.M)
