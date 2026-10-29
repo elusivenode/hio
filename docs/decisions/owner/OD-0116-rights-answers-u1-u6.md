@@ -46,3 +46,24 @@ and the operations above only.
 Any fetch; any right marked verified; D4, D5, D6; distribution beyond `hio_internal`; Authorisation B.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): U7 confirmed; D1, D2, D3, D8 and D9 owner_verified
+
+**Source:** `docs/history/2026-10-29-owner-azure-assessment-and-u7.md` (sha256
+`68d8e6eadfbd4a76086d35ff9cbca50ce13efbdc543755f545e9472a5c351c1b`), message AN, "yes to all.", answering question 5:
+"Have you read the live RBA and NY Fed terms yourself, and do they support the answers you adopted?"
+
+**Effect.** `registers/sources.yaml` gains five dataset-level records (`rba.cash_rate`, `rba.expert_judgement`,
+`rba.cash_rate_tri`, `nyfed.sofr`, `nyfed.sofr_index`; OD-0065: each dataset on its own record), `owner_verified` by this
+OD, with raw retention indefinite. Their permissions follow the matrix and the adopted answers:
+- **Capture is cleared.** `automated_retrieval`, `raw_retention` and `external_processing` are allow or conditional with
+  the condition recorded as satisfied (internal use, two requests a day, declared User-Agent, nothing published).
+  The gate now permits `fetch` and `store_raw` for the five datasets, on a CI or cloud host too.
+- **Derivation is not yet cleared.** `internal_compute`, `derivation`, `derived_storage`, `distribution.hio_internal`
+  and `agent_context` are conditional on release notices (RBA: attribution and no-endorsement statement; NY Fed: D
+  derivation label, E no endorsement, T DTCC notice). No release carries them today, so the conditions are **not**
+  recorded as satisfied and the gate refuses `build` until they are implemented and recorded.
+- **Unchanged:** the parent records `rba_statistical_tables` and `nyfed_reference_rates` (still unverified), D4, D5, D6,
+  every consumer class beyond `hio_internal`, quotation, post-termination and audit retention (unknown = deny).
+
+H1 is met **for capture**. Authorisation B is still a separate act.
