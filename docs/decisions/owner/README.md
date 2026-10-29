@@ -127,6 +127,7 @@ are in operating model §1.1; the template is
 | [OD-0110](OD-0110-receive-h6-verification-5.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-5** at corrected tip `1267f47` (NOT READY: F-VERIFY-…-4-1 verified_closed; new high F-VERIFY-…-5-1 open); hand-built correction commit; `phase-b/h6` and `proposal/harness-0.9` pushed; §5.12 reconciliation | `review/h6-1-verify-5-codex` at `1267f47` | recorded |
 | [OD-0111](OD-0111-assign-h6-verification-6-and-hiomux-fix.md) | authorise_work | **VERIFY-2026-10-28-h6-1-6 assigned** (F-VERIFY-…-5-1 at `3d376ba`; regression; consistency with proposed clarification `6d3fe3c`); hiomux runner fix, new hash `54fe4e86…` | `phase-b/h6` at `3d376ba` | recorded |
 | [OD-0112](OD-0112-receive-h6-verification-6.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-6** (NOT READY: F-VERIFY-…-5-1 verified_closed; new high F-VERIFY-…-6-1 open); §5.12 reconciliation; F-VERIFY-…-6-1 fix and response 7; orch-prompt pointer (OD-0111 correction 1) | `review/h6-1-verify-6-codex` at `c590948` | recorded |
+| [OD-0113](OD-0113-assign-h6-verification-7.md) | authorise_work | **VERIFY-2026-10-28-h6-1-7 assigned** (F-VERIFY-…-6-1 at `655335c`), the last round before an owner assessment of H6; `phase-b/h6` and `proposal/harness-0.9` pushed | `phase-b/h6` at `655335c` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
