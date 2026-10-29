@@ -7,12 +7,14 @@ resource "azurerm_user_assigned_identity" "capture" {
   location            = azurerm_resource_group.hio.location
 }
 
+# The subject is GitHub's immutable form (numeric owner and repository ids), supplied at apply time
+# through var.github_oidc_subject and never committed.
 resource "azurerm_federated_identity_credential" "capture" {
   name                      = "github-capture"
   user_assigned_identity_id = azurerm_user_assigned_identity.capture.id
   issuer                    = "https://token.actions.githubusercontent.com"
   audience                  = ["api://AzureADTokenExchange"]
-  subject                   = "repo:${var.github_repository}:environment:${var.github_environment}"
+  subject                   = var.github_oidc_subject
 }
 
 # Create-only. `blobs/add/action` creates a new blob; overwriting needs `blobs/write`, which this role
@@ -35,13 +37,13 @@ resource "azurerm_role_definition" "capture_writer" {
 }
 
 resource "azurerm_role_assignment" "capture_writer" {
-  scope              = azurerm_storage_container.evidence.resource_manager_id
+  scope              = azurerm_storage_container.evidence.id
   role_definition_id = azurerm_role_definition.capture_writer.role_definition_resource_id
   principal_id       = azurerm_user_assigned_identity.capture.principal_id
 }
 
 resource "azurerm_role_assignment" "owner_reader" {
-  scope                = azurerm_storage_container.evidence.resource_manager_id
+  scope                = azurerm_storage_container.evidence.id
   role_definition_name = "Storage Blob Data Reader"
   principal_id         = var.reader_principal_object_id
 }
