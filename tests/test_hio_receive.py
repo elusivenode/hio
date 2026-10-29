@@ -554,7 +554,7 @@ def assert_partial_disclosure(w: World, out: str) -> None:
     assert "a removed or changed line" in out  # the reasons, recomputed on the restart
 
 
-def test_restart_after_a_failed_main_push_still_discloses_the_refused_index(make_world):
+def test_restart_after_a_failed_main_push_stops_and_recovers_after_the_owners_reset(make_world):
     w = make_world(kind="verify")  # its README diff rewrites F-OLD-1-1's state: refused
     before = w.origin_git("show", "main:reviews/README.md")
     (w.origin / "deny-main").write_text("")
@@ -562,7 +562,17 @@ def test_restart_after_a_failed_main_push_still_discloses_the_refused_index(make
     assert r.code == 1 and "STATUS: receipt incomplete" in r.out
     assert "refused lines, verbatim" in r.out and received_main(w) == w.head
     (w.origin / "deny-main").unlink()
-    # attempt 2 publishes the import and merge made by attempt 1; its summary is the receipt's source
+    # attempt 2 does not resume the local merge: local main is ahead, so it stops and publishes nothing
+    local = git(w.recv, "rev-parse", "main")
+    unpublished = git(w.recv, "rev-list", "--oneline", f"{w.head}..main").splitlines()
+    assert len(unpublished) == 2
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1 and "STATUS: received" not in r.out
+    assert "preserved untouched" in r.err and "reset local main" in r.err
+    assert all(line in r.err for line in unpublished)
+    assert received_main(w) == w.head and git(w.recv, "rev-parse", "main") == local
+    # the owner's manual 5.11 route: reset local main to remote main and rerun; the import is rebuilt
+    git(w.recv, "reset", "-q", "--hard", f"origin/{hio.MAIN}")
     r = w.run(publish=True, without_index=True)
     assert r.code == 0, r.err
     assert "STATUS: received" in r.out
@@ -571,10 +581,11 @@ def test_restart_after_a_failed_main_push_still_discloses_the_refused_index(make
     assert main != w.head and w.origin_git("show", f"{main}:reviews/README.md") == before
     imp = w.origin_git("rev-list", "--parents", "-n1", main).split()[2]
     assert "Index-Diff: refused (" in w.origin_git("log", "-1", "--format=%B", imp)
-    # a later idempotent run discloses the same
+    # a further run inspects the published receipt: same disclosure, nothing pushed
     r = w.run(publish=True, without_index=True)
     assert r.code == 0, r.err
     assert "already imported" in r.out and "STATUS: received" in r.out
+    assert "none pushed by this run" in r.out
     assert_partial_disclosure(w, r.out)
     assert received_main(w) == main and w.origin_git("show", f"{main}:reviews/README.md") == before
     assert git(w.recv, "worktree", "list").count("\n") == 0
@@ -592,14 +603,13 @@ def test_dry_run_after_the_import_exists_discloses_the_refused_index(make_world)
 
 def test_restart_without_the_go_ahead_stops_after_a_refused_index_import(make_world):
     w = make_world(kind="verify")
-    (w.origin / "deny-main").write_text("")
-    assert w.run(publish=True, without_index=True).code == 1
-    (w.origin / "deny-main").unlink()
+    assert w.run(publish=True, without_index=True).code == 0  # published: now only inspected
+    main = received_main(w)
     for publish in (True, False):
         r = w.run(publish=publish)
         assert r.code == 1 and "restart with --without-index" in r.err
         assert "STATUS: received" not in r.out
-    assert received_main(w) == w.head  # nothing was published without the flag
+    assert received_main(w) == main  # nothing was pushed without the flag
 
 
 # --- a restart compares the existing import's content with the reviewer's evidence ----------------
@@ -642,10 +652,19 @@ def false_verified_closed(readme: str, _w: World) -> str:
 
 
 def assert_restart_stops(w: World) -> None:
+    """The unpublished hand-built import is refused as local history; the same import, once on remote main,
+    is stopped by the 5.6 content checks. Remote main never advances by this tool."""
     r = w.run(publish=True, without_index=True)
     assert r.code == 1, r.out
     assert "STATUS: received" not in r.out
+    assert "ahead of" in r.err and "preserved untouched" in r.err
     assert received_main(w) == w.head  # remote main did not advance
+    git(w.recv, "push", "-q", "origin", "main")  # as if a bad import had been published
+    pushed = received_main(w)
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1, r.out
+    assert "STATUS: received" not in r.out and "ahead of" not in r.err
+    assert received_main(w) == pushed
     assert git(w.recv, "worktree", "list").count("\n") == 0
 
 
@@ -686,13 +705,66 @@ def test_restart_stops_on_an_import_that_changes_the_readme_the_reviewer_left_al
     assert_restart_stops(w)
 
 
-def test_restart_accepts_a_hand_built_import_that_equals_the_reviewers_diff_applied(make_world):
+def test_restart_refuses_an_unpublished_hand_built_import_that_equals_the_reviewers_diff_applied(make_world):
+    w = make_world()
+    hand_built_import(w, reviewers_readme)  # response 5's positive control: local history is never resumed
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1, r.out
+    assert "STATUS: received" not in r.out
+    assert "ahead of" in r.err and "preserved untouched" in r.err and "hand-built" in r.err
+    assert received_main(w) == w.head
+
+
+def test_a_published_import_that_equals_the_reviewers_diff_applied_is_inspected_and_not_pushed(make_world):
     w = make_world()
     hand_built_import(w, reviewers_readme)
+    git(w.recv, "push", "-q", "origin", "main")
+    pushed = received_main(w)
     r = w.run(publish=True, without_index=True)
     assert r.code == 0, r.err
-    assert "STATUS: received" in r.out and "PARTIAL" not in r.out
-    assert received_main(w) != w.head
+    assert "STATUS: received" in r.out and "PARTIAL" not in r.out and "none pushed by this run" in r.out
+    assert received_main(w) == pushed
+
+
+def poisoned_local_import(w: World) -> tuple[str, str]:
+    """Codex's probe: an unsupported state change committed on local main, then an import that applies the
+    reviewer's exact README patch on top of it (a separate hunk, so the patch still applies)."""
+    git(w.recv, "checkout", "-q", "main")
+    readme = w.recv / "reviews" / "README.md"
+    readme.write_text(
+        replace_line(
+            readme.read_text(),
+            "| F-OLD-1-2 |",
+            "| F-OLD-1-2 | OLD-1 | medium | **verified_closed** | — | — | — |",
+        )
+    )
+    git(w.recv, "commit", "-q", "-am", "poison: unsupported verified_closed")
+    poison = git(w.recv, "rev-parse", "HEAD")
+    patch = subprocess.run(
+        ["git", "diff", "--no-renames", w.head, w.tip, "--", "reviews/README.md"],
+        cwd=w.recv,
+        capture_output=True,
+        check=True,
+    ).stdout
+    subprocess.run(["git", "apply", "--index", "-"], cwd=w.recv, input=patch, check=True)
+    return poison, hand_built_import(w)
+
+
+def test_unpublished_poisoned_commit_before_an_exact_import_is_never_published(make_world):
+    def without_findings_row(readme: str, _w: World) -> str:  # keep the patch away from F-OLD-1-2
+        return "\n".join(x for x in readme.split("\n") if not x.startswith("| F-REVIEW-T-1-1 |"))
+
+    w = make_world(readme_fn=without_findings_row)
+    poison, imp = poisoned_local_import(w)
+    assert git(w.recv, "rev-parse", f"{imp}^") == poison
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1, r.out
+    assert "STATUS: received" not in r.out
+    assert "poison: unsupported verified_closed" in r.err and "hand-built" in r.err
+    assert "preserved untouched" in r.err
+    assert received_main(w) == w.head
+    assert git(w.recv, "rev-parse", "main") == imp
+    assert git(w.recv, "worktree", "list").count("\n") == 0
 
 
 def test_without_index_is_ignored_when_the_index_diff_is_acceptable(make_world):
@@ -908,13 +980,17 @@ def test_main_push_rejected_leaves_a_reconcilable_state(make_world):
     assert w.origin_git("rev-parse", f"refs/tags/reviews/{w.rec_id}^{{commit}}") == w.tip
     local = git(w.recv, "rev-parse", "main")
     assert local != w.head and len(git(w.recv, "rev-list", "--parents", "-n1", local).split()) == 3
-    # recovery (5.11): restart from 5.1; the merge is re-verified and only the push is retried
+    # recovery (5.11): a restart does not resume the local merge; the owner resets local main and reruns
     (w.origin / "deny-main").unlink()
     r = w.run(publish=True)
+    assert r.code == 1 and "ahead of" in r.err and "STATUS: received" not in r.out
+    assert received_main(w) == w.head and git(w.recv, "rev-parse", "main") == local
+    git(w.recv, "reset", "-q", "--hard", "origin/main")
+    r = w.run(publish=True)
     assert r.code == 0, r.err
-    assert "STATUS: received" in r.out and "already holds the merge" in r.out
-    assert received_main(w) == local
-    assert git(w.recv, "rev-parse", "main") == local
+    assert "STATUS: received" in r.out and "discarded the disposable" in r.out
+    assert received_main(w) != w.head
+    assert git(w.recv, "rev-parse", "main") == received_main(w)
 
 
 def test_branch_moved_before_the_final_recheck(make_world):
@@ -945,6 +1021,39 @@ def test_main_moved_before_merge_then_restart_rebuilds_the_import(make_world):
     assert r.code == 0, r.err
     assert "discarded the disposable" in r.out
     assert "STATUS: received" in r.out
+
+
+def commit_on_local_main(w: World) -> None:
+    w.write(w.recv, "docs/extra.md", "extra\n")
+    git(w.recv, "add", "-A")
+    git(w.recv, "commit", "-q", "-m", "extra local commit")
+
+
+def test_publication_guard_stops_on_an_extra_local_commit_after_the_merge(make_world):
+    w = make_world()
+    r = w.run(publish=True, hooks={"before_push": lambda _ctx: commit_on_local_main(w)})
+    assert r.code == 1 and "publication guard" in r.err and "extra local commit" in r.err
+    assert "STATUS: received" not in r.out and "STATUS: receipt incomplete" in r.out
+    assert received_main(w) == w.head
+
+
+def test_publication_guard_stops_on_an_extra_local_commit_before_the_merge(make_world):
+    w = make_world()
+    r = w.run(publish=True, hooks={"before_recheck": lambda _ctx: commit_on_local_main(w)})
+    assert r.code == 1 and "Do not merge" in r.err
+    assert received_main(w) == w.head
+    assert git(w.recv, "show", "-s", "--format=%s", "main") == "extra local commit"
+
+
+def test_publication_guard_stops_when_remote_main_moves_after_the_merge(make_world):
+    w = make_world()
+
+    def move(_ctx) -> None:
+        w.author_commit_on("main", "docs/more.md", "more\n")
+
+    r = w.run(publish=True, hooks={"before_push": move})
+    assert r.code == 1 and "publication guard" in r.err and "not " + w.head in r.err
+    assert received_main(w) == git(w.author, "rev-parse", "main") != w.head
 
 
 def test_tag_missing_after_main_pushed_is_recreated_and_noted(make_world):

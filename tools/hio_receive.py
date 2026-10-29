@@ -20,6 +20,15 @@ suitable as the body of the receipt's OD. With --publish it also does 5.4 (prove
 (post-push verification). The status word is "receipt incomplete" until 5.10 passes. Every run
 restarts at 5.1 and checks the state it depends on (5.11).
 
+Recovery is narrow (5.11): the tool publishes only a receipt it built in this invocation from a freshly
+fetched remote `main`. Local `main` ahead of remote `main` (an unpublished import or merge) is a stop
+that lists those commits and leaves them untouched; the owner resets local `main` to remote `main` and
+reruns (the tag pins T; the import is rebuilt). A tag with no import resumes at 5.5; an unmerged
+`receipt/<id>` branch is discarded and rebuilt. An import of T already on remote `main` is inspected
+(5.6 content checks, refused-index disclosure, tag) and `main` is never pushed on that path. Just before
+the push of `main` a guard requires remote `main` to be the commit the receipt was cut from and local
+`main` to be ahead by exactly this invocation's import and merge.
+
 The tool reuses `main`'s `tools/check_review_branch.sh` and `tools/check_review_assignment.py`
 (5.3) and `tools/check_repo.py` (5.7); it never reimplements them. `check_repo.py` runs under the
 interpreter that runs this tool (use `uv run python tools/hio_receive.py ...`).
@@ -121,7 +130,7 @@ class Ctx:
     checks: dict[str, str] = field(default_factory=dict)
     import_commit: str = ""
     merge_commit: str = ""
-    ahead_with_import: bool = False
+    cut: str = ""  # the `main` revision the receipt branch was cut from (5.5)
     wt: Path | None = None
     touched: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
@@ -701,12 +710,35 @@ def step_tip(ctx: Ctx) -> None:
 
 
 def step_main_state(ctx: Ctx) -> None:
-    """Fetch main, refuse a stale or diverged target, and find an import of T already on main (5.11)."""
+    """Fetch main, require local main to equal remote main, and find a published import of T (5.11).
+
+    The receiver publishes only a receipt it built in this invocation from a freshly fetched remote
+    `main`. Local `main` ahead of remote `main` for any reason is a stop; an import of T that is on
+    remote `main` is inspected, never pushed.
+    """
     g = ctx.g
+    ref = f"{ctx.remote}/{MAIN}"
     g.out("fetch", "--no-tags", ctx.remote, f"+refs/heads/{MAIN}:refs/remotes/{ctx.remote}/{MAIN}")
-    local, remote = g.out("rev-parse", MAIN), g.out("rev-parse", f"{ctx.remote}/{MAIN}")
+    local, remote = g.out("rev-parse", MAIN), g.out("rev-parse", ref)
+    ctx.sec("Target")
+    if local == remote:
+        ctx.add(f"- local `{MAIN}` = `{ref}` = `{local}`")
+    elif g.ok("merge-base", "--is-ancestor", remote, local):
+        unpublished = g.out("rev-list", "--oneline", f"{ref}..{MAIN}")
+        raise Stop(
+            f"local {MAIN} {local} is ahead of {ref} {remote}. These unpublished commits are preserved "
+            f"untouched (the receiver never resets {MAIN}):\n{unpublished}\n"
+            "The receiver publishes only a receipt it builds in this invocation from a freshly fetched "
+            f"{ref}; it does not trust or resume local history. Manual route for the owner (5.11): "
+            f"inspect those commits, reset local {MAIN} to {ref} and rerun (the tag pins T; the import "
+            "is rebuilt)."
+        )
+    elif g.ok("merge-base", "--is-ancestor", local, remote):
+        raise Stop(f"stale target: local {MAIN} {local} is behind {ref} {remote}; update the scratch clone")
+    else:
+        raise Stop(f"local {MAIN} and {ref} have diverged")
     found = g.out(
-        "log", MAIN, "--extended-regexp", f"--grep=^Review-Commit: {ctx.tip}$", "--format=%H"
+        "log", ref, "--extended-regexp", f"--grep=^Review-Commit: {ctx.tip}$", "--format=%H"
     ).split()
     ctx.import_commit = found[0] if found else ""
     if ctx.import_commit:
@@ -715,27 +747,6 @@ def step_main_state(ctx: Ctx) -> None:
             raise Stop(
                 f"{ctx.tip} is already imported on main at {ctx.import_commit} under a different Review-Id"
             )
-    ctx.sec("Target")
-    if local == remote:
-        ctx.add(f"- local `{MAIN}` = `{ctx.remote}/{MAIN}` = `{local}`")
-    elif g.ok("merge-base", "--is-ancestor", remote, local):
-        if ctx.import_commit and not g.ok("merge-base", "--is-ancestor", ctx.import_commit, remote):
-            ctx.ahead_with_import = True
-            ctx.add(
-                f"- local `{MAIN}` `{local}` is ahead of `{ctx.remote}/{MAIN}` `{remote}` by this receipt "
-                "(merged locally, push pending; 5.11)"
-            )
-        else:
-            raise Stop(
-                f"local {MAIN} has commits that are not on {ctx.remote}/{MAIN} and are not this receipt"
-            )
-    elif g.ok("merge-base", "--is-ancestor", local, remote):
-        raise Stop(
-            f"stale target: local {MAIN} {local} is behind {ctx.remote}/{MAIN} {remote}; "
-            "update the scratch clone"
-        )
-    else:
-        raise Stop(f"local {MAIN} and {ctx.remote}/{MAIN} have diverged")
 
 
 def step_inventory(ctx: Ctx) -> None:
@@ -951,6 +962,9 @@ def step_import(ctx: Ctx) -> None:
     ctx.sec("5.5 Import")
     wt = Path(tempfile.mkdtemp(prefix="hio-receive-")) / "wt"
     ctx.wt = wt
+    ctx.cut = g.out("rev-parse", f"{ctx.remote}/{MAIN}")
+    if g.out("rev-parse", MAIN) != ctx.cut:
+        raise Stop(f"5.5: local {MAIN} is not {ctx.remote}/{MAIN} {ctx.cut}; rerun from 5.1")
     if ctx.publish:
         _prepare_receipt_branch(ctx)
         g.out("worktree", "add", "-q", "-b", ctx.receipt_branch, str(wt), MAIN)
@@ -1104,6 +1118,35 @@ def cleanup_worktree(ctx: Ctx) -> None:
 # --- 5.9 merge and publish, 5.10 verification ------------------------------------------------------
 
 
+def guard_publication(ctx: Ctx, merge: str) -> None:
+    """Immediately before the push of main: only this invocation's import and merge may be published."""
+    g, ref = ctx.g, f"{ctx.remote}/{MAIN}"
+    g.out("fetch", "--no-tags", ctx.remote, f"+refs/heads/{MAIN}:refs/remotes/{ctx.remote}/{MAIN}")
+    remote = g.out("rev-parse", ref)
+    if remote != ctx.cut:
+        raise Stop(
+            f"5.9: publication guard: {ref} is {remote}, not {ctx.cut} from which the receipt was cut. "
+            "Nothing was pushed; rerun from 5.1."
+        )
+    ahead = g.out("rev-list", f"{ref}..{MAIN}").split()
+    if g.out("rev-parse", MAIN) != merge or sorted(ahead) != sorted([ctx.import_commit, merge]):
+        listing = g.out("rev-list", "--oneline", f"{ref}..{MAIN}")
+        raise Stop(
+            f"5.9: publication guard: local {MAIN} is ahead of {ref} by commits other than this "
+            f"invocation's import {ctx.import_commit} and merge {merge}; nothing was pushed. "
+            f"Unpublished commits (left untouched):\n{listing}"
+        )
+    merge_parents = g.out("rev-list", "--parents", "-n1", merge).split()[1:]
+    import_parents = g.out("rev-list", "--parents", "-n1", ctx.import_commit).split()[1:]
+    if merge_parents != [ctx.cut, ctx.import_commit] or import_parents != [ctx.cut]:
+        raise Stop(
+            f"5.9: publication guard: the merge {merge} has parents {merge_parents} and the import "
+            f"{ctx.import_commit} has parents {import_parents}; expected [{ctx.cut}, {ctx.import_commit}] "
+            f"and [{ctx.cut}]. Nothing was pushed."
+        )
+    ctx.add(f"- publication guard: {ref} = cut `{ctx.cut}`; only the import and the merge are ahead")
+
+
 def step_merge_and_push(ctx: Ctx) -> None:
     g, a = ctx.g, ctx.args
     hook = ctx.hooks.get("before_recheck")
@@ -1122,38 +1165,36 @@ def step_merge_and_push(ctx: Ctx) -> None:
     ctx.add("- branch tip and tag unchanged since 5.1/5.4")
     g.out("fetch", "--no-tags", ctx.remote, f"+refs/heads/{MAIN}:refs/remotes/{ctx.remote}/{MAIN}")
     local, remote = g.out("rev-parse", MAIN), g.out("rev-parse", f"{ctx.remote}/{MAIN}")
-    if not ctx.ahead_with_import:
-        if local != remote:
-            raise Stop(
-                f"5.9: {ctx.remote}/{MAIN} moved to {remote} (local {local}) since the import was cut. "
-                "Do not merge; rerun from 5.1 (the import is rebuilt)."
-            )
-        subject = f"Merge {ctx.receipt_branch}: receive {a.review_id} evidence (receipt only)"
-        msg = ["-m", subject, "-m", actor(ctx)]
-        if a.co_authored_by:
-            msg += ["-m", f"Co-Authored-By: {a.co_authored_by}"]
-        p = g.run("merge", "--no-ff", *msg, ctx.receipt_branch)
-        if p.returncode:
-            g.run("merge", "--abort")
-            raise Stop(
-                f"5.9: the merge did not complete: {(p.stdout + p.stderr).decode(errors='replace').strip()}"
-            )
-        local = g.out("rev-parse", MAIN)
-        ctx.touched.append(f"merge {local} on local {MAIN} (not pushed)")
-        ctx.add(f"- merged `{ctx.receipt_branch}` `--no-ff` into {MAIN}: `{local}`")
-    else:
-        changed = g.out("diff", "--name-only", remote, local).splitlines()
-        outside = [n for n in changed if not n.startswith(ctx.prefix + "reviews/")]
-        if outside:
-            raise Stop(f"5.9: the unpublished local {MAIN} changes paths outside reviews/: {outside}")
-        ctx.add(f"- local {MAIN} `{local}` already holds the merge; re-verified, pushing")
-    ctx.merge_commit = local
-    ctx.pushed_commits.append(local)
-    p = g.run("push", ctx.remote, f"refs/heads/{MAIN}:refs/heads/{MAIN}")
+    if local != remote or remote != ctx.cut:
+        raise Stop(
+            f"5.9: {ctx.remote}/{MAIN} moved or local {MAIN} changed since the import was cut: remote "
+            f"{remote}, local {local}, cut {ctx.cut}. Do not merge; rerun from 5.1 (the import is rebuilt)."
+        )
+    subject = f"Merge {ctx.receipt_branch}: receive {a.review_id} evidence (receipt only)"
+    msg = ["-m", subject, "-m", actor(ctx)]
+    if a.co_authored_by:
+        msg += ["-m", f"Co-Authored-By: {a.co_authored_by}"]
+    p = g.run("merge", "--no-ff", *msg, ctx.receipt_branch)
+    if p.returncode:
+        g.run("merge", "--abort")
+        raise Stop(
+            f"5.9: the merge did not complete: {(p.stdout + p.stderr).decode(errors='replace').strip()}"
+        )
+    merge = g.out("rev-parse", MAIN)
+    ctx.touched.append(f"merge {merge} on local {MAIN} (not pushed)")
+    ctx.add(f"- merged `{ctx.receipt_branch}` `--no-ff` into {MAIN}: `{merge}`")
+    hook = ctx.hooks.get("before_push")
+    if hook:
+        hook(ctx)
+    guard_publication(ctx, merge)
+    ctx.merge_commit = merge
+    ctx.pushed_commits.append(merge)
+    p = g.run("push", ctx.remote, f"{merge}:refs/heads/{MAIN}")
     if p.returncode:
         raise Stop(
             f"5.9: the push of {MAIN} failed or was rejected ({p.stderr.decode(errors='replace').strip()}). "
-            f"State: merged locally, push failed (5.11): re-verify and push again."
+            "State: merged locally, push failed (5.11): the receiver will not resume or push that local "
+            f"history; the owner resets local {MAIN} to {ctx.remote}/{MAIN} and reruns (import rebuilt)."
         )
     ctx.add(f"- pushed `{MAIN}` to {ctx.remote}")
 
@@ -1313,10 +1354,8 @@ def flow(ctx: Ctx) -> None:
             tag_precheck(ctx)
             step_verify_existing(ctx)
             return
-        step_tag(ctx)
+        step_tag(ctx)  # a published receipt is inspected only: main is never pushed on this path
         step_verify_existing(ctx)
-        if ctx.ahead_with_import:
-            step_merge_and_push(ctx)
         step_verify_published(ctx)
         return
     if ctx.publish:
@@ -1351,9 +1390,12 @@ def status_word(ctx: Ctx, stop: str | None) -> str:
 
 def recovery_state(ctx: Ctx) -> str:
     if any(t.startswith("merge ") for t in ctx.touched):
-        return "merged locally, push of main failed or not verified: re-verify 5.9 and push (5.11)"
+        return (
+            "merged locally, push of main failed or not verified: the owner resets local main to "
+            "remote main and reruns; the receiver never resumes local history (5.11)"
+        )
     if any(t.startswith("import commit") for t in ctx.touched):
-        return "import committed, not merged: re-verify 5.9 then merge, or discard receipt/<id> (5.11)"
+        return "import committed, not merged: rerun (receipt/<id> is discarded and rebuilt from main) (5.11)"
     if any(t.startswith("tag ") for t in ctx.touched):
         return "tag pushed, no import: harmless; resume at 5.5 with the same T, or abandon with a note (5.11)"
     return "nothing pushed"
