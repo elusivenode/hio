@@ -69,3 +69,21 @@ F-REVIEW-2026-10-29-t0011-1-2: open → **verified_closed** at `c69df9e`. All fi
 
 **Decision 2 effective:** T-0011 accepted at `c69df9e`; PR #8 merged into `main` as `09d4886`; `infra/tofu` on `main` is
 identical to `c69df9e`. The T-0011 card is set to accepted in this commit. **B-1 may now proceed** as authorised.
+
+### Correction 2 (2026-10-29): B-1 completed
+
+Executed in the owner's terminal with the owner's `az` login, `--subscription hnf-prod` named throughout, at `main`
+`29bc58c` (T-0011 as accepted, plus the backend block and `alert_enabled` of OD-0126):
+1. `Microsoft.Insights`, `Microsoft.OperationalInsights`, `Microsoft.AlertsManagement`: Registered.
+2. Bootstrap (`infra/tofu/bootstrap`): plan shown, owner's "Go", applied: 4 added (OD-0126 correction 1).
+3. Evidence store (`infra/tofu`, remote state in `hiotfstatek835/tfstate`): the first plan was shown; on the owner's
+   "go, alert off until live" the alert was gated (OD-0126 correction 1, PR #28); the fresh plan was shown; the owner's
+   "Go"; applied: **13 added, 0 changed, 0 destroyed**.
+4. `capture` Environment variables set: `HIO_STORAGE_ACCOUNT_URL`, `HIO_STORAGE_CONTAINER`, `AZURE_TENANT_ID`,
+   `AZURE_CLIENT_ID` (identifier values, not committed).
+
+**Read-back:** evidence account shared key off, no public access, ZRS, immutability **Unlocked** at 3,650 days; the
+evidence container holds **0** blobs; the no-capture alert is **disabled**; `hnf-prod` holds only `rg-hio-tfstate` and
+`rg-hio-evidence`. Plans, applies and state are kept in `~/.hio-state/` on the owner's Mac, outside the repository.
+
+Nothing captured; B-2 and B-3 not started.
