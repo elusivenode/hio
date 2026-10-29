@@ -15,7 +15,10 @@ tests never touch a network):
 - `create` is one Put Blob with `If-None-Match: *` (`overwrite=False` and `MatchConditions.IfMissing`).
   Data above `max_single_put_size` is refused before any request, so the SDK can never switch to a
   staged block-list upload (which would not be a single conditional create). Only a genuine 409
-  `BlobAlreadyExists` or 412 `ConditionNotMet` becomes `BlobExists`; auth, policy, throttling,
+  `BlobAlreadyExists` or 412 `ConditionNotMet` becomes `BlobExists`, plus (T-0015 F-1) a 403
+  `UnauthorizedBlobOverwrite` when a properties read confirms the exact key exists (a writer role
+  without overwrite permission gets that code for an existing key; B-2). If that read fails or finds
+  nothing, the original 403 is raised. Other auth, policy, throttling,
   server and transport errors propagate unchanged as their own types. The SDK's retry policy can
   turn a lost response into a spurious `BlobExists` for bytes this caller did write; the store layer
   resolves that on retry (identical bytes at an existing key are skipped, different bytes refuse).
@@ -51,6 +54,7 @@ PAGE_SIZE = 5000
 
 _EXISTS_STATUS = {409, 412}
 _EXISTS_CODES = {"BlobAlreadyExists", "ConditionNotMet"}
+_OVERWRITE_REFUSAL_CODE = "UnauthorizedBlobOverwrite"
 _NOT_FOUND_CODES = {"BlobNotFound"}
 
 
@@ -91,6 +95,13 @@ def _code(error: BaseException) -> str | None:
 
 def _is_already_exists(error: HttpResponseError) -> bool:
     return getattr(error, "status_code", None) in _EXISTS_STATUS and _code(error) in _EXISTS_CODES
+
+
+def _is_overwrite_refusal(error: HttpResponseError) -> bool:
+    """A 403 `UnauthorizedBlobOverwrite`: what a writer role without overwrite permission gets from the
+    conditional create when the key already exists (B-2, T-0015 F-1). Only a conflict signal once a
+    properties read confirms the key; never proof that this caller's bytes are stored."""
+    return getattr(error, "status_code", None) == 403 and _code(error) == _OVERWRITE_REFUSAL_CODE
 
 
 def _is_blob_not_found(error: ResourceNotFoundError) -> bool:
@@ -148,7 +159,7 @@ class AzureBlobBackend:
                 timeout=self._timeout,
             )
         except HttpResponseError as error:
-            if _is_already_exists(error):
+            if _is_already_exists(error) or (_is_overwrite_refusal(error) and self._key_exists(blob)):
                 raise BlobExists(key) from None
             raise
         version_id = result.get("version_id") if isinstance(result, dict) else None
@@ -160,6 +171,15 @@ class AzureBlobBackend:
         if info.version_id != version_id or info.size != len(data):
             raise ProviderMetadataError(f"{key}: the stored version does not match the upload")
         return info
+
+    def _key_exists(self, blob: Any) -> bool:
+        """True only when a properties read of the exact key succeeds. A not-found answer, any other
+        failure and any inconclusive result are False, so the caller re-raises the original error."""
+        try:
+            blob.get_blob_properties(timeout=self._timeout)
+        except Exception:
+            return False
+        return True
 
     def read(self, key: str, version_id: str | None = None) -> bytes:
         """The bytes of the current version, or of exactly `version_id` when given."""
