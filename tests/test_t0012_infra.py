@@ -51,7 +51,9 @@ def test_the_probe_is_a_separate_root_module_with_the_same_provider_constraint()
 
 def test_there_is_no_backend_block_so_state_stays_local_and_outside_the_repository():
     assert not re.search(r"\bbackend\b", all_tf())
-    assert not list(PROBE.glob("*.tfstate*")) and not list(PROBE.glob("*.tfvars*"))
+    # Committed files only: a local, ignored state or tfvars file is not in the repository (T-0013 A-4).
+    names = [p.name for p in _tracked_probe_files()]
+    assert not [n for n in names if ".tfstate" in n or ".tfvars" in n], names
     readme = (PROBE / "README.md").read_text()
     assert "~/.hio-state/probe.tfstate" in readme and "-state" in readme
 
@@ -157,8 +159,22 @@ def test_nothing_is_shared_with_the_evidence_store_or_other_systems():
     assert names and all("hio" in n.lower() or n in {"github-probe", "probe"} for n in names), names
 
 
+def _tracked_probe_files() -> list[Path]:
+    """The probe module's files as git tracks them. Ignored local files (`.terraform/`, `*.tfvars`, state) are
+    never read, so a local apply cannot fail a test (T-0013 A-4, F-REVIEW-2026-10-29-t0013-1-1)."""
+    cmd = ["git", "ls-files", "-z", "--", str(PROBE.relative_to(REPO))]
+    out = subprocess.run(cmd, cwd=REPO, capture_output=True, check=True).stdout.decode()
+    return [REPO / name for name in out.split("\0") if name]
+
+
+def test_the_probe_scan_reads_only_tracked_files():
+    tracked = _tracked_probe_files()
+    assert tracked and all(p.is_file() for p in tracked)
+    assert not any(p.suffix in {".tfvars", ".tfstate"} or ".terraform" in p.parts for p in tracked)
+
+
 def test_no_email_guid_or_github_numeric_id_is_committed_in_the_probe():
-    for path in (p for p in PROBE.iterdir() if p.is_file()):  # skips ignored .terraform/ (T-0013 A-4)
+    for path in _tracked_probe_files():
         content = path.read_text()
         assert not re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}", content), path
         assert not re.search(GUID, content, re.I), path
