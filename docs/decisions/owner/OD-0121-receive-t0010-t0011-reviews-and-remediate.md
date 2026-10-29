@@ -44,3 +44,31 @@ Changing any finding's state beyond `remediation_claimed`; a verification assign
 accepting T-0010 or T-0011; any waiver; Authorisation B.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): receipts completed; the step 5.3 deviation
+
+**Source:** the owner's message AU, verbatim: "yes.  approved to continue and take the appropriate actions", answering
+Claude's question whether to continue the receipts that stopped at step 5.3.
+
+**The stop.** `check_review_assignment.py` compares a record's `assignment` field exactly. Both records named OD-0120 with
+its section ("… Assignment 1 on main"; "… on main, Assignment 2"), not the bare path. On the owner's instruction, the check
+was run with the expected source written from OD-0120's own section headings; both then passed. Future assignments state
+the exact `assignment` string for the reviewer to write.
+
+**The receipts (§6.2 step 5; merged by pull request, `main` protected).**
+
+| Review | T (tip = fetch = report) | Inventory | Tag | Import | Merge (PR) |
+|---|---|---|---|---|---|
+| REVIEW-2026-10-29-t0010-1 | `17cab4836a9be50425fc76021a943faceac3f655` | 3 added files, sha256 reconciled both ways; README unchanged | `reviews/REVIEW-2026-10-29-t0010-1` peels to T | `8561d63` | `c4164d6` (PR #13) |
+| REVIEW-2026-10-29-t0011-1 | `8f469d3563e65e2ed3dd9bb24ca7b3f412817309` | 4 added files, likewise | `reviews/REVIEW-2026-10-29-t0011-1` peels to T | `1fb3679` | `821cdd5` (PR #14) |
+
+5.10: remote `main` = local `821cdd5`; blobs on `main` equal each T; both tags peel to T. **Received.** CI: the run for
+`c4164d6` was cancelled by the workflow's cancel-in-progress rule when `821cdd5` was pushed; the `821cdd5` run is
+reported separately.
+
+A first import attempt stopped twice before any import (a zsh word-split, then bash 3.2's missing `mapfile`); both tags
+were already pushed and verified (5.11: "tag pushed, no import"), and the import resumed at 5.5 with the same T.
+
+**§5.12 (this commit):** both *Assigned reviews* rows set to received; two *Reviewed revisions* rows; five finding rows
+added as **open**, each with Claude's `remediation_claimed` (fix commits and responses on `feat/t0010` at `62adccd` and
+`infra/t0011` at `0c44b18`). No finding changes state beyond open.
