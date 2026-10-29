@@ -1,7 +1,7 @@
 ---
 id: T-0015
 title: "B-2 follow-up: narrow 403 UnauthorizedBlobOverwrite mapping in the Azure backend, C5 timing instrumentation in the storage probe, and a revised probe plan (one watched re-run plus step 7b)"
-status: authorised   # OD-0134 item 5; code and plan only; the re-run and 7b each need the owner's "go"
+status: submitted_for_review   # code and plan on feat/t0015; the re-run and 7b each need the owner's "go"
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-10-29
@@ -39,5 +39,16 @@ A C5 amendment (an owner decision after the re-run evidence); any Azure write or
 C1–C7, finality or attempt-record meanings; any other backend behaviour.
 
 ## Submission (filled by the implementer)
+
+Branch `feat/t0015`, base `a71f0ff`. hiomux workers W7 (`321e181`, F-1) and W8 (`87ac2a7`, F-2), each `check`ed and
+integrated by cherry-pick; F-3 by the orchestrator (`4cc9c36`, `docs/evidence/S1B1-B2-rerun-plan.md`, proposed).
+
+| Item | Delivered | Evidence |
+|---|---|---|
+| F-1 | `_is_overwrite_refusal` + `_key_exists`: a 403 `UnauthorizedBlobOverwrite` becomes `BlobExists` only when a properties read of the exact key succeeds; otherwise the original error is raised | `tests/test_t0015_backend.py` |
+| F-2 | probe C5 instrumentation: a publisher-completion surrogate before the write; pre-PUT, post-PUT and post-metadata instants; monotonic durations; raw `Date`, `Last-Modified`, version id and request id; the current and candidate rules side by side without tolerance; `Date` offset brackets; the clock-sync state | `tests/test_t0015_probe.py` |
+| F-3 | the re-run plan: R-1 to R-3, 7b-1 to 7b-3, D-1 | the document |
+
+Full suite **1000 passed**; `ruff`, `ruff format` and `check_repo` pass. Nothing has run against Azure.
 
 ## Review and acceptance
