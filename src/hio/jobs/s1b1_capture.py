@@ -10,6 +10,11 @@ C-3, C-8), which is wired but NOT enabled: it refuses (exit 2) unless `LIVE_AUTH
 owner decision that grants Authorisation B (T-0009 §8). Only a later Authorisation B change sets that
 constant. The refusal comes before anything is built: no transport, storage client or credential
 exists, and no environment variable is read, until the constant is set.
+
+After capture, every live run (including one with no due slot) runs the completeness check
+(T-0013 A-1): each expected slot whose window closed in the last 24 hours without any attempt record is
+printed as `missed ...` and the run exits 1, which is the failed-scheduled-run alert path. A failed
+attempt counts as attempted. Exit codes: 0 ok, 1 a failed capture or a missed slot, 2 refusal.
 """
 
 from __future__ import annotations
@@ -35,12 +40,19 @@ from hio.rights.register import load_genuine
 from hio.sources.datasets import PUBLICATIONS
 from hio.sources.http_transport import HttpTransport
 from hio.sources.run import RunResult, run_capture
-from hio.sources.schedule import already_verified, due_slots
+from hio.sources.schedule import (
+    LATENESS,
+    MISSED_HORIZON,
+    already_verified,
+    due_slots,
+    load_attempt_records,
+    missed_slots,
+)
 from hio.sources.transport import Transport
 from hio.storage.azure_auth import OidcError, github_oidc_credential
 from hio.storage.azure_blob import AzureBlobBackend, container_client
 from hio.storage.blobstore import BlobObjectStore
-from hio.storage.objectstore import LocalObjectStore
+from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
 WEEKDAYS = BusinessCalendar("weekdays")
 
@@ -94,6 +106,31 @@ def run_due(
             )
         )
     return results
+
+
+def _describe(error: Exception) -> str:
+    """The error's type, and its message only for errors HIO itself raises (they name keys and dates, never
+    a credential); a provider error is reported by type alone."""
+    if isinstance(error, ValueError | LookupError | IntegrityError | FileNotFoundError):
+        return f"{type(error).__name__}: {error}"
+    return type(error).__name__
+
+
+def check_completeness(now: datetime, store: LocalObjectStore, rits: BusinessCalendar) -> bool:
+    """True when no expected slot closed its window in the last `MISSED_HORIZON` without an attempt record.
+
+    Prints each missed slot. A calendar that does not reach back that far, a record that fails
+    verification, or an unreadable store prints the reason to stderr and returns False: the check never
+    passes silently on evidence it could not read. The attempts are listed once."""
+    try:
+        records = load_attempt_records(store, now - MISSED_HORIZON - LATENESS)
+        missed = missed_slots(now, {"rits": rits, "weekdays": WEEKDAYS}, records)
+    except Exception as error:
+        print(f"completeness check failed: {_describe(error)}", file=sys.stderr)
+        return False
+    for slot, due in missed:
+        print(f"missed {slot.publication_id} {slot.name} {due.isoformat()}")
+    return not missed
 
 
 def merge_calendars(calendars: Sequence[BusinessCalendar]) -> BusinessCalendar:
@@ -202,7 +239,10 @@ def live_capture(
     for result in results:
         record = result.record
         print(f"ran {record.source_id} {record.slot} {record.outcome}")
-    return 1 if any(r.record.outcome == "failed" for r in results) else 0
+    # After capture, on every live run (a run with no due slot included): a slot whose window closed with
+    # no attempt record fails the run, so the failed-scheduled-run email is the alert (T-0013 A-1).
+    complete = check_completeness(now, store, rits)
+    return 1 if any(r.record.outcome == "failed" for r in results) or not complete else 0
 
 
 def main(
