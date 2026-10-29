@@ -140,6 +140,7 @@ are in operating model §1.1; the template is
 | [OD-0123](OD-0123-receive-verifications-fix-t0011-f2-accept-t0010.md) | accept_work | **Receive** VERIFY-2026-10-29-t0010-1-1 (READY) and -t0011-1-1 (NOT READY) with §5.12; **fix t0011 F-2**; **T-0010 accepted** at `62adccd` once receipt completes; nothing live | `c8e5f60`, `ff911d7`, `62adccd` | recorded |
 | [OD-0124](OD-0124-assign-t0011-verification-2.md) | authorise_work | **VERIFY-2026-10-29-t0011-1-2 assigned** (`0c44b18..c69df9e`, F-REVIEW-2026-10-29-t0011-1-2); nothing received or accepted | `c69df9e` | recorded |
 | [OD-0125](OD-0125-receive-verify-2-accept-t0011-authorise-b1.md) | authorise_work | **Receive** VERIFY-2026-10-29-t0011-1-2 (READY); **T-0011 accepted** at `c69df9e` on receipt; **Authorisation B stage B-1** (infrastructure in `hnf-prod`, each apply on the owner's go); no capture | `f504833`, `c69df9e` | recorded |
+| [OD-0126](OD-0126-b1-values-and-backend-block.md) | authorise_work | B-1 values approved (state dir, account names, budget start); **empty azurerm backend block** in `infra/tofu/versions.tf`; alert email still to be named | `0d909e5` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

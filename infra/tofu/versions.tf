@@ -7,6 +7,10 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  # Remote state in the separate state account (T-0011 I-2; OD-0126). Empty on purpose: every value,
+  # including use_azuread_auth = true, comes from a -backend-config file kept outside the repository.
+  backend "azurerm" {}
 }
 
 provider "azurerm" {

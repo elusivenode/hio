@@ -99,7 +99,7 @@ def test_the_bootstrap_has_its_own_resource_group_apart_from_the_evidence_store(
     assert 'provider "azurerm"' in text("versions.tf")
 
 
-def test_versions_match_the_main_module_and_there_is_no_backend_block():
+def test_versions_match_the_main_module_and_only_the_main_module_has_an_empty_backend():
     boot, main = text("versions.tf"), _code((TOFU / "versions.tf").read_text())
     assert 'required_version = ">= 1.8.0"' in boot
     assert 'version = "~> 4.0"' in boot and 'source  = "hashicorp/azurerm"' in boot
@@ -109,7 +109,11 @@ def test_versions_match_the_main_module_and_there_is_no_backend_block():
         assert fragment in main
     backend_block = r'^\s*backend\s+"'
     assert not re.search(backend_block, all_tf(), re.M)  # local state, kept outside the repository
-    assert not re.search(backend_block, main, re.M)  # the main module is out of this contract
+    # The main module's state lives in the bootstrap account (runbook step 4, OD-0126): an empty block, with
+    # every value supplied by a -backend-config file outside the repository.
+    assert re.findall(r'^[ \t]*backend[ \t]+"azurerm"[ \t]*\{[ \t]*\}', main, re.M) == [
+        '  backend "azurerm" {}'
+    ]
 
 
 def tracked() -> list[Path]:
