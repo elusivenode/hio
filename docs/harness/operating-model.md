@@ -1,13 +1,14 @@
 ---
 id: HIO-HARNESS
 title: Agentic operating model and harness specification
-status: approved      # harness-0.9a approved by OD-0091 (Appendix A at 2df83b4); harness-0.7.1 approved by OD-0056 at 552d4fb (blob a74a41453d10). Adoption is conditional on a supervised first receipt recorded in an OD; routine delegated receipt is NOT authorised until then
-approved_by: OD-0091   # harness-0.9a, Appendix A of docs/decisions/harness-0.9-proposal.md at 2df83b427896cf5ce413e8cee76f809a267687f6 (earlier: OD-0056, harness-0.7.1 at 552d4fbde6f4256bf969b908d721a765aae84e17, blob a74a41453d10b54161136ff08ac36e6ca86f33bc; OD-0021, harness-0.7 rev 3 at 9b58811, blob 90e2565fe814; before that OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba)
+status: approved      # harness-0.9b approved by OD-0104 (docs/decisions/h6-option-b-amendment.md at d26c2fa); harness-0.9a approved by OD-0091 (Appendix A at 2df83b4); harness-0.7.1 approved by OD-0056 at 552d4fb (blob a74a41453d10). Adoption is conditional on a supervised first receipt recorded in an OD; routine delegated receipt is NOT authorised until then
+approved_by: OD-0104   # harness-0.9b, docs/decisions/h6-option-b-amendment.md at d26c2faca78fc40dc409ff53c872cb172e918d7e, blob 202f8d9219fcf1ab352d7809d51db81d1a63476a (earlier: OD-0091, harness-0.9a, Appendix A of docs/decisions/harness-0.9-proposal.md at 2df83b427896cf5ce413e8cee76f809a267687f6 (earlier: OD-0056, harness-0.7.1 at 552d4fbde6f4256bf969b908d721a765aae84e17, blob a74a41453d10b54161136ff08ac36e6ca86f33bc; OD-0021, harness-0.7 rev 3 at 9b58811, blob 90e2565fe814; before that OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba))
 owner: HIO architecture lead (owner)
-version: harness-0.9a
+version: harness-0.9b
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
+  - "harness-0.9b (2026-10-29, APPROVED by OD-0104 at d26c2fa; docs/decisions/h6-option-b-amendment.md): §6.2 step 5.6 takes Class N index changes only; a refused index diff may be received without the index on the owner's go-ahead; new step 5.12, owner-authorised finding reconciliation. Codex's bootstrap and review protocol otherwise unchanged. No CI or hook changed"
   - "harness-0.9a (2026-10-28, APPROVED by OD-0091 at 2df83b4; docs/decisions/harness-0.9-proposal.md revision 4, Appendix A): knowledge layer for non-reviewer agents. Adds MAP.md and knowledge/findings.md (navigation, precedence ranks 5 and 6), per-stream handoffs with Didn't work and For the index, current-state-only STATUS rules, §4.1 maintenance rules. Codex's bootstrap (§2.2) and the review protocol (§6.2) are unchanged. No tool, CI or hook changed"
   - "harness-0.7.1 correction 1 (2026-10-25, APPROVED by OD-0059; docs/decisions/harness-0.7.1-trailer-correction-proposal.md revision 1, blob b8d2fac0dc18): section 6.2 steps 5.7, 5.8 and 5.10 only. Requires the HIO-Actor trailer on each receipt import commit, runs tools/check_repo.py trailers on the import commit before the 5.9 recheck, and makes CI status a mandatory reported result kept separate from the evidence-integrity checks. Tested by a bounded scratch-clone regression (OD-0059). No tool, workflow or hook changed"
   - "harness-0.7.1 (2026-10-25, APPROVED by OD-0056 at 552d4fb, blob a74a41453d10; STATUS-ONLY edits follow): review evidence is delivered by a pushed review branch with no reviewer PR, and received by a byte-identical import with a verified provenance tag (docs/decisions/harness-0.7.1-proposal.md revision 3 at 8ed13fd, blob 72deffc37a4c; verified by VERIFY-2026-10-25-harness-0.7.1-1). Content change: the section 6.2 preamble sentence and steps 3, 4, 5 and 6 only. Adoption condition (OD-0056): the first receipt is supervised and its result recorded in an OD before routine delegated receipt is enabled; until then each receipt needs the owner's explicit go-ahead before anything is pushed to main"
@@ -547,30 +548,31 @@ a fixed head, its CI result and its diff visible to every agent; receipt (step 5
    file>`. For `reviews/README.md`, apply `git diff <head> T -- reviews/README.md`. Stop if it does not
    apply cleanly.
 
-   **5.6 Index-row semantics.** The staged `reviews/README.md` may differ from `main`'s only by lines
-   of these two classes. Each is checked against the **imported immutable records**: the receiver
-   reads the record, not the row.
+   **5.6 Index-row semantics (navigation only).** The staged `reviews/README.md` may differ from
+   `main`'s only by **added** lines of Class N, each checked against the **imported immutable
+   records**: the receiver reads the record, not the row.
    - **Class N (navigation).** A new row for the imported record itself (assigned-review or
      received-review row), whose id, base, head, record path and verdict equal the record's front
      matter, and whose assignment cell matches 5.0.1. Or a new finding row for a finding that the
      imported **review** record defines: the same id and severity, and the state `open`.
-   - **Class S (state transition).** The rewrite of an existing finding row. It is allowed only when
-     the imported record is a **verification** (`VERIFY-*`) of that finding at its reviewed head,
-     and states that finding's outcome. The row's id, review, severity and remediation-claim cells
-     are unchanged. The state cell begins with the state word the record states (`verified_closed`,
-     `remediation_rejected` or `open`), and any further text is traceable to the record.
+
+   Receipt never changes the state of an existing finding. A finding's state changes only by 5.12.
 
    **Refuse and stop** on any of these:
    - a duplicate id: a first-column id appearing twice in one table, or a finding id appearing twice
      anywhere in the file;
-   - `verified_closed`, `waived` or `accepted` that no imported record supports. A waiver exists
-     only as an owner OD, which the receiver may cite and never creates;
-   - a state transition with no verifying record;
-   - a removed or changed line that is not the superseded version of a Class S row;
+   - an added **finding** row whose state cell is anything but `open`, or any added row whose status
+     cell claims `accepted`, `approved` or `waived`. A waiver or acceptance exists only as an owner OD,
+     which the receiver may cite and never creates. (A verification row's verdict cell may summarise
+     outcomes; it is navigation, checked against its record's front matter, and changes no finding's state);
+   - any removed or changed line;
    - any other change.
 
-   Where the reviewer's own `README` diff fails this check, the receiver does not apply it, and
-   reports the discrepancy to the owner.
+   **When the reviewer's `README` diff is refused**, the receiver does not apply any part of it. With
+   the owner's go-ahead for that receipt, it may still receive the record files (5.5, 5.7 to 5.10)
+   **without the index diff**. The import commit then carries `Index-Diff: refused (<reason>)`, and the
+   receipt's OD lists the refused lines verbatim. The navigation rows and any state changes follow by
+   5.12. A partial receipt is never presented as including the index.
 
    **5.7 Verify.** Each imported file's blob id (`git rev-parse :<path>`) equals
    `git rev-parse T:<path>`; nothing outside `reviews/` is staged; `tools/check_repo.py` passes; and
@@ -623,6 +625,23 @@ a fixed head, its CI result and its diff visible to every agent; receipt (step 5
    | merged locally, push of `main` failed | re-verify 5.9, then push. The status stays "receipt incomplete" |
    | `main` pushed, tag missing (an outside action removed it) | recreate the exact tag at `T`, verify, and record in the OD that the receipt was incomplete until then |
    | reviewer branch moved or deleted after the tag | `T` stays pinned by the tag and by the blobs on `main`; report it and take no other action |
+
+   **5.12 Index reconciliation (owner-authorised, after receipt).** Finding states in
+   `reviews/README.md` change only by an administrative edit the owner authorises in an OD, after the
+   verification record that supports them has been received (5.10).
+   - **Each change names:**
+     - the finding;
+     - the received record and its reviewed head;
+     - the outcome as the record states it;
+     - the row's state before and after.
+   - **Only the state cell (and its citation) changes;** every other cell is preserved. Navigation rows
+     a refused index diff would have added (5.6) may be added in the same edit, checked as Class N.
+   - **Several changes may be batched** in one OD.
+   - **What it is:** a transcription of the reviewer's technical outcome. It does **not** accept the
+     work, approve its activation or grant a waiver.
+   - **The receipt summary (5.10)** lists, as "index reconciliation pending", every outcome an imported
+     verification record states that the index does not yet show. That disagreement is visible until
+     5.12 resolves it.
 
    **Accountability, not mechanism.** The author of the work may be the receiver (Claude receives
    Codex's review of Claude's proposal). **Blob identity detects substitution when the comparison
