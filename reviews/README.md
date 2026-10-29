@@ -66,6 +66,7 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
+| REVIEW-2026-10-29-t0014-1 | T-0014 base-camp completion build, P-1 through P-4 | `651eb95..13d2ea5` | Codex, assigned by OD-0133 | **NOT READY** | [record](records/REVIEW-2026-10-29-t0014-1.md) |
 | REVIEW-2026-10-18-a01 | A01 architecture, mathematics, S1 specs and harness-0.3 | `1502ab8..35c9821` | Codex, on the owner's direct 2026-10-18 request | **REQUEST CHANGES** | [record](records/REVIEW-2026-10-18-a01.md) |
 | REVIEW-2026-10-18-t0007-pilot | T-0007 review-worktree protocol and harness-0.5 corrections | `46ea6a5..b48f83c` | Codex, on the owner's direct 2026-10-18 assignment | **READY** | [record](records/REVIEW-2026-10-18-t0007-pilot.md) |
 | REVIEW-2026-10-18-t0004 | T-0004 SMSF documentation amendment for HIO-001 boundary option C1 | `1502ab8..fe3fdc7` | Codex, under OD-0010 and OD-0018 | **READY** | [record](records/REVIEW-2026-10-18-t0004.md) |
@@ -134,6 +135,8 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
+| F-REVIEW-2026-10-29-t0014-1-1 | REVIEW-2026-10-29-t0014-1 | high | **open** | — | — | — |
+| F-REVIEW-2026-10-29-t0014-1-2 | REVIEW-2026-10-29-t0014-1 | medium | **open** | — | — | — |
 | F-REVIEW-2026-10-18-a01-1 | REVIEW-2026-10-18-a01 | critical | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
 | F-REVIEW-2026-10-18-a01-2 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
 | F-REVIEW-2026-10-18-a01-3 | REVIEW-2026-10-18-a01 | high | **verified_closed** | remediation_claimed: fix `0e3de4b`; [response](responses/RESPONSE-REVIEW-2026-10-18-a01-1.md) | [VERIFY-2026-10-18-a01-1](records/VERIFY-2026-10-18-a01-1.md) | — |
