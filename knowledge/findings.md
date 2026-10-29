@@ -1,7 +1,7 @@
 ---
 id: HIO-FINDINGS-INDEX
 title: Findings index (findings, dead ends and settled assessments, one line each)
-status: current   # harness-0.9a (OD-0091); Settled section accepted by OD-0093 at 8393552 (rank 5); Inbox lines are claims (rank 6). Every line cites its source; the source wins
+status: current   # harness-0.9a (OD-0091); Settled section accepted by OD-0093 at 8393552 (rank 5); distil 2 PROPOSED on proposal/distil-2, not accepted; Inbox lines are claims (rank 6). Every line cites its source; the source wins
 owner: owner (approves Settled lines at distil); any agent appends to the Inbox
 last_reviewed: 2026-10-28
 ---
@@ -37,6 +37,13 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [repo] A YAML flow mapping cannot hold a double-quoted value containing double quotes; use single quotes inside. Source: reproducible; `registers/sources.yaml` entry `rba_calendar_pages`.
 - [repo] When an author branch carries authority records already imported to `main` byte-identically, its PR conflicts in the OD index (`main`'s rows are a superset). Integrate by merging the exact head into `main`, keeping `main`'s index; never merge `main` into a verified head. Source: OD-0079 (merge `7eba3f9`).
 - [repo] The owner's global git config rewrites `https://github.com/` to SSH; a sandboxed process with SSH blocked needs `GIT_CONFIG_GLOBAL=/dev/null` to read public refs over HTTPS. Source: OD-0077 tests.
+- [repo] zsh does not word-split an unquoted variable: `F="a b c"; git checkout T -- $F` passes one path "a b c". Write each path out (or use an array), and run receipt chains under `set -e` so a failing check stops them; a FAIL from `check_repo` was ignored and a broken import pushed. Source: OD-0098. (distil 2)
+- [repo] CI's "Lint and format" step runs `ruff check .` **and** `ruff format --check .`; a worker contract or local check that runs only `ruff check` passes while CI fails (all H6 branches, 2026-10-28). Put CI's exact lint commands in every acceptance list. Source: `.github/workflows/ci.yml` (Lint and format); CI runs 40669141245, 40673974716. (distil 2)
+- [repo] `check_repo`'s link scanner ignores code spans: quoting a Markdown link in an OD, even in backticks, fails the links check; fence it or avoid link syntax. Source: OD-0101 correction 1. (distil 2)
+- [repo] With main protected, a receipt's §5.9 merge goes through a PR (receipt/<id>), merged with the §5.9 subject; 5.10 then checks remote main. Source: OD-0121. (distil 2)
+- [repo] Never quote an owner message verbatim into a committed record when it contains an email address or other personal identifier; withhold it. Source: OD-0126 correction 1. (distil 2)
+- [repo] Tests that inspect a module directory must read git-tracked files only; ignored .terraform/, tfvars and state break them locally. Source: F-REVIEW-2026-10-29-t0013-1-1. (distil 2)
+- [repo] check_repo refuses data files (.json) outside tests/fixtures/synthetic/; retain JSON evidence verbatim in a fenced block in Markdown, with its sha256. Source: docs/evidence/b2/README.md. (distil 2)
 
 ### Releases, specs and rights
 - [releases] `spec_ref` is `factor_id@identity.version`. Editing a spec that an accepted release cites changes that release's identity or silently changes a spec at an unchanged version; S1a pins its spec versions (`S1A_SPECS`), and S1b uses its own versions. Source: `src/hio/jobs/s1a.py` (`S1A_SPECS`); F-REVIEW-2026-10-25-t0009-4; OD-0067.
@@ -46,6 +53,7 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [sources] The US observation calendar can be derived from verified NY Fed publication dates, avoiding a SIFMA dependency. Source: `src/hio/reference/calendar.py` `calendar_from_observations` (accepted with T-0009, OD-0079; synthetic data only).
 - [data] The RBA holidays page lists one year only. RITS closes on holidays "where they are observed in NSW and Victoria", so it is open on NSW-only weekdays (in 2026: 27 April, 3 August, 5 October). A 2027 calendar needs a new manual read (`review_due: 2027-01-31`). RITS Advice 02/2026 has never been read; the 2026 reading rests on the two pages, confirmed by Codex. Source: `src/hio/reference/calendars/*-2026.yaml`; VERIFY-2026-10-28-t0009-1-3. Applies to: the 2026 calendars.
 - [tools] WebFetch returns a small model's summary, not the page: unusable for exact facts (dates, quotations, hashes). Fetch the bytes (`curl`), hash them and parse locally. Source: the OD-0076 read (2026-10-28).
+- [rights] FRED/ALFRED terms forbid storing, caching or archiving without permission: not a retained source; take series from the public-domain originator (Treasury, the Board). Source: docs/research/T-0002-free-history-sources-matrix.md. (distil 2)
 
 ### Review practice
 - [review] Reuse the two probes that found the T-0009 high findings as standing adversarial tests for any change to the rights subject: allow the publication id but deny the true dataset; substitute a single-owner link with the true dataset denied. Source: `reviews/records/REVIEW-2026-10-25-t0009-1.md` F-1, F-2.
@@ -59,6 +67,15 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [review] To show whether an agent used the network, inspect its transcript for remote commands and web-search items; a regex over command strings gives false positives (`rg` globs, `uv.lock`, `.git`). Source: OD-0087 correction 2.
 - [review] Not every hex-looking string is a commit id: pre-migration `macsmsf` ids (for example `a82aa0d` in `AGENTS.md`) do not resolve here, and long decimals look like hex. Source: OD-0087 correction 2; `MIGRATION-MAP.md`.
 - [process] Tuning an identity on an evaluation case spends that case. Keep held-out cases and re-run them only at their original cutoff: the stress cases and their grading are public in the repository. Source: OD-0083; OD-0084; OD-0089 correction 1.
+- [review] A reviewer branch cut from an author branch lacks `main`'s newer index rows: its README patch may not apply, and it cannot write state rows. Receipt then needs option B handling. Source: OD-0098; OD-0101. (distil 2)
+- [review] Automated authority decisions from prose (word, token or shape matching) failed three adversarial rounds; remove the interpretation from automation instead of patching the parser. Source: OD-0100; VERIFY-2026-10-28-h6-1-1, -2. (distil 2)
+- [review] Prove a regression test catches a defect by running the new tests against the pre-fix tools in a worktree (with braced refs). Source: RESPONSE-REVIEW-2026-10-28-h6-1-1, -2. (distil 2)
+- [review] Push the assignment OD before launching a Codex reviewer: a source named "on local main" fails check_review_assignment's exact match and needs an owner ruling. Source: OD-0103. (distil 2)
+- [review] A reviewer's README diff often fails to apply on main, because review branches lack main's newer index rows; under harness-0.9b, receive without the index and add the navigation row by §5.12. Source: OD-0107. (distil 2)
+- [review] Tell the Codex reviewer that every file under reviews/ needs front matter and that check_repo must pass; hiomux does not run check_repo on Codex output. Source: OD-0109, OD-0111. (distil 2)
+- [review] check_review_assignment.py compares the record's assignment field exactly; tell the reviewer the exact string to write (path only, no section). Source: OD-0121 correction 1, OD-0122. (distil 2)
+- [review] A restore or rebuild comparison must compare against the pinned release hash and require the running code to equal the pin; reading at the rebuilt hash's own path proves nothing. Source: F-REVIEW-2026-10-29-t0014-1-1, -2. (distil 2)
+- [review] In this session Codex found a real defect in every task it reviewed (T-0013, T-0014), and Fable found the alert defect the T-0011 review had missed. Source: OD-0129, OD-0133, OD-0134. (distil 2)
 
 ### Harness and process
 - [harness] Assigning and receiving one review costs about a dozen mechanical steps (two ODs, transcripts, a tag, an import, merges, index rows, STATUS); the Codex run itself took 5 to 6 minutes. The records dominate the effort (the case for H6). Source: OD-0066; OD-0067; OD-0074 to OD-0079.
@@ -66,6 +83,13 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [harness] The HIO-ADR-0012 findings -1 and -3 read `remediation_claimed` in `reviews/README.md` but "technically verified closed" in OD-0054, because `VERIFY-2026-10-25-adr0012-1` was disposed unreceived. Read OD-0054 before relying on either. Source: OD-0053; OD-0054; OD-0057. Applies to: `main` at `624db08`.
 - [process] Record the owner's dialog answers verbatim in `docs/history/` with the question text: a selection alone is meaningless without it. Source: the history files behind OD-0074 to OD-0079.
 - [process] State each pending owner decision as one precise yes/no naming what the yes authorises. Source: `docs/history/2026-10-28-owner-d7-approval.md` messages 5 and 6.
+- [process] In Claude Code's Bash tool, `set -e` did not stop a `;` chain: gate every step with `|| exit 1`. Source: OD-0101 correction 1. (distil 2)
+- [process] Each push question names the exact commit range, and nothing beyond it is pushed: two overreaches. Source: OD-0093 correction 1; OD-0099 correction 1. (distil 2)
+- [process] A YAML front-matter value written as two quoted strings joined by ';' is invalid; write one string. Source: OD-0113 correction 1. (distil 2)
+- [process] '| tail -1' and 'set -e' hide a failing check's exit status in Claude Code's Bash tool; run check_repo alone and read its exit code before committing or pushing. Source: OD-0113 correction 1; OD-0110. (distil 2)
+- [harness] Recovery code that reconstructs trust from local or published history it did not build keeps leaking; prefer a narrow boundary (publish only what this run built from a fresh remote main). Source: OD-0109, VERIFY-2026-10-28-h6-1-3 to -7. (distil 2)
+- [process] A pipe to tail hides a failing exit: never write "check_repo | tail -1 &&"; run the check unpiped. Source: this session (PR #38). (distil 2)
+- [process] The auto-mode classifier blocks merging PRs and editing permission settings; the owner grants Bash(gh pr merge *) with /permissions (local settings). Source: OD-0131. (distil 2)
 
 ### hiomux and the owner's tools (outside the repository; `~/.hio-runs`)
 - [hiomux] macOS refuses a sandbox inside a non-trivial sandbox: a networked Codex reviewer runs under hiomux's profile with Codex's own sandbox off. Source: OD-0077 tests.
@@ -78,46 +102,24 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [hiomux] `hiomux up --no-orch` reuses an open run or opens a new one, so a `hio-orch` session can open a run that later needs `close` and `cleanup`. Source: OD-0086.
 - [ops] The owner uses Warp, which intercepts tmux prefix keys: the orchestrator runs outside tmux and the owner's view is a Warp launch configuration. A tab running one long-lived command cannot be scrolled, so long answers go on `~/.hio-runs/architect.html` and the tab is a ticker. Source: OD-0085; OD-0088 correction 2.
 - [ops] `/remote-control` connects a Claude Code session to the Claude app; phone notifications need `/config agentPushNotifEnabled=true`. Source: session 2026-10-28.
+- [hiomux] Worker `result.json` summaries can be empty; read the transcript's `result` event. Source: hiomux run `20261028T081310Z-d55d`, H6R2, H6R3. (distil 2)
+- [hiomux] A per-lock pre-built uv cache with a copy-on-write clone per review gives offline `uv sync` plus tests in about 4 s. Source: OD-0095 correction 1. (distil 2)
+- [hiomux] A Codex reviewer needs network or a pre-built environment to run the pinned suite; without either it hunts for unrelated local interpreters. Source: OD-0094 correction 1. (distil 2)
+- [ops] The owner prefers to follow agents from the orchestrator session: relay Codex and worker messages with the Monitor tool. Source: session 2026-10-28. (distil 2)
+- [hiomux] A Codex task resuming on its own existing branch needs the runner fix of OD-0111 (update-ref expected old value). Source: OD-0110, OD-0111. (distil 2)
+- [hiomux] hiomux checks an assignment OD against the LOCAL main; pull main before 'task add --kind codex'. Source: this session (OD-0120 launch). (distil 2)
+- [hiomux] A task contract cannot be widened after spawn; supersede the task with a widened one. Source: R2/R2b, OD-0121. (distil 2)
+- [hiomux] The Codex reviewer cannot push: push review/<id>-codex before receipt 5.1. Two Codex tasks with reviews/** contracts need spawn --allow-overlap. Source: OD-0133 correction 1; this session. (distil 2)
+
+### Infrastructure and providers (Azure, GitHub)
+- [infra] A required reviewer on a GitHub Environment pauses every job in it, scheduled ones included. Source: OD-0119 C-4. (distil 2)
+- [infra] A stateless scheduled-query alert (auto_mitigation off) fires on every evaluation; gate it until there is something to monitor. Source: OD-0126 correction 1. (distil 2)
+- [infra] A workflow_dispatch workflow can be dispatched only once it exists on the default branch. Source: T-0012 submission. (distil 2)
+- [infra] Azure, a conditional create (If-None-Match: *) by a create-only role (blobs/add/action, blobs/read) on an existing key returns 403 UnauthorizedBlobOverwrite, not 409 BlobAlreadyExists. Source: docs/evidence/b2/README.md (run 40853094503). (distil 2)
+- [infra] Azure Last-Modified is whole seconds (floored); HIO-ADR-0012 C5's lower bound completed_at <= s cannot be tested by a probe that takes completed_at after the write. Source: docs/evidence/b2/README.md; architect consultation 20261029T202344-ask-4dcb. (distil 2)
+- [infra] A no-write alert counting all datasets over a fixed window fires every weekend and masks one source's silence: detect per slot in the job; keep the alert as a weekend-aware dead-man. Source: OD-0129 correction 1; T-0013. (distil 2)
+- [infra] A workflow dispatch into an Environment with a required reviewer waits for the owner's approval in GitHub; say so when dispatching. Source: B-2 run 40853094503. (distil 2)
 
 ## Inbox
 
-_(Empty after distil 1. Append new candidate lines below this note.)_
-- [repo] [rediscovery] zsh does not word-split an unquoted variable: `F="a b c"; git checkout T -- $F` passes one path "a b c". Write each path out (or use an array), and run receipt chains under `set -e` so a failing check stops them; a FAIL from `check_repo` was ignored and a broken import pushed. Source: OD-0098.
-- [repo] CI's "Lint and format" step runs `ruff check .` **and** `ruff format --check .`; a worker contract or local check that runs only `ruff check` passes while CI fails (all H6 branches, 2026-10-28). Put CI's exact lint commands in every acceptance list. Source: `.github/workflows/ci.yml` (Lint and format); CI runs 40669141245, 40673974716.
-- [process] In Claude Code's Bash tool, `set -e` did not stop a `;` chain: gate every step with `|| exit 1`. Source: OD-0101 correction 1.
-- [repo] `check_repo`'s link scanner ignores code spans: quoting a Markdown link in an OD, even in backticks, fails the links check; fence it or avoid link syntax. Source: OD-0101 correction 1.
-- [review] A reviewer branch cut from an author branch lacks `main`'s newer index rows: its README patch may not apply, and it cannot write state rows. Receipt then needs option B handling. Source: OD-0098; OD-0101.
-- [review] Automated authority decisions from prose (word, token or shape matching) failed three adversarial rounds; remove the interpretation from automation instead of patching the parser. Source: OD-0100; VERIFY-2026-10-28-h6-1-1, -2.
-- [review] Prove a regression test catches a defect by running the new tests against the pre-fix tools in a worktree (with braced refs). Source: RESPONSE-REVIEW-2026-10-28-h6-1-1, -2.
-- [hiomux] Worker `result.json` summaries can be empty; read the transcript's `result` event. Source: hiomux run `20261028T081310Z-d55d`, H6R2, H6R3.
-- [hiomux] A per-lock pre-built uv cache with a copy-on-write clone per review gives offline `uv sync` plus tests in about 4 s. Source: OD-0095 correction 1.
-- [hiomux] A Codex reviewer needs network or a pre-built environment to run the pinned suite; without either it hunts for unrelated local interpreters. Source: OD-0094 correction 1.
-- [process] Each push question names the exact commit range, and nothing beyond it is pushed: two overreaches. Source: OD-0093 correction 1; OD-0099 correction 1.
-- [ops] The owner prefers to follow agents from the orchestrator session: relay Codex and worker messages with the Monitor tool. Source: session 2026-10-28.
-- [review] Push the assignment OD before launching a Codex reviewer: a source named "on local main" fails check_review_assignment's exact match and needs an owner ruling. Source: OD-0103.
-- [review] A reviewer's README diff often fails to apply on main, because review branches lack main's newer index rows; under harness-0.9b, receive without the index and add the navigation row by §5.12. Source: OD-0107.
-- [review] Tell the Codex reviewer that every file under reviews/ needs front matter and that check_repo must pass; hiomux does not run check_repo on Codex output. Source: OD-0109, OD-0111.
-- [process] A YAML front-matter value written as two quoted strings joined by ';' is invalid; write one string. Source: OD-0113 correction 1.
-- [process] [rediscovery] '| tail -1' and 'set -e' hide a failing check's exit status in Claude Code's Bash tool; run check_repo alone and read its exit code before committing or pushing. Source: OD-0113 correction 1; OD-0110.
-- [hiomux] A Codex task resuming on its own existing branch needs the runner fix of OD-0111 (update-ref expected old value). Source: OD-0110, OD-0111.
-- [harness] Recovery code that reconstructs trust from local or published history it did not build keeps leaking; prefer a narrow boundary (publish only what this run built from a fresh remote main). Source: OD-0109, VERIFY-2026-10-28-h6-1-3 to -7.
-- [review] check_review_assignment.py compares the record's assignment field exactly; tell the reviewer the exact string to write (path only, no section). Source: OD-0121 correction 1, OD-0122.
-- [repo] With main protected, a receipt's §5.9 merge goes through a PR (receipt/<id>), merged with the §5.9 subject; 5.10 then checks remote main. Source: OD-0121.
-- [hiomux] hiomux checks an assignment OD against the LOCAL main; pull main before 'task add --kind codex'. Source: this session (OD-0120 launch).
-- [hiomux] A task contract cannot be widened after spawn; supersede the task with a widened one. Source: R2/R2b, OD-0121.
-- [repo] Never quote an owner message verbatim into a committed record when it contains an email address or other personal identifier; withhold it. Source: OD-0126 correction 1.
-- [infra] A required reviewer on a GitHub Environment pauses every job in it, scheduled ones included. Source: OD-0119 C-4.
-- [infra] A stateless scheduled-query alert (auto_mitigation off) fires on every evaluation; gate it until there is something to monitor. Source: OD-0126 correction 1.
-- [infra] A workflow_dispatch workflow can be dispatched only once it exists on the default branch. Source: T-0012 submission.
-- [infra] Azure, a conditional create (If-None-Match: *) by a create-only role (blobs/add/action, blobs/read) on an existing key returns 403 UnauthorizedBlobOverwrite, not 409 BlobAlreadyExists. Source: docs/evidence/b2/README.md (run 40853094503).
-- [infra] Azure Last-Modified is whole seconds (floored); HIO-ADR-0012 C5's lower bound completed_at <= s cannot be tested by a probe that takes completed_at after the write. Source: docs/evidence/b2/README.md; architect consultation 20261029T202344-ask-4dcb.
-- [infra] A no-write alert counting all datasets over a fixed window fires every weekend and masks one source's silence: detect per slot in the job; keep the alert as a weekend-aware dead-man. Source: OD-0129 correction 1; T-0013.
-- [repo] Tests that inspect a module directory must read git-tracked files only; ignored .terraform/, tfvars and state break them locally. Source: F-REVIEW-2026-10-29-t0013-1-1.
-- [repo] check_repo refuses data files (.json) outside tests/fixtures/synthetic/; retain JSON evidence verbatim in a fenced block in Markdown, with its sha256. Source: docs/evidence/b2/README.md.
-- [process] [rediscovery] A pipe to tail hides a failing exit: never write "check_repo | tail -1 &&"; run the check unpiped. Source: this session (PR #38).
-- [rights] FRED/ALFRED terms forbid storing, caching or archiving without permission: not a retained source; take series from the public-domain originator (Treasury, the Board). Source: docs/research/T-0002-free-history-sources-matrix.md.
-- [review] A restore or rebuild comparison must compare against the pinned release hash and require the running code to equal the pin; reading at the rebuilt hash's own path proves nothing. Source: F-REVIEW-2026-10-29-t0014-1-1, -2.
-- [hiomux] The Codex reviewer cannot push: push review/<id>-codex before receipt 5.1. Two Codex tasks with reviews/** contracts need spawn --allow-overlap. Source: OD-0133 correction 1; this session.
-- [process] The auto-mode classifier blocks merging PRs and editing permission settings; the owner grants Bash(gh pr merge *) with /permissions (local settings). Source: OD-0131.
-- [infra] A workflow dispatch into an Environment with a required reviewer waits for the owner's approval in GitHub; say so when dispatching. Source: B-2 run 40853094503.
-- [review] In this session Codex found a real defect in every task it reviewed (T-0013, T-0014), and Fable found the alert defect the T-0011 review had missed. Source: OD-0129, OD-0133, OD-0134.
+_(Empty after distil 2, proposed. Append new candidate lines below this note.)_
