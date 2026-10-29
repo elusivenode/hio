@@ -89,6 +89,7 @@ Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
 
 | Verification | Original review | Base..submission head | Fix commit | Reviewer outcome | Record |
 |---|---|---|---|---|---|
+| VERIFY-2026-10-29-t0013-1-1 | REVIEW-2026-10-29-t0013-1, F-1 and A-1 to A-3 regression | `caf44da..39747c5` | `b7517ee` | F-REVIEW-2026-10-29-t0013-1-1 technically verified_closed; READY; finding-state reconciliation pending receipt and owner instruction | [record](records/VERIFY-2026-10-29-t0013-1-1.md) |
 | VERIFY-2026-10-29-t0011-1-2 | REVIEW-2026-10-29-t0011-1, F-2 (round 2) and regression | `0c44b18..c69df9e` | `f2ae1b0` | F-REVIEW-2026-10-29-t0011-1-2 verified_closed; READY | [record](records/VERIFY-2026-10-29-t0011-1-2.md) |
 | VERIFY-2026-10-29-t0011-1-1 | REVIEW-2026-10-29-t0011-1, F-1 to F-3 and regression | `2cc7362..0c44b18` | `4f90f56` | F-REVIEW-2026-10-29-t0011-1-1 and -3 verified_closed; -2 open; NOT READY | [record](records/VERIFY-2026-10-29-t0011-1-1.md) |
 | VERIFY-2026-10-29-t0010-1-1 | REVIEW-2026-10-29-t0010-1, F-1 and F-2 and regression | `f345d1e..62adccd` | `08be64a`, `42ed126` | F-REVIEW-2026-10-29-t0010-1-1 and -2 verified_closed; READY | [record](records/VERIFY-2026-10-29-t0010-1-1.md) |
