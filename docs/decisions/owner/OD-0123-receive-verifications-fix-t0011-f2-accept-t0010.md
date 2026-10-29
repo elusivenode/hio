@@ -52,3 +52,20 @@ whole-second timestamps are unverified until H4 S-6; the live path refuses until
 Acceptance of T-0011; any waiver; Authorisation B (any stage); setting `LIVE_AUTHORISATION` or moving the workflow.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): receipts completed; §5.12 applied
+
+| Verification | T (tip = fetch = report) | Inventory | Tag | Import | Merge (PR) |
+|---|---|---|---|---|---|
+| VERIFY-2026-10-29-t0010-1-1 | `c8e5f604ac326f196854903d17b08a8ed8f72c39` | 3 added files, sha256 reconciled both ways; README unchanged | peels to T | `eb9a3af` | `ef5a9f5` (PR #18) |
+| VERIFY-2026-10-29-t0011-1-1 | `ff911d7e6272668ede353383c4401189c2b1ce7c` | 3 added files, likewise | peels to T | `4faed62` | `cf89eca` (PR #19) |
+
+Step 5.3's assignment check passed as written (the records carry OD-0122's exact path). 5.10: remote `main` = local
+`cf89eca`; blobs equal each T; both tags peel to T. **Both received.**
+
+**§5.12 (this commit):** *Assigned reviews* rows set to received; two *Verification rounds* rows;
+F-REVIEW-2026-10-29-t0010-1-1 and -2: open → **verified_closed** at `62adccd` (VERIFY-2026-10-29-t0010-1-1);
+F-REVIEW-2026-10-29-t0011-1-1 and -3: open → **verified_closed** at `0c44b18` (VERIFY-2026-10-29-t0011-1-1);
+F-REVIEW-2026-10-29-t0011-1-2 stays **open**. This transcribes the reviewer's outcome; it accepts nothing.
+
+**Decision 3 is now effective:** T-0010 is accepted at `62adccd3cc1febff28b491f5564c9cae2f047202`.
