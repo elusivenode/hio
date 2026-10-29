@@ -1,0 +1,54 @@
+# B-2 storage-validation probe (T-0012 P-3; OD-0127). Manual dispatch ONLY: nothing runs it automatically.
+#
+# Running it is Authorisation B stage B-2, a separate owner action that needs the probe account (infra/tofu/probe)
+# to exist first. It writes only to the short-lived PROBE account, never to the evidence store.
+#
+# The account URL, container and the tenant and client ids of the probe's federated identity come from the
+# `capture` Environment's variables (vars.*), never as literals here. The job has `id-token: write` only to
+# obtain a GitHub OIDC token for that federated identity; nothing is stored.
+#
+# The upload-artifact pin is v7.0.2 (commit cf430e0, resolved from github.com/actions/upload-artifact tag v7.0.2 on
+# 2026-10-29 by the orchestrator).
+name: storage-probe
+on:
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: Number of fresh creates for the C5 timing check
+        type: number
+        default: 20
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: storage-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    environment: capture
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
+        with:
+          version: "0.11.19"
+          enable-cache: false
+      - name: Run the storage probe
+        run: uv run --frozen python tools/storage_probe.py --repeats "$PROBE_REPEATS" --report-file storage-probe-report.json
+        env:
+          PROBE_REPEATS: ${{ inputs.repeats }}
+          HIO_PROBE_ACCOUNT_URL: ${{ vars.HIO_PROBE_ACCOUNT_URL }}
+          HIO_PROBE_CONTAINER: ${{ vars.HIO_PROBE_CONTAINER }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_PROBE_CLIENT_ID: ${{ vars.AZURE_PROBE_CLIENT_ID }}
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: storage-probe-report
+          path: storage-probe-report.json
+          if-no-files-found: warn
+          retention-days: 30
