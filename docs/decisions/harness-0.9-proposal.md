@@ -236,6 +236,16 @@ Suggested order (the solution architect's, with H7's timing left to the owner):
   - prints a summary that becomes the body of the receipt OD;
   - exits non-zero on every stop condition;
   - never pushes `main` without `--publish`.
+  - **recovery boundary (proposed clarification, OD-0109; not adopted):** publishes only a receipt it
+    constructed in the same invocation from a freshly fetched remote `main`. It recovers automatically
+    only from a pushed tag with no import (resuming at 5.5 with the same `T`) and from a disposable,
+    unmerged `receipt/<id>` branch (discarded and rebuilt). If local `main` is ahead of remote `main`,
+    including by an unpublished import or local merge of this receipt, it stops, lists those commits and
+    leaves them untouched; recovery is then the owner's, by §6.2 step 5.11 (for example: reset local
+    `main` to remote `main` and rerun; the tag pins `T`). An import already on remote `main` is inspected
+    only (blobs, index handling, disclosure, tag) and never causes a push of `main`. Before pushing
+    `main` it re-fetches remote `main`, which must still equal the cut point, and the commits pushed must
+    be exactly this invocation's import and merge. §6.2 itself is unchanged;
 - **Required properties:** exact target and head; revision and branch identity; scope checks;
   inventory reconciled both ways; sha256; allowed paths; byte-identical import; correct index
   transitions; final recheck; stop on mismatch.
