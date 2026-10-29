@@ -81,15 +81,17 @@ def attempts(store):
 
 
 @pytest.mark.parametrize("sid", sorted(PUBLICATIONS))
-def test_genuine_register_clears_capture_and_refuses_build(sid):
-    """A-2 after OD-0116 correction 1: the five datasets are owner_verified for capture (fetch and raw
-    retention, on an external host too), while build stays refused until releases carry their notices."""
+def test_genuine_register_clears_capture_and_internal_research_only(sid):
+    """A-2 after OD-0116 correction 1 and OD-0118: the five datasets are owner_verified for capture and,
+    since every release carries its notices, for building and hio_internal use; any consumer class
+    beyond hio_internal stays refused."""
     gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"), GateContext(on_external_host=True))
     subjects = [d.source_id for d in PUBLICATIONS[sid].datasets]
-    gate.authorise(Operation.FETCH, subjects)
-    gate.authorise(Operation.STORE_RAW, subjects)
+    for op in (Operation.FETCH, Operation.STORE_RAW, Operation.BUILD, Operation.STORE_DERIVED):
+        gate.authorise(op, subjects)
+    gate.authorise(Operation.PUBLISH, subjects, consumer_class="hio_internal")
     with pytest.raises(RightsRefused):
-        gate.authorise(Operation.BUILD, subjects)
+        gate.authorise(Operation.PUBLISH, subjects, consumer_class="smsf_app")
 
 
 @pytest.mark.parametrize("sid", ["rba_statistical_tables", "nyfed_reference_rates", "rba.cash_rate_target"])

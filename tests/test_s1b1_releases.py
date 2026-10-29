@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-from hio.contracts.rights import RightsRefused
 from hio.contracts.status import Status
 from hio.contracts.temporal import KnowledgeMode
 from hio.jobs.s1a import JOB_ACTOR  # noqa: F401
@@ -233,11 +232,13 @@ def test_rebuilding_from_the_stored_receipts_reproduces_every_release(world):
     assert all(again[k].files == built[k].files for k in built)
 
 
-def test_building_is_refused_while_no_right_is_verified(world):
+def test_the_genuine_register_permits_building_now_that_releases_carry_their_notices(world):
+    """OD-0116 correction 1 and OD-0118: the five datasets' derivation conditions are recorded as satisfied
+    because every release carries its notices; before that this build was refused."""
     _store, cals, vs, cutoff, rights, code, _ = world
     gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"))
-    with pytest.raises(RightsRefused):
-        build_releases(vs, gate, rights, cals, cutoff, code)
+    releases = build_releases(vs, gate, rights, cals, cutoff, code)
+    assert releases and all(r.core["quality_summary"]["notices"] for r in releases.values())
 
 
 def _copy(store, tmp_path):
