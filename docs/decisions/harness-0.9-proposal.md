@@ -230,7 +230,9 @@ Suggested order (the solution architect's, with H7's timing left to the owner):
   - emits the *Assigned reviews* row and the exchange message from the owner's values;
   - refuses a second assignment for the same target.
 - `tools/hio_receive.py <exchange-report.json>`:
-  - implements §6.2 steps 5.1 to 5.10 without changing their meaning;
+  - implements §6.2 steps 5.1 to 5.10 as amended by option B (5.6 navigation only; a refused index diff
+    received only with `--without-index` and the owner's go-ahead), and reports "index reconciliation
+    pending" for 5.12; it never changes a finding's state;
   - prints a summary that becomes the body of the receipt OD;
   - exits non-zero on every stop condition;
   - never pushes `main` without `--publish`.
