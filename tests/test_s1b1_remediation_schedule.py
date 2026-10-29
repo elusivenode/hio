@@ -4,6 +4,7 @@ instant; nothing here makes a real request or enables a schedule."""
 
 from __future__ import annotations
 
+import re
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
@@ -41,10 +42,18 @@ def test_f7_the_definition_fires_on_exactly_the_gate_cron_slots_and_is_not_enabl
     doc = yaml.safe_load(DEFINITION.read_text())
     crons = [c["cron"] for c in doc[True]["schedule"]]  # YAML 1.1 reads the key `on` as True
     assert crons == [f"{hm} * * *" for hm in CRON_UTC]
-    assert doc["permissions"] == {"contents": "read"}
+    assert doc["permissions"] == {"contents": "read", "id-token": "write"}
+    job = doc["jobs"]["capture"]
+    assert job["environment"] == "capture"
     text = DEFINITION.read_text()
-    assert "secrets." not in text and "id-token" not in text
-    assert "--dry-run" in text and "hio.jobs.s1b1_capture" in text
+    assert "secrets." not in text
+    assert not re.search(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", text)
+    env = next(s["env"] for s in job["steps"] if "hio.jobs.s1b1_capture" in s.get("run", ""))
+    assert env == {
+        name: f"${{{{ vars.{name} }}}}"
+        for name in ("HIO_STORAGE_ACCOUNT_URL", "HIO_STORAGE_CONTAINER", "AZURE_TENANT_ID", "AZURE_CLIENT_ID")
+    }
+    assert "--dry-run" not in text and "hio.jobs.s1b1_capture" in text and "rits-*.yaml" in text
     assert not DEFINITION.is_relative_to(REPO / ".github")
 
 
