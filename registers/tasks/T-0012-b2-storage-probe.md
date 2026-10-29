@@ -1,7 +1,7 @@
 ---
 id: T-0012
 title: "B-2 storage-validation probe: a short-lived probe account, a manually dispatched probe workflow and script that test write-once behaviour and C5 timing against real Azure Blob Storage"
-status: authorised
+status: submitted_for_review   # built on feat/t0012 (7cbed07); nothing created or run in Azure
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers)"
 created_at: 2026-10-29
@@ -43,5 +43,21 @@ its own short-lived account with a one-day period, destroyed afterwards (Authori
 
 Any Azure resource creation, any run of the workflow, any write to the evidence account, any change to the accepted
 backend, a C5 tolerance (an ADR-0012 change for the owner after B-2's evidence).
+
+## Submission (filled by the implementer)
+
+Branch `feat/t0012`, base `68697ee`, head `7cbed07` plus this section. hiomux workers P1 (`e583385`) and P2 (`e82a641`), each
+`check`ed, integrated by cherry-pick; the orchestrator pinned `actions/upload-artifact` to v7.0.2 by commit SHA
+(`cf430e0…`, resolved read-only from GitHub; P2 had left a marked placeholder rather than invent one) and committed the
+probe's provider lock (azurerm 4.81.0, as the other modules).
+
+| Item | Delivered | Evidence |
+|---|---|---|
+| P-1 | `infra/tofu/probe/`: `rg-hio-probe`, probe account (1-day Unlocked immutability, no soft delete), container `probe`, `id-hio-probe` with a `capture` federated credential, create-only role on the container; no backend block | `tests/test_t0012_infra.py`; `tofu fmt -check`, `tofu validate` pass |
+| P-2 | `tools/storage_probe.py`: six checks (create, duplicate refused, overwrite refused, delete refused, one version, C5 timing over N repeats with no tolerance); JSON report; exit 0/1/2 | `tests/test_t0012_script.py` (offline fakes, pass and fail cases) |
+| P-3 | `.github/workflows/storage-probe.yml`: `workflow_dispatch` only, `capture` Environment, `id-token: write`, SHA-pinned actions, report uploaded as an artifact | `tests/test_t0012_script_workflow.py` |
+
+Full suite 868 passed; `ruff`, `ruff format`, `check_repo`, trailers pass. **Note:** a `workflow_dispatch` workflow can be
+dispatched only once it is on the default branch, so running B-2 needs this branch merged into `main` first.
 
 ## Review and acceptance
