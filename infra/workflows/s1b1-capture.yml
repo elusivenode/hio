@@ -1,10 +1,17 @@
-# S1b-1.0 scheduled capture: a DEFINITION, NOT ENABLED (T-0009 §2.5; F-REVIEW-2026-10-25-t0009-7).
+# S1b-1.0 scheduled capture, LIVE SHAPE: a DEFINITION, NOT ENABLED (T-0009 §2.5; T-0010 W-3; OD-0115, OD-0119).
 #
-# This file is kept outside .github/workflows/ on purpose, so GitHub never runs it. Enabling it means
-# moving it there, which is live operation and needs Authorisation B (T-0009 §8): rights per dataset
-# and operation, the network and credential-control decision, storage and an explicit owner
-# instruction. Until then the step below can only print the due slots: `hio.jobs.s1b1_capture`
-# makes no request and refuses anything but --dry-run.
+# This file is kept outside .github/workflows/ on purpose, so GitHub never runs it. Enabling it needs
+# TWO changes, both under Authorisation B (T-0009 §8: rights per dataset and operation, the network and
+# credential-control decision, storage, and an explicit owner instruction):
+#   1. move this file to .github/workflows/;
+#   2. set LIVE_AUTHORISATION in src/hio/jobs/s1b1_capture.py to the id of the OD record that grants B.
+# Until the constant is set, the command below refuses with exit 2 before it builds a transport, a
+# storage client or a credential, so moving the file alone captures nothing.
+#
+# The storage account URL, the container, and the tenant and client ids of the federated identity are
+# read from the `capture` Environment's variables (vars.*), never from secrets and never as literals
+# here. The job has `id-token: write` only to obtain a GitHub OIDC token for that federated identity;
+# there is no stored secret.
 #
 # The UTC cron slots equal hio.sources.schedule.CRON_UTC (checked by
 # tests/test_s1b1_remediation_schedule.py): each local check in both daylight-saving regimes plus a
@@ -27,6 +34,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  id-token: write
 concurrency:
   group: s1b1-capture
   cancel-in-progress: false
@@ -34,6 +42,7 @@ jobs:
   capture:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    environment: capture
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -43,8 +52,14 @@ jobs:
         with:
           version: "0.11.19"
           enable-cache: false
-      - name: Due-time gate (dry run; no request is made)
-        # Authorisation B replaces --dry-run with a live run and adds the OIDC store login. Not now.
-        run: uv run --frozen python -m hio.jobs.s1b1_capture --dry-run --rits-calendar "$RITS_CALENDAR"
+      - name: Capture the due slots (live; refuses unless LIVE_AUTHORISATION is set)
+        # --rits-calendar is repeated: the committed calendar files are merged (no overlap, no gap).
+        run: |
+          args=()
+          for f in src/hio/reference/calendars/rits-*.yaml; do args+=(--rits-calendar "$f"); done
+          uv run --frozen python -m hio.jobs.s1b1_capture "${args[@]}"
         env:
-          RITS_CALENDAR: reference/calendars/rits.yaml   # the dated, cited RITS file; not yet retained (D7)
+          HIO_STORAGE_ACCOUNT_URL: ${{ vars.HIO_STORAGE_ACCOUNT_URL }}
+          HIO_STORAGE_CONTAINER: ${{ vars.HIO_STORAGE_CONTAINER }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}

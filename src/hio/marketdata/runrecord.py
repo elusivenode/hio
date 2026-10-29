@@ -32,36 +32,67 @@ WITHHELD = "[withheld]"
 _WITHHELD_HEADERS = {"set-cookie", "authorization", "proxy-authenticate", "www-authenticate"}
 
 
+CI_PLATFORM = "github_actions"
+CAPTURE_WORKFLOW_PATH = ".github/workflows/s1b1-capture.yml"  # HIO-ADR-0012 §4.3.3: the capture workflow
+CAPTURE_WORKFLOW_SUFFIX = f"/{CAPTURE_WORKFLOW_PATH}@refs/heads/main"
+CAPTURE_REF = "refs/heads/main"
+CAPTURE_EVENTS = ("schedule", "workflow_dispatch")  # a scheduled or dispatched run, nothing else
+
+
 @dataclass(frozen=True)
 class Execution:
-    """Who ran the capture. Copied unaltered from the CI environment; any other run is 'other'."""
+    """Who ran the capture. Copied unaltered from the CI environment.
+
+    `platform` is the CI platform only for a run of the capture workflow on main, started by a
+    schedule or a dispatch (HIO-ADR-0012 §4.3.3); any other run, including another GitHub workflow in
+    this repository, is 'other'. `workflow_ref`, `ref` and `event` record why (F-REVIEW-2026-10-29-t0010-1-2).
+    A record written before these fields existed carries none of them and can never pass C6."""
 
     platform: str
     run_id: str | None = None
     run_attempt: str | None = None
     job: str | None = None
     sha: str | None = None
+    workflow_ref: str | None = None  # GITHUB_WORKFLOW_REF
+    ref: str | None = None  # GITHUB_REF
+    event: str | None = None  # GITHUB_EVENT_NAME
 
     @classmethod
     def from_environ(cls, env: Mapping[str, str]) -> Execution:
         if env.get("GITHUB_ACTIONS") != "true":
             return cls("other")
+        repository = env.get("GITHUB_REPOSITORY")
+        is_capture_run = (
+            bool(repository)
+            and env.get("GITHUB_WORKFLOW_REF") == f"{repository}/{CAPTURE_WORKFLOW_PATH}@refs/heads/main"
+            and env.get("GITHUB_REF") == CAPTURE_REF
+            and env.get("GITHUB_EVENT_NAME") in CAPTURE_EVENTS
+        )
         return cls(
-            "github_actions",
+            CI_PLATFORM if is_capture_run else "other",
             env.get("GITHUB_RUN_ID"),
             env.get("GITHUB_RUN_ATTEMPT"),
             env.get("GITHUB_JOB"),
             env.get("GITHUB_SHA"),
+            env.get("GITHUB_WORKFLOW_REF"),
+            env.get("GITHUB_REF"),
+            env.get("GITHUB_EVENT_NAME"),
         )
 
     def as_record(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "platform": self.platform,
             "run_id": self.run_id,
             "run_attempt": self.run_attempt,
             "job": self.job,
             "sha": self.sha,
         }
+        # Additive fields: omitted when absent, so a record written before they existed re-encodes to
+        # the same canonical bytes and still loads under its own content hash.
+        for name in ("workflow_ref", "ref", "event"):
+            if getattr(self, name) is not None:
+                out[name] = getattr(self, name)
+        return out
 
 
 def envelope_headers(headers: Sequence[tuple[str, str]]) -> list[list[str]]:

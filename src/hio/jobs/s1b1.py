@@ -50,6 +50,41 @@ DATASET_OF = {
 }
 UNIT = {AONIA: "percent per annum", SOFR: "percent per annum", TRI: "index", SOFR_INDEX: "index"}
 
+# Release notices (OD-0118 decision 3; matrix rows A, CR, NY-D, NY-E, NY-T). They sit in the manifest
+# core's quality_summary next to `limitations`, determined by the input datasets alone.
+RBA_DATASETS = frozenset({"rba.cash_rate", "rba.cash_rate_tri"})
+RBA_SOURCE_NOTICE = "Source: Reserve Bank of Australia {year}"
+RBA_NO_ENDORSEMENT_NOTICE = (
+    "The Reserve Bank of Australia does not endorse HIO or this derived series; "
+    "HIO internal research use only."
+)
+NYFED_NAME = {"nyfed.sofr": "SOFR", "nyfed.sofr_index": "SOFR Index"}
+NYFED_DERIVATION_NOTICE = (
+    "HIO derivation {ref}: not the {name} as published by the Federal Reserve Bank of New York."
+)
+NYFED_NO_ENDORSEMENT_NOTICE = (
+    "The Federal Reserve Bank of New York does not endorse HIO or this derived data."
+)
+SOFR_LICENCE_NOTICE = (
+    "SOFR is calculated using data provided under a license granted to the New York Fed by "
+    "DTCC Solutions LLC; DTCC Solutions LLC and its sources have no liability for its use."
+)
+
+
+def notices_for(datasets: Iterable[str], spec: str, cutoff_year: str) -> list[str]:
+    """The sorted notices owed by a release built from these input datasets. `spec` is the release's
+    spec_ref; `cutoff_year` the year of its knowledge_cutoff. A comparison passes the union of its
+    inputs' datasets, so it carries the union of their notices."""
+    inputs = frozenset(datasets)
+    out: set[str] = set()
+    if inputs & RBA_DATASETS:
+        out |= {RBA_SOURCE_NOTICE.format(year=cutoff_year), RBA_NO_ENDORSEMENT_NOTICE}
+    nyfed = inputs & NYFED_NAME.keys()
+    if nyfed:
+        out |= {NYFED_DERIVATION_NOTICE.format(ref=spec, name=NYFED_NAME[d]) for d in nyfed}
+        out |= {NYFED_NO_ENDORSEMENT_NOTICE, SOFR_LICENCE_NOTICE}  # the Index is SOFR-derived
+    return sorted(out)
+
 
 @dataclass(frozen=True)
 class Calendars:
@@ -272,6 +307,7 @@ def build_releases(
         "knowledge_cutoff": instant_str(cutoff),
         "supersedes": None,
     }
+    cutoff_year = common["knowledge_cutoff"][:4]  # the year of the UTC instant the manifest records
     calendars = {"rits": cals.rits, "nsw": cals.nsw, "ny": cals.ny}
     views: dict[str, object] = {}
 
@@ -309,6 +345,7 @@ def build_releases(
                     "period_ends": cals.identity(end_key),
                 },
                 "limitations": LIMITATIONS,
+                "notices": notices_for([DATASET_OF[sid]], core["spec_ref"], cutoff_year),
             }
             releases[dataset_id] = make_release(core, built.files)
         elif dataset_id in COMPARISON and dataset_id in wanted:
@@ -317,6 +354,11 @@ def build_releases(
             releases[dataset_id] = _comparison(
                 releases[cash_id], series[cash_id], view(ref_sid), dataset_id, common, base,
                 propagate([rights[s] for s in subjects]),
+                notices_for(
+                    [DATASET_OF[CASH[cash_id][0]], DATASET_OF[ref_sid]],
+                    releases[cash_id].core["spec_ref"],
+                    cutoff_year,
+                ),
             )  # fmt: skip
     return {k: v for k, v in releases.items() if k in wanted}
 
@@ -329,7 +371,16 @@ COMPARISON_CLASSES = (
 )
 
 
-def _comparison(cash: Release, cash_series, ref_view, out_id: str, common, base: int, rights) -> Release:
+def _comparison(
+    cash: Release,
+    cash_series,
+    ref_view,
+    out_id: str,
+    common,
+    base: int,
+    rights,
+    notices: list[str] | None = None,
+) -> Release:
     """Our period growth against the publisher's index over every eligible cash period (each period
     the cash release reports, and each it reports absent): ratios, the difference, the expected bound
     under the spec's pre-registered rounding model, and a classification. Nothing is dropped
@@ -406,6 +457,7 @@ def _comparison(cash: Release, cash_series, ref_view, out_id: str, common, base:
                     "rate_decimals": model.rate_decimals,
                 },
                 "limitations": LIMITATIONS,
+                "notices": notices or [],  # build_releases always supplies them
             },
         },
         {"data.csv": render_csv(columns, rows)},
