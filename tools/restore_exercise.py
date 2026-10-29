@@ -138,6 +138,11 @@ def compare_rebuild(store: Any, rebuilt: Mapping[str, Release], pins: Mapping[st
             )
             continue
         entry["rebuilt_content_sha256"] = release.content_sha256
+        # The rebuild must reproduce the release the cutoff pins, not just any stored release: a store can
+        # hold several releases of one dataset (F-REVIEW-2026-10-29-t0014-1-1).
+        if release.content_sha256 != entry["stored_content_sha256"]:
+            results.append({**entry, "identical": False, "note": "rebuilt hash differs from the cutoff pin"})
+            continue
         manifest_key = f"{release.prefix}/manifest.json"
         if not store.exists(manifest_key):
             results.append({**entry, "identical": False, "note": "no stored manifest with the rebuilt hash"})
@@ -179,8 +184,9 @@ def rebuild_and_compare(
     cutoff: str,
     running_code_ref: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
-    """`rebuild(pins)` returns the rebuilt releases. `running_code_ref` is the code actually running; if it
-    is not the pinned reference the rebuild is not 'from pinned code' and the report says so."""
+    """`rebuild(pins)` returns the rebuilt releases. `running_code_ref` is the code actually running. A
+    rebuild is a success only from the pinned code and lockfile: an absent or different running reference
+    is never `ok` (F-REVIEW-2026-10-29-t0014-1-2)."""
     pins = release_pins(store, cutoff)
     rebuilt = rebuild(pins)
     comparison = compare_rebuild(store, rebuilt, pins)
@@ -189,7 +195,7 @@ def rebuild_and_compare(
         "pins": pins,
         "running_code_matches_pin": matches,
         **comparison,
-        "ok": comparison["identical"] and matches is not False,
+        "ok": comparison["identical"] and matches is True,
     }
 
 
@@ -266,8 +272,7 @@ def _rebuild_command(args: argparse.Namespace) -> dict[str, Any]:
             store, rits=rits, nsw=nsw, rights=rights, gate=RightsGate(rights), pins=pins, cutoff_at=cutoff_at
         )
 
-    running = current_code_ref() if args.check_running_code else None
-    return rebuild_and_compare(store, rebuild, args.cutoff, running)
+    return rebuild_and_compare(store, rebuild, args.cutoff, current_code_ref())
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -286,9 +291,6 @@ def main(argv: list[str] | None = None) -> int:
     rb.add_argument("--nsw-calendar", nargs="+", required=True)
     rb.add_argument("--rights-register", help="default: registers/sources.yaml")
     rb.add_argument("--allow-synthetic", action="store_true", help="accept synthetic calendars (tests only)")
-    rb.add_argument(
-        "--check-running-code", action="store_true", help="require the running code to be the pin"
-    )
     st = sub.add_parser("state", help="rehearse restoring DUMMY state into an isolated directory")
     st.add_argument("--backup", required=True)
     st.add_argument("--sha256", required=True, help="the recorded hash of the backup")

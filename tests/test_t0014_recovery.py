@@ -426,13 +426,11 @@ def test_the_command_lines_copy_restore_and_rebuild(world, tmp_path, capsys):
         str(fixtures / "calendar_nsw.yaml"),
         "--allow-synthetic",
     ]
-    assert restore_exercise.main(rebuild) == 0
+    # The running code is always checked: the pin is 'test', not this commit, so the byte-identical rebuild is
+    # still not a success (F-REVIEW-2026-10-29-t0014-1-2).
+    assert restore_exercise.main(rebuild) == 1
     out = json.loads(capsys.readouterr().out)
-    assert out["identical"] is True and out["running_code_matches_pin"] is None
-    assert (
-        restore_exercise.main([*rebuild, "--check-running-code"]) == 1
-    )  # the pin is 'test', not this commit
-    assert json.loads(capsys.readouterr().out)["running_code_matches_pin"] is False
+    assert out["identical"] is True and out["running_code_matches_pin"] is False and out["ok"] is False
 
 
 def test_the_verify_command_reports_a_tampered_second_copy(world, tmp_path, capsys):
@@ -447,3 +445,25 @@ def test_the_verify_command_reports_a_tampered_second_copy(world, tmp_path, caps
         second_copy.main(["verify", "--store", str(tmp_path / "second"), "--inventory", str(inventory)]) == 1
     )
     assert json.loads(capsys.readouterr().out)["tampered"]
+
+
+def test_an_absent_running_code_reference_is_never_ok(world):
+    """F-REVIEW-2026-10-29-t0014-1-2: with no running reference, the rebuild is not from pinned code."""
+    target = world.store
+    outcome = restore_exercise.rebuild_and_compare(
+        target, rebuild_for(world, target), instant_str(world.cutoff)
+    )
+    assert outcome["identical"] and outcome["running_code_matches_pin"] is None and outcome["ok"] is False
+
+
+def test_a_rebuild_that_is_not_the_cutoff_pin_is_never_identical(world):
+    """F-REVIEW-2026-10-29-t0014-1-1: the comparison is against the pinned release, not whichever stored
+    release has the rebuilt hash. The old comparison read the rebuilt hash's path and reported identical."""
+    target = world.store
+    pins = restore_exercise.release_pins(target, instant_str(world.cutoff))
+    rebuilt = rebuild_for(world, target)(pins)
+    assert restore_exercise.compare_rebuild(target, rebuilt, pins)["identical"]
+    elsewhere = {**pins, "releases": {ds: "0" * 64 for ds in pins["releases"]}}
+    result = restore_exercise.compare_rebuild(target, rebuilt, elsewhere)
+    assert not result["identical"]
+    assert all(r["note"] == "rebuilt hash differs from the cutoff pin" for r in result["releases"])
