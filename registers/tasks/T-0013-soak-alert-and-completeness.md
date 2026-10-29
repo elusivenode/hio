@@ -1,7 +1,7 @@
 ---
 id: T-0013
 title: "Soak monitoring fix before B-3: per-slot completeness in the capture job, a weekend-aware dead-man alert, a soak reconciliation report, and the probe test's hermeticity"
-status: authorised   # OD-0130 item 2; code and tests on feat/t0013; no tofu plan/apply, no Azure write
+status: submitted_for_review   # built on feat/t0013; no tofu plan/apply, no Azure write
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-10-29
@@ -63,5 +63,22 @@ attempt-record meanings or HIO-ADR-0012; notification deduplication; a separate 
 - A missed slot fails each run for up to 24 hours (several emails); accepted for now.
 
 ## Submission (filled by the implementer)
+
+Branch `feat/t0013`, base `b1fc6b4`. hiomux workers W1 (`7bee703`, A-1 and A-3) and W2 (`81768e5`, A-2), each `check`ed and
+integrated by cherry-pick; A-4 by the orchestrator (`7dc85f6`).
+
+| Item | Delivered | Evidence |
+|---|---|---|
+| A-1 | `expected_slots`, `missed_slots`, `load_attempt_records` (`src/hio/sources/schedule.py`); `check_completeness` after every live run, exit 1 on a missed slot or an unreadable check (`src/hio/jobs/s1b1_capture.py`); attempts listed once, records before the horizon skipped by key | `tests/test_t0013_completeness.py` |
+| A-2 | dead-man alert: raw `WriteCount`, no row in Sat 00:00 to Mon 18:00 UTC, `auto_mitigation_enabled = true`, still disabled; comments and README say it proves only the absence of writes | `tests/test_t0013_alert.py`; `tofu fmt -check`, `tofu validate` pass |
+| A-3 | `tools/soak_report.py`: expected vs observed per slot (`captured`, `verified_unchanged`, `failed`, `missing`), start lateness, per-publication counts, JSON | `tests/test_t0013_soak_report.py` |
+| A-4 | the probe secrets test skips directories | passes with `infra/tofu/probe/.terraform/` present |
+
+Full suite **951 passed** (868 at base); `ruff`, `ruff format`, `check_repo`, trailers pass.
+
+**Open, for the soak (worker notes W2-1-bf4c, W2-1-17e2):** that Azure treats the quiet window's zero-row result as not
+breaching, and the `dayofweek` conversion, are confirmed only against live Azure (the deliberate-failure test). A Monday
+18:00 UTC evaluation breaches only if no Sunday-UTC Sydney write and no Monday write has landed by then, which is the
+intended case.
 
 ## Review and acceptance
