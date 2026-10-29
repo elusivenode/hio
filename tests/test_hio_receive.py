@@ -602,6 +602,99 @@ def test_restart_without_the_go_ahead_stops_after_a_refused_index_import(make_wo
     assert received_main(w) == w.head  # nothing was published without the flag
 
 
+# --- a restart compares the existing import's content with the reviewer's evidence ----------------
+
+
+def hand_built_import(w: World, readme_fn=None, extra: dict[str, str] | None = None) -> str:
+    """A local import on the scratch clone's main that the receiver did not make (no Index-Diff trailer)."""
+    git(w.recv, "checkout", "-q", "main")
+    for path in w.files:
+        git(w.recv, "checkout", w.tip, "--", path)
+    if readme_fn is not None:
+        readme = w.recv / "reviews" / "README.md"
+        readme.write_text(readme_fn(readme.read_text(), w))
+    for path, text in (extra or {}).items():
+        w.write(w.recv, path, text)
+    git(w.recv, "add", "-A")
+    git(
+        w.recv,
+        "commit",
+        "-q",
+        "-m",
+        f"Receive {w.rec_id} evidence by byte-identical import (hand-built)",
+        "-m",
+        f"Review-Id: {w.rec_id}\nReview-Commit: {w.tip}\nInventory: complete",
+    )
+    return git(w.recv, "rev-parse", "HEAD")
+
+
+def reviewers_readme(_readme: str, w: World) -> str:
+    return git(w.recv, "show", f"{w.tip}:reviews/README.md") + "\n"
+
+
+def false_verified_closed(readme: str, _w: World) -> str:
+    """Main's README with only the existing finding's state changed, as in Codex's probe."""
+    return replace_line(
+        readme,
+        "| F-OLD-1-1 |",
+        "| F-OLD-1-1 | OLD-1 | high | **verified_closed** | remediation_claimed: fix `abc1234` | — | — |",
+    )
+
+
+def assert_restart_stops(w: World) -> None:
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1, r.out
+    assert "STATUS: received" not in r.out
+    assert received_main(w) == w.head  # remote main did not advance
+    assert git(w.recv, "worktree", "list").count("\n") == 0
+
+
+def test_restart_stops_on_an_import_with_a_false_state_row_and_no_trailer(make_world):
+    w = make_world(kind="verify")  # the reviewer's README diff rewrites F-OLD-1-1: option B refuses it
+    hand_built_import(w, false_verified_closed)
+    assert_restart_stops(w)
+
+
+def test_restart_stops_on_an_import_that_applied_the_refused_diff_without_a_trailer(make_world):
+    w = make_world(kind="verify")
+    hand_built_import(w, reviewers_readme)  # the whole refused diff, but no Index-Diff trailer
+    assert_restart_stops(w)
+
+
+def test_restart_stops_on_an_import_whose_readme_differs_from_the_reviewers_diff(make_world):
+    def extra_navigation_row(readme: str, w: World) -> str:
+        row = (
+            f"| REVIEW-OLD-1 | other | `{w.base[:7]}..{w.head[:7]}` | Codex | **READY** | "
+            "[record](records/REVIEW-OLD-1.md) |"
+        )
+        return add_row(reviewers_readme(readme, w), H_REVIEWED, row)
+
+    w = make_world()  # a Class N diff that passes 5.6
+    hand_built_import(w, extra_navigation_row)
+    assert_restart_stops(w)
+
+
+def test_restart_stops_on_an_import_that_changes_a_file_outside_the_inventory(make_world):
+    w = make_world()
+    hand_built_import(w, reviewers_readme, extra={"reviews/records/EXTRA-1.md": "not in the inventory\n"})
+    assert_restart_stops(w)
+
+
+def test_restart_stops_on_an_import_that_changes_the_readme_the_reviewer_left_alone(make_world):
+    w = make_world(readme_fn=lambda _readme, _w: README_BASE)  # the reviewer did not touch README
+    hand_built_import(w, lambda readme, _w: readme + "| stray |\n")
+    assert_restart_stops(w)
+
+
+def test_restart_accepts_a_hand_built_import_that_equals_the_reviewers_diff_applied(make_world):
+    w = make_world()
+    hand_built_import(w, reviewers_readme)
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 0, r.err
+    assert "STATUS: received" in r.out and "PARTIAL" not in r.out
+    assert received_main(w) != w.head
+
+
 def test_without_index_is_ignored_when_the_index_diff_is_acceptable(make_world):
     w = make_world()  # a Class N review receipt
     r = w.run(publish=True, without_index=True)

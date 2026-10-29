@@ -1209,49 +1209,92 @@ def step_verify_existing_index(ctx: Ctx) -> None:
     parents = g.out("rev-list", "--parents", "-n1", imp).split()[1:]
     if not parents:
         raise Stop(f"the import {imp} has no parent commit")
-    changed = bool(g.raw("diff", "--name-only", "--no-renames", "-z", f"{imp}^1", imp, "--", path))
-    if not tagged:
-        if changed != ctx.readme_modified:
+    parent = f"{imp}^1"
+    parent_blob, import_blob = g.out("rev-parse", f"{parent}:{path}"), g.out("rev-parse", f"{imp}:{path}")
+    if tagged:
+        if import_blob != parent_blob:
+            raise Stop(f"the import {imp} carries '{tagged[0]}' yet changes {path}")
+        if not ctx.readme_modified:
             raise Stop(
-                f"the import {imp} {'changes' if changed else 'does not change'} {path}, but the reviewer's "
-                f"diff {'does' if ctx.readme_modified else 'does not'} modify it, and the import carries no "
-                "Index-Diff trailer"
+                f"the import {imp} carries '{tagged[0]}' but the reviewer's diff does not modify {path}"
             )
-        ctx.add(f"- `{path}` " + ("was imported with the reviewer's diff" if changed else "is unchanged"))
-        return
-    if changed:
-        raise Stop(f"the import {imp} carries '{tagged[0]}' yet changes {path}")
-    if not ctx.readme_modified:
-        raise Stop(f"the import {imp} carries '{tagged[0]}' but the reviewer's diff does not modify {path}")
-    if not a.without_index:
+        if not a.without_index:
+            raise Stop(
+                f"the import {imp} carries '{tagged[0]}': restart with --without-index (the same go-ahead "
+                "as the first attempt) so the refused index is disclosed"
+            )
+    # The expected README comes from the immutable evidence alone: the reviewer's diff applied and
+    # checked at the import's parent. A changed-path Boolean cannot establish that identity.
+    problems, lines, expected_blob = [], [], parent_blob
+    if ctx.readme_modified:
+        patch, lines = reviewer_readme_diff(ctx)
+        problems, expected_blob = recompute_readme(ctx, parent, patch)
+    if tagged:
+        if not problems:
+            raise Stop(
+                f"the import {imp} refused the index, but the reviewer's diff passes 5.6 against its parent"
+            )
+        if index_diff_trailer(problems) != tagged[0]:
+            raise Stop(
+                f"the import's '{tagged[0]}' differs from the recomputed '{index_diff_trailer(problems)}'"
+            )
+        expected_blob = parent_blob  # a refused diff is omitted wholly
+    elif problems:
         raise Stop(
-            f"the import {imp} carries '{tagged[0]}': restart with --without-index (the same go-ahead as "
-            "the first attempt) so the refused index is disclosed"
+            f"the import {imp} carries no Index-Diff trailer, but the reviewer's README diff fails 5.6 "
+            f"against its parent {parent}: {problems[0]}"
         )
-    patch, ctx.refused_lines = reviewer_readme_diff(ctx)
+    if import_blob != expected_blob:
+        raise Stop(
+            f"the import {imp} has {path} as {import_blob}, but the reviewer's diff applied to its parent "
+            f"{parent} gives {expected_blob}: the import does not match the immutable reviewer evidence"
+        )
+    want = set(ctx.added) | ({path} if expected_blob != parent_blob else set())
+    names = {
+        n for n in g.raw("diff", "--name-only", "--no-renames", "-z", parent, imp).decode().split("\0") if n
+    }
+    if names != want:
+        raise Stop(
+            f"the import {imp} changes {sorted(names)}, but the inventory"
+            f"{' and the applied index diff' if path in want else ''} allow only {sorted(want)}"
+        )
+    if tagged:
+        ctx.refused_lines = lines
+        report_refused_index(ctx, path, problems)
+    else:
+        ctx.add(
+            f"- `{path}` "
+            + (
+                "was imported as the reviewer's diff applied at its parent"
+                if path in want
+                else "is unchanged"
+            )
+        )
+
+
+def recompute_readme(ctx: Ctx, parent: str, patch: bytes) -> tuple[list[str], str]:
+    """Apply the reviewer's README diff at `parent` and check it (5.6): the problems and the result's blob id.
+
+    A diff that does not apply leaves the index at the parent's README, so the blob id is the parent's.
+    """
+    g, a, path = ctx.g, ctx.args, ctx.prefix + README
     wt = Path(tempfile.mkdtemp(prefix="hio-receive-")) / "wt"
     ctx.wt = wt
     try:
-        g.out("worktree", "add", "-q", "--detach", str(wt), f"{imp}^1")
+        g.out("worktree", "add", "-q", "--detach", str(wt), parent)
         w = Git(wt)
         problems = apply_readme_diff(w, patch)
         if not problems:
             problems = check_index(
-                g.raw("show", f"{imp}^1:{path}").decode(),
+                g.raw("show", f"{parent}:{path}").decode(),
                 w.raw("show", f":{path}").decode(),
                 ctx.records,
                 a.assignment_source,
                 a.od,
             )
+        return problems, w.out("rev-parse", f":{path}")
     finally:
         cleanup_worktree(ctx)
-    if not problems:
-        raise Stop(
-            f"the import {imp} refused the index, but the reviewer's diff passes 5.6 against its parent"
-        )
-    if index_diff_trailer(problems) != tagged[0]:
-        raise Stop(f"the import's '{tagged[0]}' differs from the recomputed '{index_diff_trailer(problems)}'")
-    report_refused_index(ctx, path, problems)
 
 
 # --- driver -----------------------------------------------------------------------------------------
