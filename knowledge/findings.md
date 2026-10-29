@@ -101,3 +101,11 @@ _(Empty after distil 1. Append new candidate lines below this note.)_
 - [process] [rediscovery] '| tail -1' and 'set -e' hide a failing check's exit status in Claude Code's Bash tool; run check_repo alone and read its exit code before committing or pushing. Source: OD-0113 correction 1; OD-0110.
 - [hiomux] A Codex task resuming on its own existing branch needs the runner fix of OD-0111 (update-ref expected old value). Source: OD-0110, OD-0111.
 - [harness] Recovery code that reconstructs trust from local or published history it did not build keeps leaking; prefer a narrow boundary (publish only what this run built from a fresh remote main). Source: OD-0109, VERIFY-2026-10-28-h6-1-3 to -7.
+- [review] check_review_assignment.py compares the record's assignment field exactly; tell the reviewer the exact string to write (path only, no section). Source: OD-0121 correction 1, OD-0122.
+- [repo] With main protected, a receipt's §5.9 merge goes through a PR (receipt/<id>), merged with the §5.9 subject; 5.10 then checks remote main. Source: OD-0121.
+- [hiomux] hiomux checks an assignment OD against the LOCAL main; pull main before 'task add --kind codex'. Source: this session (OD-0120 launch).
+- [hiomux] A task contract cannot be widened after spawn; supersede the task with a widened one. Source: R2/R2b, OD-0121.
+- [repo] Never quote an owner message verbatim into a committed record when it contains an email address or other personal identifier; withhold it. Source: OD-0126 correction 1.
+- [infra] A required reviewer on a GitHub Environment pauses every job in it, scheduled ones included. Source: OD-0119 C-4.
+- [infra] A stateless scheduled-query alert (auto_mitigation off) fires on every evaluation; gate it until there is something to monitor. Source: OD-0126 correction 1.
+- [infra] A workflow_dispatch workflow can be dispatched only once it exists on the default branch. Source: T-0012 submission.
