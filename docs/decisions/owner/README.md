@@ -122,6 +122,7 @@ are in operating model §1.1; the template is
 | [OD-0105](OD-0105-assign-h6-verification-4.md) | authorise_work | **VERIFY-2026-10-28-h6-1-4 assigned** (F-VERIFY-…-3-1 at `41e0840`; F-1 to F-4 regression against approved option B); `main` and `phase-b/h6` pushed | `phase-b/h6` at `41e0840` | recorded |
 | [OD-0106](OD-0106-apply-harness-0.9b-and-cleanup.md) | authorise_work | **harness-0.9b applied** (option B verbatim into operating model §6.2 5.6 and 5.12; H6 design wording on `proposal/harness-0.9`); hiomux cleanup of run `20261028T081310Z-d55d` | `docs/decisions/h6-option-b-amendment.md` at `d26c2fa` | recorded |
 | [OD-0107](OD-0107-receive-h6-verification-4.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-4 without its index diff** (NOT READY: F-VERIFY-…-3-1 verified_closed; new high F-VERIFY-…-4-1 open); harness-0.9b pushed; F-VERIFY-…-4-1 fix and response 5; §5.12 reconciliation | `review/h6-1-verify-4-codex` at `1fc82bb` | recorded |
+| [OD-0108](OD-0108-assign-h6-verification-5.md) | authorise_work | **VERIFY-2026-10-28-h6-1-5 assigned** (F-VERIFY-…-4-1 at `5e15829`; regression against harness-0.9b); `phase-b/h6` pushed | `phase-b/h6` at `5e15829` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
