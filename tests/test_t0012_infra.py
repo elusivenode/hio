@@ -158,7 +158,7 @@ def test_nothing_is_shared_with_the_evidence_store_or_other_systems():
 
 
 def test_no_email_guid_or_github_numeric_id_is_committed_in_the_probe():
-    for path in PROBE.iterdir():
+    for path in (p for p in PROBE.iterdir() if p.is_file()):  # skips ignored .terraform/ (T-0013 A-4)
         content = path.read_text()
         assert not re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}", content), path
         assert not re.search(GUID, content, re.I), path
