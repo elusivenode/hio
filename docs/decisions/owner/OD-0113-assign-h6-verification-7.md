@@ -10,7 +10,7 @@ owner_statement:
   source: docs/history/2026-10-29-owner-assign-h6-verify-7.md (owner's messages AF and AG, verbatim, with Claude's decision)
   sha256: 3b882b4deff83d2044a655301040b4ad59d4278e333f90a6a5c69a43af7ec4e1
   date: 2026-10-29
-  quote: "if we keep getting new issues raised, I think we need to cut this off and move on. let's assess after this review"; "yes"
+  quote: "if we keep getting new issues raised, I think we need to cut this off and move on. let's assess after this review (AF); yes (AG)"
 applies_to:
   - path: phase-b/h6
     revision: 655335c83ef35814de1c08719ec3e2a80eb2e1a4   # the head; fixed
@@ -56,3 +56,9 @@ proposed clarification, two commits), both confirmed by `ls-remote`.
 Receipt of the result; the assessment's outcome; adopting the clarification; H6 approval or activation.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29, Claude, mechanical)
+
+The `quote:` front-matter line was written as two quoted strings separated by `;`, which is not valid YAML; `check_repo`
+failed on `main` at `b6fc2d8`. It now reads as one string with the message labels (AF, AG). The quoted words are
+unchanged; the assignment is unchanged.
