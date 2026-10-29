@@ -335,6 +335,11 @@ def received_main(w: World) -> str:
     return w.origin_ref("refs/heads/main") or ""
 
 
+def status_line(out: str) -> str:
+    """The status word without its PARTIAL disclosure (which says the index was "not received")."""
+    return next(x for x in out.splitlines() if x.startswith("- STATUS: ")).split("; PARTIAL")[0]
+
+
 # --- 5.0 inputs ---------------------------------------------------------------------------------
 
 
@@ -471,10 +476,12 @@ def test_publish_is_idempotent_after_completion(make_world):
     before = received_main(w)
     r = w.run(publish=True)
     assert r.code == 0, r.err
-    assert "already imported" in r.out and "STATUS: received" in r.out
+    assert (
+        "already imported" in r.out and "inspection PASSED" in r.out and "received" not in status_line(r.out)
+    )
     assert received_main(w) == before
     r = w.run()
-    assert r.code == 0 and "already imported" in r.out
+    assert r.code == 0 and "already imported" in r.out and "inspection PASSED" in r.out
 
 
 def test_verification_record_with_class_s_transition_is_refused(make_world):
@@ -584,7 +591,8 @@ def test_restart_after_a_failed_main_push_stops_and_recovers_after_the_owners_re
     # a further run inspects the published receipt: same disclosure, nothing pushed
     r = w.run(publish=True, without_index=True)
     assert r.code == 0, r.err
-    assert "already imported" in r.out and "STATUS: received" in r.out
+    assert "already imported" in r.out and "inspection PASSED" in r.out
+    assert "STATUS: received" not in r.out
     assert "none pushed by this run" in r.out
     assert_partial_disclosure(w, r.out)
     assert received_main(w) == main and w.origin_git("show", f"{main}:reviews/README.md") == before
@@ -596,7 +604,7 @@ def test_dry_run_after_the_import_exists_discloses_the_refused_index(make_world)
     assert w.run(publish=True, without_index=True).code == 0
     r = w.run(without_index=True)
     assert r.code == 0, r.err
-    assert "checks passed (dry run" in r.out
+    assert "inspection PASSED" in r.out and "received" not in status_line(r.out)
     assert_partial_disclosure(w, r.out)
     assert git(w.recv, "worktree", "list").count("\n") == 0
 
@@ -615,8 +623,42 @@ def test_restart_without_the_go_ahead_stops_after_a_refused_index_import(make_wo
 # --- a restart compares the existing import's content with the reviewer's evidence ----------------
 
 
-def hand_built_import(w: World, readme_fn=None, extra: dict[str, str] | None = None) -> str:
-    """A local import on the scratch clone's main that the receiver did not make (no Index-Diff trailer)."""
+def full_trailers(w: World, drop: tuple[str, ...] = (), **replace: str) -> str:
+    """The §5.8 trailer set of a genuine import with no Index-Diff, minus `drop`, with `replace` values."""
+    lines = {
+        "Review-Id": w.rec_id,
+        "Review-Branch": w.branch,
+        "Review-Commit": w.tip,
+        "Reviewed-Base": w.base,
+        "Reviewed-Head": w.head,
+        "Assignment-Source": SOURCE,
+        "Reviewer-Report": "Codex final message, relayed by the owner (test)",
+        "Inventory": "complete",
+        "Receipt-Checks": "scope PASS; assignment PASS; index rows PASS; blob identity PASS; check_repo PASS",
+        "HIO-Actor": f"claude/implementation-agent (evidence receipt, {OD})",
+    }
+    lines.update({k.replace("_", "-"): v for k, v in replace.items()})
+    out = [f"{k}: {v}" for k, v in lines.items() if k not in drop and k != "Inventory"]
+    records = [
+        f"Record: {p} blob {git(w.recv, 'rev-parse', f'{w.tip}:{p}')} sha256 "
+        f"{hashlib.sha256(t.encode()).hexdigest()}"
+        for p, t in w.files.items()
+    ]
+    if "Record" not in drop:
+        out += records
+    if "Inventory" not in drop:
+        out.append(f"Inventory: {lines['Inventory']}")
+    return "\n".join(out)
+
+
+def hand_built_import(
+    w: World, readme_fn=None, extra: dict[str, str] | None = None, trailers: str | None = None
+) -> str:
+    """A local import on the scratch clone's main that the receiver did not make (no Index-Diff trailer).
+
+    By default it carries the full §5.8 trailer set, so that the README and path checks are what stop it;
+    pass `trailers` (e.g. only Review-Id, Review-Commit, Inventory) for the metadata probes.
+    """
     git(w.recv, "checkout", "-q", "main")
     for path in w.files:
         git(w.recv, "checkout", w.tip, "--", path)
@@ -633,9 +675,12 @@ def hand_built_import(w: World, readme_fn=None, extra: dict[str, str] | None = N
         "-m",
         f"Receive {w.rec_id} evidence by byte-identical import (hand-built)",
         "-m",
-        f"Review-Id: {w.rec_id}\nReview-Commit: {w.tip}\nInventory: complete",
+        full_trailers(w) if trailers is None else trailers,
     )
     return git(w.recv, "rev-parse", "HEAD")
+
+
+MINIMAL = "Review-Id: {rid}\nReview-Commit: {tip}\nInventory: complete"
 
 
 def reviewers_readme(_readme: str, w: World) -> str:
@@ -715,18 +760,140 @@ def test_restart_refuses_an_unpublished_hand_built_import_that_equals_the_review
     assert received_main(w) == w.head
 
 
-def test_a_published_import_that_equals_the_reviewers_diff_applied_is_inspected_and_not_pushed(make_world):
+def test_a_published_import_without_the_5_8_trailers_fails_inspection_even_if_its_readme_is_exact(make_world):
+    w = make_world()
+    hand_built_import(w, reviewers_readme, trailers=MINIMAL.format(rid=w.rec_id, tip=w.tip))
+    git(w.recv, "push", "-q", "origin", "main")
+    pushed = received_main(w)
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1, r.out
+    assert "inspection FAILED" in r.out and "STATUS: received" not in r.out
+    assert "Reviewed-Base: expected exactly one line, found 0" in r.err
+    assert received_main(w) == pushed
+
+
+def test_a_published_import_with_the_full_trailer_set_that_equals_the_reviewers_diff_is_inspected_only(
+    make_world,
+):
     w = make_world()
     hand_built_import(w, reviewers_readme)
     git(w.recv, "push", "-q", "origin", "main")
     pushed = received_main(w)
-    r = w.run(publish=True, without_index=True)
-    assert r.code == 0, r.err
-    assert "STATUS: received" in r.out and "PARTIAL" not in r.out and "none pushed by this run" in r.out
+    for publish in (True, False):
+        r = w.run(publish=publish, without_index=True)
+        assert r.code == 0, r.err
+        assert "inspection PASSED" in status_line(r.out) and "received" not in status_line(r.out)
+        assert "PARTIAL" not in r.out and "none pushed by this run" in r.out
+        assert "NOT VERIFIED by this tool: the commits before the import" in r.out
+        assert "check_repo.py trailers" in r.out
     assert received_main(w) == pushed
 
 
-def poisoned_local_import(w: World) -> tuple[str, str]:
+def test_codexs_published_probe_a_poisoned_parent_and_a_bare_import_never_reports_received(make_world):
+    def without_findings_row(readme: str, _w: World) -> str:  # keep the patch away from F-OLD-1-2
+        return "\n".join(x for x in readme.split("\n") if not x.startswith("| F-REVIEW-T-1-1 |"))
+
+    w = make_world(readme_fn=without_findings_row)
+    poison, imp = poisoned_local_import(w, trailers=MINIMAL.format(rid=w.rec_id, tip=w.tip))
+    assert git(w.recv, "rev-parse", f"{imp}^") == poison
+    git(w.recv, "push", "-q", "origin", "main")  # the outside push that publishes the poisoned history
+    pushed = received_main(w)
+    assert pushed == imp
+    for publish in (True, False):
+        r = w.run(publish=publish, without_index=True)
+        assert r.code == 1, r.out
+        assert "inspection FAILED" in r.out and "inspection FAILED" in r.err
+        assert "STATUS: received" not in r.out and "received" not in status_line(r.out)
+        assert received_main(w) == pushed
+    assert git(w.recv, "worktree", "list").count("\n") == 0
+
+
+def asserts_failed_inspection(w: World, *needles: str) -> None:
+    git(w.recv, "push", "-q", "origin", "main")
+    pushed = received_main(w)
+    for publish in (True, False):
+        r = w.run(publish=publish, without_index=True)
+        assert r.code == 1, r.out
+        assert "inspection FAILED" in status_line(r.out) and "received" not in status_line(r.out)
+        assert all(n in r.err for n in needles), r.err
+        assert received_main(w) == pushed
+    assert w.origin_ref(f"refs/tags/reviews/{w.rec_id}") is None  # a failed inspection pushes nothing
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "Review-Branch",
+        "Reviewed-Base",
+        "Reviewed-Head",
+        "Assignment-Source",
+        "Reviewer-Report",
+        "Inventory",
+        "Receipt-Checks",
+        "HIO-Actor",
+        "Record",
+    ],
+)
+def test_a_published_import_missing_a_required_trailer_fails_inspection(make_world, key):
+    # Review-Id and Review-Commit are how the import is found at all (step_main_state), so they are not here
+    w = make_world()
+    hand_built_import(w, reviewers_readme, trailers=full_trailers(w, drop=(key,)))
+    needle = (
+        "no line for the inventory file" if key == "Record" else f"{key}: expected exactly one line, found 0"
+    )
+    asserts_failed_inspection(w, needle)
+
+
+@pytest.mark.parametrize("key", ["Review-Branch", "Reviewed-Base", "Reviewed-Head", "Assignment-Source"])
+def test_a_published_import_with_a_mismatched_trailer_fails_inspection(make_world, key):
+    w = make_world()
+    hand_built_import(w, reviewers_readme, trailers=full_trailers(w, **{key: "review/other-codex"}))
+    asserts_failed_inspection(w, f"{key}: 'review/other-codex'")
+
+
+def test_a_published_import_with_a_duplicated_trailer_fails_inspection(make_world):
+    w = make_world()
+    hand_built_import(w, reviewers_readme, trailers=full_trailers(w) + f"\nReviewed-Head: {w.base}")
+    asserts_failed_inspection(w, "Reviewed-Head: expected exactly one line, found 2")
+
+
+def test_a_published_import_with_a_wrong_record_sha256_fails_inspection(make_world):
+    w = make_world()
+    wrong = "0" * 64
+    trailers = full_trailers(w)
+    right = hashlib.sha256(w.files[w.handoff_path].encode()).hexdigest()
+    hand_built_import(w, reviewers_readme, trailers=trailers.replace(right, wrong))
+    asserts_failed_inspection(w, f"Record: {w.handoff_path} sha256 {wrong}")
+
+
+def test_a_published_import_with_a_wrong_record_blob_fails_inspection(make_world):
+    w = make_world()
+    right = git(w.recv, "rev-parse", f"{w.tip}:{w.handoff_path}")
+    hand_built_import(w, reviewers_readme, trailers=full_trailers(w).replace(right, "1" * 40))
+    asserts_failed_inspection(w, f"Record: {w.handoff_path} blob {'1' * 40}")
+
+
+def test_a_published_import_with_an_extra_record_line_fails_inspection(make_world):
+    w = make_world()
+    extra = f"\nRecord: reviews/records/EXTRA-1.md blob {'1' * 40} sha256 {'2' * 64}"
+    hand_built_import(w, reviewers_readme, trailers=full_trailers(w) + extra)
+    asserts_failed_inspection(w, "Record: reviews/records/EXTRA-1.md is not in the inventory")
+
+
+def test_the_trusted_trailers_check_is_run_on_a_published_import(make_world):
+    w = make_world()
+    hand_built_import(w, reviewers_readme)
+    git(w.recv, "push", "-q", "origin", "main")
+    (w.recv / "tools" / "check_repo.py").write_text("import sys\nprint('trailers refused')\nsys.exit(1)\n")
+    git(w.recv, "commit", "-q", "-am", "swap check_repo for a failing one")
+    git(w.recv, "push", "-q", "origin", "main")
+    pushed = received_main(w)
+    r = w.run(publish=True, without_index=True)
+    assert r.code == 1 and "inspection FAILED" in r.err and "trailers refused" in r.err
+    assert received_main(w) == pushed
+
+
+def poisoned_local_import(w: World, trailers: str | None = None) -> tuple[str, str]:
     """Codex's probe: an unsupported state change committed on local main, then an import that applies the
     reviewer's exact README patch on top of it (a separate hunk, so the patch still applies)."""
     git(w.recv, "checkout", "-q", "main")
@@ -747,7 +914,7 @@ def poisoned_local_import(w: World) -> tuple[str, str]:
         check=True,
     ).stdout
     subprocess.run(["git", "apply", "--index", "-"], cwd=w.recv, input=patch, check=True)
-    return poison, hand_built_import(w)
+    return poison, hand_built_import(w, trailers=trailers)
 
 
 def test_unpublished_poisoned_commit_before_an_exact_import_is_never_published(make_world):

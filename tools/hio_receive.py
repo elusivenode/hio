@@ -25,7 +25,9 @@ fetched remote `main`. Local `main` ahead of remote `main` (an unpublished impor
 that lists those commits and leaves them untouched; the owner resets local `main` to remote `main` and
 reruns (the tag pins T; the import is rebuilt). A tag with no import resumes at 5.5; an unmerged
 `receipt/<id>` branch is discarded and rebuilt. An import of T already on remote `main` is inspected
-(5.6 content checks, refused-index disclosure, tag) and `main` is never pushed on that path. Just before
+(the full 5.8 trailer set and `Record:` lines, 5.6 content checks, refused-index disclosure, tag), `main`
+is never pushed on that path, and the status is "inspection PASSED" or "inspection FAILED", never
+"received": the commits before such an import are not verified by this tool. Just before
 the push of `main` a guard requires remote `main` to be the commit the receipt was cut from and local
 `main` to be ahead by exactly this invocation's import and merge.
 
@@ -136,7 +138,8 @@ class Ctx:
     notes: list[str] = field(default_factory=list)
     lines: list[str] = field(default_factory=list)
     pushed_commits: list[str] = field(default_factory=list)
-    completed: bool = False
+    completed: bool = False  # a receipt this invocation built passed 5.10
+    inspecting: bool = False  # an import of T was found on remote main: history this run did not build
 
     @property
     def remote(self) -> str:
@@ -1200,9 +1203,13 @@ def step_merge_and_push(ctx: Ctx) -> None:
 
 
 def step_verify_published(ctx: Ctx) -> None:
-    """5.10: remote main equals the local merge, the blobs on main equal T's, the remote tag peels to T."""
+    """5.10: remote main equals the local merge, the blobs on main equal T's, the remote tag peels to T.
+
+    Passing is a receipt only for the caller that built it this invocation; an inspection of a published
+    import uses the same checks and never reports "received".
+    """
     g = ctx.g
-    ctx.sec("5.10 Post-push verification")
+    ctx.sec("Published import: remote main and tag" if ctx.inspecting else "5.10 Post-push verification")
     local = g.out("rev-parse", MAIN)
     rows = ls_remote(ctx, f"refs/heads/{MAIN}")
     if len(rows) != 1 or rows[0][0] != local:
@@ -1217,20 +1224,124 @@ def step_verify_published(ctx: Ctx) -> None:
     if peel != ctx.tip:
         raise Stop(f"5.10: the remote tag {ctx.tag} peels to {peel}, not T")
     ctx.add(f"- remote tag `{ctx.tag}` peels to T")
-    ctx.completed = True
+
+
+REQUIRED_TRAILERS = (
+    "Review-Id",
+    "Review-Branch",
+    "Review-Commit",
+    "Reviewed-Base",
+    "Reviewed-Head",
+    "Assignment-Source",
+    "Reviewer-Report",
+    "Inventory",
+    "Receipt-Checks",
+    "HIO-Actor",
+)
+RECORD_RE = re.compile(r"Record: (\S+) blob ([0-9a-f]{40}) sha256 ([0-9a-f]{64})")
+
+
+def trailer_lines(message: str) -> tuple[dict[str, list[str]], list[str]]:
+    """The `Key: value` lines after the subject and the `Record:` lines, as written (no word search)."""
+    body = message.splitlines()[1:]
+    found: dict[str, list[str]] = {}
+    for ln in body:
+        m = re.fullmatch(r"([A-Za-z][A-Za-z0-9-]*): (.*)", ln)
+        if m:
+            found.setdefault(m.group(1), []).append(m.group(2))
+    return found, [ln for ln in body if ln.startswith("Record:")]
+
+
+def step_verify_existing_trailers(ctx: Ctx) -> None:
+    """The published import's message must carry the whole §6.2 step 5.8 trailer set, matching this run."""
+    g, a, imp = ctx.g, ctx.args, ctx.import_commit
+    ctx.sec("Existing import: 5.8 trailers")
+    parents = g.out("rev-list", "--parents", "-n1", imp).split()[1:]
+    if len(parents) != 1:
+        raise Stop(f"the import {imp} is not a single-parent import commit (parents {parents})")
+    found, record_lines = trailer_lines(g.out("log", "-1", "--format=%B", imp))
+    problems = []
+    for key in REQUIRED_TRAILERS:
+        n = len(found.get(key, []))
+        if n != 1:
+            problems.append(f"{key}: expected exactly one line, found {n}")
+    for key in ("Reviewer-Report", "Receipt-Checks", "HIO-Actor"):
+        if len(found.get(key, [])) == 1 and not found[key][0].strip():
+            problems.append(f"{key}: the line is empty")
+    expected = {
+        "Review-Id": a.review_id,
+        "Review-Branch": a.branch,
+        "Review-Commit": ctx.tip,
+        "Reviewed-Base": a.base,
+        "Reviewed-Head": a.head,
+        "Inventory": "complete",
+    }
+    for key, want in expected.items():
+        got = found.get(key, [])
+        if len(got) == 1 and got[0] != want:
+            problems.append(f"{key}: '{got[0]}', this run has '{want}'")
+    source = found.get("Assignment-Source", [])
+    if len(source) == 1 and _norm(source[0]) != _norm(a.assignment_source):
+        problems.append(f"Assignment-Source: '{source[0]}', this run has '{_norm(a.assignment_source)}'")
+    recorded: dict[str, tuple[str, str]] = {}
+    for ln in record_lines:
+        m = RECORD_RE.fullmatch(ln)
+        if not m:
+            problems.append(f"malformed line '{ln}'")
+        elif m.group(1) in recorded:
+            problems.append(f"Record: {m.group(1)} appears more than once")
+        else:
+            recorded[m.group(1)] = (m.group(2), m.group(3))
+    for path in sorted(set(recorded) - set(ctx.added)):
+        problems.append(f"Record: {path} is not in the inventory")
+    for path in ctx.added:
+        if path not in recorded:
+            problems.append(f"Record: no line for the inventory file {path}")
+            continue
+        blob, sha = recorded[path]
+        at_t, on_main = (
+            g.out("rev-parse", f"{ctx.tip}:{path}"),
+            g.out("rev-parse", f"{ctx.remote}/{MAIN}:{path}"),
+        )
+        if blob != at_t or blob != on_main:
+            problems.append(
+                f"Record: {path} blob {blob}, but T has {at_t} and {ctx.remote}/{MAIN} has {on_main}"
+            )
+        actual = hashlib.sha256(blob_at(g, ctx.tip, path)).hexdigest()
+        if sha != actual:
+            problems.append(f"Record: {path} sha256 {sha}, but T's file is {actual}")
+    if problems:
+        raise Stop(f"the import {imp} does not carry the 5.8 trailer set:\n  - " + "\n  - ".join(problems))
+    ctx.add(
+        f"- the import carries the full 5.8 trailer set; {len(recorded)} `Record:` line(s) equal T's files"
+    )
+    cr = subprocess.run(
+        [sys.executable, "tools/check_repo.py", "trailers", f"{imp}^1", imp],
+        cwd=ctx.root,
+        capture_output=True,
+        text=True,
+    )
+    if cr.returncode:
+        raise Stop(f"check_repo trailers {imp}^1 {imp} failed:\n{(cr.stdout + cr.stderr).strip()}")
+    ctx.add(f"- `tools/check_repo.py trailers {imp}^1 {imp}`: PASS")
 
 
 def step_verify_existing(ctx: Ctx) -> None:
-    """The import of T is already on main: verify blob identity there (used by dry runs and restarts)."""
+    """The import of T is on remote main: inspect it (blobs, 5.8 trailers, 5.6 index); dry runs and reruns."""
     g = ctx.g
     ctx.sec("Existing import")
     ctx.add(f"- T is already imported on `{MAIN}` by `{ctx.import_commit}` (Review-Id matches)")
+    ctx.add(
+        "- INSPECTION ONLY, not a receipt by this run. NOT VERIFIED by this tool: the commits before the "
+        "import (including whether its parent was the receipt's cut point)."
+    )
     for rel in ctx.added:
         on_main, at_t = g.out("rev-parse", f"{MAIN}:{rel}"), g.out("rev-parse", f"{ctx.tip}:{rel}")
         if on_main != at_t:
             raise Stop(f"the blob of {rel} on {MAIN} is {on_main}, T's is {at_t}")
     ctx.checks["blob identity"] = "PASS"
     ctx.add(f"- blobs on `{MAIN}` equal T's for {len(ctx.added)} file(s)")
+    step_verify_existing_trailers(ctx)
     step_verify_existing_index(ctx)
 
 
@@ -1350,13 +1461,7 @@ def flow(ctx: Ctx) -> None:
     step_checks(ctx)
     step_reconciliation(ctx)
     if ctx.import_commit:
-        if not ctx.publish:
-            tag_precheck(ctx)
-            step_verify_existing(ctx)
-            return
-        step_tag(ctx)  # a published receipt is inspected only: main is never pushed on this path
-        step_verify_existing(ctx)
-        step_verify_published(ctx)
+        inspect_published(ctx)
         return
     if ctx.publish:
         step_tag(ctx)
@@ -1369,10 +1474,32 @@ def flow(ctx: Ctx) -> None:
     cleanup_worktree(ctx)
     step_merge_and_push(ctx)
     step_verify_published(ctx)
+    ctx.completed = True  # only a receipt built in this invocation is ever "received"
+
+
+def inspect_published(ctx: Ctx) -> None:
+    """An import of T is on remote main: history this run did not build is inspected, never certified."""
+    ctx.inspecting = True
+    try:
+        step_verify_existing(ctx)  # nothing is written to the remote unless the inspection passed
+        if ctx.publish:
+            step_tag(ctx)  # ensures the provenance tag, as before
+            step_verify_published(ctx)
+        else:
+            tag_precheck(ctx)
+    except Stop as exc:
+        raise Stop(f"inspection FAILED: {exc}") from exc
 
 
 def status_word(ctx: Ctx, stop: str | None) -> str:
     partial = "; PARTIAL: the index diff was refused and not received (--without-index)"
+    if ctx.inspecting:
+        if stop:
+            return "already on remote main: inspection FAILED (not a receipt; the owner decides)"
+        return (
+            "already on remote main: inspection PASSED (not a receipt by this run; the receipt OD is the "
+            "owner's)" + (partial if ctx.index_refused else "")
+        )
     if not ctx.publish:
         return (
             "checks FAILED (dry run; nothing was published)"
@@ -1389,6 +1516,11 @@ def status_word(ctx: Ctx, stop: str | None) -> str:
 
 
 def recovery_state(ctx: Ctx) -> str:
+    if ctx.inspecting:
+        return (
+            "inspection only: this run did not push main and does not certify the history before the "
+            "import; the owner decides"
+        )
     if any(t.startswith("merge ") for t in ctx.touched):
         return (
             "merged locally, push of main failed or not verified: the owner resets local main to "
