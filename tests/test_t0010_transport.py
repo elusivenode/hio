@@ -66,6 +66,12 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(302, headers=[("Location", "http://u:p@127.0.0.1:1/")])
         elif path == "/to-absolute":
             self._send(301, headers=[("Location", f"http://127.0.0.1:{srv.server_port}/ok#frag")])
+        elif path == "/cross":
+            self._send(302, headers=[("Location", f"http://127.0.0.1:{srv.other_port}/ok")])
+        elif path == "/leave-and-return":
+            self._send(302, headers=[("Location", f"http://127.0.0.1:{srv.other_port}/back")])
+        elif path == "/back":
+            self._send(302, headers=[("Location", f"http://127.0.0.1:{srv.other_port}/ok")])
         elif path == "/nolocation":
             self._send(302, b"moved")
         elif path == "/hang":
@@ -84,21 +90,45 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(404, b"unknown")
 
 
-@pytest.fixture
-def server():
+def _serve():
     srv = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
     srv.daemon_threads = True
     srv.seen = []
     srv.release = threading.Event()
+    srv.other_port = None
     thread = threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True)
     thread.start()
+    return srv, thread
+
+
+def _stop(srv, thread):
+    srv.release.set()
+    srv.shutdown()
+    srv.server_close()
+    thread.join(5)
+
+
+@pytest.fixture
+def server():
+    srv, thread = _serve()
     try:
         yield srv
     finally:
-        srv.release.set()
-        srv.shutdown()
-        srv.server_close()
-        thread.join(5)
+        _stop(srv, thread)
+
+
+@pytest.fixture
+def two_servers():
+    """Two loopback servers on different ports: two origins, each recording the requests it receives."""
+    first, t1 = _serve()
+    second, t2 = _serve()
+    first.other_port = second.server_port
+    second.other_port = first.server_port
+    try:
+        yield first, second
+    finally:
+        _stop(first, t1)
+        _stop(second, t2)
 
 
 def _url(srv, path):
@@ -251,6 +281,48 @@ def test_redirect_to_a_refused_target_is_a_transport_error(server, path):
     with pytest.raises(TransportError):
         _loopback().get(_url(server, path), UA)
     assert [p for p, _ in server.seen] == [path]  # the second request was never sent
+
+
+# --- redirects stay on the original origin (OD-0121) -----------------------------------------------
+
+
+def test_cross_origin_redirect_is_refused_and_the_other_origin_sees_nothing(two_servers):
+    first, second = two_servers
+    with pytest.raises(TransportError, match="cross-origin") as info:
+        _loopback().get(_url(first, "/cross"), UA)
+    assert f"127.0.0.1:{first.server_port}" in str(info.value)
+    assert f"127.0.0.1:{second.server_port}" in str(info.value)
+    assert [p for p, _ in first.seen] == ["/cross"]
+    assert second.seen == []
+
+
+def test_same_origin_redirect_is_still_followed_with_another_origin_present(two_servers):
+    first, second = two_servers
+    resp = _loopback().get(_url(first, "/redirect/2"), UA)
+    assert resp.status == 200
+    assert resp.final_url == _url(first, "/redirect/0")
+    assert second.seen == []
+
+
+def test_a_chain_that_leaves_and_returns_is_refused_at_the_first_cross_origin_hop(two_servers):
+    first, second = two_servers
+    with pytest.raises(TransportError, match="cross-origin"):
+        _loopback().get(_url(first, "/leave-and-return"), UA)
+    assert [p for p, _ in first.seen] == ["/leave-and-return"]
+    assert second.seen == []
+
+
+@pytest.mark.parametrize(
+    ("url", "origin"),
+    [
+        ("HTTPS://Example.COM/x", "https://example.com:443"),
+        ("https://example.com:443/x", "https://example.com:443"),
+        ("https://example.com:8443/x", "https://example.com:8443"),
+        ("https://example.com/x#frag", "https://example.com:443"),
+    ],
+)
+def test_origin_is_scheme_lowercase_host_and_effective_port(url, origin):
+    assert HttpTransport()._origin(url) == origin
 
 
 # --- policy refusals (no connection is attempted) ---------------------------------------------------

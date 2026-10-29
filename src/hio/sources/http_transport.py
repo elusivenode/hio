@@ -15,8 +15,12 @@ Design choices, each deliberate:
 - `Accept-Encoding: identity` unless the caller says otherwise, so the body is the bytes the server sent
   and no decompression happens inside the transport.
 - Redirects (301, 302, 303, 307, 308 with a `Location`) are followed by hand, at most `max_redirects`
-  times, only to https (or loopback http under the opt-in). The caller's headers are re-sent unchanged.
-  `final_url` is the URL that produced the returned response.
+  times, and only to the exact origin of the ORIGINAL requested URL (scheme, lowercase host, effective
+  port; OD-0121). Any other target, including one that would leave and later return, raises
+  `TransportError` naming both origins at the first cross-origin hop, before any request is made to the
+  other origin. The approved request identity (URL and headers) therefore never reaches a host the
+  caller did not name. The caller's headers are re-sent unchanged. `final_url` is the URL that produced
+  the returned response.
 - A body larger than `max_body_bytes` is refused with `TransportError`; it is never truncated.
 - `timeout` bounds the connect and each socket read; `deadline` bounds the whole call, redirects
   included, so a server that drips bytes cannot hold the caller indefinitely.
@@ -63,13 +67,22 @@ class HttpTransport:
         request_headers = self._request_headers(headers)
         expires = time.monotonic() + self.deadline
         current = url
+        origin: str | None = None
         for hop in range(self.max_redirects + 1):
             response = self._fetch_once(current, request_headers, expires)
+            if origin is None:  # the first fetch passed `_check_url`, so the original URL is valid
+                origin = self._origin(url)
             location = _header(response.headers, "location")
             if response.status in REDIRECT_STATUSES and location is not None:
                 if hop == self.max_redirects:
                     raise TransportError(f"more than {self.max_redirects} redirects from {url}")
                 current = urljoin(current, location)
+                target_origin = self._origin(current)  # validates the target; no request is made yet
+                if target_origin != origin:
+                    raise TransportError(
+                        f"refused cross-origin redirect from {origin} to {target_origin} "
+                        f"(requested {url}, Location {location!r}); no request was made to the target"
+                    )
                 continue
             return response
         raise AssertionError("unreachable")  # pragma: no cover
@@ -108,6 +121,12 @@ class HttpTransport:
         if parts.query:
             target += "?" + parts.query
         return parts.scheme, host, port, target
+
+    def _origin(self, url: str) -> str:
+        """`scheme://host:port` with a lowercase host and the effective port (443 or 80 when absent)."""
+        scheme, host, port, _ = self._check_url(url)
+        effective = port if port is not None else (443 if scheme == "https" else 80)
+        return f"{scheme}://{host}:{effective}"
 
     def _fetch_once(self, url: str, headers: dict[str, str], expires: float) -> HttpResponse:
         scheme, host, port, target = self._check_url(url)
