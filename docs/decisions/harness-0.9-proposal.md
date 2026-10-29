@@ -243,7 +243,10 @@ Suggested order (the solution architect's, with H7's timing left to the owner):
     including by an unpublished import or local merge of this receipt, it stops, lists those commits and
     leaves them untouched; recovery is then the owner's, by §6.2 step 5.11 (for example: reset local
     `main` to remote `main` and rerun; the tag pins `T`). An import already on remote `main` is inspected
-    only (blobs, index handling, disclosure, tag) and never causes a push of `main`. Before pushing
+    only and never causes a push of `main`: the run checks the blobs, index handling, disclosure and tag,
+    and the full §6.2 step 5.8 trailer set (each field against the run's arguments, each `Record:` line
+    against T's and `main`'s blobs, and `check_repo.py trailers`). It reports "inspection passed" or
+    "inspection failed", never "received", and states that commits before the import are not verified. Before pushing
     `main` it re-fetches remote `main`, which must still equal the cut point, and the commits pushed must
     be exactly this invocation's import and merge. §6.2 itself is unchanged;
 - **Required properties:** exact target and head; revision and branch identity; scope checks;
