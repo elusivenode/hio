@@ -125,6 +125,7 @@ are in operating model §1.1; the template is
 | [OD-0108](OD-0108-assign-h6-verification-5.md) | authorise_work | **VERIFY-2026-10-28-h6-1-5 assigned** (F-VERIFY-…-4-1 at `5e15829`; regression against harness-0.9b); `phase-b/h6` pushed | `phase-b/h6` at `5e15829` | recorded |
 | [OD-0109](OD-0109-narrow-h6-recovery-and-correct-verify-5.md) | authorise_work | **Narrowed H6 recovery** (draft clarification, W3 fix, response 6); VERIFY-…-5 receipt stopped at 5.7 (test plan lacks front matter); Codex correction assigned; tag at `409cc71` pinned, not received | `review/h6-1-verify-5-codex` at `409cc71` | recorded |
 | [OD-0110](OD-0110-receive-h6-verification-5.md) | authorise_work | **Receipt of VERIFY-2026-10-28-h6-1-5** at corrected tip `1267f47` (NOT READY: F-VERIFY-…-4-1 verified_closed; new high F-VERIFY-…-5-1 open); hand-built correction commit; `phase-b/h6` and `proposal/harness-0.9` pushed; §5.12 reconciliation | `review/h6-1-verify-5-codex` at `1267f47` | recorded |
+| [OD-0111](OD-0111-assign-h6-verification-6-and-hiomux-fix.md) | authorise_work | **VERIFY-2026-10-28-h6-1-6 assigned** (F-VERIFY-…-5-1 at `3d376ba`; regression; consistency with proposed clarification `6d3fe3c`); hiomux runner fix, new hash `54fe4e86…` | `phase-b/h6` at `3d376ba` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
