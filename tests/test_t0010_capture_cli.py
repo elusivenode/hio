@@ -29,6 +29,10 @@ ENV = {
     "AZURE_TENANT_ID": "tenant-x",
     "AZURE_CLIENT_ID": "client-x",
     "GITHUB_ACTIONS": "true",
+    "GITHUB_REPOSITORY": "synthetic-owner/hio",
+    "GITHUB_WORKFLOW_REF": "synthetic-owner/hio/.github/workflows/s1b1-capture.yml@refs/heads/main",
+    "GITHUB_REF": "refs/heads/main",
+    "GITHUB_EVENT_NAME": "schedule",
     "GITHUB_RUN_ID": "99",
     "GITHUB_RUN_ATTEMPT": "2",
     "GITHUB_JOB": "capture",
@@ -190,6 +194,31 @@ def test_an_authorised_run_captures_a_due_slot_into_the_fake_store_with_a_run_re
     body = container._blobs[attempt][-1].data.decode()
     assert '"platform":"github_actions"' in body.replace(" ", "") and '"run_id":"99"' in body.replace(" ", "")
     assert CANARY not in body
+
+
+def test_a_run_of_another_workflow_records_platform_other(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(s1b1_capture, "LIVE_AUTHORISATION", "OD-9999")
+    script = {
+        f"https://fixture.invalid/{pid}": [
+            HttpResponse(200, HEADERS, (FX / FILES[pid]).read_bytes(), f"https://fixture.invalid/{pid}")
+        ]
+        for pid in PUBLICATIONS
+    }
+    other = ENV | {"GITHUB_WORKFLOW_REF": "synthetic-owner/hio/.github/workflows/ci.yml@refs/heads/main"}
+    transport, container = FixtureTransport(script), FakeContainer()
+    rc = s1b1_capture.main(
+        ["--rits-calendar", calendar(tmp_path), "--at", NOW],
+        environ=other,
+        builders=fakes(transport, container, []),
+    )
+    assert rc == 0, capsys.readouterr().out
+    keys = [name for op, name, _ in container.calls if op == "upload_blob"]
+    attempt = next(k for k in keys if k.startswith(ATTEMPTS_PREFIX))
+    body = container._blobs[attempt][-1].data.decode().replace(" ", "")
+    assert '"platform":"other"' in body and '"platform":"github_actions"' not in body
+    assert (
+        '"workflow_ref":"synthetic-owner/hio/.github/workflows/ci.yml@refs/heads/main"' in body
+    )  # raw value kept
 
 
 def test_a_second_run_is_a_no_op_for_verified_slots(tmp_path, monkeypatch, capsys):

@@ -7,6 +7,7 @@ These verdicts label nothing final (T-0010 A-9)."""
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from email.utils import format_datetime
@@ -47,6 +48,19 @@ def parse_keys(body: bytes) -> list[tuple[str, str, str]]:
 
 
 POLICY = FinalityPolicy("github_actions", {"commit": SHA, "lock_sha256": "0" * 64}, parse_keys)
+
+REPO = "synthetic-owner/hio"
+CAPTURE_WORKFLOW_REF = f"{REPO}/.github/workflows/s1b1-capture.yml@refs/heads/main"
+
+
+def ci(run_id: str | None = "1001", attempt: str | None = "1", job: str | None = "capture", sha=SHA, **over):
+    """An execution of the capture workflow on main, started by a schedule; `over` replaces any field."""
+    fields = {
+        "workflow_ref": CAPTURE_WORKFLOW_REF,
+        "ref": "refs/heads/main",
+        "event": "schedule",
+    } | over
+    return Execution("github_actions", run_id, attempt, job, sha, **fields)
 
 
 def body_of(value: str) -> bytes:
@@ -100,7 +114,7 @@ class Env:
         rid = sha256_hex(body)
         record = RunRecord(
             source_id=SRC,
-            execution=execution or Execution("github_actions", str(1000 + self.runs), "1", "capture", SHA),
+            execution=execution or ci(str(1000 + self.runs)),
             request={"method": "GET", "url": "https://synthetic.invalid/rate.csv"},
             status=200,
             headers=headers,
@@ -337,13 +351,13 @@ def test_c5_a_missing_w_doc_fails_c4_and_c5(env):
     ("execution", "code", "category"),
     [
         (Execution("other"), "platform_other", "unverified"),
-        (Execution("gitlab", "1001", "1", "capture", SHA), "platform_mismatch", "inconsistent"),
-        (Execution("github_actions", "1001", "1", "capture", "f" * 40), "sha_not_code_ref", "inconsistent"),
-        (Execution("github_actions", "1001", "1", "capture", None), "sha_missing", "missing"),
-        (Execution("github_actions", "10x1", "1", "capture", SHA), "run_id_malformed", "inconsistent"),
-        (Execution("github_actions", "1001", "0", "capture", SHA), "run_attempt_malformed", "inconsistent"),
-        (Execution("github_actions", "1001", None, "capture", SHA), "run_attempt_missing", "missing"),
-        (Execution("github_actions", "1001", "1", None, SHA), "job_missing", "missing"),
+        (replace(ci(), platform="gitlab"), "platform_mismatch", "inconsistent"),
+        (ci(sha="f" * 40), "sha_not_code_ref", "inconsistent"),
+        (ci(sha=None), "sha_missing", "missing"),
+        (ci("10x1"), "run_id_malformed", "inconsistent"),
+        (ci(attempt="0"), "run_attempt_malformed", "inconsistent"),
+        (ci(attempt=None), "run_attempt_missing", "missing"),
+        (ci(job=None), "job_missing", "missing"),
     ],
 )
 def test_c6_an_execution_that_is_not_bound_to_the_ci_platform_and_the_pinned_code_fails(
@@ -362,8 +376,73 @@ def test_c6_a_dirty_or_unpinned_code_ref_cannot_bind_any_run(env):
     assert codes(ev, "C6") == {"code_ref_not_pinned"}
 
 
+@pytest.mark.parametrize("event", ["schedule", "workflow_dispatch"])
+def test_c6_a_scheduled_or_dispatched_run_of_the_capture_workflow_on_main_passes(env, event):
+    env.attempt(body_of("3.60"), T(5, 30), T(5, 30, 8), T(5, 30, 10), execution=ci(event=event))
+    ev = one(env, [vintage(1, "3.60", T(5, 30, 8))])
+    assert ev.passed and ev.check("C6").passed
+
+
+@pytest.mark.parametrize(
+    ("execution", "code", "category"),
+    [
+        (
+            ci(workflow_ref=f"{REPO}/.github/workflows/ci.yml@refs/heads/main"),
+            "workflow_not_capture",
+            "unverified",
+        ),
+        (
+            ci(workflow_ref=f"{REPO}/.github/workflows/s1b1-capture.yml@refs/heads/feature"),
+            "workflow_not_capture",
+            "unverified",
+        ),
+        (
+            ci(workflow_ref=f"{REPO}/.github/workflows/s1b1-capture.yml.bak@refs/heads/main"),
+            "workflow_not_capture",
+            "unverified",
+        ),
+        (ci(ref="refs/heads/feature"), "ref_not_main", "unverified"),
+        (ci(ref="refs/pull/7/merge"), "ref_not_main", "unverified"),
+        (ci(event="pull_request"), "event_not_scheduled_or_dispatched", "unverified"),
+        (ci(event="push"), "event_not_scheduled_or_dispatched", "unverified"),
+        (ci(workflow_ref=None), "workflow_ref_missing", "missing"),
+        (ci(ref=None), "ref_missing", "missing"),
+        (ci(event=None), "event_missing", "missing"),
+        (ci(workflow_ref=""), "workflow_ref_missing", "missing"),
+        # the reviewer's counterexample: an unrelated CI job of the same repository, platform and sha
+        (
+            ci(
+                job="unrelated_ci_job",
+                workflow_ref=f"{REPO}/.github/workflows/unrelated.yml@refs/heads/main",
+                event="push",
+            ),
+            "workflow_not_capture",
+            "unverified",
+        ),
+    ],
+)
+def test_c6_a_run_of_another_workflow_ref_or_event_is_not_completion_evidence(env, execution, code, category):
+    env.attempt(body_of("3.60"), T(5, 30), T(5, 30, 8), T(5, 30, 10), execution=execution)
+    v1 = vintage(1, "3.60", T(5, 30, 8))
+    ev = one(env, [v1])
+    assert code in codes(ev, "C6") and ev.check("C6").category == category
+    assert ev.failed == ("C6",)
+    refused = verdict(env, v1, [v1], T(6, 0))
+    assert not refused.final and refused.category == category
+
+
+def test_c6_a_record_written_before_the_workflow_fields_loads_but_can_never_pass(env):
+    legacy = Execution("github_actions", "1001", "1", "capture", SHA)
+    rec = env.attempt(body_of("3.60"), T(5, 30), T(5, 30, 8), T(5, 30, 10), execution=legacy)
+    assert b"workflow_ref" not in rec.canonical()  # the old canonical bytes, so the old hash still holds
+    ev = one(env, [vintage(1, "3.60", T(5, 30, 8))])
+    assert ev.record is not None and ev.check("C1").passed
+    assert codes(ev, "C6") == {"workflow_ref_missing", "ref_missing", "event_missing"}
+    assert ev.failed == ("C6",) and ev.category == "missing"
+
+
 def test_c7_two_records_claiming_the_same_execution_both_fail(env):
-    same = Execution("github_actions", "5555", "1", "capture", SHA)
+    same = ci("5555")
     env.attempt(body_of("3.60"), T(5, 30), T(5, 30, 8), T(5, 30, 10), execution=same)
     env.attempt(
         body_of("3.60"), T(5, 40), T(5, 40, 8), T(5, 40, 10), outcome="verified_unchanged", execution=same
@@ -379,7 +458,7 @@ def test_c7_a_new_run_attempt_of_the_same_run_is_a_different_execution(env):
         T(5, 30),
         T(5, 30, 8),
         T(5, 30, 10),
-        execution=Execution("github_actions", "5555", "1", "capture", SHA),
+        execution=ci("5555"),
     )
     env.attempt(
         body_of("3.60"),
@@ -387,7 +466,7 @@ def test_c7_a_new_run_attempt_of_the_same_run_is_a_different_execution(env):
         T(5, 40, 8),
         T(5, 40, 10),
         outcome="verified_unchanged",
-        execution=Execution("github_actions", "5555", "2", "capture", SHA),
+        execution=ci("5555", "2"),
     )
     evs = evaluate_records(env.store, SRC, POLICY, w_doc=W, vintages=[vintage(1, "3.60", T(5, 30, 8))])
     assert all(e.check("C7").passed for e in evs)

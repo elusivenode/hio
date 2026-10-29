@@ -271,12 +271,25 @@ def test_malformed_payloads_fail_closed(sid, payload, klass):
 def test_execution_is_copied_from_the_ci_environment_or_marked_other():
     env = {
         "GITHUB_ACTIONS": "true",
+        "GITHUB_REPOSITORY": "o/hio",
+        "GITHUB_WORKFLOW_REF": "o/hio/.github/workflows/s1b1-capture.yml@refs/heads/main",
+        "GITHUB_REF": "refs/heads/main",
+        "GITHUB_EVENT_NAME": "schedule",
         "GITHUB_RUN_ID": "9",
         "GITHUB_RUN_ATTEMPT": "2",
         "GITHUB_JOB": "capture",
         "GITHUB_SHA": "b" * 40,
     }
-    assert Execution.from_environ(env) == Execution("github_actions", "9", "2", "capture", "b" * 40)
+    assert Execution.from_environ(env) == Execution(
+        "github_actions",
+        "9",
+        "2",
+        "capture",
+        "b" * 40,
+        "o/hio/.github/workflows/s1b1-capture.yml@refs/heads/main",
+        "refs/heads/main",
+        "schedule",
+    )
     assert Execution.from_environ({}) == Execution("other")
     assert envelope_headers([("Set-Cookie", "x"), ("Date", "d")]) == [
         ["Set-Cookie", "[withheld]"],

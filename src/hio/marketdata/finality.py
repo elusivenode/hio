@@ -34,7 +34,15 @@ from hio.contracts.layout import ATTEMPTS_PREFIX, CAPTURES_PREFIX
 from hio.contracts.observation import Receipt, Vintage
 from hio.contracts.temporal import require_utc_instant
 from hio.marketdata.capture import load_receipt_record, receipt_bytes
-from hio.marketdata.runrecord import RunRecord, load_run_record, value_digest
+from hio.marketdata.runrecord import (
+    CAPTURE_EVENTS,
+    CAPTURE_REF,
+    CAPTURE_WORKFLOW_SUFFIX,
+    Execution,
+    RunRecord,
+    load_run_record,
+    value_digest,
+)
 from hio.storage.objectstore import IntegrityError
 
 CHECK_NAMES = ("C1", "C2", "C3", "C4", "C5", "C6", "C7")
@@ -376,7 +384,8 @@ def _c5(
 
 def _c6(rec: RunRecord, policy: FinalityPolicy) -> tuple[Reason, ...]:
     """Execution binding: the platform is the CI platform (`other` is a manual or local run), the sha
-    is the pinned code_ref, and the run identifiers are well formed."""
+    is the pinned code_ref, the run identifiers are well formed, and the run is of the capture workflow
+    on main, scheduled or dispatched."""
     e = rec.execution
     out = []
     if e.platform == "other" or policy.ci_platform in ("", "other"):
@@ -397,7 +406,29 @@ def _c6(rec: RunRecord, policy: FinalityPolicy) -> tuple[Reason, ...]:
             out.append(Reason(f"{name}_malformed", INCONSISTENT, repr(value)))
     if not e.job:
         out.append(Reason("job_missing", MISSING))
+    out.extend(_capture_workflow_reasons(e))
     return tuple(out)
+
+
+def _capture_workflow_reasons(e: Execution) -> list[Reason]:
+    """The run is of the capture workflow on main, started by a schedule or a dispatch (§4.3.3). A
+    run of another workflow in the same repository is not completion evidence
+    (F-REVIEW-2026-10-29-t0010-1-2). An absent field, as in a record written before the fields
+    existed, fails closed."""
+    out = []
+    if not e.workflow_ref:
+        out.append(Reason("workflow_ref_missing", MISSING))
+    elif not e.workflow_ref.endswith(CAPTURE_WORKFLOW_SUFFIX):
+        out.append(Reason("workflow_not_capture", UNVERIFIED, f"workflow_ref {e.workflow_ref!r}"))
+    if not e.ref:
+        out.append(Reason("ref_missing", MISSING))
+    elif e.ref != CAPTURE_REF:
+        out.append(Reason("ref_not_main", UNVERIFIED, f"ref {e.ref!r}"))
+    if not e.event:
+        out.append(Reason("event_missing", MISSING))
+    elif e.event not in CAPTURE_EVENTS:
+        out.append(Reason("event_not_scheduled_or_dispatched", UNVERIFIED, f"event {e.event!r}"))
+    return out
 
 
 def _c7(rec: RunRecord, claims: Counter) -> tuple[Reason, ...]:
