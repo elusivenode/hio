@@ -135,6 +135,7 @@ are in operating model §1.1; the template is
 | [OD-0118](OD-0118-authorise-t0011-github-settings-release-notices.md) | authorise_work | **T-0011 I-1 to I-6 authoring** (offline validation only) and H3/H4 packs; **branch protection on `main`** and the **`capture` Environment**; **S1b-1 release notices**, then derivation conditions recorded as satisfied | T-0010, T-0011 at `c70019d` | recorded |
 | [OD-0119](OD-0119-adopt-h3-h4-decline-h5-codex-assignment-draft.md) | authorise_work | **H3 and H4 decided** (decision pack adopted as recommended: no egress firewall accepted as residual; ZRS; Unlocked WORM 3,650 days; owner-run OpenTofu); **H5 declined** (Q-010 open); Codex assignment for T-0010/T-0011 to be **drafted**; nothing provisioned | pack at `5315f2d` | recorded |
 | [OD-0120](OD-0120-assign-t0010-t0011-reviews.md) | authorise_work | **REVIEW-2026-10-29-t0010-1** (`feat/t0010` `150f813..f345d1e`) and **REVIEW-2026-10-29-t0011-1** (`infra/t0011` `4bce6ae..2cc7362`) **assigned** to Codex; nothing received or accepted | `f345d1e`, `2cc7362` | recorded |
+| [OD-0121](OD-0121-receive-t0010-t0011-reviews-and-remediate.md) | authorise_work | **Go-ahead to receive** REVIEW-2026-10-29-t0010-1 and -t0011-1 (both NOT READY; five findings open), receipts merged **by PR** (main protected); **remediation of all five authorised**; nothing accepted or waived | `17cab48`, `8f469d3` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
