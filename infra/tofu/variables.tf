@@ -95,6 +95,12 @@ variable "owner_email" {
   }
 }
 
+variable "alert_enabled" {
+  description = "Whether the no-attempt-write alert is enabled. Off until live capture starts (B-3), because before then nothing is written and the rule would fire every hour (OD-0126 correction 1)."
+  type        = bool
+  default     = false
+}
+
 variable "missing_write_window_hours" {
   description = "The soak alert fires when no successful StorageWrite to the attempts prefix catalogue/attempts/ occurs in this many hours (default 26: a daily capture plus margin)."
   type        = number

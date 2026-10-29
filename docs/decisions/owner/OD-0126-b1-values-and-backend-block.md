@@ -28,3 +28,15 @@ related: {adrs: [], tasks: [T-0011], findings: [], ods: [OD-0125]}
   waits for it.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): alert email named; the alert switched off until live; bootstrap applied
+
+- **Owner's messages** (quoted with the email address withheld; the repository is public): "Go" (apply the bootstrap
+  plan); "go, alerts to <the owner's business email>"; and, on being told the no-capture alert would fire hourly before
+  go-live, "go, alert off until live".
+- **Bootstrap applied** (B-1 step 2): `rg-hio-tfstate`, `hiotfstatek835`, container `tfstate`, and the owner's
+  container-scoped `Storage Blob Data Contributor`; 4 added, nothing changed or destroyed; local state in
+  `~/.hio-state/bootstrap.tfstate`.
+- **Alert email:** supplied at the prompt only, never committed.
+- **`alert_enabled`** (`infra/tofu/variables.tf`, default `false`) gates `azurerm_monitor_scheduled_query_rules_alert_v2.no_attempt_write`;
+  B-3 sets it to `true`. A small change to accepted T-0011 code, made on the owner's instruction, with a test.
