@@ -1,14 +1,14 @@
 ---
 id: T-0012
 title: "B-2 storage-validation probe: a short-lived probe account, a manually dispatched probe workflow and script that test write-once behaviour and C5 timing against real Azure Blob Storage"
-status: submitted_for_review   # built on feat/t0012 (7cbed07); nothing created or run in Azure
+status: accepted   # OD-0128 at efb6fa1, merged into main as 01edfe9; nothing created or run in Azure (B-2 needs its own yes)
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers)"
 created_at: 2026-10-29
 updated_at: 2026-10-29
 authorised_by: OD-0127
 base_revision: d3ae240
-accepted_by: null
+accepted_by: OD-0128   # at efb6fa115ede33869f1e21c4ee6030ba35b92e28, merged into main as 01edfe9
 review_required: owner (Codex review if the owner assigns one)
 links:
   adrs_governing_approved: [HIO-ADR-0012]
@@ -61,3 +61,6 @@ Full suite 868 passed; `ruff`, `ruff format`, `check_repo`, trailers pass. **Not
 dispatched only once it is on the default branch, so running B-2 needs this branch merged into `main` first.
 
 ## Review and acceptance
+
+Accepted by the owner on their own judgement, without a Codex review (OD-0128), at `efb6fa1`; merged into `main` as
+`01edfe9` (PR #33). Running the probe is B-2, which needs a probe plan and the owner's yes.

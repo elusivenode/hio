@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-10-29
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0127"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0128"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -24,7 +24,7 @@ on `main` as `73f2e40`); **T-0011** (IaC) **accepted** (OD-0125, `c69df9e`, `09d
 datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5 declined**. **Authorisation B is
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
-**B-2** (storage probe, T-0012) is **built** on `feat/t0012`, not run; **B-3** (go-live) not started. **Nothing has
+**B-2** (storage probe, T-0012) is **built and accepted** (OD-0128, on `main` as `01edfe9`), not run; **B-3** (go-live) not started. **Nothing has
 been captured.** `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-10-29-auth-b-stage-1.md`.
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
 **Phase A is approved and applied as harness-0.9a** (OD-0091). **Distil 1 accepted** (46 Settled findings,
@@ -50,9 +50,9 @@ finding states change by owner-authorised reconciliation (§6.2 step 5.12). **H6
 | Item | State | Record |
 |---|---|---|
 | Approved | charter, architecture, HIO-ADR-0001…0009, six standards, `AGENTS.md` (OD-0008); HIO-ADR-0010 rev 3 (OD-0011); **HIO-ADR-0012 rev 3** at `d0965cc` (OD-0055); operating model **harness-0.7.1** at `552d4fb` (OD-0056) with correction 1 (OD-0059); **harness-0.9b** (option B amendment at `d26c2fa`, OD-0104; applied OD-0106); **harness-0.9a** (Phase A: `MAP.md`, `knowledge/findings.md`, stream handoffs) at `2df83b4` (OD-0091); OpenTofu as IaC authoring tool and the S1b-1.0 finality staging (OD-0063) | per-file blobs in the OD records |
-| Accepted | **S1a** (OD-0042); **T-0009** (OD-0079); **T-0010** at `62adccd` (OD-0123); **T-0011** at `c69df9e` (OD-0125); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
+| Accepted | **S1a** (OD-0042); **T-0009** (OD-0079); **T-0010** at `62adccd` (OD-0123); **T-0011** at `c69df9e` (OD-0125); **T-0012** at `efb6fa1` (OD-0128); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
 | Authorised, in progress | **hiomux pilot**
-use under its protocol, outside the repository (OD-0072, OD-0073). Routine delegated receipt (OD-0061). Harness-0.9: drafting only (OD-0068, OD-0070; done to revision 3). **T-0012** (B-2 probe) built (OD-0127); B-2 run needs a yes | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (`status: accepted`; `accepted_by: OD-0079`) |
+use under its protocol, outside the repository (OD-0072, OD-0073). Routine delegated receipt (OD-0061). Harness-0.9: drafting only (OD-0068, OD-0070; done to revision 3). **T-0012** accepted (OD-0128); B-2 run needs a probe plan and a yes | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (`status: accepted`; `accepted_by: OD-0079`) |
 | Not authorised | **B-2 run, B-3 go-live** and any capture; S1b-2; setting `LIVE_AUTHORISATION`; any source permission beyond the five S1b-1 datasets (`hio_internal` only) and D7; D4–D6; factor specs (drafts); harness-0.9 Phase B activation (H6 parked, OD-0114), H11, H3, H7, H8; settling any finding without its verification | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Open owner questions | Q-013 (P3 in force), Q-003, Q-004, Q-005b, Q-006, Q-010 (open; H5 declined for S1b-1), Q-014 (harness-0.9) | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 
@@ -79,16 +79,15 @@ No finding is waived.
 | Item | State |
 |---|---|
 | Phase | S1b-1 Authorisation B, staged ([package](docs/evidence/S1B1-authorisation-B-package.md)): **B-1 done**; B-2 next; then B-3 |
-| B-2 (storage probe) | built on `feat/t0012` (T-0012, `submitted_for_review`); needs: owner acceptance or review, merge to `main` (a dispatch workflow must be on the default branch), a probe plan approved, apply, a watched dispatch, destroy after one day. Answers whether C5 holds with Azure's whole-second timestamps |
+| B-2 (storage probe) | T-0012 accepted and on `main` (OD-0128); needs: a probe plan approved, apply, a watched dispatch, destroy after one day. Answers whether C5 holds with Azure's whole-second timestamps |
 | B-3 (go-live) | five data-source URLs approved; `LIVE_AUTHORISATION` set; workflow moved to `.github/workflows/`; `alert_enabled = true`; the `capture` reviewer rule removed (C-4); one watched dispatch; then schedule and the 10-business-day soak (incl. a failing **scheduled** run's email, I-5) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** decide B-2 (accept T-0012 or assign a review; then the probe plan). Back up `~/.hio-state/`. Architect performance review is due (six consultations). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** approve a B-2 probe plan (Claude drafts it on a yes). Back up `~/.hio-state/`. Architect performance review: material assembled (OD-0128), the review is the owner's. Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
 | Branch | Head | Holds |
 |---|---|---|
-| `feat/t0012` | `efb6fa1` (pushed) | T-0012 B-2 probe (OpenTofu, script, dispatch workflow); **submitted, not accepted, not merged** |
 | `phase-b/h6` | `655335c` (pushed) | H6 tools and tests, responses 1 to 7; **parked, unactivated** (OD-0114) |
 | `proposal/h6-option-b` | `d26c2fa` (pushed) | the option B amendment, **approved** (OD-0104) and applied to `main` (OD-0106) |
 | `proposal/harness-0.9` | `c711f51` (pushed) | harness-0.9 revision 4 (design record for Phase B and H7; Fable dry-run report); H6 design wording per option B (OD-0106); the H6 recovery clarification (**proposed**, OD-0109, OD-0112). Phase A is applied on `main` (OD-0091) |
@@ -105,7 +104,7 @@ No finding is waived.
 | S1b-1.0 cash capture | [T-0009](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) | **accepted** (OD-0079) at `846974b`, integrated `7eba3f9`; finality staging and Authorisation B remain |
 | S1b-1 non-live integration | [T-0010](registers/tasks/T-0010-s1b1-non-live-integration.md) | **accepted** (OD-0123) at `62adccd`; W-5 calendars a gap |
 | S1b-1 IaC | [T-0011](registers/tasks/T-0011-s1b1-infrastructure-as-code.md) | **accepted** (OD-0125) at `c69df9e`; applied as B-1 |
-| B-2 storage probe | T-0012 (on `feat/t0012`) | **submitted_for_review** (OD-0127) |
+| B-2 storage probe | [T-0012](registers/tasks/T-0012-b2-storage-probe.md) | **accepted** (OD-0128) at `efb6fa1`, merged `01edfe9`; not run |
 | T-0006, T-0007, T-0008 | in `registers/tasks/` | **accepted** (OD-0007, OD-0004, OD-0006) |
 | ETF diagnostic (lives in `macsmsf`) | `macsmsf` branch `docs/etf-diagnostic-card` | proposed; not authorised (OD-0018); not an HIO dependency |
 

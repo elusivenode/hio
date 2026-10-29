@@ -42,3 +42,14 @@ capture workflow; any write to the evidence store; B-3; `LIVE_AUTHORISATION`; an
 architect's identity, manifest or cases.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): T-0012 merged; review material assembled
+
+**Decision 1 effective:** this record merged as `edb2168` (PR #32); `feat/t0012` merged at head `efb6fa1` (head match
+enforced) as `01edfe9` (PR #33); `infra/`, `tools/`, `tests/` and `.github/` on `main` are identical to `efb6fa1`. The
+T-0012 card is set to accepted in this commit. Nothing was created, applied or dispatched.
+
+**Decision 2 done:** the review material was assembled read-only from the four hiomux runs' consultation logs and answers,
+and the records that cite them, and given to the owner. It is operational material outside the repository, not a
+record. Six `ask` consultations; whether the identity check `20261028T180220-ask-1a5f` counts as genuine is for the
+owner (five or six). The review itself, and any outcome, is a separate owner action.
