@@ -1,14 +1,14 @@
 ---
 id: T-0010
 title: "S1b-1 non-live integration: real transport confined to the adapters, Azure blob backend, OIDC and disabled workflow wiring, C1–C7 finality on synthetic inputs, 2027 calendars, draft H3/H4 evidence"
-status: submitted_for_review   # W-1 to W-4, W-6 done; W-5 a recorded gap; extended by OD-0117 (Azure SDKs) and OD-0118 (release notices)
+status: accepted   # OD-0123 at 62adccd; W-5 (2027 calendars) an open gap; nothing live
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator with hiomux Sonnet workers; independent reviewer: Codex, when assigned)"
 created_at: 2026-10-29
 updated_at: 2026-10-29
 authorised_by: OD-0115
 base_revision: a56462cb60a002324f90097da28168396c8ae918
-accepted_by: null
+accepted_by: OD-0123   # at 62adccd3cc1febff28b491f5564c9cae2f047202, merged into main as 73f2e40
 review_required: independent (Codex), assigned separately by the owner
 links:
   adrs_governing_approved: [HIO-ADR-0012, HIO-ADR-0010, HIO-ADR-0005, HIO-ADR-0006, HIO-ADR-0002]
@@ -85,3 +85,7 @@ identical-bytes check). **Owed for Authorisation B, not this card:** the five da
 approved with the rights); `LIVE_AUTHORISATION`; moving the workflow; the 2027 calendars.
 
 ## Review and acceptance
+
+- REVIEW-2026-10-29-t0010-1 (OD-0120): NOT READY at `f345d1e`; two high findings; received by OD-0121.
+- VERIFY-2026-10-29-t0010-1-1 (OD-0122): READY at `62adccd`; both findings verified_closed; received by OD-0123.
+- **Accepted by OD-0123** at `62adccd3cc1febff28b491f5564c9cae2f047202`; merged into `main` as `73f2e40` (PR #21).
