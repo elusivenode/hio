@@ -63,3 +63,30 @@ owner-authored source.
 Acceptance of T-0013 or T-0014; any waiver; receipt of the new verification or review (each comes back); B-3.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-10-29): A1 receipt completed; A2 and B launched
+
+**Receipt of REVIEW-2026-10-29-t0013-1** (verdict NOT READY):
+- **The branch:** Claude pushed `review/t0013-1-codex` (the reviewer cannot push).
+- **5.0 inputs:**
+  - the assignment source is the *Assigned reviews* row with OD-0132 (owner's message 6);
+  - the reviewer's report is the hiomux C1 result, Codex's own final report;
+  - no second owner-authored assignment was found in `reviews/README.md`, the OD index or `docs/history/`.
+- **5.1:** T = `4ab2346d19510aafac4a91cb89afa37d6bc9e360`, which equals the fetch and the report.
+- **5.2 inventory:** 3 expected (`reviews/README.md` M; the record and the handoff A), 3 found, 0 missing, 0 extra;
+  each sha256 equals the report.
+- **5.3:** `check_review_branch.sh` PASS and `check_review_assignment.py` PASS, both with `main`'s copies.
+- **5.4:** tag `reviews/REVIEW-2026-10-29-t0013-1` peels to T on the remote.
+- **5.6:** two added Class N lines: the received-review row, and finding F-REVIEW-2026-10-29-t0013-1-1 (medium,
+  `open`). No removed or changed lines.
+- **5.7:** blobs equal T; check_repo PASS; trailers PASS.
+- **5.8:** pure import commit on `receipt/REVIEW-2026-10-29-t0013-1`.
+- **5.9:** recheck passed; merged as `4d6032c` (PR #45).
+- **5.10:** remote `main` equals the local merge; blobs on `main` equal T; the tag peels to T. **Received.**
+- **CI:** PR #45 checks `harness` and `tests` passed on the import commit.
+
+**§5.12:** no finding state changes now; F-REVIEW-2026-10-29-t0013-1-1 stays `open` until VERIFY-2026-10-29-t0013-1-1 is
+received. This commit sets the *Assigned reviews* row to received.
+
+**A2 and B launched:** hiomux Codex tasks C2 (`VERIFY-2026-10-29-t0013-1-1`, head `39747c5`) and C3
+(`REVIEW-2026-10-29-t0014-1`, head `13d2ea5`), `gpt-6-sol` `high`, with network.
