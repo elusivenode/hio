@@ -1,7 +1,8 @@
 ---
 id: T-0017
 title: "Fix the expert-judgement parser's header detection after the first live run"
-status: submitted_for_review
+status: accepted   # OD-0146 at 4576ae5, merged into main
+accepted_by: OD-0146
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator); independent reviewer: Codex (REVIEW-2026-11-04-t0017-1)"
 created_at: 2026-11-04

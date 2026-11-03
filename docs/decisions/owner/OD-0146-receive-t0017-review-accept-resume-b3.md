@@ -38,3 +38,11 @@ related: {adrs: [HIO-ADR-0012], tasks: [T-0016, T-0017], findings: [], ods: [OD-
 Any other parser change; any finality claim; any waiver; the probe destroy; the dead-man exercise; any further dispatch beyond the one in item 3 before the rule is removed.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-04): receipt complete; #77 merged; re-run clean; steps 7 to 9 done
+
+**§5.9 and 5.10.** PR #79 merged as `1bfd06f` by the owner. The tip and tag were rechecked before, and the record's blob equals `T`'s. **CI, reported separately:** green on the receipt PR, with no failed attempt seen. #77 merged at `4576ae5` as `ac36cbf` by the owner. Run `41734200727` cancelled.
+
+**Re-run** `41737776204`: `ran rba.expert_judgement first verified_changed`, then only listed `missed` lines. 466 flags.
+
+**Step 7, by the owner's explicit yes:** a full plan showed three resources, against the package's "only that change", so the owner approved a plan targeted at the alert. Applied: 0 added, 1 changed, 0 destroyed. Read back enabled, auto-resolve on. The other two differences: `docs/evidence/b3/plan-differences.md`. **Step 8:** the reviewer rule was removed; the `main`-only branch policy stays. **Step 9:** scheduled run `41741724257` ran on its own.

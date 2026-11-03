@@ -162,6 +162,8 @@ are in operating model §1.1; the template is
 | [OD-0145](OD-0145-t0017-parser-fix.md) | authorise_work | one manual download of the expert-judgement file; T-0017; one Codex review; after the first live run | `0a2c0a1` | recorded |
 | [OD-0146](OD-0146-receive-t0017-review-accept-resume-b3.md) | authorise_work | REVIEW-2026-11-04-t0017-1 received; T-0017 accepted at `4576ae5`; one watched re-run; if clean, package steps 7 and 8 | `6ee8922` | recorded |
 | [OD-0147](OD-0147-next-development-block.md) | authorise_work | local cash rebuild from live receipts; proposed US duration spec; draft vendor questions; proposed planning patch; plan differences read | `ac36cbf` | recorded |
+| [OD-0148](OD-0148-repeatable-cash-rebuild.md) | authorise_work | "proceed with next steps. approved", read narrowly as T-0018, the repeatable cash rebuild; T-0018 accepted (correction 1) | `ac36cbf` | recorded |
+| [OD-0149](OD-0149-i5-met-soak-boundaries.md) | authorise_work | run `41741724257` accepted as meeting I-5; deliberate test dropped; soak boundaries declared | `a881882` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

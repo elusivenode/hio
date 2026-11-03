@@ -1,7 +1,8 @@
 ---
 id: T-0018
 title: "A repeatable local cash rebuild from retained receipts, for a stated history window"
-status: submitted_for_review
+status: accepted   # OD-0148 correction 1 at acf1487, merged into main as a881882; no Codex review
+accepted_by: OD-0148
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-11-04
