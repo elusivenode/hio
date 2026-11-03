@@ -56,3 +56,47 @@ T-0014 tool on a real store or real receipts; activating the consumer-contract w
 waiver.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-03): receipt complete without the index diff; §5.12; T-0014 accepted and merged; distil 2 merged; C1 finished
+
+**Owner's go-ahead.** The receipt stopped at §6.2 step 5.5: the reviewer's README diff does not apply to `main` (its context
+lacks `main`'s newer verification row). The owner then answered "yes" to receiving without the index diff
+(`docs/history/2026-11-03-owner-t0014-index-diff-go-ahead.md`, sha256
+`af81c111aab268d6b9fc6f77242a572ddc001906083c150768828a1f32f7ef4f`).
+
+**Receipt (§6.2 5.0–5.10, in a scratch clone).** The assignment source is the *Assigned reviews* row plus OD-0134. The
+reviewer's report is the hiomux C4 result. A second owner-authored assignment was looked for in the *Assigned reviews* table,
+`docs/history/` and the comments on PR #43; none was found.
+
+| Receipt | T | Inventory | Index | Import, merge (PR) | 5.10 |
+|---|---|---|---|---|---|
+| VERIFY-2026-10-29-t0014-1-1 (READY) | `03b8139983463f54beb580f7c9870a52f7ad5a84` | 3 record files and the README reported; 3 imported, 0 missing, 0 extra, sha256 equal | README diff refused, omitted wholly | `74fee7d`, `53bf125` (#57) | PASS; tag peels to T; CI success on `74fee7d` (runs 41576099548, 41576106549) |
+
+**Refused line, verbatim** (the reviewer's whole README diff):
+
+```text
++| VERIFY-2026-10-29-t0014-1-1 | REVIEW-2026-10-29-t0014-1, F-1 and F-2; P-1 to P-4 regression | `13d2ea5..e0aaa4d` | `ede5763` | F-REVIEW-2026-10-29-t0014-1-1 and -2 technically verified_closed; READY | [record](records/VERIFY-2026-10-29-t0014-1-1.md) |
+```
+
+**§5.12 (this commit).** Each against VERIFY-2026-10-29-t0014-1-1, received, reviewed head `e0aaa4d`, outcome "technically
+verified_closed". Only the state cell and its citation changed.
+
+| Finding | Before | After |
+|---|---|---|
+| F-REVIEW-2026-10-29-t0014-1-1 (high) | open | verified_closed at `e0aaa4d` |
+| F-REVIEW-2026-10-29-t0014-1-2 (medium) | open | verified_closed at `e0aaa4d` |
+
+The refused navigation row is added byte-identical (Class N, checked against the record's front matter). The *Assigned
+reviews* row is set to received.
+
+**Decision 2 effective.** T-0014 is accepted at `e0aaa4d`; PR #43 merged as `aacfca2` with the head match enforced. Before the
+merge, `e0aaa4d` merged with `main` at `b5a2b1c` passed in a scratch clone: pytest 1053 passed, `ruff check`, `ruff format
+--check` and `check_repo` pass. The T-0014 code, tools, tests, workflow template and runbook on `main` are identical to
+`e0aaa4d`. The card is set to accepted in this commit.
+
+**Decision 4 effective.** PR #55 merged as `7bcbc2a` with the head match enforced; `MAP.md` and `knowledge/findings.md` equalled
+`4f30a9d` at the merge. This commit changes the status wording that said "proposed". It also appends one Inbox line flagging a
+contradiction among the accepted lines (`set -e`); the accepted line itself is unchanged.
+
+**Item 3.** hiomux Codex task C1 finished: tip `312359993055409d5a954adc5e5faf8f9ec3b161`, verdict NOT READY, one medium
+finding by its own report. **Not received; the branch is not pushed.** Nothing here is a receipt of that review.
