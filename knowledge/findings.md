@@ -1,7 +1,7 @@
 ---
 id: HIO-FINDINGS-INDEX
 title: Findings index (findings, dead ends and settled assessments, one line each)
-status: current   # harness-0.9a (OD-0091); Settled section accepted by OD-0093 at 8393552 (rank 5); distil 2 PROPOSED on proposal/distil-2, not accepted; Inbox lines are claims (rank 6). Every line cites its source; the source wins
+status: current   # harness-0.9a (OD-0091); Settled section accepted by OD-0093 at 8393552 (rank 5); distil 2 accepted by OD-0135 at 4f30a9d; Inbox lines are claims (rank 6). Every line cites its source; the source wins
 owner: owner (approves Settled lines at distil); any agent appends to the Inbox
 last_reviewed: 2026-10-28
 ---
@@ -122,4 +122,5 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 
 ## Inbox
 
-_(Empty after distil 2, proposed. Append new candidate lines below this note.)_
+_(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate lines below this note.)_
+- [process] flagged: the Settled line advising receipt chains "under `set -e`" (Source: OD-0098) conflicts with the Settled lines that found `set -e` does not stop a chain in Claude Code's Bash tool; gate each step with `|| exit 1`. Source: OD-0101 correction 1; OD-0113 correction 1. Applies to: the next distil.

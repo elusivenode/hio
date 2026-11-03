@@ -1,14 +1,14 @@
 ---
 id: T-0014
 title: "Base-camp completion build (criteria 3-6, non-live): cash evidence and comparison dispositions, external finality evaluation records, second-copy and restore exercise, minimal consumer contract test; executed on real receipts only later, under B-3 and the soak"
-status: submitted_for_review   # non-live build on feat/t0014; no real data, no Azure, no CI activation
+status: accepted   # OD-0135 at e0aaa4d, merged into main as aacfca2; machinery only, no base-camp criterion established
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-10-29
-updated_at: 2026-10-29
+updated_at: 2026-11-03
 authorised_by: OD-0132
 base_revision: 651eb95
-accepted_by: null
+accepted_by: OD-0135   # at e0aaa4d9648b153dd37afd1e27c810439324063c, merged into main as aacfca2
 review_required: owner (Codex review if the owner assigns one)
 links:
   adrs_governing_approved: [HIO-ADR-0012]
@@ -73,3 +73,7 @@ fixed on `feat/t0013` and absent in CI. `ruff`, `ruff format` and `check_repo` p
 each needs the execution checklist.
 
 ## Review and acceptance
+
+Reviewed by REVIEW-2026-10-29-t0014-1 (NOT READY at `13d2ea5`; F-1 high, F-2 medium). Remediated at `e0aaa4d`; VERIFY-2026-10-29-t0014-1-1
+READY (both `verified_closed`). **Accepted** by the owner (OD-0135) at `e0aaa4d`, merged as `aacfca2` (PR #43). Criteria 3–6 stay
+unestablished until the execution checklist runs on real receipts, each step with its own authority.
