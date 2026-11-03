@@ -157,6 +157,7 @@ are in operating model §1.1; the template is
 | [OD-0140](OD-0140-rerun-7b-accept-storage-error-limit.md) | authorise_work | go for B-2 re-run (R-1) and 7b, once the state backup is confirmed; storage-error limit accepted for the soak; no destroy, C5 change or go-live | `dfc2e99` | recorded |
 | [OD-0141](OD-0141-session-distil-and-roll.md) | authorise_work | session distil (handoff, Inbox, STATUS, distil 3 proposed); prepare to roll the orchestrator | `310d7dd` | recorded |
 | [OD-0142](OD-0142-draft-go-live-package.md) | authorise_work | draft the go-live package (B-3); draft only | `387eee7` | recorded |
+| [OD-0143](OD-0143-go-live-b3.md) | authorise_work | go live (B-3) under the package at `3cee431`; T-0016 and its Codex review; D-2 to D-5 as put | `5c68d6c` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
