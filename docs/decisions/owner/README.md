@@ -153,6 +153,7 @@ are in operating model §1.1; the template is
 | [OD-0136](OD-0136-draft-capture-gate-revision-and-factor-sequencing.md) | authorise_work | two **drafts only**: B-2/B-3 prerequisites revision; factor-first sequencing proposal; nothing adopted | `6030c17` | recorded |
 | [OD-0137](OD-0137-receive-t0015-review-remediate-verify.md) | authorise_work | receive REVIEW-…-t0015-1 (NOT READY); remediate its finding; assign verification at the new head; nothing accepted | `7c36e4a` | recorded |
 | [OD-0138](OD-0138-receive-t0015-verification-accept-t0015.md) | accept / authorise_work | **T-0015 accepted** at `a05219a`; receive VERIFY-…-t0015-1-1; nothing run | `fc77ea0` | recorded |
+| [OD-0139](OD-0139-adopt-capture-gate-revision-and-factor-first.md) | approve | **Authorisation B revision 1 adopted** (B-3 no longer waits for a C5 decision); **factor-first sequence** is the working order; no capture, run or build authorised | `58fe532` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
