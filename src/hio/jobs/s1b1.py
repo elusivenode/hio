@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from hio.contracts.canonical import decimal_str, instant_str
@@ -144,22 +144,28 @@ def series_defs(cals: Calendars) -> dict[str, SeriesDef]:
     }
 
 
-def _parser(publication_id: str) -> Callable[[bytes], list[RawRow]]:
+def _parser(publication_id: str, earliest: date | None = None) -> Callable[[bytes], list[RawRow]]:
+    """`earliest` states a history window (T-0018): rows labelled before it aren't read. The receipt keeps
+    them. A publisher's file can run back past the cited calendars, and without a window it refuses."""
     spec = PUBLICATIONS[publication_id]
 
     def parse(data: bytes) -> list[RawRow]:
         try:
-            return list(spec.parse(data).rows)
+            rows = list(spec.parse(data).rows)
         except MalformedPayload as exc:
             raise MalformedReceipt(str(exc)) from exc
+        return rows if earliest is None else [r for r in rows if r.valid_time >= earliest]
 
     return parse
 
 
 def vintage_store(
-    store: LocalObjectStore, cals: Calendars, clock: Callable[[], datetime] | None = None
+    store: LocalObjectStore,
+    cals: Calendars,
+    clock: Callable[[], datetime] | None = None,
+    earliest: date | None = None,
 ) -> VintageStore:
-    parsers = {pid: _parser(pid) for pid in PUBLICATIONS}
+    parsers = {pid: _parser(pid, earliest) for pid in PUBLICATIONS}
     return VintageStore(store, series_defs(cals), clock, parsers)
 
 
@@ -292,10 +298,12 @@ def build_releases(
     cutoff: datetime,
     code_ref: dict[str, str],
     outputs: Iterable[str] | None = None,
+    history_from: date | None = None,
 ) -> dict[str, Release]:
     """Build the requested outputs (default: all four). Each output is authorised on the datasets
     it actually uses, evaluated one by one: the AUD cash release needs only `rba.cash_rate`, while
-    its TRI comparison also needs `rba.cash_rate_tri`. A refusal writes nothing."""
+    its TRI comparison also needs `rba.cash_rate_tri`. A refusal writes nothing. `history_from` states
+    the window given to `vintage_store` in each manifest; without one, a manifest is unchanged."""
     wanted = frozenset(outputs) if outputs is not None else frozenset(OUTPUTS)
     if wanted - set(OUTPUTS):
         raise ValueError(f"unknown outputs: {sorted(wanted - set(OUTPUTS))}")
@@ -308,6 +316,7 @@ def build_releases(
         "supersedes": None,
     }
     cutoff_year = common["knowledge_cutoff"][:4]  # the year of the UTC instant the manifest records
+    window = {} if history_from is None else {"history_from": history_from.isoformat()}
     calendars = {"rits": cals.rits, "nsw": cals.nsw, "ny": cals.ny}
     views: dict[str, object] = {}
 
@@ -346,6 +355,7 @@ def build_releases(
                 },
                 "limitations": LIMITATIONS,
                 "notices": notices_for([DATASET_OF[sid]], core["spec_ref"], cutoff_year),
+                **window,
             }
             releases[dataset_id] = make_release(core, built.files)
         elif dataset_id in COMPARISON and dataset_id in wanted:
@@ -359,6 +369,7 @@ def build_releases(
                     releases[cash_id].core["spec_ref"],
                     cutoff_year,
                 ),
+                window,
             )  # fmt: skip
     return {k: v for k, v in releases.items() if k in wanted}
 
@@ -380,6 +391,7 @@ def _comparison(
     base: int,
     rights,
     notices: list[str] | None = None,
+    window: Mapping[str, str] | None = None,
 ) -> Release:
     """Our period growth against the publisher's index over every eligible cash period (each period
     the cash release reports, and each it reports absent): ratios, the difference, the expected bound
@@ -458,6 +470,7 @@ def _comparison(
                 },
                 "limitations": LIMITATIONS,
                 "notices": notices or [],  # build_releases always supplies them
+                **(window or {}),
             },
         },
         {"data.csv": render_csv(columns, rows)},
