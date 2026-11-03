@@ -44,3 +44,18 @@ Accepting T-0016, which stays a separate owner act after the review, so the go-l
 any C5 amendment or final label; S1b-2; destroying the probe account; the dead-man exercise, whose method comes to the owner first. A failure at step 4 or 6 stops the sequence and returns to the owner.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-03): the review's head, under item 4
+
+T-0016 is built, on `feat/t0016` (draft PR #75). The owner's yes covers one Codex review of that PR; this fills in its head.
+
+| Field | Value |
+|---|---|
+| Review id | `REVIEW-2026-11-03-t0016-1` |
+| Target | T-0016, rows G-1 to G-4 of `registers/tasks/T-0016-b3-go-live.md` at the head |
+| Base SHA | `490df8a` (full id in the review index row) |
+| Head SHA | `d77e6e21c2fd8f867b4b6a5dc5b552511c7383f7` (`feat/t0016`) |
+| Scope | the activation diff: the constant, the four URLs against the package at `3cee431`, the workflow move with triggers, permissions, pins and steps unchanged; the refusal path still tested; whether anything else now behaves live that should not; and the package's order of steps against the code. No Azure access; no request to any of the four data URLs; publishers' documentation pages may be read |
+| Review branch | `review/t0016-1-codex`, cut at the head |
+| The record's `assignment` field | exactly `docs/decisions/owner/OD-0143-go-live-b3.md` |
+| Delivery | hiomux Codex task, `gpt-6-sol` `high`, with network (public reads only) |
