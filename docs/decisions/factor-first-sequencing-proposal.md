@@ -1,7 +1,7 @@
 ---
 id: HIO-PROPOSAL-FACTOR-FIRST
 title: "Factor-first sequencing (proposed): the duration factor and an analytical layer move ahead of further storage work"
-status: proposed            # a draft for owner decision; authorises nothing
+status: adopted             # OD-0139 at ecd6b81 (blob 21d7e17ffb98); later edits record status only; authorises no capture, run or build
 owner: HIO architecture lead (owner); drafted by claude/implementation-agent
 created_at: 2026-11-03
 base_revision: 6030c17c980591bc8498d8cb77852647616ffb83
@@ -10,9 +10,9 @@ amends_if_adopted: docs/base-camp.md (proposed; order and parallel work); docs/r
 sources: [architect consultation 20261103T141451-ask-15e3, docs/research/data-need-statement.md, docs/research/T-0002-free-history-sources-matrix.md, docs/charter.md §6]
 ---
 
-# Factor-first sequencing (proposed)
+# Factor-first sequencing (adopted as the working order, OD-0139)
 
-> **Proposed.** It authorises no download, build, purchase or vendor contact. It changes no approved document: the roadmap, the
+> **Adopted by OD-0139 at `ecd6b81` as the working order; the text below stands as adopted.** It authorises no download, build, purchase or vendor contact. It changes no approved document: the roadmap, the
 > implementation plan and base camp are all themselves proposed. Each step below needs its own yes.
 
 ## The problem

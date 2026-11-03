@@ -43,3 +43,8 @@ B-3 go-live, any capture or `LIVE_AUTHORISATION`; the re-run, 7b or the destroy;
 vendor contact or purchase; the duration experiment; the analytical reader or a stack change; adopting base camp; any waiver.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-03): merged
+
+OD-0139 merged as `b40e139`; PR #60 merged as `cf312ed`, with the head match enforced and both blobs on `main` equal to those
+above. This commit changes each document's status wording only, and STATUS.
