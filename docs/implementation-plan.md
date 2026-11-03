@@ -28,9 +28,9 @@ OD-0016).
 | **S1a** | independent repository (history-preserving migration, §8.1) and harness MVH; contracts; local-filesystem object-store adapter; observation, vintage and knowability model; AUD and USD cash legs and the investable USD-cash-versus-AUD excess return with exact decomposition, **on synthetic sources and fixtures only**; rights and publication gates exercised on fixtures | G1 (complete, OD-0011); a separate owner authorisation of S1a's scope. **Not** T-0002 | recommended; not authorised |
 | **S1b** | real-source adapters behind the rights gate; bucket with scoped keys; scheduled capture; soak; triangulation reports | S1a accepted; T-0002 `owner_verified` rights per operation, per source; timing, calendars and the AUD rate regime evidenced; a separate S1b authorisation | planned; not authorised |
 | S2 | equity total return (USD) → AUD unhedged and hedged, per HIO-ADR-0011 | T-0003 → G3; S1b | planned |
-| S3 | AU and US government CMT total and excess returns (2/5/10y), with decomposition | S1; rights for RBA F2 and the Treasury par curve (T-0002 extension) | planned |
+| S3 | AU and US government CMT total and excess returns (2/5/10y), with decomposition | S1 for promotion; a bounded experiment may precede S1 completion on its own yes (OD-0139; `specs/factors/rates.us.cmt_10y.total_return.yaml`, proposed); rights for RBA F2 and the Treasury par curve (T-0002 extension) | planned |
 | S4 | futures PoC: one root (ZN recommended, GC alternative), individual-contract settlements → rolled excess + collateral TR | procurement (G4-lite: PoC data only); S1 collateral leg; S3 for the ZN triangulation | planned |
-| S5 | library v0 release + covariance with uncertainty + hypothetical mandate R1 risk report + D1 demonstration | S1 + at least one of S2/S3 | planned |
+| S5 | library v0 release + covariance with uncertainty + hypothetical mandate R1 risk report + D1 demonstration | S1 + at least one of S2/S3; the minimal analytical reader, once an experiment justifies it (OD-0139) | planned |
 | A05 | consumer contract schemas and contract tests (HIO side only) | S1 contracts package | planned |
 
 ---

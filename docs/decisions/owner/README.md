@@ -161,6 +161,7 @@ are in operating model §1.1; the template is
 | [OD-0144](OD-0144-receive-t0016-review-accept-t0016.md) | authorise_work | REVIEW-2026-11-03-t0016-1 received; T-0016 accepted at `d77e6e2`; #75 merged by the owner in the window | `6eb5c13` | recorded |
 | [OD-0145](OD-0145-t0017-parser-fix.md) | authorise_work | one manual download of the expert-judgement file; T-0017; one Codex review; after the first live run | `0a2c0a1` | recorded |
 | [OD-0146](OD-0146-receive-t0017-review-accept-resume-b3.md) | authorise_work | REVIEW-2026-11-04-t0017-1 received; T-0017 accepted at `4576ae5`; one watched re-run; if clean, package steps 7 and 8 | `6ee8922` | recorded |
+| [OD-0147](OD-0147-next-development-block.md) | authorise_work | local cash rebuild from live receipts; proposed US duration spec; draft vendor questions; proposed planning patch; plan differences read | `ac36cbf` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
