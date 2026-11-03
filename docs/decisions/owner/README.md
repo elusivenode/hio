@@ -156,6 +156,7 @@ are in operating model §1.1; the template is
 | [OD-0139](OD-0139-adopt-capture-gate-revision-and-factor-first.md) | approve | **Authorisation B revision 1 adopted** (B-3 no longer waits for a C5 decision); **factor-first sequence** is the working order; no capture, run or build authorised | `58fe532` | recorded |
 | [OD-0140](OD-0140-rerun-7b-accept-storage-error-limit.md) | authorise_work | go for B-2 re-run (R-1) and 7b, once the state backup is confirmed; storage-error limit accepted for the soak; no destroy, C5 change or go-live | `dfc2e99` | recorded |
 | [OD-0141](OD-0141-session-distil-and-roll.md) | authorise_work | session distil (handoff, Inbox, STATUS, distil 3 proposed); prepare to roll the orchestrator | `310d7dd` | recorded |
+| [OD-0142](OD-0142-draft-go-live-package.md) | authorise_work | draft the go-live package (B-3); draft only | `387eee7` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
