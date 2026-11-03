@@ -3,7 +3,7 @@ id: HIO-MAP
 title: HIO map (purpose, architecture, threads, settled facts, open questions)
 status: current   # approved as part of harness-0.9a by OD-0091 (seed at 2df83b4); navigational, rank 5, no independent authority; substantive changes need the owner's approval (operating model §4.1)
 owner: owner (approves changes); drafted by claude/implementation-agent
-last_reviewed: 2026-10-28
+last_reviewed: 2026-10-29
 max_length: 110 lines
 ---
 
@@ -43,8 +43,8 @@ Two research pillars stay visible in every phase (charter §2):
 | | Current | Target (Year 1) | Undecided |
 |---|---|---|---|
 | Shape | one repository, modular monolith, import rules in CI ([architecture](docs/architecture.md) §1) | same | services only on a measured trigger (architecture §5) |
-| Storage | local filesystem store; no cloud storage (STATUS one-line state) | object store as system of record for receipts, releases, artefacts and catalogue; DuckDB index rebuilt from manifests (architecture §2; HIO-ADR-0009) | provider subscription named `hnf-prod` ([OD-0066](docs/decisions/owner/OD-0066-assign-t0009-review-and-name-subscription.md)); immutability period, replication and second copy (`infra/tofu/README.md`; authored, never applied, OD-0063, OD-0079) |
-| Data | synthetic fixtures (OD-0019; `tools/check_repo.py` `check_public`), plus the dated 2026 RITS and NSW reference calendars from the RBA (`src/hio/reference/calendars/`; D7, OD-0076) | RBA and NY Fed official data, captured daily ([roadmap](docs/roadmap.md) §1) | every source right unverified except D7, retain-and-cite only (`registers/sources.yaml`; OD-0013; OD-0076) |
+| Storage | the evidence store is provisioned in `hnf-prod` and empty (B-1, [OD-0125](docs/decisions/owner/OD-0125-receive-verify-2-accept-t0011-authorise-b1.md) correction 2); the B-2 probe ran once ([evidence](docs/evidence/b2/README.md)) | object store as system of record for receipts, releases, artefacts and catalogue; DuckDB index rebuilt from manifests (architecture §2; HIO-ADR-0009) | immutability, replication and network settings decided ([OD-0119](docs/decisions/owner/OD-0119-adopt-h3-h4-decline-h5-codex-assignment-draft.md)); the second copy is deferred to the first capture month (H4 S-7); C5 timing open (B-2) |
+| Data | synthetic fixtures (OD-0019; `tools/check_repo.py` `check_public`), plus the dated 2026 RITS and NSW reference calendars from the RBA (`src/hio/reference/calendars/`; D7, OD-0076) | RBA and NY Fed official data, captured daily ([roadmap](docs/roadmap.md) §1) | five S1b-1 cash datasets owner_verified for `hio_internal` ([OD-0116](docs/decisions/owner/OD-0116-rights-answers-u1-u6.md) correction 1, OD-0118) and D7 (OD-0076); every other source unverified (`registers/sources.yaml`) |
 | Consumers | none | contract-only clients; the SMSF reads pinned artefacts (HIO-ADR-0002) | consumer contract A05 not started (roadmap §1) |
 
 ## Threads (state lives in `STATUS.md`)
@@ -76,9 +76,9 @@ Two research pillars stay visible in every phase (charter §2):
 
 | Question | Blocks | Source |
 |---|---|---|
-| Source rights per dataset and operation (RBA, NY Fed; D7 done) | all live capture | T-0002; OD-0013; OD-0076 |
-| Network and credential controls (successor to OD-0038) | provisioning, live runs | OD-0038 |
-| Storage immutability, replication, second copy, network default | provisioning | `infra/tofu/README.md` |
+| Source rights beyond the five S1b-1 datasets (free history sources: draft rows) | criterion 8 of base camp; history research | T-0002; `docs/research/T-0002-free-history-sources-matrix.md` |
+| C5 timing rule on Azure (whole-second `Last-Modified`) | B-3 go-live | `docs/evidence/b2/README.md`; HIO-ADR-0012 §4.3.3 |
+| Base camp, the procurement-readiness milestone (proposed) | data purchases | [`docs/base-camp.md`](docs/base-camp.md) |
 | Q-013: capture-time knowability for unevidenced publication instants | `as_known_by_market` claims | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 | Q-003, Q-004, Q-005b, Q-006, Q-010 | research use, S1b design, consumers | `open-decisions.md` |
 | Q-014: harness-0.9 | how agents keep context | `open-decisions.md`; `docs/decisions/harness-0.9-proposal.md` |
