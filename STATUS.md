@@ -3,8 +3,8 @@ id: HIO-STATUS
 title: Current status
 status: current
 owner: HIO architecture lead (owner)
-last_reviewed: 2026-11-03
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0141"
+last_reviewed: 2026-11-04
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0149"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -24,11 +24,8 @@ on `main` as `73f2e40`); **T-0011** (IaC) **accepted** (OD-0125, `c69df9e`, `09d
 datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5 declined**. **Authorisation B is
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
-**B-2 ran** (OD-0132), then **re-ran with 7b** (OD-0140, `docs/evidence/b2/rerun-1.md`): `BlobExists` works live; C5 as written still fails (45/50), the floored candidate holds (50/50); a privileged delete of a retained version is refused by policy;
-**T-0015** (fix and instrumented re-run) is **accepted** (OD-0138), on `main`, not run; the probe account is **held** (OD-0134). **B-3** not started; it **no longer waits for a C5 decision** (Authorisation B revision 1, OD-0139).
-**Nothing has been captured.** **Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **Base camp** (`docs/base-camp.md`, proposed) is the procurement-readiness goal (OD-0129 to
-OD-0134): **T-0013** and **T-0014** accepted (T-0014 is machinery only; no criterion established). `main` is protected (PRs only;
-OD-0118). Session handoff: `handoffs/s1b1/2026-11-03-capture-gate-factor-first.md`.
+**B-2 ran** (OD-0132), then **re-ran with 7b** (OD-0140, `docs/evidence/b2/rerun-1.md`); the probe account is **held** (OD-0134). **CAPTURE IS LIVE (B-3, OD-0143, 2026-11-04 Sydney):** four files on schedule, exploratory and `schedule_only`; reviewer rule removed, alert on; first runs in `docs/evidence/b3/first-run.md`. **I-5 met** (OD-0149). **The soak starts 2026-11-05 09:45 Sydney** and ends 2026-11-19 (`docs/evidence/b3/soak-1.md`). T-0016, T-0017 and T-0018 accepted. **First real cash rebuild** done and repeatable (`docs/evidence/b3/cash-rebuild-1.md`, `tools/cash_rebuild.py`): no unexplained residual; dispositions await the owner; criterion 3 not established. **C5 undecided:** no longer gates capture; still owed before any final claim.
+**Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **US duration spec proposed** (`specs/factors/rates.us.cmt_10y.total_return.yaml`); blocked on the owner's H2 rights reading. Base camp, the roadmap and the plan are still proposed, patched to that order (OD-0147). `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-11-03-capture-gate-factor-first.md` (newer state is in the ODs above).
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
 **Phase A is approved and applied as harness-0.9a** (OD-0091). **Distil 1 accepted** (46 Settled findings,
 OD-0093); **distil 2 accepted** (39 lines, OD-0135). Phase B work on H6 then H11 is authorised (OD-0092); activation of either needs Codex review and approval. **hiomux** is a tmux
@@ -53,10 +50,10 @@ finding states change by owner-authorised reconciliation (§6.2 step 5.12). **H6
 | Item | State | Record |
 |---|---|---|
 | Approved | charter, architecture, HIO-ADR-0001…0009, six standards, `AGENTS.md` (OD-0008); HIO-ADR-0010 rev 3 (OD-0011); **HIO-ADR-0012 rev 3** at `d0965cc` (OD-0055); operating model **harness-0.7.1** at `552d4fb` (OD-0056) with correction 1 (OD-0059); **harness-0.9b** (option B amendment at `d26c2fa`, OD-0104; applied OD-0106); **harness-0.9a** (Phase A: `MAP.md`, `knowledge/findings.md`, stream handoffs) at `2df83b4` (OD-0091); OpenTofu as IaC authoring tool and the S1b-1.0 finality staging (OD-0063) | per-file blobs in the OD records |
-| Accepted | **S1a** (OD-0042); **T-0009** (OD-0079); **T-0010** at `62adccd` (OD-0123); **T-0011** at `c69df9e` (OD-0125); **T-0012** at `efb6fa1` (OD-0128); **T-0013** at `39747c5` (OD-0134); **T-0014** at `e0aaa4d` (OD-0135); **T-0015** at `a05219a` (OD-0138); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
+| Accepted | **S1a** (OD-0042); **T-0009** (OD-0079); **T-0010** at `62adccd` (OD-0123); **T-0011** at `c69df9e` (OD-0125); **T-0012** at `efb6fa1` (OD-0128); **T-0013** at `39747c5` (OD-0134); **T-0014** at `e0aaa4d` (OD-0135); **T-0015** at `a05219a` (OD-0138); **T-0016** at `d77e6e2` (OD-0144); **T-0017** at `4576ae5` (OD-0146); **T-0018** at `acf1487`, no Codex review (OD-0148 c1); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
 | Authorised, in progress | **hiomux pilot**
 use under its protocol, outside the repository (OD-0072, OD-0073). Routine delegated receipt (OD-0061). Harness-0.9: drafting only (OD-0068, OD-0070; done to revision 3). Base-camp work (OD-0132) | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (`status: accepted`; `accepted_by: OD-0079`) |
-| Not authorised | **the B-2 re-run, step 7b and destroy** without a "go"; **any C5 amendment; B-3 go-live** and any capture; S1b-2; setting `LIVE_AUTHORISATION`; any source permission beyond the five S1b-1 datasets (`hio_internal` only) and D7; D4–D6; factor specs (drafts); harness-0.9 Phase B activation (H6 parked, OD-0114), H11, H3, H7, H8; settling any finding without its verification | [`docs/decisions/README.md`](docs/decisions/README.md) |
+| Not authorised | **the probe destroy** without a "go"; **any C5 amendment**; the duration experiment; any download or vendor contact; S1b-2; any source permission beyond the five S1b-1 datasets (`hio_internal` only) and D7; D4–D6; factor specs (drafts); harness-0.9 Phase B activation (H6 parked, OD-0114), H11, H3, H7, H8; settling any finding without its verification | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Open owner questions | Q-013 (P3 in force), Q-003, Q-004, Q-005b, Q-006, Q-010 (open; H5 declined for S1b-1), Q-014 (harness-0.9) | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 
 ## Reviews
@@ -64,6 +61,8 @@ use under its protocol, outside the repository (OD-0072, OD-0073). Routine deleg
 | Review | State |
 |---|---|
 | **REVIEW-2026-10-29-t0013-1** | NOT READY at `caf44da` (OD-0133); **VERIFY-…-t0013-1-1 READY** at `39747c5` (OD-0134): F-1 `verified_closed` |
+| **REVIEW-2026-11-04-t0017-1** | READY, no findings, at `4576ae5` (received OD-0146) |
+| **REVIEW-2026-11-03-t0016-1** | READY, no findings, at `d77e6e2` (received OD-0144) |
 | **REVIEW-2026-11-03-t0015-1** | NOT READY at `3d259d3`, one medium (received OD-0137); **VERIFY-…-t0015-1-1 READY** at `a05219a` (OD-0138): `verified_closed` |
 | **REVIEW-2026-10-29-t0014-1** | NOT READY at `13d2ea5`, one high, one medium (received OD-0134); **VERIFY-…-t0014-1-1 READY** at `e0aaa4d` (OD-0135): both `verified_closed` |
 | **REVIEW-2026-10-29-t0010-1** | NOT READY at `f345d1e` (OD-0121); **VERIFY-…-t0010-1-1 READY** at `62adccd` (OD-0123): both findings `verified_closed` |
@@ -84,11 +83,12 @@ No finding is waived.
 
 | Item | State |
 |---|---|
-| Phase | S1b-1 Authorisation B, staged ([package](docs/evidence/S1B1-authorisation-B-package.md), as amended by [revision 1](docs/evidence/S1B1-authorisation-B-revision-1.md)): **B-1 done**; B-2 ran, re-run pending; then B-3. Base camp: `docs/base-camp.md` (proposed) |
-| B-2 (storage probe) | run `40853094503`: create, refusals and one-version pass; duplicate create gives 403 `UnauthorizedBlobOverwrite`; **C5 0/50** (`s` floored to whole seconds; the probe measured `completed_at` after the write, unlike the ADR). Re-run `41590213489` and 7b done (`docs/evidence/b2/rerun-1.md`). Next: destroy, from 2026-11-04T06:36:50Z, on a "go". The C5 decision (candidate or version-id witness) follows on evidence and no longer gates B-3 (OD-0139) |
-| B-3 (go-live) | five data-source URLs approved; `LIVE_AUTHORISATION` set; workflow moved to `.github/workflows/`; `alert_enabled = true`; the `capture` reviewer rule removed (C-4); one watched dispatch; then schedule and the 10-business-day soak (incl. a failing **scheduled** run's email, I-5) |
+| Phase | S1b-1 live capture, soak pending (`docs/evidence/S1B1-go-live-package.md`, adopted OD-0143) |
+| Soak | 2026-11-05 09:45 to 2026-11-19 09:45 Sydney; 80 slots; bar declared in `docs/evidence/b3/soak-1.md`. Then the dead-man exercise, CI-run audit, replay and reconstruction |
+| B-2 | done; see `docs/evidence/b2/`. Destroy `rg-hio-probe` from 2026-11-04T06:36:50Z, on a "go" |
+| Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** the go-live package draft (put, unanswered); the destroy "go" (from 2026-11-04T06:36:50Z); the C5 decision; distil 3 (proposed); rights on the H2 and H4 rows (the owner's own reading); back up `~/.hio-state/`. The architect performance review is overdue. Architect review: material assembled (OD-0128). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** H2 Treasury rights (blocks duration); the probe destroy "go"; T-0003 vendor questions; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's context budget (it refuses at `main`) and its overdue performance review; held-out cases. **Claude:** nothing beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
@@ -114,6 +114,9 @@ No finding is waived.
 | Soak monitoring fix | [T-0013](registers/tasks/T-0013-soak-alert-and-completeness.md) | **accepted** (OD-0134) at `39747c5`, merged `ae84ac6`; alert still disabled |
 | Base-camp completion build | [T-0014](registers/tasks/T-0014-basecamp-completion-build.md) | **accepted** (OD-0135) at `e0aaa4d`, merged `aacfca2`; no criterion established |
 | B-2 follow-up | [T-0015](registers/tasks/T-0015-b2-followup.md) | **accepted** (OD-0138) at `a05219a`, merged `52abaff`; nothing run |
+| B-3 go-live PR | [T-0016](registers/tasks/T-0016-b3-go-live.md) | **accepted** (OD-0144) |
+| Expert-judgement parser | [T-0017](registers/tasks/T-0017-expert-judgement-parser.md) | **accepted** (OD-0146) |
+| Repeatable cash rebuild | [T-0018](registers/tasks/T-0018-repeatable-cash-rebuild.md) | **accepted** (OD-0148 c1) |
 | T-0006, T-0007, T-0008 | in `registers/tasks/` | **accepted** (OD-0007, OD-0004, OD-0006) |
 | ETF diagnostic (lives in `macsmsf`) | `macsmsf` branch `docs/etf-diagnostic-card` | proposed; not authorised (OD-0018); not an HIO dependency |
 
@@ -126,7 +129,7 @@ No finding is waived.
   Hatchling not hash-locked; release ids revision-dependent.
 - **B-1 read-back** (OD-0125 c2): evidence account shared key off, no public access, ZRS, immutability Unlocked 3,650 days, 0 blobs, alert disabled.
 - **B-2 runs** (`docs/evidence/b2/`): writer RBAC refuses overwrite and delete; one version per key; `BlobExists` on a duplicate create; C5 as written fails on Azure. **7b** (probe account, Unlocked policy, one day): a privileged delete of a retained version is refused by policy; an overwrite adds a new version.
-- **No live capture or publication timing has been validated**; changing an Unlocked policy, and the evidence account itself, are untested.
+- **First live runs** read back (`docs/evidence/b3/first-run.md`). **Unattended reliability isn't validated** until the soak, and publication timing isn't validated; changing an Unlocked policy, and the evidence account itself, are untested.
 
 ## Unverified and external
 
@@ -135,8 +138,8 @@ No finding is waived.
 
 ## Do not
 
-- fetch any real source, write to the evidence store, run `tofu plan/apply` or any Azure write, or dispatch a workflow,
-  outside an OD that authorises it (B-2 and B-3 each need their own yes);
+- fetch any real source, write to the evidence store, run `tofu apply` or any Azure write, or dispatch a workflow,
+  outside an OD that authorises it; dispatch manually during the soak without recording why;
 - commit any subscription, tenant or object id, email address, GitHub numeric id, state or backend file;
 - mark any further source permission verified, or declare S1b-1 complete;
 - change HIO-001, or `macsmsf`; treat a branch, a merge or a handoff as approval;
