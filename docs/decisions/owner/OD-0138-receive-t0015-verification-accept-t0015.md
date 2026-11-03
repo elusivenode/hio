@@ -36,3 +36,32 @@ reaches `main` as `proposed`: accepting T-0015 does not adopt it. The storage-er
 The re-run, 7b or the destroy; any C5 amendment; adopting the re-run plan or PR #60; B-3; any waiver.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-03): receipt complete without the index diff; §5.12; T-0015 accepted and merged
+
+**Receipt (§6.2 5.0–5.10, in a scratch clone).** The assignment source is the *Assigned reviews* row plus OD-0137 correction 1. The
+reviewer's report is the hiomux C2 result. A second owner-authored assignment was looked for in the *Assigned reviews* table,
+`docs/history/` and the comments on PR #53; none was found.
+
+| Receipt | T | Inventory | Index | Import, merge (PR) | 5.10 |
+|---|---|---|---|---|---|
+| VERIFY-2026-11-03-t0015-1-1 (READY) | `0e5f5dba09d4c17646881bcb57dc8f39abd1f8d6` | 3 record files and the README reported; 3 imported, 0 missing, 0 extra, sha256 equal | README diff refused, omitted wholly | `8a9b1f2`, `098bb96` (#65) | PASS; tag peels to T |
+
+**CI, reported separately.** On `8a9b1f2`: run 41580899925 success. Run 41580916805 **attempt 1 failed** at the step that installs `uv`
+(lint and tests skipped; the log shows no error text, so the cause is not established); **attempt 2 succeeded** after a re-run of the
+failed job. The failed attempt stays on record. Before the merge, both results were read.
+
+**Refused line, verbatim** (the reviewer's whole README diff):
+
+```text
++| VERIFY-2026-11-03-t0015-1-1 | REVIEW-2026-11-03-t0015-1, F-1 and F-1 to F-3 regression | `3d259d3..a05219a` | `cf50736` | F-REVIEW-2026-11-03-t0015-1-1 technically verified_closed; READY; finding-state reconciliation pending receipt and owner instruction | [record](records/VERIFY-2026-11-03-t0015-1-1.md) |
+```
+
+**§5.12 (this commit).** F-REVIEW-2026-11-03-t0015-1-1, against VERIFY-2026-11-03-t0015-1-1, received, reviewed head `a05219a`, outcome
+"verified_closed": open → verified_closed at `a05219a`. Only the state cell and its citation changed. The refused navigation row is
+added byte-identical (Class N). The *Assigned reviews* row is set to received.
+
+**Decision 2 effective.** T-0015 is accepted at `a05219a`; PR #53 merged as `52abaff` with the head match enforced. Before the merge,
+`a05219a` merged with `main` at `fc77ea0` passed in a scratch clone: pytest 1108 passed; `ruff check`, `ruff format --check` and
+`check_repo` pass. Only records changed on `main` between that trial and the merge (checked by path). The card is set to accepted in
+this commit. Nothing was run against Azure.
