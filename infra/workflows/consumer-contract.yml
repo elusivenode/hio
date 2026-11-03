@@ -1,0 +1,61 @@
+# Consumer contract check, TEMPLATE: a DEFINITION, NOT ENABLED (T-0014 P-4; OD-0132 item 3; base-camp criterion 6).
+#
+# This file is kept outside .github/workflows/ on purpose, so GitHub never runs it. Activating it is a
+# separate owner act with its own authority (T-0014 execution checklist, item 3): authorised READ-ONLY access
+# to a pinned real release. Moving the file alone does not give the second job access to anything, and it
+# approves nothing: a passing check is evidence for criterion 6, never an approval of a release.
+#
+# What it does when activated:
+#   1. `contract-tests` runs the synthetic consumer-contract refusals offline (no data, no credentials).
+#   2. `pinned-release` is the later read-only run against ONE pinned release: it calls
+#      hio.publish.status.resolve_for_use with the exact dataset id and content hash, the required status and
+#      the consumer class, which checks the pin, canonical integrity, complete lineage, and the CURRENT status
+#      and rights on every run. It writes nothing and never appends a status event.
+#
+# The pin (dataset, content hash, consumer class) and any storage setting come from the `consumer`
+# Environment's variables (vars.*), never from secrets and never as literals here. This template holds no
+# secret and no identity. The read-only access mechanism is deliberately NOT chosen here: the second job
+# refuses (exit 2) until the authorising change adds it, so a moved file reads and checks nothing.
+name: consumer-contract (disabled template)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: consumer-contract
+  cancel-in-progress: false
+jobs:
+  contract-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
+        with:
+          version: "0.11.19"
+          enable-cache: false
+      - name: Synthetic refusals (withdrawn, tampered, insufficient or unknown permission, missing status, broken lineage)
+        run: uv run --frozen pytest -q tests/test_t0014_consumer_contract.py
+  pinned-release:
+    needs: contract-tests
+    runs-on: ubuntu-24.04
+    environment: consumer
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e  # v10.3.2
+        with:
+          version: "0.11.19"
+          enable-cache: false
+      - name: Resolve the pinned release for use (read-only; refuses until read-only access is authorised)
+        run: |
+          echo "read-only access to a pinned real release is not yet authorised (T-0014 checklist item 3)" >&2
+          exit 2
+        env:
+          HIO_CONSUMER_DATASET_ID: ${{ vars.HIO_CONSUMER_DATASET_ID }}
+          HIO_CONSUMER_CONTENT_SHA256: ${{ vars.HIO_CONSUMER_CONTENT_SHA256 }}
+          HIO_CONSUMER_CLASS: ${{ vars.HIO_CONSUMER_CLASS }}
