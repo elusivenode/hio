@@ -9,66 +9,46 @@ task: T-0003
 
 # Draft vendor questions (NOT SENT)
 
-> **Do not send.** Drafted for owner review under OD-0013. Sending needs a separate owner
+> **Do not send.** Drafted for owner review under OD-0013; revised under OD-0147 (2026-11-04), so the context describes HIO's independent research, its write-once store, and processing, and not only the SMSF. Sending needs a separate owner
 > instruction. The sender's name and contact details are left blank on purpose. No
 > fund-identifying details are included beyond what the questions need.
 
 ## 1. To EODHD (EOD Historical Data)
 
-**Subject:** Licensing questions: personal-use status for a family superannuation fund, and
-derived data
+**Subject:** Licensing questions before subscribing: private research use, retained and derived data
 
 Hello,
 
-I am considering an EOD Historical Data subscription and would like to confirm how your terms
-apply to my situation before subscribing.
+I am considering an EOD Historical Data subscription and would like to confirm how your terms apply before subscribing.
 
-**Context:** I am one of two individual trustees of a small, private, self-managed family
-superannuation fund in Australia (two members, no employees, no external clients). I would use
-end-of-day data only to compute investment returns for the fund's internal research and for
-private reports to its two trustees. I would not redistribute or display the data to anyone
-else.
+**Context:** I run a private investment research system on my own. It computes investment returns and risk analysis from end-of-day data, and I would not sell it or offer it to anyone. Its results may inform decisions for a small self-managed family superannuation fund in Australia, of which I am one of two individual trustees (two members, no employees, no external clients). Raw data would never be redistributed or displayed to anyone else.
 
-1. **User classification:** under your Terms, would this use count as a **Non-Professional
-   User** ("solely in a personal capacity")? Or does use for a family superannuation trust
-   make me a Professional User? If so, which plan applies?
-2. **Derived figures in private reports:** may I compute returns and other figures from your
-   prices and dividends, and show those **derived figures** (not raw prices) in a private report
-   read only by the fund's two trustees and its auditor?
-3. **Storage:** may I store the raw data I download, and the figures derived from it, for as
-   long as I keep the subscription, in my own private cloud storage and CI environment?
-4. **After cancellation:** what may I retain, if anything (raw data, derived figures), once a
-   subscription ends?
-5. **Data content:** for US-listed ETFs (for example, a S&P 500 ETF), do you provide
-   **unadjusted** daily closes **and** separate dividend records (ex-date, pay date, amount) and
-   split records? Are historical values ever revised, and if so, is that flagged?
+1. **User classification:** does this count as **Non-Professional** ("solely in a personal capacity")? Does the fund's use of the results make me a Professional User? If so, which plan applies, and at what price?
+2. **Derived figures:** may I compute returns and other figures from your prices and dividends, and keep them in my system? May derived figures (not raw prices) appear in a private report read only by the fund's two trustees and its auditor?
+3. **Storage:** may I keep raw downloads and derived figures in private cloud object storage, processed in a private cloud build environment? My store retains records under a write-once policy for up to ten years, so they can't easily be deleted. Is that compatible with your terms?
+4. **After cancellation:** what may I keep once a subscription ends: raw data, derived figures, or both? If deletion is required, does the write-once store above prevent me from using your data at all?
+5. **Automated use:** may a scheduled job download data under my key? What request limits apply?
+6. **Third-party tools:** may raw data be processed by cloud services acting for me? I keep raw licensed data out of AI tools, but would AI tools be permitted to see derived figures?
+7. **Data content:** for US-listed and ASX-listed ETFs, do you provide **unadjusted** daily closes **and** separate dividend records (ex-date, pay date, amount) and split records? Are historical values ever revised, and is a revision flagged? How far back does each go?
+8. **Futures:** do you offer individual-contract daily settlements, and under the same terms?
 
 Thank you,
 [name, contact details: to be completed by the owner]
 
 ## 2. To S&P Dow Jones Indices (data licensing)
 
-**Subject:** Licensing enquiry: S&P 500 total-return index levels for private, internal
-research
+**Subject:** Licensing enquiry: S&P 500 total-return index levels for private internal research
 
 Hello,
 
 I would like to understand the licensing options and pricing for S&P 500 index-level data.
 
-**Context:** I am a trustee of a small, private, self-managed family superannuation fund in
-Australia (two members). I would use the data only for internal research and private reporting
-to the fund's two trustees. I would not create or market any investment product, and I would
-not redistribute the data.
+**Context:** I run a private investment research system on my own. Its results may inform decisions for a small self-managed family superannuation fund in Australia, of which I am a trustee (two members). I would not create or market any investment product, and I would not redistribute the data.
 
-1. **Product:** daily **S&P 500 Total Return** and **Net Total Return** index levels (USD),
-   historical and ongoing. Which licence or product covers this, and what does it cost for this
-   use?
-2. **Derived figures:** may returns computed from licensed index levels be shown in a private
-   report read only by the fund's two trustees and its auditor?
-3. **Storage and retention:** may licensed data and derived figures be stored in private cloud
-   storage, and what may be retained after a licence ends?
-4. **Methodology documents:** are the index methodology and the dividend-reinvestment and
-   withholding conventions for the net TR series available to licensees?
+1. **Product:** daily **S&P 500 Total Return** and **Net Total Return** index levels (USD), historical and ongoing. Which licence covers this, what does it cost, and how far back does the history go?
+2. **Derived figures:** may returns computed from licensed levels be kept in my system and shown in a private report read only by the fund's two trustees and its auditor?
+3. **Storage and retention:** may licensed data and derived figures be held in private cloud storage under a write-once policy for up to ten years? What may be retained after a licence ends?
+4. **Methodology:** are the index methodology and the dividend-reinvestment and withholding conventions for the net series available to licensees?
 
 Thank you,
 [name, contact details: to be completed by the owner]
@@ -79,4 +59,5 @@ Thank you,
   [`T-0003-equity-total-return-sources.md`](T-0003-equity-total-return-sources.md), so the
   answers can be recorded as evidence (verification `contract` or `owner_verified`).
 - Sending reveals limited context about the fund (a two-member family SMSF). Remove that if you
-  prefer a generic enquiry.
+  prefer a generic enquiry, but the answer to question 1 may then not be reliable.
+- **Question 3 can decide the design.** Evidence-store retention is 3,650 days under the account default, so a licence that requires deletion needs a different home for its raw data.

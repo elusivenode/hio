@@ -28,6 +28,8 @@ evidence corrected. No architectural substance changed. This roadmap remains a r
 
 ## 1. The next 90 days (G1 → G1 + 13 weeks, i.e. 2026-10-18 → about 2027-01-17)
 
+> **Working order (OD-0139).** Where this section's order differs from `docs/decisions/factor-first-sequencing-proposal.md`, that document wins. Capture went live on 2026-11-04 (OD-0143). A bounded US duration experiment may run before G2, on its own yes. **Promotion** of S2 and S3 stays behind G2. The week numbers below are the original estimates; treat them as conditional on rights and vendor answers, not as dates.
+
 | Weeks | Deliverable | Research outcome | Task / slice |
 |---|---|---|---|
 | 0 (done) | A01 baseline: **G1 complete 2026-10-18** (OD-0008, OD-0011) | a binding vocabulary and mathematics for every later result | T-0001 (its acceptance is not recorded) |
@@ -47,8 +49,8 @@ evidence corrected. No architectural substance changed. This roadmap remains a r
   holiday period make it the most likely item to slip. Procurement still starts in the 90 days.
 - **The factor covariance experiment** in D1 uses only the series that exist by then, so D1
   does not wait for futures.
-- **The second of S2/S3, and D1**, now end after week 13 (corrected 2026-10-24). S2/S3 cannot
-  start before G2, which follows S1b.
+- **The second of S2/S3, and D1**, now end after week 13 (corrected 2026-10-24). **Promotion** of S2/S3
+  can't come before G2, which follows S1b; a bounded experiment can (OD-0139).
 
 ## 2. 12–18 month research outcomes
 
