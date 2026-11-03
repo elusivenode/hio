@@ -12,7 +12,7 @@ import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 WORKFLOW = REPO / ".github" / "workflows" / "storage-probe.yml"
-CAPTURE = REPO / "infra" / "workflows" / "s1b1-capture.yml"
+CAPTURE = REPO / ".github" / "workflows" / "s1b1-capture.yml"
 
 SHA_PIN = re.compile(r"^[\w.-]+/[\w.-]+@[0-9a-f]{40}$")
 

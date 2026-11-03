@@ -690,14 +690,14 @@ def test_dry_run_is_unchanged_by_the_check(tmp_path, capsys):
     assert rc == 0 and capsys.readouterr().out == ""
 
 
-def test_the_live_refusal_still_exits_two_before_any_check(tmp_path, capsys):
+def test_the_live_refusal_still_exits_two_before_any_check(tmp_path, monkeypatch, capsys):
     class Exploding:
         def __call__(self, *_a, **_k):
             raise AssertionError("built before the live path was authorised")
 
     boom = Exploding()
     builders = LiveBuilders(gate=boom, transport=boom, credential=boom, container=boom, urls=boom)
-    assert s1b1_capture.LIVE_AUTHORISATION is None
+    monkeypatch.setattr(s1b1_capture, "LIVE_AUTHORISATION", None)
     rc = s1b1_capture.main(
         ["--rits-calendar", calendar(tmp_path), "--at", "2026-11-07T12:00:00Z"], environ={}, builders=builders
     )

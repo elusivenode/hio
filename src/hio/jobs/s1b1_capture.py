@@ -4,12 +4,11 @@
 skips a slot that already has a verified record, and passes the gate's slot and due instant to the
 run record. A caller cannot supply its own due time.
 
-`main` is what the (disabled) workflow definition runs. With `--dry-run` it prints the slots due at an
-instant and makes no request. Without it, it takes the **live path** (T-0010 W-3; OD-0115, OD-0119 C-1,
-C-3, C-8), which is wired but NOT enabled: it refuses (exit 2) unless `LIVE_AUTHORISATION` names the
-owner decision that grants Authorisation B (T-0009 §8). Only a later Authorisation B change sets that
-constant. The refusal comes before anything is built: no transport, storage client or credential
-exists, and no environment variable is read, until the constant is set.
+`main` is what the capture workflow runs. With `--dry-run` it prints the slots due at an instant and
+makes no request. Without it, it takes the **live path** (T-0010 W-3; OD-0115, OD-0119 C-1, C-3, C-8). It
+refuses (exit 2) unless `LIVE_AUTHORISATION` names the owner decision that grants Authorisation B (T-0009
+§8), which is OD-0143. The refusal comes before anything is built: no transport, storage client or
+credential exists, and no environment variable is read, unless the constant is set.
 
 After capture, every live run (including one with no due slot) runs the completeness check
 (T-0013 A-1): each expected slot whose window closed in the last 24 hours without any attempt record is
@@ -56,9 +55,9 @@ from hio.storage.objectstore import IntegrityError, LocalObjectStore
 
 WEEKDAYS = BusinessCalendar("weekdays")
 
-# Authorisation B (T-0009 §8) is the owner's explicit grant of live operation. Until a later change
-# sets this to the id of the OD record that grants it (for example "OD-0123"), the live path refuses.
-LIVE_AUTHORISATION: str | None = None
+# Authorisation B (T-0009 §8) is the owner's explicit grant of live operation: this is the id of the OD
+# record that grants it. Setting it back to None makes the live path refuse again.
+LIVE_AUTHORISATION: str | None = "OD-0143"
 
 # Every request names HIO and where its code lives, so a publisher can identify and contact the requester.
 USER_AGENT = "HIO-s1b1-capture/1 (+https://github.com/elusivenode/hio)"

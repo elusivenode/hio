@@ -49,7 +49,7 @@ class Parsed:
 class DatasetSpec:
     source_id: str  # the dataset id: the rights subject
     parse: Callable[[bytes], Parsed]
-    url: str | None = None  # configured per environment and approved with the rights (T-0009 §8)
+    url: str | None = None  # the approved URL is on the Publication; a dataset never carries its own
     series: tuple[str, ...] = ()
 
 
@@ -225,14 +225,24 @@ DATASETS: Mapping[str, DatasetSpec] = {
     ),
 }
 
+# The approved request identity (OD-0143; docs/evidence/S1B1-go-live-package.md).
+# Changing one needs the owner.
+APPROVED_URLS: Mapping[str, str] = {
+    "rba.f1": "https://www.rba.gov.au/statistics/tables/csv/f1-data.csv",
+    "rba.expert_judgement": "https://www.rba.gov.au/statistics/tables/csv/f1-use-of-expert-judgement.csv",
+    "nyfed.sofr": "https://markets.newyorkfed.org/api/rates/secured/sofr/last/30.json",
+    "nyfed.sofr_index": "https://markets.newyorkfed.org/api/rates/secured/sofrai/last/30.json",
+}
+
 PUBLICATIONS: Mapping[str, Publication] = {
     "rba.f1": Publication(
         "rba.f1",
         (DATASETS["rba.cash_rate"], DATASETS["rba.cash_rate_tri"]),
         parse_rba_f1(F1_COLUMNS),
+        APPROVED_URLS["rba.f1"],
     ),
     **{
-        sid: Publication(sid, (DATASETS[sid],), DATASETS[sid].parse)
+        sid: Publication(sid, (DATASETS[sid],), DATASETS[sid].parse, APPROVED_URLS[sid])
         for sid in ("rba.expert_judgement", "nyfed.sofr", "nyfed.sofr_index")
     },
 }

@@ -1,4 +1,4 @@
-"""T-0010 W-3 (OD-0115; OD-0119 C-1, C-3, C-8): the live capture path is wired and NOT enabled.
+"""T-0010 W-3 (OD-0115; OD-0119 C-1, C-3, C-8): the live capture path, and its refusal without authorisation.
 
 No real network and no real Azure: the transport is a `FixtureTransport`, the storage client a fake
 container, the credential a stand-in object. `LIVE_AUTHORISATION` is monkeypatched only inside tests."""
@@ -90,8 +90,10 @@ def fakes(transport, container, credentials):
 # --- refusal ------------------------------------------------------------------------------------------
 
 
-def test_the_default_refuses_before_building_anything_and_needs_no_environment(tmp_path, capsys):
-    assert s1b1_capture.LIVE_AUTHORISATION is None
+def test_no_authorisation_refuses_before_building_anything_and_needs_no_environment(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(s1b1_capture, "LIVE_AUTHORISATION", None)
     boom = Exploding()
     builders = LiveBuilders(gate=boom, transport=boom, credential=boom, container=boom, urls=boom)
     rc = s1b1_capture.main(
@@ -101,7 +103,10 @@ def test_the_default_refuses_before_building_anything_and_needs_no_environment(t
     assert "Authorisation B" in capsys.readouterr().err
 
 
-def test_the_default_builders_are_not_called_even_with_a_complete_environment(tmp_path, monkeypatch, capsys):
+def test_no_authorisation_calls_no_default_builder_even_with_a_complete_environment(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(s1b1_capture, "LIVE_AUTHORISATION", None)
     for name in ("BlobObjectStore", "AzureBlobBackend", "run_due", "Execution"):
         monkeypatch.setattr(s1b1_capture, name, Exploding())
     assert s1b1_capture.main(["--rits-calendar", calendar(tmp_path), "--at", NOW], environ=ENV) == 2
@@ -126,7 +131,7 @@ def test_missing_environment_refuses_cleanly_and_leaks_no_secret(tmp_path, monke
 def test_an_unconfigured_publication_url_refuses(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(s1b1_capture, "LIVE_AUTHORISATION", "OD-9999")
     boom = Exploding()
-    builders = LiveBuilders(gate=boom, transport=boom, credential=boom, container=boom)  # real url source
+    builders = LiveBuilders(gate=boom, transport=boom, credential=boom, container=boom, urls=lambda: {})
     assert (
         s1b1_capture.main(
             ["--rits-calendar", calendar(tmp_path), "--at", NOW], environ=ENV, builders=builders

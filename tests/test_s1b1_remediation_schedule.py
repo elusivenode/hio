@@ -23,7 +23,7 @@ from tests.test_s1b1_capture import EXEC, FILES, FX, HEADERS, UA, go
 from tests.test_s1b1_releases import RITS
 
 REPO = Path(__file__).resolve().parent.parent
-DEFINITION = REPO / "infra" / "workflows" / "s1b1-capture.yml"
+DEFINITION = REPO / ".github" / "workflows" / "s1b1-capture.yml"
 CALS = {"rits": RITS, "weekdays": WEEKDAYS}
 
 
@@ -35,10 +35,10 @@ def names(due):
     return {(s.publication_id, s.name, d) for s, d in due}
 
 
-# --- the definition is complete and disabled ------------------------------------------------------
+# --- the enabled workflow is complete ------------------------------------------------------------
 
 
-def test_f7_the_definition_fires_on_exactly_the_gate_cron_slots_and_is_not_enabled():
+def test_f7_the_workflow_fires_on_exactly_the_gate_cron_slots():
     doc = yaml.safe_load(DEFINITION.read_text())
     crons = [c["cron"] for c in doc[True]["schedule"]]  # YAML 1.1 reads the key `on` as True
     assert crons == [f"{hm} * * *" for hm in CRON_UTC]
@@ -54,13 +54,16 @@ def test_f7_the_definition_fires_on_exactly_the_gate_cron_slots_and_is_not_enabl
         for name in ("HIO_STORAGE_ACCOUNT_URL", "HIO_STORAGE_CONTAINER", "AZURE_TENANT_ID", "AZURE_CLIENT_ID")
     }
     assert "--dry-run" not in text and "hio.jobs.s1b1_capture" in text and "rits-*.yaml" in text
-    assert not DEFINITION.is_relative_to(REPO / ".github")
+    assert DEFINITION.is_relative_to(REPO / ".github" / "workflows")
 
 
-def test_f7_no_enabled_workflow_has_a_schedule():
+def test_f7_the_capture_workflow_is_the_only_scheduled_workflow():
+    scheduled = set()
     for wf in (REPO / ".github" / "workflows").glob("*.y*ml"):
         on = yaml.safe_load(wf.read_text())[True]
-        assert not (isinstance(on, dict) and "schedule" in on), wf.name
+        if isinstance(on, dict) and "schedule" in on:
+            scheduled.add(wf.name)
+    assert scheduled == {DEFINITION.name}
 
 
 def _firings(day: date) -> list[datetime]:

@@ -1,7 +1,7 @@
 ---
 id: T-0016
 title: "B-3 go-live PR: set LIVE_AUTHORISATION, configure the four approved URLs, move the capture workflow into .github/workflows, and update the tests that pin the disabled state"
-status: authorised
+status: submitted_for_review
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator); independent reviewer: Codex (REVIEW-2026-11-03-t0016-1)"
 created_at: 2026-11-03
@@ -35,3 +35,8 @@ links:
 ## Exclusions
 
 Any other change to the capture path, the completeness check, the schedule or the parsers; any dispatch, Azure or GitHub setting change; any request to a data URL.
+
+## Submission (filled by the implementer)
+
+Branch `feat/t0016`, built by the orchestrator. Full suite 1112 passed; `ruff` and `check_repo` clean. G-4 changed five tests that pinned the disabled state or relied on an empty URL
+(`test_a_url_is_required`, three in `test_t0010_capture_cli.py`, one in `test_t0013_completeness.py`) and repointed two at the moved file. Submitting approves nothing.

@@ -1,12 +1,9 @@
-# S1b-1.0 scheduled capture, LIVE SHAPE: a DEFINITION, NOT ENABLED (T-0009 §2.5; T-0010 W-3; OD-0115, OD-0119).
+# S1b-1 scheduled capture, LIVE (T-0009 §2.5; T-0010 W-3; OD-0115, OD-0119; enabled by OD-0143).
 #
-# This file is kept outside .github/workflows/ on purpose, so GitHub never runs it. Enabling it needs
-# TWO changes, both under Authorisation B (T-0009 §8: rights per dataset and operation, the network and
-# credential-control decision, storage, and an explicit owner instruction):
-#   1. move this file to .github/workflows/;
-#   2. set LIVE_AUTHORISATION in src/hio/jobs/s1b1_capture.py to the id of the OD record that grants B.
-# Until the constant is set, the command below refuses with exit 2 before it builds a transport, a
-# storage client or a credential, so moving the file alone captures nothing.
+# Merging this file arms the schedule. The `capture` Environment's required-reviewer rule holds every run,
+# scheduled ones included, until it is removed (OD-0119 C-4; go-live package step 8).
+# Scheduled-run failure emails go to whoever last changed the `schedule:` lines: repeat the I-5 check after
+# any change to them (infra/tofu/README.md).
 #
 # The storage account URL, the container, and the tenant and client ids of the federated identity are
 # read from the `capture` Environment's variables (vars.*), never from secrets and never as literals
@@ -16,7 +13,7 @@
 # The UTC cron slots equal hio.sources.schedule.CRON_UTC (checked by
 # tests/test_s1b1_remediation_schedule.py): each local check in both daylight-saving regimes plus a
 # same-day retry. The local-time due gate decides what runs; idempotence makes extra firings no-ops.
-name: s1b1-capture (disabled definition)
+name: s1b1-capture
 on:
   schedule:
     - cron: "45 22 * * *"

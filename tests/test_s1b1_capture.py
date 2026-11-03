@@ -4,6 +4,7 @@ with the genuine register (everything refused) and with a permissive test double
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -300,7 +301,7 @@ def test_execution_is_copied_from_the_ci_environment_or_marked_other():
 def test_a_url_is_required():
     with pytest.raises(ValueError):
         run_capture(
-            PUBLICATIONS["nyfed.sofr"],
+            replace(PUBLICATIONS["nyfed.sofr"], url=None),
             transport=FixtureTransport({}),
             store=None,
             gate=AllowAllGate(),
