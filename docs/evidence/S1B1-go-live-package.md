@@ -1,7 +1,7 @@
 ---
 id: HIO-EVIDENCE-S1B1-GO-LIVE
 title: "S1b-1 go-live package (proposed): stage B-3, its URLs, punctuality bar, staging statement and order of steps"
-status: proposed            # drafted under OD-0142; a request for an owner decision; authorises nothing
+status: adopted             # OD-0143 at 3cee431; later edits record status only
 owner: HIO architecture lead (owner); drafted by claude/implementation-agent
 created_at: 2026-11-03
 base_revision: 387eee7ee39d91f5ab983284089a0949bda0fb9f
@@ -11,7 +11,7 @@ governs: [docs/evidence/S1B1-authorisation-B-package.md, docs/evidence/S1B1-auth
 
 # S1b-1 go-live package (proposed)
 
-> **Proposed.** Nothing here authorises go-live, a code change, a dispatch, an Azure write or a request to a data URL. While drafting, only
+> **Adopted by OD-0143 at `3cee431`; the text below stands as adopted.** While drafting, only
 > publishers' documentation pages were read. No data URL was requested.
 
 ## What a yes would start
