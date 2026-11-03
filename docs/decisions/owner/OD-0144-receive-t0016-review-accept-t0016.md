@@ -40,3 +40,7 @@ the check passed at `T`, with no change to `T`. The tag peels to `T` and was not
 Merging #75 outside the window or at any other head; starting capture other than by the package's steps; any finality claim; any waiver.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-04): receipt complete; #75 merged
+
+**§5.9 and 5.10.** PR #76 merged as `a4ba84b` by the owner, after the branch tip and tag were rechecked. Remote `main` equalled the local merge, the three blobs equal `T`'s, and the tag peels to `T`. **CI, reported separately:** runs `41596145699` and `41596155204` success on `54efae5`; run `41596423450` success on `a4ba84b`. The Assigned reviews row is set to received. T-0016's card is set to accepted. #75 merged at `d77e6e2` as `0a2c0a1` by the owner, inside the window.
