@@ -1,7 +1,7 @@
 ---
 id: HIO-EVIDENCE-S1B1-AUTH-B-REV1
 title: "Authorisation B, revision 1 (proposed): exploratory P3 capture no longer waits for the C5 decision"
-status: proposed            # a draft for owner decision; authorises nothing
+status: adopted             # OD-0139 at ecd6b81 (blob c7db575b9788); later edits record status only; authorises no capture, run or build
 owner: HIO architecture lead (owner); drafted by claude/implementation-agent
 created_at: 2026-11-03
 base_revision: 6030c17c980591bc8498d8cb77852647616ffb83
@@ -10,9 +10,9 @@ amends_if_adopted: docs/evidence/S1B1-authorisation-B-package.md (stages B-2 and
 sources: [architect consultation 20261103T141451-ask-15e3, OD-0063, OD-0119, HIO-ADR-0012 §4.3.3, docs/evidence/b2/README.md]
 ---
 
-# Authorisation B, revision 1 (proposed)
+# Authorisation B, revision 1 (adopted, OD-0139)
 
-> **Proposed.** Nothing here authorises capture, an Azure write, a dispatch or a C5 amendment. It amends no ADR text. If the
+> **Adopted by OD-0139 at `ecd6b81`; the text below stands as adopted.** Nothing here authorises capture, an Azure write, a dispatch or a C5 amendment. It amends no ADR text. If the
 > owner adopts it, the Authorisation B package and base-camp criterion 1 are read as changed below.
 
 ## The change, in one line

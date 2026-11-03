@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-03
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0138"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0139"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -25,8 +25,8 @@ datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
 **B-2 ran once** (OD-0132): C5 failed 50/50 as written and a duplicate create returned 403, not 409 (`docs/evidence/b2/`);
-**T-0015** (fix and instrumented re-run) is **accepted** (OD-0138), on `main`, not run; the probe account is **held** (OD-0134). **B-3** not started.
-**Nothing has been captured.** **Base camp** (`docs/base-camp.md`, proposed) is the procurement-readiness goal (OD-0129 to
+**T-0015** (fix and instrumented re-run) is **accepted** (OD-0138), on `main`, not run; the probe account is **held** (OD-0134). **B-3** not started; it **no longer waits for a C5 decision** (Authorisation B revision 1, OD-0139).
+**Nothing has been captured.** **Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **Base camp** (`docs/base-camp.md`, proposed) is the procurement-readiness goal (OD-0129 to
 OD-0134): **T-0013** and **T-0014** accepted (T-0014 is machinery only; no criterion established). `main` is protected (PRs only;
 OD-0118). Session handoff: `handoffs/s1b1/2026-10-29-base-camp.md`.
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
@@ -84,17 +84,16 @@ No finding is waived.
 
 | Item | State |
 |---|---|
-| Phase | S1b-1 Authorisation B, staged ([package](docs/evidence/S1B1-authorisation-B-package.md)): **B-1 done**; B-2 ran, re-run pending; then B-3. Base camp: `docs/base-camp.md` (proposed) |
-| B-2 (storage probe) | run `40853094503`: create, refusals and one-version pass; duplicate create gives 403 `UnauthorizedBlobOverwrite`; **C5 0/50** (`s` floored to whole seconds; the probe measured `completed_at` after the write, unlike the ADR). T-0015 is merged. Next: re-run (R-1), 7b, C5 decision, destroy ≥24 h after the last write (re-run plan `docs/evidence/S1B1-B2-rerun-plan.md`, proposed); PR #60 would stop the C5 decision gating B-3 |
+| Phase | S1b-1 Authorisation B, staged ([package](docs/evidence/S1B1-authorisation-B-package.md), as amended by [revision 1](docs/evidence/S1B1-authorisation-B-revision-1.md)): **B-1 done**; B-2 ran, re-run pending; then B-3. Base camp: `docs/base-camp.md` (proposed) |
+| B-2 (storage probe) | run `40853094503`: create, refusals and one-version pass; duplicate create gives 403 `UnauthorizedBlobOverwrite`; **C5 0/50** (`s` floored to whole seconds; the probe measured `completed_at` after the write, unlike the ADR). T-0015 is merged. Next: re-run (R-1), 7b, destroy ≥24 h after the last write (re-run plan `docs/evidence/S1B1-B2-rerun-plan.md`, proposed). The C5 decision follows on evidence and no longer gates B-3 (OD-0139) |
 | B-3 (go-live) | five data-source URLs approved; `LIVE_AUTHORISATION` set; workflow moved to `.github/workflows/`; `alert_enabled = true`; the `capture` reviewer rule removed (C-4); one watched dispatch; then schedule and the 10-business-day soak (incl. a failing **scheduled** run's email, I-5) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** decide PR #60 (Authorisation B revision 1, factor-first sequencing; both proposed, OD-0136); the re-run "go"; rights; back up `~/.hio-state/`. Architect review: material assembled (OD-0128). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** the re-run and 7b "go"s (or defer 7b); accept or fix the storage-error limit (revision 1); the punctuality bar and five URLs for go-live; rights on the H2 and H4 rows (the owner's own reading); back up `~/.hio-state/`. The architect performance review is overdue. Architect review: material assembled (OD-0128). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
 | Branch | Head | Holds |
 |---|---|---|
-| `proposal/capture-gate-factor-first` | `ecd6b81` (pushed) | Authorisation B revision 1 and factor-first sequencing; **proposed, not adopted** (PR #60, OD-0136) |
 | `phase-b/h6` | `655335c` (pushed) | H6 tools and tests, responses 1 to 7; **parked, unactivated** (OD-0114) |
 | `proposal/h6-option-b` | `d26c2fa` (pushed) | the option B amendment, **approved** (OD-0104) and applied to `main` (OD-0106) |
 | `proposal/harness-0.9` | `c711f51` (pushed) | harness-0.9 revision 4 (design record for Phase B and H7; Fable dry-run report); H6 design wording per option B (OD-0106); the H6 recovery clarification (**proposed**, OD-0109, OD-0112). Phase A is applied on `main` (OD-0091) |
