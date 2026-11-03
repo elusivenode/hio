@@ -1,14 +1,14 @@
 ---
 id: T-0015
 title: "B-2 follow-up: narrow 403 UnauthorizedBlobOverwrite mapping in the Azure backend, C5 timing instrumentation in the storage probe, and a revised probe plan (one watched re-run plus step 7b)"
-status: submitted_for_review   # code and plan on feat/t0015; the re-run and 7b each need the owner's "go"
+status: accepted   # OD-0138 at a05219a, merged into main as 52abaff; nothing run; the re-run and 7b each need the owner's "go"
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator; hiomux workers); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-10-29
-updated_at: 2026-10-29
+updated_at: 2026-11-03
 authorised_by: OD-0134
 base_revision: a71f0ff
-accepted_by: null
+accepted_by: OD-0138   # at a05219a77ee9c21de56c1ea14dbd09f2dddeb327, merged into main as 52abaff
 review_required: owner (Codex review if the owner assigns one)
 links:
   adrs_governing_approved: [HIO-ADR-0012]
@@ -52,3 +52,7 @@ integrated by cherry-pick; F-3 by the orchestrator (`4cc9c36`, `docs/evidence/S1
 Full suite **1000 passed**; `ruff`, `ruff format` and `check_repo` pass. Nothing has run against Azure.
 
 ## Review and acceptance
+
+Reviewed by REVIEW-2026-11-03-t0015-1 (NOT READY at `3d259d3`; F-1 medium). Remediated at `a05219a`; VERIFY-2026-11-03-t0015-1-1
+READY (F-1 `verified_closed`). **Accepted** by the owner (OD-0138) at `a05219a`, merged as `52abaff` (PR #53). Offline fakes only; the re-run plan
+stays proposed.
