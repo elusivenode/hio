@@ -17,8 +17,8 @@ due instant written to the run record comes from this gate, never from the calle
 slots should have been attempted in a period, and which of those closed their window without any attempt
 record. The capture job runs `missed_slots` after every live run and fails on a missed slot.
 
-Nothing here makes a request. The schedule is defined, not enabled: the workflow definition is
-kept outside `.github/workflows/` and live operation needs Authorisation B (T-0009 §8).
+Nothing here makes a request. The workflow `.github/workflows/s1b1-capture.yml` fires the schedule, and
+live operation rests on Authorisation B (T-0009 §8; OD-0143).
 """
 
 from __future__ import annotations
