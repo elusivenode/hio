@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-03
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0139"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0140"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -24,7 +24,7 @@ on `main` as `73f2e40`); **T-0011** (IaC) **accepted** (OD-0125, `c69df9e`, `09d
 datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5 declined**. **Authorisation B is
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
-**B-2 ran once** (OD-0132): C5 failed 50/50 as written and a duplicate create returned 403, not 409 (`docs/evidence/b2/`);
+**B-2 ran** (OD-0132), then **re-ran with 7b** (OD-0140, `docs/evidence/b2/rerun-1.md`): `BlobExists` works live; C5 as written still fails (45/50), the floored candidate holds (50/50); a privileged delete of a retained version is refused by policy;
 **T-0015** (fix and instrumented re-run) is **accepted** (OD-0138), on `main`, not run; the probe account is **held** (OD-0134). **B-3** not started; it **no longer waits for a C5 decision** (Authorisation B revision 1, OD-0139).
 **Nothing has been captured.** **Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **Base camp** (`docs/base-camp.md`, proposed) is the procurement-readiness goal (OD-0129 to
 OD-0134): **T-0013** and **T-0014** accepted (T-0014 is machinery only; no criterion established). `main` is protected (PRs only;
@@ -85,10 +85,10 @@ No finding is waived.
 | Item | State |
 |---|---|
 | Phase | S1b-1 Authorisation B, staged ([package](docs/evidence/S1B1-authorisation-B-package.md), as amended by [revision 1](docs/evidence/S1B1-authorisation-B-revision-1.md)): **B-1 done**; B-2 ran, re-run pending; then B-3. Base camp: `docs/base-camp.md` (proposed) |
-| B-2 (storage probe) | run `40853094503`: create, refusals and one-version pass; duplicate create gives 403 `UnauthorizedBlobOverwrite`; **C5 0/50** (`s` floored to whole seconds; the probe measured `completed_at` after the write, unlike the ADR). T-0015 is merged. Next: re-run (R-1), 7b, destroy ≥24 h after the last write (re-run plan `docs/evidence/S1B1-B2-rerun-plan.md`, proposed). The C5 decision follows on evidence and no longer gates B-3 (OD-0139) |
+| B-2 (storage probe) | run `40853094503`: create, refusals and one-version pass; duplicate create gives 403 `UnauthorizedBlobOverwrite`; **C5 0/50** (`s` floored to whole seconds; the probe measured `completed_at` after the write, unlike the ADR). Re-run `41590213489` and 7b done (`docs/evidence/b2/rerun-1.md`). Next: destroy, from 2026-11-04T06:36:50Z, on a "go". The C5 decision (candidate or version-id witness) follows on evidence and no longer gates B-3 (OD-0139) |
 | B-3 (go-live) | five data-source URLs approved; `LIVE_AUTHORISATION` set; workflow moved to `.github/workflows/`; `alert_enabled = true`; the `capture` reviewer rule removed (C-4); one watched dispatch; then schedule and the 10-business-day soak (incl. a failing **scheduled** run's email, I-5) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** the re-run and 7b "go"s (or defer 7b); accept or fix the storage-error limit (revision 1); the punctuality bar and five URLs for go-live; rights on the H2 and H4 rows (the owner's own reading); back up `~/.hio-state/`. The architect performance review is overdue. Architect review: material assembled (OD-0128). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** the destroy "go" (from 2026-11-04T06:36:50Z); the C5 decision; the punctuality bar and five URLs for go-live; rights on the H2 and H4 rows (the owner's own reading); back up `~/.hio-state/`. The architect performance review is overdue. Architect review: material assembled (OD-0128). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
@@ -125,8 +125,8 @@ No finding is waived.
 - **S1a**, on synthetic fixtures (OD-0042), with its limitations: no CI egress firewall (Q-008);
   Hatchling not hash-locked; release ids revision-dependent.
 - **B-1 read-back** (OD-0125 c2): evidence account shared key off, no public access, ZRS, immutability Unlocked 3,650 days, 0 blobs, alert disabled.
-- **B-2 first run** (`docs/evidence/b2/`): writer RBAC refuses overwrite and delete; one version per key; C5 as written fails on Azure.
-- **No live capture or publication timing has been validated**; immutability against a privileged actor is untested (7b).
+- **B-2 runs** (`docs/evidence/b2/`): writer RBAC refuses overwrite and delete; one version per key; `BlobExists` on a duplicate create; C5 as written fails on Azure. **7b** (probe account, Unlocked policy, one day): a privileged delete of a retained version is refused by policy; an overwrite adds a new version.
+- **No live capture or publication timing has been validated**; changing an Unlocked policy, and the evidence account itself, are untested.
 
 ## Unverified and external
 

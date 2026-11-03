@@ -37,3 +37,23 @@ The destroy; any C5 amendment; B-3 go-live; any write to the evidence account; r
 plan as a standing document is not implied: only these steps are authorised.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-03): backup condition dropped; 7b role changed; both run
+
+**Owner's words:** `docs/history/2026-11-03-owner-backup-and-7b-role.md`, sha256 `9961974836968621dafd532d5d59cf9104ba11db9d6e2d7bb9edc891db8ae918`.
+
+1. **The backup condition is dropped for R-1 and 7b.** The owner: "rebuilding state from deployed resources isn't that difficult. we can back
+   up state if you really want." Claude reads this as: no backup is required for these steps. Authorisation B revision 1 lists a backup as a
+   B-3 prerequisite. Claude treats the same words as making it optional there too, **open to the owner's correction at the go-live yes**.
+   `~/.hio-state/` remains a single copy. Its `probe*` files were set to owner-only on the owner's "yes to all".
+2. **The 7b role changed** from `Storage Blob Data Contributor` to `Storage Blob Data Owner`, on the owner's yes, on container `probe` only:
+   the first role cannot delete a version, so its refusal would have proved nothing. That was an error in the plan Claude wrote.
+3. **The auto-mode classifier refused Claude's role grant** ("Permission Grant"). The owner ran it with their own login, as the plan had
+   said. Claude ran the removal and the read-back.
+4. **Claude's first delete attempt never reached Azure**: `az storage blob delete` has no `--version-id` (exit 2), an error in the same plan.
+   That was found by reading the output, before any result was reported. The delete then ran through the SDK, after the overwrite, so the
+   order was not the plan's. The refusal is unaffected.
+
+**Results:** `docs/evidence/b2/rerun-1.md`. R-1 run `41590213489`: C5 as written 45 of 50 violations, candidate 0 of 50. 7b: the retained version's
+delete refused, 409 `BlobImmutableDueToPolicy`; bytes identical; the role removed. **The stop rule did not fire.** Last write 2026-11-03T06:36:50Z.
+No C5 change, destroy or go-live follows from this record.
