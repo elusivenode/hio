@@ -124,3 +124,20 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 
 _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate lines below this note.)_
 - [process] flagged: the Settled line advising receipt chains "under `set -e`" (Source: OD-0098) conflicts with the Settled lines that found `set -e` does not stop a chain in Claude Code's Bash tool; gate each step with `|| exit 1`. Source: OD-0101 correction 1; OD-0113 correction 1. Applies to: the next distil.
+- [infra] Azure's x-ms-version-id carries sub-second time: s equalled its floor and completed_at <= version id in 50 of 50, by 67.6 to 76.2 ms. Whether Azure guarantees this meaning is unverified. Source: docs/evidence/b2/rerun-1.md.
+- [infra] With completed_at taken before the write, C5's existing rule failed 45 of 50 and floor_s(completed_at) <= s held 50 of 50: whole-second Last-Modified explains the failure. Source: docs/evidence/b2/rerun-1.md.
+- [infra] Azure's response Date header ran up to about a second behind x-ms-version-id, so offset bounds built from Date may not measure clock skew. Unexplained. Source: docs/evidence/b2/rerun-1.md.
+- [infra] Storage Blob Data Contributor has no blobs/deleteBlobVersion/action, so its refusal of a version delete proves nothing about immutability; test with Storage Blob Data Owner. Source: OD-0140 correction 1.
+- [infra] az storage blob delete has no --version-id; use the SDK's delete_blob(version_id=...). Source: OD-0140 correction 1.
+- [infra] Under version-level immutability, deleting a retained version gives 409 BlobImmutableDueToPolicy; an overwrite by a principal with write rights succeeds and adds a new current version. Source: docs/evidence/b2/rerun-1.md.
+- [storage] BlobStagedWrites.commit creates keys one at a time with no rollback, and a storage exception escapes run_capture and run_due with no failed run record; the process fails, so the alert fires. Accepted for the soak. Source: src/hio/storage/blobstore.py:145; OD-0140.
+- [publish] resolve_for_use resolves stored releases only and returns knowability declarations without enforcing them; a reader must enforce the knowledge mode and cutoff itself. Source: src/hio/publish/status.py:83; architect consultation 20261103T142328-ask-3901.
+- [process] A refusal test counts only if the refusal's reason is read: exit code 2 from a CLI argument error looked like a refusal. Source: OD-0140 correction 1.
+- [process] Match a precondition to the risk of its step: the state backup gated a probe that never touched state. Source: OD-0140 correction 1.
+- [process] A pipe to head kills the check with SIGPIPE and gives a false failure: send a check's output to a file and read its exit code. Source: OD-0137 correction 1.
+- [process] The auto-mode classifier refuses Azure role grants ("Permission Grant"): give the owner the command to run with !, printing no ids. Source: OD-0140 correction 1.
+- [repo] In zsh, $T:path applies a history modifier (:r strips an extension): write ${T}:path. A word starting with = is an equals expansion. Source: reproducible.
+- [ci] A newer merge to main cancels the running main CI, so read the tip's run; a cancelled run on an earlier merge is not a failure. Source: runs on 098bb96, 52abaff and 58fe532.
+- [review] A reviewer's README diff failed to apply in all three receipts this session; ask for the go-ahead to receive without it in the receipt question. Source: OD-0135 correction 1; OD-0137; OD-0138.
+- [hiomux] A Codex reviewer's clone has no origin remote: tell it to read the OD and index row from local main at a cited commit. Source: REVIEW-2026-11-03-t0015-1.
+- [review] In three tasks running (T-0013, T-0014, T-0015) Codex found a real defect that a passing full suite did not cover. Source: OD-0133, OD-0134, OD-0135.
