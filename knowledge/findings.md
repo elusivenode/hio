@@ -1,7 +1,7 @@
 ---
 id: HIO-FINDINGS-INDEX
 title: Findings index (findings, dead ends and settled assessments, one line each)
-status: current   # harness-0.9a (OD-0091); Settled section accepted by OD-0093 at 8393552 (rank 5); distil 2 accepted by OD-0135 at 4f30a9d; Inbox lines are claims (rank 6). Every line cites its source; the source wins
+status: current   # harness-0.9a (OD-0091); Settled section accepted by OD-0093 at 8393552 (rank 5); distil 2 accepted by OD-0135 at 4f30a9d; distil 3 PROPOSED on proposal/distil-3, not accepted; Inbox lines are claims (rank 6). Every line cites its source; the source wins
 owner: owner (approves Settled lines at distil); any agent appends to the Inbox
 last_reviewed: 2026-10-28
 ---
@@ -37,13 +37,15 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [repo] A YAML flow mapping cannot hold a double-quoted value containing double quotes; use single quotes inside. Source: reproducible; `registers/sources.yaml` entry `rba_calendar_pages`.
 - [repo] When an author branch carries authority records already imported to `main` byte-identically, its PR conflicts in the OD index (`main`'s rows are a superset). Integrate by merging the exact head into `main`, keeping `main`'s index; never merge `main` into a verified head. Source: OD-0079 (merge `7eba3f9`).
 - [repo] The owner's global git config rewrites `https://github.com/` to SSH; a sandboxed process with SSH blocked needs `GIT_CONFIG_GLOBAL=/dev/null` to read public refs over HTTPS. Source: OD-0077 tests.
-- [repo] zsh does not word-split an unquoted variable: `F="a b c"; git checkout T -- $F` passes one path "a b c". Write each path out (or use an array), and run receipt chains under `set -e` so a failing check stops them; a FAIL from `check_repo` was ignored and a broken import pushed. Source: OD-0098. (distil 2)
+- [repo] zsh does not word-split an unquoted variable: `F="a b c"; git checkout T -- $F` passes one path "a b c". Write each path out (or use an array), and gate receipt chains with `|| exit 1` (superseded: this line first advised `set -e`, which does not stop a chain in Claude Code's Bash tool, OD-0101 correction 1); a FAIL from `check_repo` was ignored and a broken import pushed. Source: OD-0098. (distil 2)
 - [repo] CI's "Lint and format" step runs `ruff check .` **and** `ruff format --check .`; a worker contract or local check that runs only `ruff check` passes while CI fails (all H6 branches, 2026-10-28). Put CI's exact lint commands in every acceptance list. Source: `.github/workflows/ci.yml` (Lint and format); CI runs 40669141245, 40673974716. (distil 2)
 - [repo] `check_repo`'s link scanner ignores code spans: quoting a Markdown link in an OD, even in backticks, fails the links check; fence it or avoid link syntax. Source: OD-0101 correction 1. (distil 2)
 - [repo] With main protected, a receipt's §5.9 merge goes through a PR (receipt/<id>), merged with the §5.9 subject; 5.10 then checks remote main. Source: OD-0121. (distil 2)
 - [repo] Never quote an owner message verbatim into a committed record when it contains an email address or other personal identifier; withhold it. Source: OD-0126 correction 1. (distil 2)
 - [repo] Tests that inspect a module directory must read git-tracked files only; ignored .terraform/, tfvars and state break them locally. Source: F-REVIEW-2026-10-29-t0013-1-1. (distil 2)
 - [repo] check_repo refuses data files (.json) outside tests/fixtures/synthetic/; retain JSON evidence verbatim in a fenced block in Markdown, with its sha256. Source: docs/evidence/b2/README.md. (distil 2)
+- [repo] In zsh, $T:path applies a history modifier (:r strips an extension): write ${T}:path. A word starting with = is an equals expansion. Source: reproducible. (distil 3)
+- [ci] A newer merge to main cancels the running main CI, so read the tip's run; a cancelled run on an earlier merge is not a failure. Source: runs on 098bb96, 52abaff and 58fe532. (distil 3)
 
 ### Releases, specs and rights
 - [releases] `spec_ref` is `factor_id@identity.version`. Editing a spec that an accepted release cites changes that release's identity or silently changes a spec at an unchanged version; S1a pins its spec versions (`S1A_SPECS`), and S1b uses its own versions. Source: `src/hio/jobs/s1a.py` (`S1A_SPECS`); F-REVIEW-2026-10-25-t0009-4; OD-0067.
@@ -54,6 +56,8 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [data] The RBA holidays page lists one year only. RITS closes on holidays "where they are observed in NSW and Victoria", so it is open on NSW-only weekdays (in 2026: 27 April, 3 August, 5 October). A 2027 calendar needs a new manual read (`review_due: 2027-01-31`). RITS Advice 02/2026 has never been read; the 2026 reading rests on the two pages, confirmed by Codex. Source: `src/hio/reference/calendars/*-2026.yaml`; VERIFY-2026-10-28-t0009-1-3. Applies to: the 2026 calendars.
 - [tools] WebFetch returns a small model's summary, not the page: unusable for exact facts (dates, quotations, hashes). Fetch the bytes (`curl`), hash them and parse locally. Source: the OD-0076 read (2026-10-28).
 - [rights] FRED/ALFRED terms forbid storing, caching or archiving without permission: not a retained source; take series from the public-domain originator (Treasury, the Board). Source: docs/research/T-0002-free-history-sources-matrix.md. (distil 2)
+- [storage] BlobStagedWrites.commit creates keys one at a time with no rollback, and a storage exception escapes run_capture and run_due with no failed run record; the process fails, so the alert fires. Accepted for the soak. Source: src/hio/storage/blobstore.py:145; OD-0140. (distil 3)
+- [publish] resolve_for_use resolves stored releases only and returns knowability declarations without enforcing them; a reader must enforce the knowledge mode and cutoff itself. Source: src/hio/publish/status.py:83; architect consultation 20261103T142328-ask-3901. (distil 3)
 
 ### Review practice
 - [review] Reuse the two probes that found the T-0009 high findings as standing adversarial tests for any change to the rights subject: allow the publication id but deny the true dataset; substitute a single-owner link with the true dataset denied. Source: `reviews/records/REVIEW-2026-10-25-t0009-1.md` F-1, F-2.
@@ -76,6 +80,8 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [review] check_review_assignment.py compares the record's assignment field exactly; tell the reviewer the exact string to write (path only, no section). Source: OD-0121 correction 1, OD-0122. (distil 2)
 - [review] A restore or rebuild comparison must compare against the pinned release hash and require the running code to equal the pin; reading at the rebuilt hash's own path proves nothing. Source: F-REVIEW-2026-10-29-t0014-1-1, -2. (distil 2)
 - [review] In this session Codex found a real defect in every task it reviewed (T-0013, T-0014), and Fable found the alert defect the T-0011 review had missed. Source: OD-0129, OD-0133, OD-0134. (distil 2)
+- [review] A reviewer's README diff failed to apply in all three receipts this session; ask for the go-ahead to receive without it in the receipt question. Source: OD-0135 correction 1; OD-0137; OD-0138. (distil 3)
+- [review] In three tasks running (T-0013, T-0014, T-0015) Codex found a real defect that a passing full suite did not cover. Source: OD-0133, OD-0134, OD-0135. (distil 3)
 
 ### Harness and process
 - [harness] Assigning and receiving one review costs about a dozen mechanical steps (two ODs, transcripts, a tag, an import, merges, index rows, STATUS); the Codex run itself took 5 to 6 minutes. The records dominate the effort (the case for H6). Source: OD-0066; OD-0067; OD-0074 to OD-0079.
@@ -90,6 +96,10 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [harness] Recovery code that reconstructs trust from local or published history it did not build keeps leaking; prefer a narrow boundary (publish only what this run built from a fresh remote main). Source: OD-0109, VERIFY-2026-10-28-h6-1-3 to -7. (distil 2)
 - [process] A pipe to tail hides a failing exit: never write "check_repo | tail -1 &&"; run the check unpiped. Source: this session (PR #38). (distil 2)
 - [process] The auto-mode classifier blocks merging PRs and editing permission settings; the owner grants Bash(gh pr merge *) with /permissions (local settings). Source: OD-0131. (distil 2)
+- [process] A refusal test counts only if the refusal's reason is read: exit code 2 from a CLI argument error looked like a refusal. Source: OD-0140 correction 1. (distil 3)
+- [process] Match a precondition to the risk of its step: the state backup gated a probe that never touched state. Source: OD-0140 correction 1. (distil 3)
+- [process] A pipe to head kills the check with SIGPIPE and gives a false failure: send a check's output to a file and read its exit code. Source: OD-0137 correction 1. (distil 3)
+- [process] The auto-mode classifier refuses Azure role grants ("Permission Grant"): give the owner the command to run with !, printing no ids. Source: OD-0140 correction 1. (distil 3)
 
 ### hiomux and the owner's tools (outside the repository; `~/.hio-runs`)
 - [hiomux] macOS refuses a sandbox inside a non-trivial sandbox: a networked Codex reviewer runs under hiomux's profile with Codex's own sandbox off. Source: OD-0077 tests.
@@ -110,6 +120,7 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [hiomux] hiomux checks an assignment OD against the LOCAL main; pull main before 'task add --kind codex'. Source: this session (OD-0120 launch). (distil 2)
 - [hiomux] A task contract cannot be widened after spawn; supersede the task with a widened one. Source: R2/R2b, OD-0121. (distil 2)
 - [hiomux] The Codex reviewer cannot push: push review/<id>-codex before receipt 5.1. Two Codex tasks with reviews/** contracts need spawn --allow-overlap. Source: OD-0133 correction 1; this session. (distil 2)
+- [hiomux] A Codex reviewer's clone has no origin remote: tell it to read the OD and index row from local main at a cited commit. Source: REVIEW-2026-11-03-t0015-1. (distil 3)
 
 ### Infrastructure and providers (Azure, GitHub)
 - [infra] A required reviewer on a GitHub Environment pauses every job in it, scheduled ones included. Source: OD-0119 C-4. (distil 2)
@@ -119,25 +130,13 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 - [infra] Azure Last-Modified is whole seconds (floored); HIO-ADR-0012 C5's lower bound completed_at <= s cannot be tested by a probe that takes completed_at after the write. Source: docs/evidence/b2/README.md; architect consultation 20261029T202344-ask-4dcb. (distil 2)
 - [infra] A no-write alert counting all datasets over a fixed window fires every weekend and masks one source's silence: detect per slot in the job; keep the alert as a weekend-aware dead-man. Source: OD-0129 correction 1; T-0013. (distil 2)
 - [infra] A workflow dispatch into an Environment with a required reviewer waits for the owner's approval in GitHub; say so when dispatching. Source: B-2 run 40853094503. (distil 2)
+- [infra] Azure's x-ms-version-id carries sub-second time: s equalled its floor and completed_at <= version id in 50 of 50, by 67.6 to 76.2 ms. Whether Azure guarantees this meaning is unverified. Source: docs/evidence/b2/rerun-1.md. (distil 3)
+- [infra] With completed_at taken before the write, C5's existing rule failed 45 of 50 and floor_s(completed_at) <= s held 50 of 50: whole-second Last-Modified explains the failure. Source: docs/evidence/b2/rerun-1.md. (distil 3)
+- [infra] Azure's response Date header ran up to about a second behind x-ms-version-id, so offset bounds built from Date may not measure clock skew. Unexplained. Source: docs/evidence/b2/rerun-1.md. (distil 3)
+- [infra] Storage Blob Data Contributor has no blobs/deleteBlobVersion/action, so its refusal of a version delete proves nothing about immutability; test with Storage Blob Data Owner. Source: OD-0140 correction 1. (distil 3)
+- [infra] az storage blob delete has no --version-id; use the SDK's delete_blob(version_id=...). Source: OD-0140 correction 1. (distil 3)
+- [infra] Under version-level immutability, deleting a retained version gives 409 BlobImmutableDueToPolicy; an overwrite by a principal with write rights succeeds and adds a new current version. Source: docs/evidence/b2/rerun-1.md. (distil 3)
 
 ## Inbox
 
-_(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate lines below this note.)_
-- [process] flagged: the Settled line advising receipt chains "under `set -e`" (Source: OD-0098) conflicts with the Settled lines that found `set -e` does not stop a chain in Claude Code's Bash tool; gate each step with `|| exit 1`. Source: OD-0101 correction 1; OD-0113 correction 1. Applies to: the next distil.
-- [infra] Azure's x-ms-version-id carries sub-second time: s equalled its floor and completed_at <= version id in 50 of 50, by 67.6 to 76.2 ms. Whether Azure guarantees this meaning is unverified. Source: docs/evidence/b2/rerun-1.md.
-- [infra] With completed_at taken before the write, C5's existing rule failed 45 of 50 and floor_s(completed_at) <= s held 50 of 50: whole-second Last-Modified explains the failure. Source: docs/evidence/b2/rerun-1.md.
-- [infra] Azure's response Date header ran up to about a second behind x-ms-version-id, so offset bounds built from Date may not measure clock skew. Unexplained. Source: docs/evidence/b2/rerun-1.md.
-- [infra] Storage Blob Data Contributor has no blobs/deleteBlobVersion/action, so its refusal of a version delete proves nothing about immutability; test with Storage Blob Data Owner. Source: OD-0140 correction 1.
-- [infra] az storage blob delete has no --version-id; use the SDK's delete_blob(version_id=...). Source: OD-0140 correction 1.
-- [infra] Under version-level immutability, deleting a retained version gives 409 BlobImmutableDueToPolicy; an overwrite by a principal with write rights succeeds and adds a new current version. Source: docs/evidence/b2/rerun-1.md.
-- [storage] BlobStagedWrites.commit creates keys one at a time with no rollback, and a storage exception escapes run_capture and run_due with no failed run record; the process fails, so the alert fires. Accepted for the soak. Source: src/hio/storage/blobstore.py:145; OD-0140.
-- [publish] resolve_for_use resolves stored releases only and returns knowability declarations without enforcing them; a reader must enforce the knowledge mode and cutoff itself. Source: src/hio/publish/status.py:83; architect consultation 20261103T142328-ask-3901.
-- [process] A refusal test counts only if the refusal's reason is read: exit code 2 from a CLI argument error looked like a refusal. Source: OD-0140 correction 1.
-- [process] Match a precondition to the risk of its step: the state backup gated a probe that never touched state. Source: OD-0140 correction 1.
-- [process] A pipe to head kills the check with SIGPIPE and gives a false failure: send a check's output to a file and read its exit code. Source: OD-0137 correction 1.
-- [process] The auto-mode classifier refuses Azure role grants ("Permission Grant"): give the owner the command to run with !, printing no ids. Source: OD-0140 correction 1.
-- [repo] In zsh, $T:path applies a history modifier (:r strips an extension): write ${T}:path. A word starting with = is an equals expansion. Source: reproducible.
-- [ci] A newer merge to main cancels the running main CI, so read the tip's run; a cancelled run on an earlier merge is not a failure. Source: runs on 098bb96, 52abaff and 58fe532.
-- [review] A reviewer's README diff failed to apply in all three receipts this session; ask for the go-ahead to receive without it in the receipt question. Source: OD-0135 correction 1; OD-0137; OD-0138.
-- [hiomux] A Codex reviewer's clone has no origin remote: tell it to read the OD and index row from local main at a cited commit. Source: REVIEW-2026-11-03-t0015-1.
-- [review] In three tasks running (T-0013, T-0014, T-0015) Codex found a real defect that a passing full suite did not cover. Source: OD-0133, OD-0134, OD-0135.
+_(Empty after distil 3, proposed. Append new candidate lines below this note.)_
