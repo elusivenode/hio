@@ -1,7 +1,8 @@
 ---
 id: T-0016
 title: "B-3 go-live PR: set LIVE_AUTHORISATION, configure the four approved URLs, move the capture workflow into .github/workflows, and update the tests that pin the disabled state"
-status: submitted_for_review
+status: accepted   # OD-0144 at d77e6e2, merged into main as 0a2c0a1
+accepted_by: OD-0144
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator); independent reviewer: Codex (REVIEW-2026-11-03-t0016-1)"
 created_at: 2026-11-03

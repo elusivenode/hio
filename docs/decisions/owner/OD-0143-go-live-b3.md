@@ -59,3 +59,7 @@ T-0016 is built, on `feat/t0016` (draft PR #75). The owner's yes covers one Code
 | Review branch | `review/t0016-1-codex`, cut at the head |
 | The record's `assignment` field | exactly `docs/decisions/owner/OD-0143-go-live-b3.md` |
 | Delivery | hiomux Codex task, `gpt-6-sol` `high`, with network (public reads only) |
+
+### Correction 2 (2026-11-04): the day, and the stop at step 6
+
+The owner chose Wednesday 2026-11-04 Sydney ("Wednesday morning works"; `docs/history/2026-11-04-owner-t0017-fix.md`), and merged #75 at `d77e6e2` as `0a2c0a1`. The first run failed `rba.expert_judgement`, so the sequence stopped at step 6 with the rule on (`docs/evidence/b3/first-run.md`). Next: OD-0145.
