@@ -158,6 +158,7 @@ are in operating model §1.1; the template is
 | [OD-0141](OD-0141-session-distil-and-roll.md) | authorise_work | session distil (handoff, Inbox, STATUS, distil 3 proposed); prepare to roll the orchestrator | `310d7dd` | recorded |
 | [OD-0142](OD-0142-draft-go-live-package.md) | authorise_work | draft the go-live package (B-3); draft only | `387eee7` | recorded |
 | [OD-0143](OD-0143-go-live-b3.md) | authorise_work | go live (B-3) under the package at `3cee431`; T-0016 and its Codex review; D-2 to D-5 as put | `5c68d6c` | recorded |
+| [OD-0144](OD-0144-receive-t0016-review-accept-t0016.md) | authorise_work | REVIEW-2026-11-03-t0016-1 received; T-0016 accepted at `d77e6e2`; #75 merged by the owner in the window | `6eb5c13` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
