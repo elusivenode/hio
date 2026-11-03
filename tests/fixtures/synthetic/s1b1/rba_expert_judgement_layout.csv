@@ -1,0 +1,10 @@
+SYNTHETIC FIXTURE; invented words and dates; mirrors the live file's layout (T-0017)
+"An invented paragraph that says when each type applies, with an update date, so one cell holds both words."
+,A - invented meaning
+,B - invented meaning
+,"C - invented meaning, with a comma"
+An invented pointer to a manual,,,An invented title.
+
+Date,Expert Judgement type,Series title,Details
+31-Jul-2026,A,Invented Series Title
+02-Oct-2026,C,Invented Series Title
