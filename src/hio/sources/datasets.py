@@ -125,12 +125,13 @@ def parse_rba_f1(wanted: Mapping[str, str]) -> Callable[[bytes], Parsed]:
 
 
 def parse_rba_expert_judgement(data: bytes) -> Parsed:
-    """RBA expert-judgement CSV: a header with a date column and a type column (A, B or C)."""
+    """RBA expert-judgement CSV: prose rows, then a header with a column named exactly `Date` and a separate
+    type column (A, B or C). Prose can hold both words in one cell, so a cell must be exactly `date`."""
     rows = list(csv.reader(io.StringIO(_text(data))))
     for i, r in enumerate(rows):
         lowered = [c.strip().lower() for c in r]
-        d = next((j for j, c in enumerate(lowered) if "date" in c), None)
-        t = next((j for j, c in enumerate(lowered) if "type" in c), None)
+        d = next((j for j, c in enumerate(lowered) if c == "date"), None)
+        t = next((j for j, c in enumerate(lowered) if "type" in c and j != d), None)
         if d is not None and t is not None:
             flags = []
             for rr in rows[i + 1 :]:
