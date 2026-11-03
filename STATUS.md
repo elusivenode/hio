@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-03
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0135"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0137"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -25,7 +25,7 @@ datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
 **B-2 ran once** (OD-0132): C5 failed 50/50 as written and a duplicate create returned 403, not 409 (`docs/evidence/b2/`);
-**T-0015** (fix and instrumented re-run) is built, not run; its review is **NOT READY** (one medium finding; not received); the probe account is **held** (OD-0134). **B-3** not started.
+**T-0015** (fix and instrumented re-run) is built, not run; its review is **NOT READY** (one medium finding; received, fixed at `a05219a`, verification assigned, OD-0137); the probe account is **held** (OD-0134). **B-3** not started.
 **Nothing has been captured.** **Base camp** (`docs/base-camp.md`, proposed) is the procurement-readiness goal (OD-0129 to
 OD-0134): **T-0013** and **T-0014** accepted (T-0014 is machinery only; no criterion established). `main` is protected (PRs only;
 OD-0118). Session handoff: `handoffs/s1b1/2026-10-29-base-camp.md`.
@@ -64,7 +64,7 @@ use under its protocol, outside the repository (OD-0072, OD-0073). Routine deleg
 | Review | State |
 |---|---|
 | **REVIEW-2026-10-29-t0013-1** | NOT READY at `caf44da` (OD-0133); **VERIFY-…-t0013-1-1 READY** at `39747c5` (OD-0134): F-1 `verified_closed` |
-| **REVIEW-2026-11-03-t0015-1** | **NOT READY** at `3d259d3`, one medium (F-…-t0015-1-1, by the reviewer's report); tip `3123599`, **not pushed, not received** (OD-0135) |
+| **REVIEW-2026-11-03-t0015-1** | **NOT READY** at `3d259d3`, one medium, **open** (received OD-0137); **VERIFY-…-t0015-1-1 assigned** at `a05219a` |
 | **REVIEW-2026-10-29-t0014-1** | NOT READY at `13d2ea5`, one high, one medium (received OD-0134); **VERIFY-…-t0014-1-1 READY** at `e0aaa4d` (OD-0135): both `verified_closed` |
 | **REVIEW-2026-10-29-t0010-1** | NOT READY at `f345d1e` (OD-0121); **VERIFY-…-t0010-1-1 READY** at `62adccd` (OD-0123): both findings `verified_closed` |
 | **REVIEW-2026-10-29-t0011-1** | NOT READY at `2cc7362` (OD-0121); VERIFY-…-1 (OD-0123) and **VERIFY-…-2 READY** at `c69df9e` (OD-0125): all three `verified_closed` |
@@ -88,13 +88,14 @@ No finding is waived.
 | B-2 (storage probe) | run `40853094503`: create, refusals and one-version pass; duplicate create gives 403 `UnauthorizedBlobOverwrite`; **C5 0/50** (`s` floored to whole seconds; the probe measured `completed_at` after the write, unlike the ADR). Next: merge T-0015, re-run (R-1), 7b, C5 decision, destroy ≥24 h after the last write (re-run plan `docs/evidence/S1B1-B2-rerun-plan.md` on `feat/t0015`) |
 | B-3 (go-live) | five data-source URLs approved; `LIVE_AUTHORISATION` set; workflow moved to `.github/workflows/`; `alert_enabled = true`; the `capture` reviewer rule removed (C-4); one watched dispatch; then schedule and the 10-business-day soak (incl. a failing **scheduled** run's email, I-5) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** receive REVIEW-…-t0015-1 and authorise its remediation; then verification and acceptance of T-0015; then the re-run "go"; rights V1–V5; back up `~/.hio-state/`. Architect review: material assembled (OD-0128). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** decide PR #60 (Authorisation B revision 1, factor-first sequencing; both proposed, OD-0136); after VERIFY-…-t0015-1-1, receipt and acceptance of T-0015; then the re-run "go"; rights; back up `~/.hio-state/`. Architect review: material assembled (OD-0128). Older items stand: held-out stress cases (OD-0089); H7 timing; observations v0.3; Q-013. **Claude:** nothing beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
 | Branch | Head | Holds |
 |---|---|---|
-| `feat/t0015` | `3d259d3` (pushed) | T-0015 B-2 follow-up (403 mapping, probe instrumentation, re-run plan); **submitted**, review NOT READY (PR #53) |
+| `feat/t0015` | `a05219a` (pushed) | T-0015 B-2 follow-up (403 mapping, probe instrumentation, re-run plan); **submitted**, remediated, verification assigned (PR #53) |
+| `proposal/capture-gate-factor-first` | `ecd6b81` (pushed) | Authorisation B revision 1 and factor-first sequencing; **proposed, not adopted** (PR #60, OD-0136) |
 | `phase-b/h6` | `655335c` (pushed) | H6 tools and tests, responses 1 to 7; **parked, unactivated** (OD-0114) |
 | `proposal/h6-option-b` | `d26c2fa` (pushed) | the option B amendment, **approved** (OD-0104) and applied to `main` (OD-0106) |
 | `proposal/harness-0.9` | `c711f51` (pushed) | harness-0.9 revision 4 (design record for Phase B and H7; Fable dry-run report); H6 design wording per option B (OD-0106); the H6 recovery clarification (**proposed**, OD-0109, OD-0112). Phase A is applied on `main` (OD-0091) |
@@ -114,7 +115,7 @@ No finding is waived.
 | B-2 storage probe | [T-0012](registers/tasks/T-0012-b2-storage-probe.md) | **accepted** (OD-0128) at `efb6fa1`, merged `01edfe9`; ran once (B-2) |
 | Soak monitoring fix | [T-0013](registers/tasks/T-0013-soak-alert-and-completeness.md) | **accepted** (OD-0134) at `39747c5`, merged `ae84ac6`; alert still disabled |
 | Base-camp completion build | [T-0014](registers/tasks/T-0014-basecamp-completion-build.md) | **accepted** (OD-0135) at `e0aaa4d`, merged `aacfca2`; no criterion established |
-| B-2 follow-up | T-0015 (on `feat/t0015`) | submitted (OD-0134); review NOT READY, not received |
+| B-2 follow-up | T-0015 (on `feat/t0015`) | submitted (OD-0134); review NOT READY (received), remediated; verification assigned (OD-0137) |
 | T-0006, T-0007, T-0008 | in `registers/tasks/` | **accepted** (OD-0007, OD-0004, OD-0006) |
 | ETF diagnostic (lives in `macsmsf`) | `macsmsf` branch `docs/etf-diagnostic-card` | proposed; not authorised (OD-0018); not an HIO dependency |
 
