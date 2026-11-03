@@ -151,6 +151,7 @@ are in operating model §1.1; the template is
 | [OD-0134](OD-0134-accept-t0013-verify-t0014-build-t0015-distil.md) | accept / authorise_work | **T-0013 accepted** at `39747c5`; receive VERIFY-…-t0013-1-1 and REVIEW-…-t0014-1; assign VERIFY-…-t0014-1-1; T-0015 (B-2 follow-up); hold the probe; session distil | `3dfcf85` | recorded |
 | [OD-0135](OD-0135-accept-t0014-assign-t0015-review-accept-distil-2.md) | accept / authorise_work | **T-0014 accepted** at `e0aaa4d`; receive VERIFY-…-t0014-1-1; assign REVIEW-…-t0015-1 at `3d259d3`; **distil 2 accepted** at `4f30a9d` | `3a8486a` | recorded |
 | [OD-0136](OD-0136-draft-capture-gate-revision-and-factor-sequencing.md) | authorise_work | two **drafts only**: B-2/B-3 prerequisites revision; factor-first sequencing proposal; nothing adopted | `6030c17` | recorded |
+| [OD-0137](OD-0137-receive-t0015-review-remediate-verify.md) | authorise_work | receive REVIEW-…-t0015-1 (NOT READY); remediate its finding; assign verification at the new head; nothing accepted | `7c36e4a` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
