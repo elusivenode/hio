@@ -159,7 +159,7 @@ class AzureBlobBackend:
                 timeout=self._timeout,
             )
         except HttpResponseError as error:
-            if _is_already_exists(error) or (_is_overwrite_refusal(error) and self._key_exists(blob)):
+            if _is_already_exists(error) or (_is_overwrite_refusal(error) and self._key_exists(key, blob)):
                 raise BlobExists(key) from None
             raise
         version_id = result.get("version_id") if isinstance(result, dict) else None
@@ -172,14 +172,16 @@ class AzureBlobBackend:
             raise ProviderMetadataError(f"{key}: the stored version does not match the upload")
         return info
 
-    def _key_exists(self, blob: Any) -> bool:
-        """True only when a properties read of the exact key succeeds. A not-found answer, any other
-        failure and any inconclusive result are False, so the caller re-raises the original error."""
+    def _key_exists(self, key: str, blob: Any) -> bool:
+        """True only when a properties read returns substantive properties of exactly `key`: its name,
+        version id, UTC write time and size. A not-found answer, any other failure and any absent or
+        malformed result are False, so the caller re-raises the original error."""
         try:
-            blob.get_blob_properties(timeout=self._timeout)
+            props = blob.get_blob_properties(timeout=self._timeout)
+            _info(key, props)
         except Exception:
             return False
-        return True
+        return getattr(props, "name", None) == key
 
     def read(self, key: str, version_id: str | None = None) -> bytes:
         """The bytes of the current version, or of exactly `version_id` when given."""

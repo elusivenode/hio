@@ -3,6 +3,8 @@ properties read confirms the exact key exists. Offline fakes only; no credential
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 from azure.core.exceptions import (
     ClientAuthenticationError,
@@ -13,7 +15,9 @@ from azure.core.exceptions import (
 
 from hio.storage.blobstore import BlobExists
 from tests.test_t0010_azure_blob import backend
-from tests.test_t0010_azure_fakes import FakeBlobClient, service_error
+from tests.test_t0010_azure_fakes import FakeBlobClient, Props, service_error
+
+WRITTEN_AT = datetime(2026, 11, 3, tzinfo=UTC)
 
 
 def overwrite_refusal() -> HttpResponseError:
@@ -85,6 +89,31 @@ def test_a_failing_existence_check_raises_the_original_error(monkeypatch, check_
     monkeypatch.setattr(FakeBlobClient, "get_blob_properties", failing)
     with pytest.raises(HttpResponseError) as raised:
         b.create("k/a", b"second")
+    assert raised.value is error
+    assert not isinstance(raised.value, BlobExists)
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        None,
+        object(),
+        Props("k/a", None, WRITTEN_AT, 1),
+        Props("k/a", "v1", None, 1),
+        Props("k/a", "v1", WRITTEN_AT, None),
+        Props("other/key", "v1", WRITTEN_AT, 1),
+        Props(None, "v1", WRITTEN_AT, 1),  # type: ignore[arg-type]
+    ],
+    ids=["none", "bare-object", "no-version", "no-write-time", "no-size", "other-key", "no-name"],
+)
+def test_an_inconclusive_existence_result_raises_the_original_error(monkeypatch, result):
+    """F-REVIEW-2026-11-03-t0015-1-1: a properties call that returns without raising is not proof."""
+    b, c = backend()  # the key is absent
+    error = overwrite_refusal()
+    c.upload_error = error
+    monkeypatch.setattr(FakeBlobClient, "get_blob_properties", lambda *_a, **_k: result)
+    with pytest.raises(HttpResponseError) as raised:
+        b.create("k/a", b"x")
     assert raised.value is error
     assert not isinstance(raised.value, BlobExists)
 
