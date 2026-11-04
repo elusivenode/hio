@@ -102,7 +102,7 @@
   reviewed_by: null
 - id: E-0003
   hypothesis: H-0007
-  status: pre_registered
+  status: complete
   pre_registration:
     committed_revision: "self: the commit that adds this entry, before retained RBA data was read for it (OD-0170)"
     sample:
@@ -132,9 +132,9 @@
     not_tested: "hedged returns, costs, tax, AUD assets, any period before 2011"
   variants: []
   inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
-  runs: []
-  results: null
-  negative_findings: null
-  outcome: null
-  follow_up: null
+  runs: ["docs/evidence/e0003/result-1.md"]
+  results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "volatility distinguished for cash rate and currency and for total; all other intervals span zero"}
+  negative_findings: "the Treasury duration effect isn't distinguished on any metric in this sample"
+  outcome: inconclusive
+  follow_up: "earlier AUD cash history indicated by the pre-registered test; the owner's rights decision"
   reviewed_by: null
