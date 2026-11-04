@@ -50,3 +50,5 @@ The message answered a list Claude had just put. Each item below transcribes wha
 - Any change to the architect's powers, entries, identity, schema or boundary; accepting the review or the architect as an authority.
 
 ## Corrections (append-only)
+
+1. **2026-11-04:** the owner decided no vendor letters need be sent (OD-0161). The owner also confirmed reading the live pages.

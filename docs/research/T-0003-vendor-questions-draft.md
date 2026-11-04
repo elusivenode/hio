@@ -9,7 +9,7 @@ task: T-0003
 
 # Draft vendor questions (NOT SENT)
 
-> **OD-0155: the owner may send these; none has been sent.** Claude has no mail channel, and the sender's details and recipient addresses are for the owner. Record the date sent as a correction to OD-0155.
+> **OD-0161: the owner decided no letters need be sent; none has been.** OD-0155 permitted them. Claude has no mail channel, and the sender's details and recipient addresses are for the owner. Record the date sent as a correction to OD-0155.
 >
 > Drafted for owner review under OD-0013; revised under OD-0147 (2026-11-04), so the context describes HIO's independent research, its write-once store, and processing, and not only the SMSF. Sending needs a separate owner
 > instruction. The sender's name and contact details are left blank on purpose. No
