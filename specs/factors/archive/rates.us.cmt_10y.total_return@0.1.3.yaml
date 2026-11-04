@@ -1,0 +1,145 @@
+# PROPOSED under OD-0147; E-0001 runs on this version (OD-0157), which approves nothing. External facts are marked [EXT] and are unverified.
+identity:
+  factor_id: rates.us.cmt_10y.total_return
+  version: 0.1.3
+  status: proposed
+  owner: quantitative researcher
+  family: rates
+economics:
+  exposure: >-
+    USD funded total return of holding a par 10-year US Treasury constant-maturity position,
+    re-struck every observation date: carry, roll-down and curve change.
+  rationale: >-
+    The rate-duration risk premium and the main diversifier against equity risk in a multi-asset
+    portfolio. A pillar 1 input. This spec makes no claim that it diversifies; that needs other
+    return series.
+  is_not: >-
+    A yield series (state_indicator); -D x dy (price_only, RA §6); a traded bond or fund return; an
+    excess return, which needs a specified, cleared historical cash leg; market-timed evidence (it is reconstructed).
+classification:
+  series_class: total_return
+  investability: replicable_with_basis
+return_convention:
+  return_type: simple
+  period: "consecutive observation dates of the curve"
+  compounding: chain simple period returns
+  numeraire: USD
+  hedging: n/a
+  cash_leg: "n/a: funded form. Excess return is out of scope for this version"
+  excess_definition: "n/a: funded form"
+observations:
+  - series_id: us_treasury.par_yield.7y
+    source_id: us_treasury.par_yield_curve   # OD-0155, OD-0156
+    unit: percent per annum, bond-equivalent semi-annual [EXT]
+    knowledge_mode_required: latest
+  - series_id: us_treasury.par_yield.10y
+    source_id: us_treasury.par_yield_curve
+    unit: percent per annum, bond-equivalent semi-annual [EXT]
+    knowledge_mode_required: latest
+  - series_id: "us_treasury.par_yield.{6m, 1y, 2y, 3y, 5y}, for the pricing-basis sensitivity only; not an input to the return"
+    source_id: us_treasury.par_yield_curve
+    unit: percent per annum, bond-equivalent semi-annual [EXT]
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: >-
+    Every value is labelled reconstructed(T): one one-off download at T. No publication instant is
+    claimed, and nothing supports an as_known_by_market claim.
+  earliest_history: "1990-01-02 for the Treasury par curve [EXT, unverified]; to be confirmed at the first authorised structure check"
+  capture_clock_dependency: "none for this exploratory version; walk-forward claims would need captured vintages, which don't exist for this series"
+construction:
+  calendar: >-
+    The dates the curve is published with both tenors present (derived from the observations; a
+    derived calendar, as for SOFR). A gap isn't filled: the period runs between consecutive present
+    dates, its length comes from the calendar dates, and it is flagged if longer than 5 calendar days.
+  day_count: "actual/actual within the coupon period (street convention), semi-annual"
+  algorithm: |
+    Let t-1 and t be consecutive observation dates and y(d, m) the par yield at date d, maturity m.
+    Curve: Treasury par curve as published. Par yields are used as yields of the aged bond: this is
+    the declared flat-yield approximation (RA §6). Its error isn't measured by this construction: see
+    the pricing basis below.
+    1. Strike at t-1: a 10-year bond with coupon c = y(t-1, 10y). Its coupon dates are anchored to the
+       STRIKE: strike + 6k months, k = 1..20, each with the day clamped to the month's length, and the last
+       is the maturity. So the first coupon period starts on the strike date, the bond has no stub, and
+       P_dirty(t-1) = 100 by construction, on every date. A 2024-02-29 strike pays on 2024-08-29 and
+       matures on 2034-02-28.
+    2. Remaining maturity at t: M - tau, in years, on actual/365.25.
+    3. Yield at t: interpolate y(t, M - tau) linearly in maturity between y(t, 7y) and y(t, 10y). Refuse if
+       either is absent. Never extrapolate: M - tau < 10y always, and a period long enough to
+       take M - tau below 7y refuses.
+    4. Price: P_dirty(t) = sum over remaining cash flows CF_j / (1 + y/2)^(w + j), where w = (days to next
+       coupon) / (days in the coupon period), j = 0, 1, ...
+    5. Coupon cash: C = any coupon paid in (t-1, t]. With a daily re-strike, none falls due unless a gap reaches
+       six months. A longer gap refuses. The formula always carries C, so that RA-INV-013 holds.
+    6. R_t = (P_dirty(t) + C) / P_dirty(t-1) - 1. Re-strike at t on total wealth (RA §6).
+    7. Report, per period, the decomposition: carry, roll-down, curve change, convexity and residual. The
+       residual is (this return - those Taylor terms), both on the same flat yield. It tests the decomposition
+       only. A small residual says nothing about pricing-basis error.
+    Pricing basis: the error from using flat-yield pricing instead of a discount curve is not measured by the
+    return or its residual. E-0001 reports it as a separate sensitivity, on the same source, so it is not independent:
+      a. Knots: par yields at 6m, 1y, 2y, 3y, 5y, 7y and 10y, the same set throughout history. A date missing any
+         knot has no zero curve; its periods are counted as uncovered and stay in the primary return.
+      b. Half-year par grid: linear in maturity between knots, at n/2 years, n = 1..20. Nothing below 6m
+         or above 10y is used.
+      c. Bootstrap: D_1 = 1 / (1 + g_1/200); D_n = (1 - (g_n/200) * sum_{k<n} D_k) / (1 + g_n/200), for grid par yield
+         g_n in percent. Any D_n <= 0 is a failure for that date.
+      d. Discounting at time s years: log-linear in D across the grid, with D(0) = 1, so forwards are constant between
+         grid points. s = (w + j) / 2, with w and j as in step 4.
+      e. Same cash flows at both ends: V(t-1) and V(t) value the bond struck at t-1, on the curves of t-1 and t.
+         Rz_t = (V(t) + C) / V(t-1) - 1, and d_t = Rz_t - R_t. V(t-1) need not be taken as 100: it is computed.
+    Arithmetic: exact decimal to the numerical boundary of the power in step 4, in the library's context.
+  rebalancing_and_rolls: "daily re-strike to a new par 10-year bond; no transaction costs"
+  costs: "none: a gross, frictionless return. Stated as a limitation"
+invariants:
+  standard: [RA-INV-013]
+  spec_specific:
+    - id: CMT-INV-1
+      statement: "the coupon-date fixture (102, C = 2, 100) gives exactly 0, and the non-coupon-date fixture (101.00, 101.05) gives 0.000495049505"
+    - id: CMT-INV-2
+      statement: "with y(t, M - tau) = c and tau = 0, P_dirty = 100 within 1e-12 relative"
+    - id: CMT-INV-3
+      statement: "a flat, unchanged curve gives R_t > 0, equal to the accrual to within the declared bound"
+    - id: CMT-INV-4
+      statement: "a missing tenor refuses; nothing is forward-filled"
+    - id: CMT-INV-5
+      statement: "decomposition residual below 1 bp a day when |dy| < 25 bp (RA §6); a test of the Taylor decomposition, not of the pricing basis and not an identity. A breach is reported, never hidden"
+    - id: ZC-INV-1
+      statement: "on a date's own zero curve, the bond struck that date values to 100 within 1e-10 relative"
+    - id: ZC-INV-2
+      statement: "on a flat par curve, the zero-curve and flat-yield prices of any bond agree within 1e-10 relative, so d_t is 0 within that bound"
+    - id: ZC-INV-3
+      statement: "a missing knot gives no curve; nothing is filled, and D_n <= 0 is refused"
+    - id: CMT-INV-6
+      statement: "coupon dates are strike + 6k months with the day clamped; on a month-end or leap-day strike the coupon falls on that schedule, and the bond is at par on its strike date"
+triangulation:
+  - reference: "OPEN: a separately cleared reference. Candidates: a 7-10 year Treasury ETF's total return (needs an equity data licence, T-0003), or a licensed 7-10 year Treasury index. H.15 and FRED are not references: they repeat the same curve."
+    why_comparable: "same exposure family, and a traded or index-tracked return, so it can catch sign, scale and carry errors"
+    expected_differences:
+      - mechanism: "fund fee and costs (ETF only)"
+        predicted_sign: "+"
+        predicted_magnitude: "about the expense ratio per year [EXT]"
+      - mechanism: "reference holds a 7-10 year basket, so lower duration than the 10-year par bond"
+        predicted_sign: either
+        predicted_magnitude: "scales with curve moves; tracking error is the main difference, and a beta below 1 is expected"
+      - mechanism: "daily par re-strike against held, off-par, on-the-run and off-the-run securities"
+        predicted_sign: either
+        predicted_magnitude: "small; to be estimated before comparison"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap, regression_beta]
+limitations:
+  - "Reconstructed: curve values may be restated, and the capture clock doesn't cover this series."
+  - "The Treasury changed its par-curve method during the sample (to monotone convex, December 2021 [EXT, unverified]), so a method break may be visible."
+  - "Linear interpolation over 7y-10y is a simplification: a monotone-convex-consistent alternative is a sensitivity to report, not the definition."
+  - "One tenor only. It demonstrates the construction and shows nothing about diversification (OD-0139)."
+  - "No comparison reference is cleared: E-0001 is UNREFERENCED. The zero-curve check repeats the same source."
+  - "A strike-anchored schedule is a synthetic convention: real Treasury coupon dates differ. It affects only the dates of the accrual within a period."
+  - "Pricing-basis error is measured only as the same-source sensitivity above, on one interpolation."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.3 (2026-11-04): source repointed to us_treasury.par_yield_curve (OD-0156); the pricing-basis sensitivity is pinned, with ZC-INV-1 to 3; for E-0001 (OD-0157). Still proposed."
+  - "0.1.2 (2026-11-04): F-REVIEW-2026-11-04-t0019-1-1, the coupon schedule is anchored to the strike; F-REVIEW-2026-11-04-t0019-1-2, the residual no longer claims to measure pricing error, and a pricing-basis sensitivity is required (OD-0152). Still proposed."
+  - "0.1.1 (2026-11-04): step 5 corrected; a gap of exactly six months pays a coupon (found building T-0019, OD-0150). Still proposed."
+  - 0.1.0 (2026-11-04): first proposed version (OD-0147). The method reproduces RA §14.6 (about -0.397% for the worked one-day case) in a scratch calculation; no real data used.
