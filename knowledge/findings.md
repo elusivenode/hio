@@ -141,3 +141,23 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - [review] A reviewer's README diff failed to apply in all three receipts this session; ask for the go-ahead to receive without it in the receipt question. Source: OD-0135 correction 1; OD-0137; OD-0138.
 - [hiomux] A Codex reviewer's clone has no origin remote: tell it to read the OD and index row from local main at a cited commit. Source: REVIEW-2026-11-03-t0015-1.
 - [review] In three tasks running (T-0013, T-0014, T-0015) Codex found a real defect that a passing full suite did not cover. Source: OD-0133, OD-0134, OD-0135.
+- [capture] The completeness check has no start date, so slots before go-live count as missed until due + 27h: expect red runs at any fresh start, and compute the list first. Source: src/hio/sources/schedule.py:130; docs/evidence/b3/first-run.md.
+- [capture] Moving the workflow with LIVE_AUTHORISATION set arms cron on merge; the capture reviewer rule is the only hold. Source: docs/evidence/S1B1-go-live-package.md.
+- [capture] Under AEDT and EST, 22:45 to 23:00 UTC is the only overlap of the RBA first and NY final slots, so one run can test all four files. Approval time, not dispatch time, decides which slots run. Source: OD-0143; run 41733292506.
+- [sources] The RBA expert-judgement CSV opens with prose holding both "date" and "type" in one cell; its header is Date, Expert Judgement type, Series title, Details. Source: T-0017; src/hio/sources/datasets.py.
+- [sources] Publication URLs: F1 serves two datasets, so five datasets are four URLs. NY Fed sofrai is under /api/rates/secured/{ratetype}/last/{n}. Source: docs/evidence/S1B1-go-live-package.md.
+- [sources] The live FIRMMCTRI has up to 6 decimals; cash.aud.overnight 0.3.0 declares 4, so every AUD period classifies differs: precision. Source: docs/evidence/b3/cash-rebuild-1.md.
+- [build] The F1 file runs back to 2011, past the cited calendars: ingest refuses unless vintage_store(earliest=...) states a window. Source: T-0018; tools/cash_rebuild.py.
+- [alert] A failed capture still writes an attempt record, so a failed run does not fire the dead-man; infra/tofu/README.md says the same test proves both, which monitoring.tf contradicts. Source: docs/evidence/b3/soak-1.md; architect 20261103T165541-ask-dee0.
+- [ci] GitHub's scheduled firings ran about a minute to five minutes late on the first day; a scheduled run waiting on a reviewer holds its old code and can be cancelled. Source: runs 41734200727, 41741724257.
+- [infra] tofu inputs can be read from state without printing them, but a full plan after B-1 shows drift, so use a targeted plan and show the owner. Source: OD-0146 correction 1.
+- [factors] In CMT, the decomposition residual tests the Taylor terms only: both sides use the same flat yield, so it cannot measure pricing-basis error. Source: F-REVIEW-2026-11-04-t0019-1-2.
+- [factors] A maturity-anchored schedule breaks on a leap-day strike; the spec anchors coupons to the strike with the day clamped. Source: F-REVIEW-2026-11-04-t0019-1-1.
+- [rights] The Federal Reserve Board's change removes Build Your Package in the week of 2026-11-09, but historical XML stays on release pages: not a November deadline for losing history. Source: federalreserve.gov/data/data-download-fred-information.htm, read 2026-11-04.
+- [rights] No Treasury page read grants or restricts reuse: H2 rests on the 17 U.S.C. §105 presumption. Source: docs/research/T-0002-h2-reading-pack.md.
+- [process] A worker-free receipt from a scratch clone needs a local branch for check_review_assignment, which must run in a worktree at T. Source: OD-0144.
+- [process] A verification record linking to the response file fails check_repo at 5.7 until the work is merged, so merge the work first when the record links to it. Source: OD-0153.
+- [process] A records PR that adds an OD index row conflicts with an open PR adding a row at the same place: run git merge-tree first. Source: OD-0151.
+- [process] The classifier refuses gh pr merge from Claude as "Merge Without Review": give the owner the command with --match-head-commit; base branch policy also blocks it until CI ends. Source: PRs #74 to #88.
+- [hiomux] sa ask refuses at main when the bundle exceeds 90,000 bytes; --rev <older> works if the question supplies newer state. Distil 3 doesn't shrink it. Source: OD-0142 correction 1.
+- [review] Codex has now found a real defect or spec overclaim that a passing suite missed in T-0013, T-0014, T-0015 and T-0019, and was READY first time on T-0016 and T-0017, both small. Source: OD-0144, OD-0146, OD-0152.
