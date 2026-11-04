@@ -45,6 +45,8 @@ Symbols worked as given. Declaration and record dates are absent on all three AS
 
 **So the dividend endpoint can't be assumed final,** and the evidence can't size this: it's one differing row in the one fund checked. **SPY, IEF and BIL, the comparison's sleeves, have no independent check.** Their record counts fit their stated frequencies, which is weak evidence. ASX non-income components aren't exposed separately by the fields used, and franking appears only in a beta feed not tested.
 
+**Issuer check of the sleeves, added at `5bb696d`:** HIO's compounded return for SPY, IEF and BIL against the market-price returns in their public fact sheets to 2026-09-30, and IEF's calendar years 2021 to 2025. **17 of 17 within the pre-declared 0.10 points a year:** SPY 4 of 4, IEF 9 of 9, BIL 4 of 4. Report sha256 `a3bc4720eb7bb5a75f97674755251dc4984e7eaef5a69bd9fecc722d2654069e`, for the owner. **It reaches back only to September 2016,** so 2008, BIL's zero-distribution years and everything earlier stay unchecked. It tests income in aggregate, and one small missing payment over ten years stays inside the bar. The fact sheets aren't committed: State Street's restrict reproduction.
+
 **No series here is economically validated.** The quote currency of all seven funds matches the exchange listing, the listing being EODHD's own. Between `s1` and `s2`, minutes apart, no close or distribution changed, which says little: a later snapshot is the real test.
 
 ## D. Technical suitability
