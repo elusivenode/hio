@@ -4,24 +4,19 @@ They describe the returns they are given. Nothing here forecasts, optimises, rec
 
 Conventions, all simple returns:
 - **Alignment.** A panel's dates are the dates every sleeve has as a period boundary. Each sleeve is
-  compounded
-  between consecutive common dates, exactly, and converted to float once, in `align`. Nothing is filled.
-- **Wealth.** Starts at 1 in the target weights, drifts with fractional holdings and no costs, and is
-  reset to the
-  weights at the last common date of each calendar month.
+  compounded between consecutive common dates, exactly, and converted to float once, in `align`. Nothing is
+  filled.
+- **Wealth.** Starts at 1 in the target weights, drifts with fractional holdings and no costs, and is reset
+  to the weights at the last common date of each calendar month.
 - **Period returns.** Measured between the last common dates of consecutive calendar months or ISO weeks.
-  The first
-  and last periods are dropped as possibly partial.
-- **Annualisation.** Volatility is the sample standard deviation (ddof 1) times the square root of 12 or
-  52. Return
-  is geometric, on 365.25 days a year.
+  The first and last periods are dropped as possibly partial.
+- **Annualisation.** Volatility is the sample standard deviation (ddof 1) times the square root of 12 or 52.
+  Return is geometric, on 365.25 days a year.
 - **Drawdown.** Measured from the running peak. A drawdown not recovered by the end has no recovery date,
-  and its
-  underwater time runs to the end.
-- **Bootstrap.** Circular blocks of whole months, the same rows for every sleeve, with the rebalance
-  rerun. Its
-  drawdowns have monthly resolution. Its intervals are conditional on this history: resampling can't create
-  independent crises that did not occur.
+  and its underwater time runs to the end.
+- **Bootstrap.** Circular blocks of whole months, the same rows for every sleeve, with the rebalance rerun.
+  Its drawdowns have monthly resolution. Its intervals are conditional on this history: resampling can't
+  create independent crises that did not occur.
 """
 
 from __future__ import annotations
@@ -58,9 +53,8 @@ class Panel:
     sleeves: tuple[str, ...]
     dates: tuple[date, ...]  # n + 1 common dates
     returns: Floats  # n rows, one column per sleeve
-    omitted_dates: Mapping[
-        str, int
-    ]  # per sleeve: its own boundaries that aren't common, or lie outside the span
+    # Per sleeve: its own boundaries that aren't common, or lie outside the span.
+    omitted_dates: Mapping[str, int]
 
 
 @dataclass(frozen=True)
@@ -185,8 +179,7 @@ def wealth_path(panel: Panel, weights: Mapping[str, float]) -> WealthPath:
 
 def reconcile(panel: Panel, weights: Mapping[str, float], path: WealthPath) -> float:
     """Rebuild final wealth independently: between rebalances, each sleeve compounds on its own weight.
-    Raises on a
-    break, and returns the relative difference."""
+    Raises on a break, and returns the relative difference."""
     target = _weights(panel, weights)
     marks = [0, *period_ends(panel.dates, "monthly"), len(panel.dates) - 1]
     level = 1.0
@@ -274,9 +267,8 @@ def paired_block_bootstrap(
     replications: int,
     seed: int,
 ) -> PairedBootstrap:
-    """Portfolio b minus portfolio a, on the same resampled months. `monthly` holds sleeve returns, one
-    row per
-    month. Monthly rebalancing makes each month's portfolio return the weighted sum of its sleeves."""
+    """Portfolio b minus portfolio a, on the same resampled months. `monthly` holds sleeve returns, one row
+    per month. Monthly rebalancing makes each month's portfolio return the weighted sum of its sleeves."""
     months = monthly.shape[0]
     if not 1 <= block_months <= months:
         raise ValueError(f"a block of {block_months} doesn't fit {months} months")

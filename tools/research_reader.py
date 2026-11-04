@@ -1,13 +1,11 @@
 """The minimal local research reader (T-0021, OD-0159): named releases, pinned by content hash, into one
 panel.
 
-For each pin, `resolve_for_use` verifies the bytes and lineage and checks the current status and the
-current rights
-of the release's actual sources, at every read. It only returns the release's knowledge declarations, so
-this reader
-enforces those itself, then refuses mixed numeraires or series classes. Nothing is cached, so every read
-rechecks.
-Exploratory use only: reading here approves nothing and proves nothing about what the data means.
+For each pin, `resolve_for_use` verifies the bytes and lineage and checks the current status and the current
+rights of the release's actual sources, at every read. It only returns the release's knowledge declarations,
+so this reader enforces those itself, then refuses mixed numeraires or series classes. Nothing is cached, so
+every read rechecks. Exploratory use only: reading here approves nothing and proves nothing about what the
+data means.
 """
 
 from __future__ import annotations
@@ -53,8 +51,7 @@ class Pin:
 
 def check_knowledge(core: Mapping[str, Any], mode: KnowledgeMode, cutoff: datetime) -> None:
     """The request must match what the release declares, so every pin shares one mode and cutoff. Neither
-    can be
-    relabelled here: a latest or reconstructed release is never point-in-time evidence."""
+    can be relabelled here: a latest or reconstructed release is never point-in-time evidence."""
     declared = KnowledgeMode(core["knowledge_mode"])
     name = core["dataset_id"]
     if declared is not mode:

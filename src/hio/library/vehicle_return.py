@@ -3,11 +3,10 @@
 For consecutive observed days t−1 and t, with a split factor f (new units per old unit, ex on t) and a cash
 distribution D per new unit (ex on t):
   PR_t = f P_t / P_{t−1} − 1,   IR_t = f D_t (1 − w) / P_{t−1},   TR_t = PR_t + IR_t
-A split alone therefore gives no return (RA-INV-020). The convention is reinvest_ex_close, so chaining
-TR_t is the
-reinvested return. Fund fees are already in the observed prices and are not deducted again. A vendor's
-adjusted
-close is never an input. Pure compute on the numbers it is given: no source, no storage, nothing filled.
+A split alone therefore gives no return (RA-INV-020). The convention is reinvest_ex_close, so chaining TR_t
+is the reinvested return. Fund fees are already in the observed prices and are not deducted again. A
+vendor's adjusted close is never an input. Pure compute on the numbers it is given: no source, no storage,
+nothing filled.
 """
 
 from __future__ import annotations
@@ -65,6 +64,5 @@ def vehicle_period(
 
 def vehicle_series(days: Sequence[VehicleDay], withholding: Decimal = Decimal(0)) -> list[VehiclePeriod]:
     """Every period between consecutive observed days. An action on an unobserved day isn't representable
-    here:
-    the caller places it on the first observed day on or after its ex-date, and states that it did."""
+    here: the caller places it on the first observed day on or after its ex-date, and states that it did."""
     return [vehicle_period(a, b, withholding) for a, b in pairwise(days)]
