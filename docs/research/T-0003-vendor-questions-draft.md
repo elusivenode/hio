@@ -33,6 +33,10 @@ I am considering an EOD Historical Data subscription and would like to confirm h
 6. **Third-party tools:** may raw data be processed by cloud services acting for me? I keep raw licensed data out of AI tools, but would AI tools be permitted to see derived figures?
 7. **Data content:** for US-listed and ASX-listed ETFs, do you provide **unadjusted** daily closes **and** separate dividend records (ex-date, pay date, amount) and split records? Are historical values ever revised, and is a revision flagged? How far back does each go?
 8. **Futures:** do you offer individual-contract daily settlements, and under the same terms?
+9. **Closing price:** for a US-listed ETF, what exactly is your end-of-day close: the primary exchange's official close, a consolidated close, or something else? Which venue or data partner does it come from, and has that changed over the history?
+10. **Named coverage:** do you cover a broad US equity ETF, a 7-10 year US Treasury ETF and a T-bill ETF (for example SPY or IVV, IEF and BIL), back to each fund's inception, on the unadjusted-close, dividend and split basis in question 7?
+11. **Checking your data:** may I compare figures computed from your data with a fund issuer's published total returns, and keep the result of that comparison?
+12. **A short trial:** can I take one month of access on these terms? What can I keep when it ends, and what is the full cost, including any exchange fees?
 
 Thank you,
 [name, contact details: to be completed by the owner]

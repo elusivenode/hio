@@ -10,6 +10,7 @@ dependencies = [
     "pyyaml>=6.0",      # factor specs and registers are YAML (factor-specification standard)
     "azure-storage-blob>=12.19",  # Azure Blob backend (T-0010 W-2, OD-0117); injected client, not wired to jobs
     "azure-identity>=1.15",       # GitHub-OIDC ClientAssertionCredential only (T-0010 W-2, OD-0117)
+    "numpy>=2",
 ]
 
 [dependency-groups]
