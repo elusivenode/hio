@@ -4,8 +4,9 @@
 
 Every step starts from retained bytes: E-0002's raw snapshot (never its store), the F1 receipt, H.10's
 archive and the RBA's historical .xls, which is extracted again. Nothing is fetched. Each run writes a new
-directory under ~/.hio-research/T-0023/runs/ and touches no earlier workspace. Values stay there; stdout and the
-repository hold hashes, counts and classes only. Exploratory: this shows what ran, not that any input is right.
+directory under ~/.hio-research/T-0023/runs/ and touches no earlier workspace. Values stay there; stdout and
+the repository hold hashes, counts and classes only. Exploratory: this shows what ran, not that any input is
+right.
 
 Release ids hold the code revision, so they change at every commit. The panel id doesn't: it covers the input
 bytes, the conventions and the panel's own text.
@@ -113,7 +114,7 @@ def panel_text(built: ext.Assembled) -> str:
 
 
 def panel_id(inputs: Mapping[str, Any], panel_sha256: str) -> str:
-    """Input bytes, conventions and the panel's text. Not the code revision: an unchanged panel keeps its id."""
+    """Input bytes, conventions and the panel's text; not the code revision, so an unchanged panel keeps it"""
     return sha256(
         canonical_json(
             {
