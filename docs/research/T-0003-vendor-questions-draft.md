@@ -1,6 +1,6 @@
 ---
 id: HIO-RESEARCH-T0003-VENDOR-DRAFTS
-title: "T-0003 draft written questions to EODHD and S&P DJI: NOT SENT"
+title: "T-0003 draft written questions to EODHD, Tiingo and S&P DJI: NOT SENT"
 status: draft              # for owner review only (OD-0013). Do not send.
 owner: owner (approves sending); drafted by claude/documentation-agent
 created_at: 2026-10-18
@@ -55,6 +55,32 @@ I would like to understand the licensing options and pricing for S&P 500 index-l
 2. **Derived figures:** may returns computed from licensed levels be kept in my system and shown in a private report read only by the fund's two trustees and its auditor?
 3. **Storage and retention:** may licensed data and derived figures be held in private cloud storage under a write-once policy for up to ten years? What may be retained after a licence ends?
 4. **Methodology:** are the index methodology and the dividend-reinvestment and withholding conventions for the net series available to licensees?
+
+Thank you,
+[name, contact details: to be completed by the owner]
+
+## 3. Add to the EODHD letter (OD-0160)
+
+13. **Permitted class, stated plainly:** my research system's stated purpose includes informing the two-trustee self-managed superannuation fund above, though I alone would hold the account and see raw data. Which plan applies to that purpose, and does the Historian plan permit it?
+14. **Which price:** your pages describe direct exchange agreements, and also say "We are not using exchanges data feeds for the pricing data". Which of these applies to the EOD `close` for SPY.US, IEF.US and VAS.AU?
+15. **Series and reports:** is a daily return series I compute from your closes and dividends "derived data" I may keep? May results computed from it (not prices) go in a private report read by the fund's two trustees and its auditor?
+16. **Retention:** may I keep raw downloads, derived series and reproducibility evidence for up to ten years, including after a subscription ends? Must anything be deleted, and when?
+17. **Processing:** may data be processed on my private Azure or GitHub Actions environments? May coding agents or hosted AI services process raw data, or only derived figures?
+
+## 4. To Tiingo (OD-0160)
+
+**Subject:** Licensing questions before subscribing: private research for a small superannuation fund
+
+Hello,
+
+I run a private research system on my own. Its results may inform decisions for a two-trustee self-managed superannuation fund in Australia. Nothing would be redistributed or sold.
+
+1. Does the fund's purpose need the internal commercial plan rather than the individual plan?
+2. Your terms require deletion when a paid plan ends. Does that cover return series I compute from your closes and dividends, and the results computed from those? May any reproducibility evidence be kept, and is a written retention agreement available at what cost?
+3. May results computed from your data (not prices) go in a private report read by the fund's two trustees and its auditor?
+4. May data be processed on my private Azure or GitHub Actions environments? May coding agents or hosted AI services process it?
+5. What is the `close` for US ETFs: an official or consolidated close? Which sources feed it?
+6. Do you cover SPY, VTI, IEF and BIL from inception, with `divCash` and `splitFactor` complete? Are corrections to history flagged?
 
 Thank you,
 [name, contact details: to be completed by the owner]
