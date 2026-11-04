@@ -155,11 +155,11 @@ def test_no_2008_window_exists():
     assert min(s for s, _ in tool.WINDOWS.values() if s != date.min) >= date(2011, 1, 1)
 
 
-def test_the_rights_allow_each_source_locally_and_no_agent_use_of_eodhd():
+def test_the_rights_allow_each_source_locally_and_limit_agent_use_of_eodhd():
     gate = tool.ev.make_gate({})
     for source in (tool.RBA_SOURCE, tool.aud_tool.H10_SOURCE, tool.ev.SOURCE_ID):
         gate.authorise(tool.Operation.BUILD, [source])
-    assert str(gate.records[tool.ev.SOURCE_ID].get("agent_context")) == "deny"
+    assert str(gate.records[tool.ev.SOURCE_ID].get("agent_context")).startswith("conditional(derived")
 
 
 def test_a_tampered_receipt_stops(tmp_path):

@@ -99,7 +99,9 @@ def test_the_record_allows_local_evaluation_and_denies_everything_wider():
     for consumer in ("smsf_app", "smsf_trustee_pack", "smsf_auditor", "third_party"):
         with pytest.raises(RightsRefused):
             g.authorise(Operation.PUBLISH, [tool.SOURCE_ID], consumer)
-    assert str(g.records[tool.SOURCE_ID].get("agent_context")) == "deny"
+    assert str(g.records[tool.SOURCE_ID].get("agent_context")).startswith(
+        "conditional(derived statistics only"
+    )
     assert str(g.records[tool.SOURCE_ID].get("quotation_in_documents")) == "deny"
 
 

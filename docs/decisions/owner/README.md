@@ -188,6 +188,7 @@ are in operating model §1.1; the template is
 | [OD-0171](OD-0171-accept-t0022-rba-pack.md) | accept | T-0022 accepted at `888c493`; finding states reconciled, F-4 verification waived; RBA history reading pack, draft | `888c493` | recorded |
 | [OD-0172](OD-0172-rba-history-rights.md) | authorise_work | RBA historical overnight cash rights, pages read; one one-off download; E-0003 not extended | `0a816f5` | recorded |
 | [OD-0173](OD-0173-extend-e0003.md) | authorise_work | E-0003 variant V1 back to May 2007, with 2008 as a named window | `51f3587` | recorded |
+| [OD-0174](OD-0174-claude-reads-derived-statistics.md) | authorise_work | Claude may read EODHD-derived statistics in the personal evaluation; raw data, Codex and the architect unchanged | `59429c5` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
