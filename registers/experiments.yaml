@@ -83,10 +83,11 @@
       recommendation, forecast or statement about the future. IEF is a vehicle and validates no synthetic factor. Any change after
       results exist is a variant, stated with its reason.
     not_tested: "AUD translation, costs, tax, other funds, tail dependence, predictive use"
-  variants: []
+  variants:
+    - {id: V1, change: "qualification corrected to its pre-registered meaning: quote currency checked, every period in Q3's denominator; run on snapshot s2", reason: "REVIEW-2026-11-04-t0022-1 F-1, F-2; allocations, windows and bootstrap unchanged", revision: 185c33a}
   inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
-  runs: ["14e8e1a, snapshot s1, docs/evidence/e0002/assessment-1.md"]
-  results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "Q1 to Q3 pass for all sleeves; Q4 not yet run; Q5 BGBL only, one unresolved difference; no independent check of SPY, IEF or BIL"}
+  runs: ["14e8e1a, snapshot s1", "185c33a, snapshot s2, docs/evidence/e0002/assessment-1.md"]
+  results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "Q1 to Q3 pass for all sleeves; Q4 no changes over minutes only; Q5 BGBL only, one unresolved difference; no independent check of SPY, IEF or BIL"}
   negative_findings: "F-1: BGBL 2026-07-01 distribution record differs from the issuer's"
   outcome: null
   follow_up: "a second snapshot, and independent checks of the sleeves"

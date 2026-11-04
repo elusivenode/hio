@@ -11,7 +11,7 @@ instruction: OD-0162
 
 > **Recommendation: continue conditionally, for internal exploratory USD research only.** One snapshot, one independently checked fund. **No value is recorded here:** the rights record denies agent use and quotation. Claude saw counts, hashes, dates and pass or fail, and hasn't read the portfolio results. They are in `~/.hio-research/E-0002-eodhd/reports/owner-report.md`, for the owner.
 
-Run at `14e8e1a`, snapshot `s1`, 2026-11-04. Manifest sha256 `5cddadf67f96cce1035385edf07d2e3df206ceee7699e80572ccc92681d37c3c`; summary sha256 `25fcaa434db8d46f5004cd2ce06190f08917ed6519c42ad5eeabcfcd9a6fd7a8`.
+Run at `185c33a`, snapshot `s2`, compared with `s1`, 2026-11-04, after the remediation of REVIEW-2026-11-04-t0022-1. Manifest sha256 `bb40a84650a8b7104e3d116a5d0773619dd4870ee20190a80bab370135fee38d`; summary sha256 `bc276d727aaa9760ee0c6100f8eee4a13943dbb144b01b89f23bbd7194832bbc`.
 
 ## A. Subscription and cost
 
@@ -40,20 +40,20 @@ Symbols worked as given. Declaration and record dates are absent on all three AS
 
 **Independent check: BGBL only, 7 issuer rows read from the page.**
 - All 7 ex-dates match.
-- 6 amounts match once rounded to the vendor's 4 or 5 decimals. Vendor amounts are rounded throughout, an effect small enough to ignore here.
-- **Unresolved finding F-1: the 2026-07-01 record is lower than the issuer's, by under 5%.** The vendor's own adjusted close agrees with the issuer's amount and not with its own record, so EODHD's two fields disagree. HIO's constructed return is wrong on that date by that amount. It may be a preliminary estimate never updated, which is unconfirmed; the second snapshot may show.
+- 6 amounts match once the issuer's figure is rounded to the vendor's decimals.
+- **Unresolved finding F-1: the 2026-07-01 record differs from the issuer's.** The detail is in the owner's local report, not here, because agent use and quotation are denied.
 
-**So the dividend endpoint can't be assumed final, at least for recent ASX records,** and the evidence can't size this: it's one wrong row in the one fund checked. **SPY, IEF and BIL, the comparison's sleeves, have no independent check.** Their record counts fit their stated frequencies, which is weak evidence. ASX non-income components aren't exposed separately by the fields used, and franking appears only in a beta feed not tested.
+**So the dividend endpoint can't be assumed final,** and the evidence can't size this: it's one differing row in the one fund checked. **SPY, IEF and BIL, the comparison's sleeves, have no independent check.** Their record counts fit their stated frequencies, which is weak evidence. ASX non-income components aren't exposed separately by the fields used, and franking appears only in a beta feed not tested.
 
-**No series here is economically validated.** Revisions aren't tested yet.
+**No series here is economically validated.** The quote currency of all seven funds matches the exchange listing, the listing being EODHD's own. Between `s1` and `s2`, minutes apart, no close or distribution changed, which says little: a later snapshot is the real test.
 
 ## D. Technical suitability
 
-22 requests in under a minute, no failures, far inside the limits. 5.9 MB in all. Simple JSON, and one tool of about 650 lines including the comparison. Data flowed into HIO's releases and through the reader's checks with no change to contracts. Not tested: symbol changes, incremental updates, repeat-snapshot stability. **Provenance stays unresolved:** EODHD's published statements conflict on whether closes come from exchange feeds, and no letters were sent (OD-0161), so nothing settles it. An independent price source isn't available. **An additional independent source is needed** for anything beyond exploration.
+24 requests in under a minute per snapshot, no failures, far inside the limits. 5.9 MB in all. Simple JSON, and one tool of about 650 lines including the comparison. Data flowed into HIO's releases and through the reader's checks with no change to contracts. Not tested: symbol changes, incremental updates, repeat-snapshot stability. **Provenance stays unresolved:** EODHD's published statements conflict on whether closes come from exchange feeds, and no letters were sent (OD-0161), so nothing settles it. An independent price source isn't available. **An additional independent source is needed** for anything beyond exploration.
 
 ## E. Portfolio demonstration
 
-The comparison ran: 4,889 common periods, 2007-05-30 to 2026-11-03, BIL setting the start. All three allocations; full, before and from 2020, and 2008, Q1 2020 and 2022. Wealth reconciled in every window. The rerun at `14e8e1a` gave byte-identical values. **Results are the owner's to read.** Limits: three named funds and one history, no trading costs or tax, BIL isn't overnight cash, IEF validates no factor, and about six non-overlapping three-year periods. It isn't a recommendation or forecast. F-1 doesn't touch these three funds as far as is known, but they're unchecked.
+The comparison ran: 4,889 common periods, 2007-05-30 to 2026-11-03, BIL setting the start. All three allocations; full, before and from 2020, and 2008, Q1 2020 and 2022. Wealth reconciled in every window. **Results are the owner's to read.** Limits: three named funds and one history, no trading costs or tax, BIL isn't overnight cash, IEF validates no factor, and about six non-overlapping three-year periods. It isn't a recommendation or forecast. F-1 is in a fund outside the comparison, but these three are unchecked.
 
 ## F. Recommendation
 
