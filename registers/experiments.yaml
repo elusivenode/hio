@@ -139,7 +139,7 @@
       seam_check: "the same accrual on the current F1's FIRMMCRID against the TRI, monthly, from 2011: passes if within 1 bp in at least 95% of months. The historical file doesn't overlap the TRI, so this tests the method, not the historical rates"
       decision_rule: "descriptive, as E-0003's. A failed seam check is reported, and the pre-2011 AUD cash isn't relied on until explained. The US funds' 2008 inputs have no independent check, and 2008 is one crisis"
   inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
-  runs: ["docs/evidence/e0003/result-1.md"]
+  runs: ["docs/evidence/e0003/result-1.md", "docs/evidence/t0023/panel-1.md", "docs/evidence/t0023/corroboration-1.md", "docs/evidence/t0023/episodes-1.md"]
   results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "volatility distinguished for cash rate and currency and for total; all other intervals span zero"}
   negative_findings: "the Treasury duration effect isn't distinguished on any metric in this sample"
   outcome: inconclusive

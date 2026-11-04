@@ -193,25 +193,42 @@ def earlier_history_indicated(results: Mapping[str, Any]) -> bool:
     return False
 
 
-def intervals_span_zero(results: Mapping[str, Any]) -> dict[str, dict[str, bool]]:
-    """Pass or fail for agents: does every block length's interval span zero, per effect and metric?"""
-    out: dict[str, dict[str, bool]] = {}
+def interval_classes(results: Mapping[str, Any]) -> dict[str, dict[str, dict[str, Any]]]:
+    """Per effect and metric, which block lengths' intervals exclude zero, and the class that follows. Counts
+    and block lengths only, so it's safe for stdout."""
+    out: dict[str, dict[str, dict[str, Any]]] = {}
     for effect, blocks in results["bootstrap"].items():
-        out[effect] = {
-            m: all(block[m]["low"] <= 0 <= block[m]["high"] for block in blocks.values())
-            for m in ("volatility", "annualised_return", "max_drawdown")
-        }
+        if not blocks:
+            raise ev.Stop(f"no block lengths for {effect}")
+        out[effect] = {}
+        for m in ("volatility", "annualised_return", "max_drawdown"):
+            excludes = {
+                int(size) for size, block in blocks.items() if not block[m]["low"] <= 0 <= block[m]["high"]
+            }
+            spans = {int(size) for size in blocks} - excludes
+            kind = "mixed" if excludes and spans else "distinguished" if excludes else "not_distinguished"
+            out[effect][m] = {"class": kind, "excludes_zero": sorted(excludes), "spans_zero": sorted(spans)}
     return out
+
+
+def verdict_words(entry: Mapping[str, Any]) -> str:
+    """ "Every block length" is said only when it's true; a mixed result names the lengths on each side."""
+    if entry["class"] == "not_distinguished":
+        return "not distinguished"
+    if entry["class"] == "distinguished":
+        return "distinguished at every block length"
+    excludes = ", ".join(map(str, entry["excludes_zero"]))
+    spans = ", ".join(map(str, entry["spans_zero"]))
+    return f"mixed: distinguished at {excludes}-month blocks, not at {spans}-month blocks"
 
 
 def conclusion(results: Mapping[str, Any]) -> list[str]:
     """Built from the pre-registered tests only, so it reads the same to anyone who holds the same results."""
-    spans = intervals_span_zero(results)
+    classes = interval_classes(results)
 
     def verdict(effect: str) -> str:
-        words = {True: "not distinguished", False: "distinguished at every block length"}
         metrics = ("annualised_return", "volatility", "max_drawdown")
-        return "; ".join(f"{m.replace('_', ' ')}: {words[spans[effect][m]]}" for m in metrics)
+        return "; ".join(f"{m.replace('_', ' ')}: {verdict_words(classes[effect][m])}" for m in metrics)
 
     if earlier_history_indicated(results):
         earlier = (
@@ -383,7 +400,7 @@ def run(root: Path, e0002_root: Path, h10_root: Path, snapshot: str, *, gate: Ri
         "receipt": manifest["receipt_id"],
         **{k: facts[k] for k in ("rates_not_on_the_day", "oldest_rate_days")},
         "windows_available": {k: v["available"] for k, v in results["windows"].items()},
-        "intervals_span_zero": intervals_span_zero(results),
+        "interval_classes": interval_classes(results),
         "earlier_history_indicated": earlier_history_indicated(results),
     }
     ev.private_write(root / "summary.json", (json.dumps(out, indent=1, sort_keys=True) + "\n").encode())
