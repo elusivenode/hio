@@ -47,7 +47,7 @@ SNAPSHOT = "s2"
 XLRD = "2.0.1"
 # The values file E-0003 V1 recorded, at 7d4ef02 and again at cae1318 (handoff 2026-11-04).
 RECORDED_V1_VALUES_SHA256 = "8720540764da7151970e598ab7c671aa5c9b1bf47b557ec0f2a2339d5a6c6bc9"
-FROZEN_PANEL_ID: str | None = None
+FROZEN_PANEL_ID: str | None = "1aa2991815b03ba2acc908b0bf3655faae45199a04991181aeb8975ff2e58190"
 CONVENTIONS = {
     "aonia_series": ext.AONIA,
     "cash": "ACT/365 simple accrual of published rates, joined to the TRI at its first level",
