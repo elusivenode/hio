@@ -192,6 +192,7 @@ are in operating model §1.1; the template is
 | [OD-0175](OD-0175-architect-calibration.md) | authorise_work | One bounded architect calibration after E-0002 and E-0003; advice only | `6e4a455` | recorded |
 | [OD-0176](OD-0176-consolidation-milestone-eodhd-retention.md) | authorise_work | Consolidation milestone T-0023; EODHD data retained for research; all agents may review it, no values in the repository | `569f338` | recorded |
 | [OD-0177](OD-0177-start-t0023-steps-1-2.md) | authorise_work | **T-0023 started:** steps 1 and 2 in a branch, reporting back before step 3; no Codex assignment, merge, new source or acceptance | `main` at `db9d7ae` | recorded |
+| [OD-0178](OD-0178-t0023-steps-3-5.md) | authorise_work | **T-0023 steps 3 to 5** authorised; branch pushed and PR opened; no steps 6 and 7, Codex assignment, merge or acceptance | `feat/t0023-consolidation` at `3175865` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

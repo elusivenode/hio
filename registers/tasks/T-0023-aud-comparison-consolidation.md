@@ -1,7 +1,7 @@
 ---
 id: T-0023
 title: "Make the AUD defensive-sleeve comparison independently challengeable"
-status: in_progress   # steps 1 and 2 done, unreviewed and unaccepted (OD-0177); steps 3 to 7 wait for the owner
+status: in_progress   # steps 1 and 2 done, unreviewed and unaccepted (OD-0177); steps 3 to 5 authorised (OD-0178); steps 6 and 7 wait for the owner
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator)"
 created_at: 2026-11-04
