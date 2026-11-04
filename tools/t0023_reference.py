@@ -29,7 +29,12 @@ def nav_rows(rows: list[tuple[object, ...]]) -> list[tuple[str, str]]:
     for row in rows[start + 1 :]:
         if row[0] is None:
             continue
-        day = datetime.strptime(str(row[0]), "%d-%b-%Y").replace(tzinfo=UTC).date()
+        try:
+            day = datetime.strptime(str(row[0]), "%d-%b-%Y").replace(tzinfo=UTC).date()
+        except ValueError:
+            if row[1] is None:  # the issuer's footer text
+                continue
+            raise ev.Stop("a NAV row with no readable date") from None
         if not isinstance(row[1], int | float) or row[1] <= 0:
             raise ev.Stop(f"{day}: an impossible NAV")
         if day in out:
