@@ -1,6 +1,7 @@
 """T-0022: the EODHD evaluation tool, on invented JSON only. Nothing here touches the network or a key."""
 
 import importlib.util
+import itertools
 import json
 import sys
 from datetime import date, timedelta
@@ -512,6 +513,22 @@ def test_end_to_end_the_reader_and_comparison_run_on_invented_data(tmp_path):
     values = json.loads((tmp_path / "reports" / "owner-values.json").read_text())
     assert set(values["windows"]["full"]["allocations"]) == set(tool.ALLOCATIONS)
     assert set(values["bootstrap_treasury_minus_cash"]) == {"12", "6", "24"}
+
+
+def test_a_named_window_counts_its_last_month_and_the_open_window_does_not(tmp_path):
+    full_run(tmp_path)
+    values = json.loads((tmp_path / "reports" / "owner-values.json").read_text())
+    days = trading_days(date(2006, 1, 2), 5400)
+    panel = tool.fa.align(
+        {
+            s: [tool.fa.Interval(a, b, D("0")) for a, b in itertools.pairwise(days)]
+            for s in ("equity", "treasury", "cash")
+        }
+    )
+    part = tool.fa.window(panel, date(2019, 12, 31), date(2020, 3, 31))
+    assert tool.describe(part, tool.ALLOCATIONS["100_equity"], closed=True)["volatility_monthly"] == 0
+    assert values["windows"]["q1_2020"]["available"] is True
+    assert tool.WINDOWS["from_2020"][0] == date(2019, 12, 31)
 
 
 def test_the_summary_for_agents_holds_no_value(tmp_path):

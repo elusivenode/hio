@@ -132,5 +132,21 @@ def test_fx_sources_are_compared_as_counts_only():
     assert "close" not in out
 
 
+def _usd(vol, dd, wealth):
+    return {"volatility_monthly": vol, "max_drawdown": dd, "final_wealth": wealth}
+
+
+def _aud(vol, dd, wealth):
+    return {"usd": {"volatility": vol, "max_drawdown": dd, "final_wealth": wealth}}
+
+
+def test_the_reports_reconcile_and_a_difference_is_caught():
+    usd = {"windows": {"q1_2020": {"available": True, "allocations": {"a": _usd(0.2, 0.3, 0.9)}}}}
+    good = {"windows": {"q1_2020": {"available": True, "allocations": {"a": _aud(0.2, 0.2, 0.9)}}}}
+    assert all(tool.reconcile_reports(usd, good)["q1_2020"].values())
+    bad = {"windows": {"q1_2020": {"available": True, "allocations": {"a": _aud(0.25, 0.4, 0.8)}}}}
+    assert not any(tool.reconcile_reports(usd, bad)["q1_2020"].values())
+
+
 def test_no_common_dates_is_not_a_pass():
     assert tool.compare_fx_sources([], {}, date(2020, 1, 1))["within_1pct_on_95pct"] is False

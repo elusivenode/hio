@@ -196,6 +196,31 @@ def compare_fx_sources(
     return {"common_dates": len(gaps), **counts, "weekend_rows": weekend, "within_1pct_on_95pct": ok}
 
 
+def reconcile_reports(usd: Mapping[str, Any], aud: Mapping[str, Any]) -> dict[str, dict[str, bool]]:
+    """The USD report against the AUD report's USD column, by window, as pass or fail (V3). Wealth is compared
+    only where the spans match: the USD report runs daily to its last date, the AUD report month to month."""
+    out = {}
+    for name, window in usd["windows"].items():
+        other = aud["windows"][name]
+        if not window["available"] or not other["available"]:
+            continue
+        row = {"monthly_volatility_equal": True, "month_end_drawdown_at_most_daily": True}
+        same_span = name in {"2008", "q1_2020", "2022"}
+        row["wealth_equal_where_spans_match"] = True
+        for allocation, daily in window["allocations"].items():
+            monthly = other["allocations"][allocation]["usd"]
+            row["monthly_volatility_equal"] &= abs(daily["volatility_monthly"] - monthly["volatility"]) < 1e-9
+            row["month_end_drawdown_at_most_daily"] &= (
+                monthly["max_drawdown"] <= daily["max_drawdown"] + 1e-12
+            )
+            if same_span:
+                row["wealth_equal_where_spans_match"] &= (
+                    abs(daily["final_wealth"] - monthly["final_wealth"]) < 1e-9
+                )
+        out[name] = row
+    return out
+
+
 def render(results: Mapping[str, Any]) -> str:
     lines = [
         "# E-0002 AUD variant: for the owner only. Licensed-derived: don't commit, share or paste into AI.",
@@ -284,6 +309,9 @@ def run(root: Path, h10_root: Path, snapshot: str, *, gate: RightsGate) -> dict[
         "windows_available": {k: v["available"] for k, v in results["windows"].items()},
         "eodhd_fx_against_h10": fx,
     }
+    usd_values = reports / "owner-values.json"
+    if usd_values.is_file():
+        out["reports_reconciled"] = reconcile_reports(json.loads(usd_values.read_text()), results)
     ev.private_write(root / "summary-aud.json", (json.dumps(out, indent=1, sort_keys=True) + "\n").encode())
     return out
 
