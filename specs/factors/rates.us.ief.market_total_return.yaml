@@ -1,0 +1,67 @@
+# PROPOSED under OD-0162 for E-0002 only; approves nothing. External facts are [EXT] and unverified.
+identity:
+  factor_id: rates.us.ief.market_total_return
+  version: 0.1.0
+  status: proposed
+  owner: quantitative researcher
+  family: rates
+economics:
+  exposure: >-
+    USD market-price total return of holding IEF, a US-listed 7-10 year Treasury fund, distributions reinvested at the ex-date close. An observed vehicle, with its fees in its price.
+  rationale: "One sleeve of E-0002's descriptive comparison."
+  is_not: >-
+    Not the synthetic constant-maturity series, and no validation of it. Not an index return, a NAV return, an after-cost or after-tax return, or a validated factor.
+classification:
+  series_class: total_return
+  investability: investable_with_costs
+return_convention:
+  return_type: simple
+  period: "consecutive observed trading dates"
+  compounding: chain simple period returns
+  numeraire: USD
+  hedging: n/a
+  cash_leg: "n/a: funded form"
+  excess_definition: "n/a: funded form"
+observations:
+  - series_id: IEF.US.close_unadjusted
+    source_id: eodhd.personal_evaluation
+    unit: USD per unit
+    knowledge_mode_required: latest
+  - series_id: IEF.US.distributions_and_splits
+    source_id: eodhd.personal_evaluation
+    unit: USD per unit; new units per old
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: "Every value is reconstructed(T): one snapshot at T. No publication instant is claimed."
+  earliest_history: "fund inception [EXT, unverified]; confirmed by the first snapshot"
+  capture_clock_dependency: "none for this exploratory version"
+construction:
+  calendar: "the vendor's observed dates; nothing filled"
+  day_count: "n/a: no accrual"
+  algorithm: |
+    src/hio/library/vehicle_return.py. TR_t = f (P_t + D_t) / P_(t-1) - 1, with unadjusted closes, unadjustedValue for D and the split factor f,
+    on the ex-date. An action on an unobserved date moves to the next observed date, and is counted. A vendor adjusted close is never an input.
+  rebalancing_and_rolls: "n/a: a single vehicle"
+  costs: "fund fees embedded; no trading costs or tax"
+invariants:
+  standard: [RA-INV-001, RA-INV-020]
+  spec_specific: []
+triangulation:
+  - reference: "the issuer's published distributions and returns, read by hand where permitted; not read means not independently checked"
+    why_comparable: "the same fund, from its issuer"
+    expected_differences:
+      - mechanism: "market price against NAV, and timing"
+        predicted_sign: either
+        predicted_magnitude: "small; to be reported"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - "Provenance of the close is unresolved: EODHD's published statements conflict (OD-0160)."
+  - "Reconstructed; survivor selection of a named fund."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.0 (2026-11-04): first proposed version, for E-0002 (OD-0162). Not validated."

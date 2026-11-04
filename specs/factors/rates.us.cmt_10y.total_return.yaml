@@ -1,7 +1,7 @@
-# PROPOSED under OD-0147; E-0001 runs on this version (OD-0157), which approves nothing. External facts are marked [EXT] and are unverified.
+# PROPOSED under OD-0147. E-0001 ran on 0.1.3 (archived); this version is its zero-curve variant V1 (OD-0163), which approves nothing. External facts are marked [EXT] and are unverified.
 identity:
   factor_id: rates.us.cmt_10y.total_return
-  version: 0.1.3
+  version: 0.2.0
   status: proposed
   owner: quantitative researcher
   family: rates
@@ -74,6 +74,8 @@ construction:
     7. Report, per period, the decomposition: carry, roll-down, curve change, convexity and residual. The
        residual is (this return - those Taylor terms), both on the same flat yield. It tests the decomposition
        only. A small residual says nothing about pricing-basis error.
+    From 0.2.0 the primary return is Rz_t in step e below, valuing both ends on the zero curve; R_t in step 6 is kept as
+    the flat comparison. This is a construction convention. It isn't evidence that Rz_t is closer to a market price.
     Pricing basis: the error from using flat-yield pricing instead of a discount curve is not measured by the
     return or its residual. E-0001 reports it as a separate sensitivity, on the same source, so it is not independent:
       a. Knots: par yields at 6m, 1y, 2y, 3y, 5y, 7y and 10y, the same set throughout history. A date missing any
@@ -139,6 +141,7 @@ rights_required:
   derived_storage: allow
   distribution: {hio_internal: allow}
 changelog:
+  - "0.2.0 (2026-11-04): zero-curve valuation is primary, and flat yield the comparison, after E-0001 failed B6 and B7 (OD-0163). Still proposed, UNREFERENCED."
   - "0.1.3 (2026-11-04): source repointed to us_treasury.par_yield_curve (OD-0156); the pricing-basis sensitivity is pinned, with ZC-INV-1 to 3; for E-0001 (OD-0157). Still proposed."
   - "0.1.2 (2026-11-04): F-REVIEW-2026-11-04-t0019-1-1, the coupon schedule is anchored to the strike; F-REVIEW-2026-11-04-t0019-1-2, the residual no longer claims to measure pricing error, and a pricing-basis sensitivity is required (OD-0152). Still proposed."
   - "0.1.1 (2026-11-04): step 5 corrected; a gap of exactly six months pays a coupon (found building T-0019, OD-0150). Still proposed."

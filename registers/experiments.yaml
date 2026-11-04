@@ -44,11 +44,58 @@
       this purpose. B9 failing leaves B6 to B8 inconclusive. A negative return, or a large drawdown, supports or rejects
       nothing. Bars aren't changed after results exist; any change is a variant, stated with its reason.
     not_tested: "traded-return agreement, costs, historical availability, diversification, and the alternative interpolation the spec lists as a sensitivity"
-  variants: []
+  variants:
+    - id: V1
+      change: "post-hoc, after B6 and B7 failed: spec 0.2.0 values on the zero curve, with flat yield as the comparison. Interpolation sensitivity: a monotone cubic par grid through the same knots against the linear one. Same retained bytes, same dates"
+      reason: "OD-0163. It doesn't reverse E-0001's verdict, and it is still UNREFERENCED, with no promotion"
+      revision: 7399b55
+      result: "docs/evidence/e0001/variant-1.md: cubic against linear inside all three numbers; zero against flat as in E-0001"
+      decision_rule: "descriptive. The monotone-cubic difference is read against B6 to B8's own numbers (1 bp on 99% of periods, 5 bp at worst, 10 bp a year). Within them says interpolation isn't decisive here, and nothing about market accuracy. Declared before any variant result"
   inputs: {releases: ["rel-05e05e482265376e8e33c19fcb868a2be69e782eb037a4b1fed196666a904376"], specs: ["rates.us.cmt_10y.total_return@0.1.3"]}
   runs: ["49e1b4d, docs/evidence/e0001/result-1.md"]
   results: {estimates: "values held locally; quotation_in_documents is unknown", uncertainty: "not estimated", diagnostics: "B1 to B5, B8, B9 pass; B6 and B7 fail"}
   negative_findings: "the flat-yield approximation failed B6 and B7"
   outcome: not_supported
   follow_up: "owner decision on the valuation basis; any change is a new variant, and no bar moves"
+  reviewed_by: null
+- id: E-0002
+  hypothesis: H-0006
+  status: running
+  pre_registration:
+    committed_revision: "self: the commit that adds this entry, before any EODHD data was retrieved (OD-0162, OD-0163)"
+    sample:
+      start: "the first date common to all three sleeves; about 2007 [EXT, unverified], stated in the results"
+      end: "the last common date on or before retrieval T"
+      frequency: "daily wealth; monthly primary statistics, weekly as sensitivity"
+      knowledge_mode: "latest; every value reconstructed(T); no as_known_by_market claim"
+      cutoff_rule: "the snapshot named in the run"
+    qualification:
+      Q1_identity: "each of SPY, IEF, BIL: rows present; no duplicate, unordered or non-positive close; no gap over 7 calendar days; quote currency USD"
+      Q2_actions: "every distribution has unadjustedValue and USD currency; every split parses; actions off an observed day are moved to the next observed day and counted"
+      Q3_internal: "constructed total return within 1 bp of the adjusted-close return in at least 99% of periods. An INTERNAL consistency check only, between two EODHD fields"
+      Q4_snapshots: "raw closes and distributions unchanged between snapshots, or each change counted"
+      Q5_reference: "reported where issuer records are read: distributions matched, missing or differing, as counts. Unread means not independently checked, and is said so"
+      gate: "Q1 to Q3 must pass for all three sleeves before the comparison runs"
+    test: >-
+      Allocations, weights fixed: 100% equity; 60% equity with 40% BIL; 60% equity with 40% IEF. Market-price total return under RA 3.1
+      and 5, reinvest_ex_close, gross of withholding. Rebalanced at the last common date of each month, fractional holdings, no costs.
+      Reported for the full window, before and from 2020-01-01, and 2008, Q1 2020 and 2022 as separate windows with wealth restarted;
+      no period is spliced out. Primary comparison: 60/40 BIL against 60/40 IEF. Paired joint block bootstrap of monthly returns,
+      10,000 replications, seed 20260002, blocks of 12 months, with 6 and 24 as sensitivity; 2.5th to 97.5th percentile.
+    metrics: [compounded_wealth, annualised_return, annualised_volatility, max_drawdown, recovery_date, longest_underwater_days, underwater_fraction, covariance, correlation]
+    costs: "fund fees embedded in market prices; no trading costs and no tax: stated limitations"
+    decision_rule: >-
+      Descriptive. Intervals spanning zero mean the evidence doesn't distinguish the two 60/40 allocations on that metric. It supports no
+      recommendation, forecast or statement about the future. IEF is a vehicle and validates no synthetic factor. Any change after
+      results exist is a variant, stated with its reason.
+    not_tested: "AUD translation, costs, tax, other funds, tail dependence, predictive use"
+  variants:
+    - {id: V1, change: "qualification corrected to its pre-registered meaning: quote currency checked, every period in Q3's denominator; run on snapshot s2", reason: "REVIEW-2026-11-04-t0022-1 F-1, F-2; allocations, windows and bootstrap unchanged", revision: 185c33a}
+    - {id: V2, change: "AUD variant: the three allocations, unhedged under RA 4.1, monthly only, on H.10 AUD/USD noon New York rates; a rate up to 5 days old is used and counted, older stops; compounded asset, currency and cross contributions; the same windows, seed and blocks. EODHD's AUD/USD compared with H.10: passes if within 1% on at least 95% of common dates, and can flag but not validate. Declared before any AUD result", reason: "OD-0167", revision: "the commit adding tools/e0002_aud.py"}
+  inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
+  runs: ["14e8e1a, snapshot s1", "185c33a, snapshot s2, docs/evidence/e0002/assessment-1.md", "475173b, snapshot s2 and V2"]
+  results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "Q1 to Q3 pass for all sleeves; Q4 no changes over minutes only; Q5 BGBL only, one unresolved difference; no independent check of SPY, IEF or BIL"}
+  negative_findings: "F-1: BGBL 2026-07-01 distribution record differs from the issuer's"
+  outcome: null
+  follow_up: "a second snapshot, and independent checks of the sleeves"
   reviewed_by: null

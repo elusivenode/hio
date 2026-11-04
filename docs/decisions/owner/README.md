@@ -176,6 +176,14 @@ are in operating model §1.1; the template is
 | [OD-0159](OD-0159-authorise-e0002-stage-a.md) | authorise_work | E-0002 Stage A (T-0021) on synthetic data; OD-0139 order amended for tracks 5 and 6; NumPy adopted; a trial may precede base camp, separately decided; vendor drafts extended | `cbab2a8` | recorded |
 | [OD-0160](OD-0160-vendor-assessment.md) | authorise_work | equity data vendor assessment (draft): stop condition applies, no candidate cleared; nothing purchased or retrieved | `6c1699b` | recorded |
 | [OD-0161](OD-0161-pages-letters-t0021.md) | accept | Treasury pages read, E-0001 download hold lifted; no vendor letters; T-0021 accepted at `59d03ab`, no Codex review; retrieval, raw-retention and agent conditions recorded | `2662e1d` | recorded |
+| [OD-0162](OD-0162-eodhd-evaluation.md) | authorise_work | one-month EODHD Personal evaluation (T-0022), owner pays; rights decision owed before retrieval; agents see no licensed values | `9b39922` | recorded |
+| [OD-0163](OD-0163-eodhd-rights-zero-curve-variant.md) | authorise_work | `eodhd.personal_evaluation` owner_verified for the evaluation only; zero-curve variant authorised, UNREFERENCED, no promotion | `bae70d9` | recorded |
+| [OD-0164](OD-0164-eodhd-key-vault.md) | authorise_work | one small key vault in `hnf-prod` for the EODHD key; credential only, no data | `183d6d3` | recorded |
+| [OD-0165](OD-0165-h10-reading-pack.md) | authorise_work | H.10 reading pack (row H3), draft; nothing downloaded or decided | `4f9929b` | recorded |
+| [OD-0166](OD-0166-h10-rights.md) | authorise_work | H.10 AUD/USD rights decided, pages read; `frb_h10.aud_usd` owner_verified, no condition met; no download | `05222af` | recorded |
+| [OD-0167](OD-0167-history-verify-aud-variant.md) | authorise_work | bound stays in branch history; VERIFY-2026-11-04-t0022-1-1 assigned; AUD variant of E-0002 on H.10 authorised | `13859ca` | recorded |
+| [OD-0168](OD-0168-verify-2-receipt-exception.md) | authorise_work | VERIFY-2026-11-04-t0022-1-2 assigned (F-3, F-4); front matter on Codex's T-0022 plans accepted as a receipt exception | `0df537d` | recorded |
+| [OD-0169](OD-0169-waive-f4-verification.md) | waive | further verification of F-REVIEW-2026-11-04-t0022-1-4 waived; fix at `75c67a4` accepted; T-0022 not accepted | `75c67a4` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

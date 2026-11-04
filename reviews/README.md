@@ -75,6 +75,7 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
+| REVIEW-2026-11-04-t0022-1 | T-0022 EODHD personal evaluation, focused code and claims review | `9b399221684defd643c4d68fbb42b42e80b80b4d..6f3b1e006913caa269d41cf6db3f9f3bfcf1c8be` (base from task card; assignment omits it) | Codex, assigned by OD-0162 corrections 1–2 | **NOT READY** | [record](records/REVIEW-2026-11-04-t0022-1.md) |
 | REVIEW-2026-10-29-t0014-1 | T-0014 base-camp completion build, P-1 through P-4 | `651eb95..13d2ea5` | Codex, assigned by OD-0133 | **NOT READY** | [record](records/REVIEW-2026-10-29-t0014-1.md) |
 | REVIEW-2026-11-03-t0015-1 | T-0015 B-2 follow-up, F-1 through F-3 | `a71f0ff..3d259d3` | Codex, assigned by OD-0135 | **NOT READY** | [record](records/REVIEW-2026-11-03-t0015-1.md) |
 | REVIEW-2026-11-03-t0016-1 | T-0016 B-3 go-live PR, G-1 through G-4 | `490df8a5dda42550e4572ca598a3deeeec10caed..d77e6e21c2fd8f867b4b6a5dc5b552511c7383f7` | Codex, assigned by [OD-0143](../docs/decisions/owner/OD-0143-go-live-b3.md) | **READY** | [record](records/REVIEW-2026-11-03-t0016-1.md) |
@@ -100,6 +101,8 @@ Reviewer build-check addendum for `REVIEW-2026-10-24-s1a-1`:
 
 | Verification | Original review | Base..submission head | Fix commit | Reviewer outcome | Record |
 |---|---|---|---|---|---|
+| VERIFY-2026-11-04-t0022-1-1 | REVIEW-2026-11-04-t0022-1, F-1 to F-5 only | `6f3b1e006913caa269d41cf6db3f9f3bfcf1c8be..bb58f859888d4b7f3b6ebc3a071157642de2f0a3` | `185c33a`, `13859ca` | F-1, F-2 and F-5 technically verified_closed; F-3 and F-4 open; **NOT READY**; finding-state reconciliation pending receipt and owner instruction | [record](records/VERIFY-2026-11-04-t0022-1-1.md) |
+| VERIFY-2026-11-04-t0022-1-2 | REVIEW-2026-11-04-t0022-1, F-3 and F-4 only | `bb58f859888d4b7f3b6ebc3a071157642de2f0a3..b410b02d988d431ed3e723c8a7666f391f3bc345` | `475173b`; assigned by OD-0168 item 1 | F-3 technically verified_closed; F-4 open; **NOT READY**; finding-state reconciliation pending receipt and owner instruction | [record](records/VERIFY-2026-11-04-t0022-1-2.md) |
 | VERIFY-2026-11-04-t0019-1-1 | REVIEW-2026-11-04-t0019-1, F-1 to F-3 and C-1 to C-3 regression | `b4929f721d9772f64d5904685ccc741a5ae10224..fa6370dc3f55c4d9e6537d502ab4a4727ca85fbd` | `83dae6a` | F-REVIEW-2026-11-04-t0019-1-1, -2 and -3 technically verified_closed; READY; finding-state reconciliation pending receipt and owner instruction | [record](records/VERIFY-2026-11-04-t0019-1-1.md) |
 | VERIFY-2026-11-03-t0015-1-1 | REVIEW-2026-11-03-t0015-1, F-1 and F-1 to F-3 regression | `3d259d3..a05219a` | `cf50736` | F-REVIEW-2026-11-03-t0015-1-1 technically verified_closed; READY; finding-state reconciliation pending receipt and owner instruction | [record](records/VERIFY-2026-11-03-t0015-1-1.md) |
 | VERIFY-2026-10-29-t0014-1-1 | REVIEW-2026-10-29-t0014-1, F-1 and F-2; P-1 to P-4 regression | `13d2ea5..e0aaa4d` | `ede5763` | F-REVIEW-2026-10-29-t0014-1-1 and -2 technically verified_closed; READY | [record](records/VERIFY-2026-10-29-t0014-1-1.md) |
@@ -153,6 +156,11 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
+| F-REVIEW-2026-11-04-t0022-1-1 | REVIEW-2026-11-04-t0022-1 | high | **open**: Q1 omits quote-currency check | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-2 | REVIEW-2026-11-04-t0022-1 | high | **open**: Q3 excludes missing adjusted-close periods | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-3 | REVIEW-2026-11-04-t0022-1 | high | **open**: snapshot path can escape the workspace | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-4 | REVIEW-2026-11-04-t0022-1 | high | **open**: private workspace mode is not enforced | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-5 | REVIEW-2026-11-04-t0022-1 | high | **open**: assessment has a licensed-derived magnitude claim | — | — | — |
 | F-REVIEW-2026-10-29-t0014-1-1 | REVIEW-2026-10-29-t0014-1 | high | **verified_closed** at `e0aaa4d` by [VERIFY-2026-10-29-t0014-1-1](records/VERIFY-2026-10-29-t0014-1-1.md) (received by OD-0135; row updated administratively by OD-0135) | — | — | — |
 | F-REVIEW-2026-10-29-t0014-1-2 | REVIEW-2026-10-29-t0014-1 | medium | **verified_closed** at `e0aaa4d` by [VERIFY-2026-10-29-t0014-1-1](records/VERIFY-2026-10-29-t0014-1-1.md) (received by OD-0135; row updated administratively by OD-0135) | — | — | — |
 | F-REVIEW-2026-11-03-t0015-1-1 | REVIEW-2026-11-03-t0015-1 | medium | **verified_closed** at `a05219a` by [VERIFY-2026-11-03-t0015-1-1](records/VERIFY-2026-11-03-t0015-1-1.md) (received by OD-0138; row updated administratively by OD-0138) | — | — | — |
