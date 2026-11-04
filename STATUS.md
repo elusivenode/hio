@@ -86,10 +86,10 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 |---|---|
 | Phase | S1b-1 live capture, soak pending (`docs/evidence/S1B1-go-live-package.md`, adopted OD-0143) |
 | Soak | 2026-11-05 09:45 to 2026-11-19 09:45 Sydney; 80 slots; bar declared in `docs/evidence/b3/soak-1.md`. Then the dead-man exercise, CI-run audit, replay and reconstruction |
-| B-2 | done; see `docs/evidence/b2/`. Destroy `rg-hio-probe` authorised (OD-0155), from 2026-11-04T06:36:50Z; not yet run |
+| B-2 | done; see `docs/evidence/b2/`. `rg-hio-probe` destroyed (OD-0155 correction 2) |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** reading the E-0002 results; the EODHD renewal (`docs/evidence/e0002/assessment-1.md`); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
+| Next permissible actions | **Owner:** reading the E-0002 results; the EODHD renewal (`docs/evidence/e0002/assessment-1.md`); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** nothing beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 

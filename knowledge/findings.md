@@ -123,6 +123,7 @@ _Distil 1, accepted by OD-0093 at `8393552` (2026-10-28). Dispositions of the 57
 ## Inbox
 
 _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate lines below this note.)_
+- `[infra] An Azure account or container with version-level immutability can't be deleted while it holds blobs, even expired: tofu destroy fails with 409 at the container. Delete every version first; az storage blob delete has no --version-id in this CLI, so use the SDK. Plan for it on the evidence store. Source: OD-0155 correction 2.`
 - [process] flagged: the Settled line advising receipt chains "under `set -e`" (Source: OD-0098) conflicts with the Settled lines that found `set -e` does not stop a chain in Claude Code's Bash tool; gate each step with `|| exit 1`. Source: OD-0101 correction 1; OD-0113 correction 1. Applies to: the next distil.
 - [infra] Azure's x-ms-version-id carries sub-second time: s equalled its floor and completed_at <= version id in 50 of 50, by 67.6 to 76.2 ms. Whether Azure guarantees this meaning is unverified. Source: docs/evidence/b2/rerun-1.md.
 - [infra] With completed_at taken before the write, C5's existing rule failed 45 of 50 and floor_s(completed_at) <= s held 50 of 50: whole-second Last-Modified explains the failure. Source: docs/evidence/b2/rerun-1.md.
