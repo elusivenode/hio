@@ -143,7 +143,8 @@ sources:
     home: https://home.treasury.gov/
     intended_use: [S1 USD cash triangulation (bills), S3 US CMT returns]
     task: T-0002
-    verification: unverified          # no site terms located; 17 U.S.C. §105 presumption only [EXT]
+    verification: unverified          # no site terms located; 17 U.S.C. §105 presumption only [EXT]. OD-0155 decided retention, V2 and V3 for the par yield curve only; six operations undecided, so the row stays unverified and the gate denies
+    owner_decisions_partial: "OD-0155, par yield curve only: raw retention indefinite, for audit and rebuild (cite Treasury, no implied endorsement); one modest one-off download acceptable, none authorised until the experiment has its own yes; NY Fed collection leaves the public-domain presumption intact. Undecided: calculate, store derived, rebuild, external processing, hio_internal, agent context"
     blocked_by: OD-0013
     evidence: [https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics, https://home.treasury.gov/subfooter/site-policies-and-notices]
     research_note: docs/research/T-0002-source-rights-and-timing.md

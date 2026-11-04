@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-04
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0154"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0155"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -25,7 +25,7 @@ datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
 **B-2 ran** (OD-0132), then **re-ran with 7b** (OD-0140, `docs/evidence/b2/rerun-1.md`); the probe account is **held** (OD-0134). **CAPTURE IS LIVE (B-3, OD-0143, 2026-11-04 Sydney):** four files on schedule, exploratory and `schedule_only`; reviewer rule removed, alert on; first runs in `docs/evidence/b3/first-run.md`. **I-5 met** (OD-0149). **The soak starts 2026-11-05 09:45 Sydney** and ends 2026-11-19 (`docs/evidence/b3/soak-1.md`). T-0016, T-0017 and T-0018 accepted. **First real cash rebuild** done and repeatable (`docs/evidence/b3/cash-rebuild-1.md`, `tools/cash_rebuild.py`): no unexplained residual; dispositions await the owner; criterion 3 not established. **C5 undecided:** no longer gates capture; still owed before any final claim.
-**Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **US duration:** spec 0.1.2 proposed (`specs/factors/rates.us.cmt_10y.total_return.yaml`); calculation accepted on invented inputs (T-0019, `src/hio/library/cmt.py`); pricing-basis error unmeasured; real data blocked on the owner's H2 rights reading (`docs/research/T-0002-h2-reading-pack.md`). Base camp, the roadmap and the plan are still proposed, patched to that order (OD-0147). `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-11-04-go-live-and-first-factor-code.md`.
+**Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **US duration:** spec 0.1.2 proposed (`specs/factors/rates.us.cmt_10y.total_return.yaml`); calculation accepted on invented inputs (T-0019, `src/hio/library/cmt.py`); pricing-basis error unmeasured; real data still blocked: H2 is part-decided (retention, V2, V3; OD-0155), six operations and the experiment's own yes remain (`docs/research/T-0002-h2-reading-pack.md`). Base camp, the roadmap and the plan are still proposed, patched to that order (OD-0147). `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-11-04-go-live-and-first-factor-code.md`.
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
 **Phase A is approved and applied as harness-0.9a** (OD-0091). **Distil 1 accepted** (46 Settled findings,
 OD-0093); **distil 2 accepted** (39 lines, OD-0135). Phase B work on H6 then H11 is authorised (OD-0092); activation of either needs Codex review and approval. **hiomux** is a tmux
@@ -53,7 +53,7 @@ finding states change by owner-authorised reconciliation (§6.2 step 5.12). **H6
 | Accepted | **S1a** (OD-0042); **T-0009** (OD-0079); **T-0010** at `62adccd` (OD-0123); **T-0011** at `c69df9e` (OD-0125); **T-0012** at `efb6fa1` (OD-0128); **T-0013** at `39747c5` (OD-0134); **T-0014** at `e0aaa4d` (OD-0135); **T-0015** at `a05219a` (OD-0138); **T-0016** at `d77e6e2` (OD-0144); **T-0017** at `4576ae5` (OD-0146); **T-0018** at `acf1487`, no Codex review (OD-0148 c1); **T-0019** at `fa6370d` (OD-0153); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
 | Authorised, in progress | **hiomux pilot**
 use under its protocol, outside the repository (OD-0072, OD-0073). Routine delegated receipt (OD-0061). Harness-0.9: drafting only (OD-0068, OD-0070; done to revision 3). Base-camp work (OD-0132) | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (`status: accepted`; `accepted_by: OD-0079`) |
-| Not authorised | **the probe destroy** without a "go"; **any C5 amendment**; the duration experiment; any download or vendor contact; S1b-2; any source permission beyond the five S1b-1 datasets (`hio_internal` only) and D7; D4–D6; factor specs (drafts); harness-0.9 Phase B activation (H6 parked, OD-0114), H11, H3, H7, H8; settling any finding without its verification | [`docs/decisions/README.md`](docs/decisions/README.md) |
+| Not authorised | **any C5 amendment**; the duration experiment; any download or vendor contact; S1b-2; any source permission beyond the five S1b-1 datasets (`hio_internal` only) and D7; D4–D6; factor specs (drafts); harness-0.9 Phase B activation (H6 parked, OD-0114), H11, H3, H7, H8; settling any finding without its verification | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Open owner questions | Q-013 (P3 in force), Q-003, Q-004, Q-005b, Q-006, Q-010 (open; H5 declined for S1b-1), Q-014 (harness-0.9) | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 
 ## Reviews
@@ -86,10 +86,10 @@ No finding is waived.
 |---|---|
 | Phase | S1b-1 live capture, soak pending (`docs/evidence/S1B1-go-live-package.md`, adopted OD-0143) |
 | Soak | 2026-11-05 09:45 to 2026-11-19 09:45 Sydney; 80 slots; bar declared in `docs/evidence/b3/soak-1.md`. Then the dead-man exercise, CI-run audit, replay and reconstruction |
-| B-2 | done; see `docs/evidence/b2/`. Destroy `rg-hio-probe` from 2026-11-04T06:36:50Z, on a "go" |
+| B-2 | done; see `docs/evidence/b2/`. Destroy `rg-hio-probe` authorised (OD-0155), from 2026-11-04T06:36:50Z; not yet run |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** H2 Treasury rights (blocks duration); the probe destroy "go"; T-0003 vendor questions; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's context budget (it refuses at `main`) and its overdue performance review; held-out cases. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** the six remaining H2 operations, then the duration experiment; sending the T-0003 vendor questions (OD-0155); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
