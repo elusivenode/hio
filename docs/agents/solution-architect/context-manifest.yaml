@@ -5,7 +5,7 @@
 # required file refuses the session); note (why the architect gets it). Everything else is read on demand from the
 # read-only checkout.
 version: "0.2"
-budget_bytes: 90000        # about 22k tokens; the bundle refuses rather than truncates past this
+budget_bytes: 120000       # about 30k tokens (raised from 90000, OD-0155); the bundle refuses rather than truncates past this
 entries:
   - {path: AGENTS.md, required: true, note: "authority rules and roles; context, not your role instructions"}
   - {path: STATUS.md, required: true, note: "current state, navigation only"}
