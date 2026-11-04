@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -196,11 +197,15 @@ def check_root(root: Path) -> None:
 
 
 def private_write(path: Path, data: bytes) -> None:
-    """Never through a link, and private even if the file already exists with an open mode."""
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
-    with os.fdopen(fd, "wb") as out:
-        os.fchmod(out.fileno(), 0o600)
-        out.write(data)
+    """Private, and always a new file swapped into place, so no link of any kind is written through."""
+    fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")  # mode 600
+    try:
+        with os.fdopen(fd, "wb") as out:
+            out.write(data)
+        os.replace(temporary, path)
+    except BaseException:
+        Path(temporary).unlink(missing_ok=True)
+        raise
 
 
 def make_private(path: Path) -> None:

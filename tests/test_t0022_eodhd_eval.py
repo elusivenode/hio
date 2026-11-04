@@ -176,14 +176,25 @@ def test_an_open_workspace_part_refuses(tmp_path):
         tool.check_root(tmp_path)
 
 
-def test_a_report_file_that_is_a_link_is_never_written_through(tmp_path):
-    outside = tmp_path / "outside.md"
+@pytest.mark.parametrize("make_link", [tool.os.symlink, tool.os.link])
+def test_a_report_file_that_is_a_link_is_replaced_and_the_target_untouched(tmp_path, make_link):
+    outside = tmp_path.parent / f"{tmp_path.name}-outside.md"
     outside.write_text("untouched")
     (tmp_path / "reports").mkdir(mode=0o700)
-    (tmp_path / "reports" / "owner-report.md").symlink_to(outside)
-    with pytest.raises(OSError):
-        full_run(tmp_path)
+    report = tmp_path / "reports" / "owner-report.md"
+    make_link(outside, report)
+    full_run(tmp_path)
     assert outside.read_text() == "untouched"
+    assert not report.is_symlink()
+    assert report.read_text().startswith("# E-0002")
+    assert report.stat().st_mode & 0o077 == 0
+
+
+def test_a_failed_write_leaves_no_temporary_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(tool.os, "replace", lambda *_a: (_ for _ in ()).throw(OSError("invented")))
+    with pytest.raises(OSError):
+        tool.private_write(tmp_path / "x", b"y")
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_an_existing_open_report_becomes_private(tmp_path):
