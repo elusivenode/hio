@@ -11,7 +11,7 @@ instruction: OD-0162
 
 > **Recommendation: continue conditionally, for internal exploratory USD research only.** One snapshot, one independently checked fund. **No value is recorded here:** the rights record denies agent use and quotation. Claude saw counts, hashes, dates and pass or fail, and hasn't read the portfolio results. They are in `~/.hio-research/E-0002-eodhd/reports/owner-report.md`, for the owner.
 
-Run at `185c33a`, snapshot `s2`, compared with `s1`, 2026-11-04, after the remediation of REVIEW-2026-11-04-t0022-1. Manifest sha256 `bb40a84650a8b7104e3d116a5d0773619dd4870ee20190a80bab370135fee38d`; summary sha256 `bc276d727aaa9760ee0c6100f8eee4a13943dbb144b01b89f23bbd7194832bbc`.
+Run at `475173b`, snapshot `s2`, compared with `s1`, 2026-11-04, after the remediation of REVIEW-2026-11-04-t0022-1 and VERIFY-2026-11-04-t0022-1-1; values unchanged from `185c33a`. Manifest sha256 `bb40a84650a8b7104e3d116a5d0773619dd4870ee20190a80bab370135fee38d`; summary sha256 `905e4db5de033be01e2c4ee5b87297c356f412656fbe4e67f03323370872fb25`.
 
 ## A. Subscription and cost
 
@@ -54,6 +54,10 @@ Symbols worked as given. Declaration and record dates are absent on all three AS
 ## E. Portfolio demonstration
 
 The comparison ran: 4,889 common periods, 2007-05-30 to 2026-11-03, BIL setting the start. All three allocations; full, before and from 2020, and 2008, Q1 2020 and 2022. Wealth reconciled in every window. **Results are the owner's to read.** Limits: three named funds and one history, no trading costs or tax, BIL isn't overnight cash, IEF validates no factor, and about six non-overlapping three-year periods. It isn't a recommendation or forecast. F-1 is in a fund outside the comparison, but these three are unchecked.
+
+## E2. AUD variant (V2)
+
+Ran at `475173b`: the three allocations, unhedged, monthly, on H.10's noon New York rate, 2007-05-31 to 2026-10-30, 233 months, all windows available. Results are the owner's to read, in `reports/owner-report-aud.md`. H.10 manifest sha256 `07cff3c0929a96bdfe8938c3f1f9242777621f9bbe39deb0515202d816199b21`; summary sha256 `5bb515e36ac3c2c57b8dc42c720d5ddf1a2308c56563b4ad685add216cadf701`. **Archive:** the Australian series is labelled USD per AUD, 13,993 rows from 1971-01-04 to 2026-10-30, with 572 rows holding no value, and it has rates across the 2006 to 2009 publication gap. **Rates:** 2 month ends used an earlier rate, the oldest a day old. **EODHD's AUD/USD against H.10:** within 1% on 4,772 of 4,863 common dates, which passes the declared bar and can flag but not validate, at different times of day. 1,139 weekend rows sit in that span. BIL in AUD is USD bills plus currency risk, not AUD cash; it's unhedged, and there's no long AUD cash leg.
 
 ## F. Recommendation
 

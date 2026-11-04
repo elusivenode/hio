@@ -37,4 +37,4 @@ As OD-0162 lists. No change under `src/hio/sources/`, `src/hio/jobs/`, `.github/
 
 ## Submission (filled by the implementer)
 
-Branch `feat/t0022-eodhd`. Snapshots `s1` and `s2`; assessment 1 in `docs/evidence/e0002/`: continue conditionally. **REVIEW-2026-11-04-t0022-1: NOT READY at `6f3b1e0`, five high findings, on local branch `review/REVIEW-2026-11-04-t0022-1-codex`, not received.** Remediation claimed at this branch's head for all five; none is verified. Not accepted.
+Branch `feat/t0022-eodhd`. Snapshots `s1` and `s2`; assessment 1 in `docs/evidence/e0002/`: continue conditionally. **REVIEW-2026-11-04-t0022-1: NOT READY at `6f3b1e0`, five high findings, on local branch `review/REVIEW-2026-11-04-t0022-1-codex`, not received.** **VERIFY-2026-11-04-t0022-1-1: NOT READY at `bb58f85`:** F-1, F-2 and F-5 technically verified closed; F-3 and F-4 open, remediation claimed at this branch's head, unverified. AUD variant V2 run. Not received; not accepted.
