@@ -1,7 +1,8 @@
 ---
 id: T-0022
 title: "One-month EODHD Personal plan evaluation: data qualification and first USD portfolio comparison"
-status: submitted_for_review
+status: accepted   # OD-0171 at 888c493; F-4 verification waived (OD-0169); tooling only, no data accepted
+accepted_by: OD-0171
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator); independent reviewer: Codex, one focused review"
 created_at: 2026-11-04
