@@ -86,3 +86,19 @@
   variants_tried: 0
   created: 2026-11-04
   owner: quantitative researcher
+- id: H-0006
+  title: Replacing cash with Treasury exposure changed risk at a fixed equity weight
+  status: proposed
+  pillar: diversification
+  model_kind: explanatory
+  thesis: >-
+    At a fixed 60% in a broad US equity ETF, holding the other 40% in an intermediate Treasury ETF rather than a T-bill ETF
+    changed volatility, drawdown and recovery over the observed history. Descriptive only: three named vehicles, one history.
+  prediction: {direction: conditional, magnitude: "not predicted; reported with uncertainty", horizon: "monthly and weekly, the common window"}
+  data: {factors: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"], states: [], knowledge_mode: latest, min_knowable_basis: "reconstructed(T)"}
+  competing_explanations: [the sample's rate regime, a few crises dominating, vehicle basis, survivor selection of the funds]
+  falsification: "intervals on the paired differences spanning zero means the evidence doesn't distinguish the allocations"
+  experiments: [E-0002]
+  variants_tried: 0
+  created: 2026-11-04
+  owner: quantitative researcher

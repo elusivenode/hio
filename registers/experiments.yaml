@@ -52,3 +52,42 @@
   outcome: not_supported
   follow_up: "owner decision on the valuation basis; any change is a new variant, and no bar moves"
   reviewed_by: null
+- id: E-0002
+  hypothesis: H-0006
+  status: pre_registered
+  pre_registration:
+    committed_revision: "self: the commit that adds this entry, before any EODHD data was retrieved (OD-0162, OD-0163)"
+    sample:
+      start: "the first date common to all three sleeves; about 2007 [EXT, unverified], stated in the results"
+      end: "the last common date on or before retrieval T"
+      frequency: "daily wealth; monthly primary statistics, weekly as sensitivity"
+      knowledge_mode: "latest; every value reconstructed(T); no as_known_by_market claim"
+      cutoff_rule: "the snapshot named in the run"
+    qualification:
+      Q1_identity: "each of SPY, IEF, BIL: rows present; no duplicate, unordered or non-positive close; no gap over 7 calendar days; quote currency USD"
+      Q2_actions: "every distribution has unadjustedValue and USD currency; every split parses; actions off an observed day are moved to the next observed day and counted"
+      Q3_internal: "constructed total return within 1 bp of the adjusted-close return in at least 99% of periods. An INTERNAL consistency check only, between two EODHD fields"
+      Q4_snapshots: "raw closes and distributions unchanged between snapshots, or each change counted"
+      Q5_reference: "reported where issuer records are read: distributions matched, missing or differing, as counts. Unread means not independently checked, and is said so"
+      gate: "Q1 to Q3 must pass for all three sleeves before the comparison runs"
+    test: >-
+      Allocations, weights fixed: 100% equity; 60% equity with 40% BIL; 60% equity with 40% IEF. Market-price total return under RA 3.1
+      and 5, reinvest_ex_close, gross of withholding. Rebalanced at the last common date of each month, fractional holdings, no costs.
+      Reported for the full window, before and from 2020-01-01, and 2008, Q1 2020 and 2022 as separate windows with wealth restarted;
+      no period is spliced out. Primary comparison: 60/40 BIL against 60/40 IEF. Paired joint block bootstrap of monthly returns,
+      10,000 replications, seed 20260002, blocks of 12 months, with 6 and 24 as sensitivity; 2.5th to 97.5th percentile.
+    metrics: [compounded_wealth, annualised_return, annualised_volatility, max_drawdown, recovery_date, longest_underwater_days, underwater_fraction, covariance, correlation]
+    costs: "fund fees embedded in market prices; no trading costs and no tax: stated limitations"
+    decision_rule: >-
+      Descriptive. Intervals spanning zero mean the evidence doesn't distinguish the two 60/40 allocations on that metric. It supports no
+      recommendation, forecast or statement about the future. IEF is a vehicle and validates no synthetic factor. Any change after
+      results exist is a variant, stated with its reason.
+    not_tested: "AUD translation, costs, tax, other funds, tail dependence, predictive use"
+  variants: []
+  inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
+  runs: []
+  results: null
+  negative_findings: null
+  outcome: null
+  follow_up: null
+  reviewed_by: null
