@@ -167,3 +167,5 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - [rights] Claude may read EODHD-derived statistics; raw prices stay out, and Codex, the architect and the repository get no values. Source: OD-0174.
 - [data] Issuer checks on BIL and IEF match closely, while SPY runs slightly high at every horizon, unexplained. Source: tools/e0002_issuer_check.py.
 - [method] H.10 is usable for AUD translation only monthly, under RA 4.4. Source: tools/e0002_aud.py, OD-0167.
+- [research] E-0003's intervals_span_zero treats any block length excluding zero as "distinguished at every block length"; no recorded result is mixed, and the code is unfixed. Source: OD-0175 correction 1.
+- [hiomux] The architect's clone holds local branches as well as the checkout, so it can read an open PR's branch and say so. Source: docs/history/2026-11-04-architect-calibration.md.

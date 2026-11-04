@@ -89,7 +89,7 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 | B-2 | done; see `docs/evidence/b2/`. `rg-hio-probe` destroyed (OD-0155 correction 2) |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** the architect's calibration answer (OD-0175); the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** whether to adopt the architect's §6 consolidation milestone (`docs/history/2026-11-04-architect-calibration.md`, OD-0175); the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** nothing beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 

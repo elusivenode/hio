@@ -24,3 +24,5 @@ One consultation, submitted word for word (`hiomux sa ask --caller owner`), to b
 **After submission,** OD-0174 let Claude read derived statistics. The brief's sentence that the rights record denies agent use is unchanged for the architect, which received no values.
 
 ## Corrections (append-only)
+
+- **Correction 1, 2026-11-04.** The answer is received and stored at `docs/history/2026-11-04-architect-calibration.md`, sha256 `90cc5f808523e2b0b8f75119465ec88169cda7d6df648039466e12a889402f93`. The checkout was `6e4a455`, as stated above, but the clone also held local branches, and the architect read V1 separately at `59429c5`, so the concern about V1 being invisible didn't arise. It didn't see OD-0174. Its finding on `intervals_span_zero` is correct as to logic: a mix of block lengths would be labelled "distinguished at every block length". Claude checked E-0003's and V1's reports: 9 effect and metric pairs in each, none mixed, so no recorded result is misclassified. The code isn't changed, because no implementation is authorised. Nothing in the answer is adopted.
