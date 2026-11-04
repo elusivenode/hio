@@ -102,3 +102,19 @@
   variants_tried: 0
   created: 2026-11-04
   owner: quantitative researcher
+- id: H-0007
+  title: For an AUD investor, USD defensive sleeves differ from AUD cash through currency as well as duration
+  status: proposed
+  pillar: diversification
+  model_kind: explanatory
+  thesis: >-
+    With 60% in unhedged US equity, holding the other 40% in USD bills instead of AUD cash changes outcomes through the rate gap
+    and the currency together, and holding US Treasuries instead of USD bills changes them through duration. Descriptive only.
+  prediction: {direction: conditional, magnitude: "not predicted; reported with uncertainty", horizon: "monthly, 2011 onward"}
+  data: {factors: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"], states: [], knowledge_mode: latest, min_knowable_basis: "reconstructed(T)"}
+  competing_explanations: [the post-2011 sample, a few episodes dominating, vehicle basis, month-end timing]
+  falsification: "intervals on a paired difference spanning zero mean the evidence doesn't distinguish that pair"
+  experiments: [E-0003]
+  variants_tried: 0
+  created: 2026-11-04
+  owner: quantitative researcher
