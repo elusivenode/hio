@@ -158,11 +158,11 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
-| F-REVIEW-2026-11-04-t0022-1-1 | REVIEW-2026-11-04-t0022-1 | high | **open**: Q1 omits quote-currency check | — | — | — |
-| F-REVIEW-2026-11-04-t0022-1-2 | REVIEW-2026-11-04-t0022-1 | high | **open**: Q3 excludes missing adjusted-close periods | — | — | — |
-| F-REVIEW-2026-11-04-t0022-1-3 | REVIEW-2026-11-04-t0022-1 | high | **open**: snapshot path can escape the workspace | — | — | — |
-| F-REVIEW-2026-11-04-t0022-1-4 | REVIEW-2026-11-04-t0022-1 | high | **open**: private workspace mode is not enforced | — | — | — |
-| F-REVIEW-2026-11-04-t0022-1-5 | REVIEW-2026-11-04-t0022-1 | high | **open**: assessment has a licensed-derived magnitude claim | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-1 | REVIEW-2026-11-04-t0022-1 | high | **verified_closed** (OD-0171): Q1 omits quote-currency check | see T-0022 | VERIFY-2026-11-04-t0022-1-1 | — |
+| F-REVIEW-2026-11-04-t0022-1-2 | REVIEW-2026-11-04-t0022-1 | high | **verified_closed** (OD-0171): Q3 excludes missing adjusted-close periods | see T-0022 | VERIFY-2026-11-04-t0022-1-1 | — |
+| F-REVIEW-2026-11-04-t0022-1-3 | REVIEW-2026-11-04-t0022-1 | high | **verified_closed** (OD-0171): snapshot path can escape the workspace | see T-0022 | VERIFY-2026-11-04-t0022-1-2 | — |
+| F-REVIEW-2026-11-04-t0022-1-4 | REVIEW-2026-11-04-t0022-1 | high | **fix accepted, verification waived** (OD-0169, OD-0171): private workspace mode is not enforced | `75c67a4` | VERIFY-2026-11-04-t0022-1-2 left it open; fix unverified | OD-0169 |
+| F-REVIEW-2026-11-04-t0022-1-5 | REVIEW-2026-11-04-t0022-1 | high | **verified_closed** (OD-0171): assessment has a licensed-derived magnitude claim | see T-0022 | VERIFY-2026-11-04-t0022-1-1 | — |
 | F-REVIEW-2026-10-29-t0014-1-1 | REVIEW-2026-10-29-t0014-1 | high | **verified_closed** at `e0aaa4d` by [VERIFY-2026-10-29-t0014-1-1](records/VERIFY-2026-10-29-t0014-1-1.md) (received by OD-0135; row updated administratively by OD-0135) | — | — | — |
 | F-REVIEW-2026-10-29-t0014-1-2 | REVIEW-2026-10-29-t0014-1 | medium | **verified_closed** at `e0aaa4d` by [VERIFY-2026-10-29-t0014-1-1](records/VERIFY-2026-10-29-t0014-1-1.md) (received by OD-0135; row updated administratively by OD-0135) | — | — | — |
 | F-REVIEW-2026-11-03-t0015-1-1 | REVIEW-2026-11-03-t0015-1 | medium | **verified_closed** at `a05219a` by [VERIFY-2026-11-03-t0015-1-1](records/VERIFY-2026-11-03-t0015-1-1.md) (received by OD-0138; row updated administratively by OD-0138) | — | — | — |
