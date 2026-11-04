@@ -145,7 +145,28 @@ def test_the_reports_reconcile_and_a_difference_is_caught():
     good = {"windows": {"q1_2020": {"available": True, "allocations": {"a": _aud(0.2, 0.2, 0.9)}}}}
     assert all(tool.reconcile_reports(usd, good)["q1_2020"].values())
     bad = {"windows": {"q1_2020": {"available": True, "allocations": {"a": _aud(0.25, 0.4, 0.8)}}}}
-    assert not any(tool.reconcile_reports(usd, bad)["q1_2020"].values())
+    row = tool.reconcile_reports(usd, bad)["q1_2020"]
+    assert row["availability_matches"] is True
+    assert not any(v for k, v in row.items() if k != "availability_matches")
+
+
+def test_an_availability_mismatch_fails_and_is_never_omitted():
+    usd = {"windows": {"q1_2020": {"available": True, "allocations": {"a": _usd(0.2, 0.3, 0.9)}}}}
+    aud = {"windows": {"q1_2020": {"available": False}}}
+    row = tool.reconcile_reports(usd, aud)["q1_2020"]
+    assert row["availability_matches"] is False and row["monthly_volatility_equal"] is None
+
+
+def test_a_window_only_one_report_has_fails():
+    usd = {"windows": {}}
+    aud = {"windows": {"2008": {"available": True, "allocations": {}}}}
+    assert tool.reconcile_reports(usd, aud)["2008"]["availability_matches"] is False
+
+
+def test_wealth_not_compared_is_none_and_not_a_pass():
+    usd = {"windows": {"full": {"available": True, "allocations": {"a": _usd(0.2, 0.3, 0.9)}}}}
+    aud = {"windows": {"full": {"available": True, "allocations": {"a": _aud(0.2, 0.2, 1.5)}}}}
+    assert tool.reconcile_reports(usd, aud)["full"]["wealth_equal"] is None
 
 
 def test_no_common_dates_is_not_a_pass():

@@ -606,23 +606,30 @@ def dependence(panel: fa.Panel, *, closed: bool = False) -> dict[str, Any]:
     return out
 
 
-def compare(panel: fa.Panel) -> dict[str, Any]:
-    results: dict[str, Any] = {"windows": {}}
+def compare_windows_only(panel: fa.Panel) -> dict[str, Any]:
+    windows: dict[str, Any] = {}
     for name, (start, end) in WINDOWS.items():
         low, high = max(start, panel.dates[0]), min(end, panel.dates[-1])
         if start != date.min and start < panel.dates[0]:
-            results["windows"][name] = {"available": False}
+            windows[name] = {"available": False}
             continue
         try:
             part = fa.window(panel, low, high)
         except fa.AlignmentError:
-            results["windows"][name] = {"available": False}
+            windows[name] = {"available": False}
             continue
-        results["windows"][name] = {
+        # Its last month counts only if the data reaches the window's stated end; otherwise it may be partial.
+        closed = end != date.max and panel.dates[-1] >= end
+        windows[name] = {
             "available": True,
-            "allocations": {a: describe(part, w, closed=end != date.max) for a, w in ALLOCATIONS.items()},
-            "dependence": dependence(part, closed=end != date.max),
+            "allocations": {a: describe(part, w, closed=closed) for a, w in ALLOCATIONS.items()},
+            "dependence": dependence(part, closed=closed),
         }
+    return windows
+
+
+def compare(panel: fa.Panel) -> dict[str, Any]:
+    results: dict[str, Any] = {"windows": compare_windows_only(panel)}
     monthly = fa.period_returns(panel.dates, fa.sleeve_levels(panel), "monthly")
     weights = {a: np.array([w[s] for s in panel.sleeves]) for a, w in ALLOCATIONS.items()}
     results["bootstrap_treasury_minus_cash"] = {}
