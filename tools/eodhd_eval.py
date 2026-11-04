@@ -14,6 +14,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -64,6 +65,8 @@ ETFS = {
     "BGBL.AU": "AUD",
 }
 FOREX = "AUDUSD.FOREX"
+EXCHANGES = ("US", "AU")
+SNAPSHOT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 KINDS = ("eod", "div", "splits")
 MAX_REQUESTS_PER_SNAPSHOT = 40
 PAUSE_SECONDS = 0.5
@@ -165,13 +168,45 @@ def requests_for() -> list[tuple[str, str, str]]:
         out.append((symbol, "div", f"/div/{symbol}?fmt=json"))
         out.append((symbol, "splits", f"/splits/{symbol}?fmt=json"))
     out.append((FOREX, "eod", f"/eod/{FOREX}?fmt=json&period=d"))
+    for exchange in EXCHANGES:  # the listing's quote currency (F-REVIEW-2026-11-04-t0022-1-1)
+        out.append((f"EXCHANGE.{exchange}", "symbols", f"/exchange-symbol-list/{exchange}?fmt=json"))
     return out
 
 
 def check_root(root: Path) -> None:
+    """The workspace must be outside the repository and private, and everything created under it stays private
+    (F-REVIEW-2026-11-04-t0022-1-4)."""
     resolved = root.resolve()
     if resolved == REPO or REPO in resolved.parents:
         raise Stop("--root must lie outside the repository")
+    if not resolved.is_dir():
+        raise Stop("--root must be an existing directory")
+    if resolved.stat().st_mode & 0o077:
+        raise Stop("--root must be mode 700")
+    os.umask(0o077)
+
+
+def make_private(path: Path) -> None:
+    """The object store marks its files world-readable and read-only; here they stay read-only and private."""
+    for item in path.rglob("*"):
+        item.chmod(0o700 if item.is_dir() else 0o400)
+
+
+def snapshot_dir(root: Path, snapshot: str) -> Path:
+    """A snapshot is one safe name directly under raw/ (F-REVIEW-2026-11-04-t0022-1-3)."""
+    if not SNAPSHOT_NAME.fullmatch(snapshot):
+        raise Stop("a snapshot name must be letters, digits, hyphens or underscores")
+    target = (root / "raw" / snapshot).resolve()
+    if target.parent != (root / "raw").resolve():
+        raise Stop("a snapshot must stay under raw/")
+    return target
+
+
+def quote_currency(rows: Sequence[Mapping[str, Any]], symbol: str) -> str | None:
+    """The listing's own quote currency, or None if the listing doesn't settle it."""
+    code = symbol.rsplit(".", 1)[0]
+    found = {str(row.get("Currency")) for row in rows if row.get("Code") == code and row.get("Currency")}
+    return found.pop() if len(found) == 1 else None
 
 
 def fetch(
@@ -181,7 +216,7 @@ def fetch(
     check_root(root)
     gate.authorise(Operation.FETCH, [SOURCE_ID])
     gate.authorise(Operation.STORE_RAW, [SOURCE_ID])
-    target = root / "raw" / snapshot
+    target = snapshot_dir(root, snapshot)
     if target.exists():
         raise Stop(f"snapshot {snapshot} already exists")
     planned = requests_for()
@@ -229,7 +264,7 @@ def fetch(
 
 
 def load_snapshot(root: Path, snapshot: str) -> dict[str, Any]:
-    manifest = json.loads((root / "raw" / snapshot / "manifest.json").read_text())
+    manifest = json.loads((snapshot_dir(root, snapshot) / "manifest.json").read_text())
     if manifest["stopped"] is not None:
         raise Stop(f"snapshot {snapshot} stopped early: {manifest['stopped']}")
     for entry in manifest["files"]:
@@ -264,6 +299,7 @@ class Series:
 def analyse(
     symbol: str,
     expected_currency: str,
+    listed_currency: str | None,
     eod: Sequence[Mapping[str, Any]],
     dividends: Sequence[Mapping[str, Any]],
     splits: Sequence[Mapping[str, Any]],
@@ -285,8 +321,10 @@ def analyse(
         for n in range(1, (b - a).days)
         if (a + timedelta(days=n)).weekday() < 5
     )
+    counts["quote_currency_unconfirmed"] = int(listed_currency != expected_currency)
     identity_ok = bool(eod) and not (
-        counts["duplicate_dates"]
+        counts["quote_currency_unconfirmed"]
+        or counts["duplicate_dates"]
         or counts["unordered_dates"]
         or counts["non_positive_closes"]
         or counts["gaps_over_7_days"]
@@ -372,7 +410,9 @@ def analyse(
             counts["internal_differences_explained_by_factor_formula"] += int(
                 abs(adjusted[period.end] - factor_style) <= BP
             )
-    internal_ok = bool(compared) and Decimal(within) / Decimal(len(compared)) >= Decimal("0.99")
+    # Every period is in the denominator: one without an adjusted close can't agree (F-...-t0022-1-2).
+    counts["internal_periods_without_adjusted"] = len(periods) - len(compared)
+    internal_ok = bool(periods) and Decimal(within) / Decimal(len(periods)) >= Decimal("0.99")
     by_year = Counter(str(record["date"])[:4] for record in dividends)
     return Series(
         symbol,
@@ -389,6 +429,14 @@ def analyse(
     )
 
 
+def _agrees(vendor: Any, issuer: Decimal) -> bool:
+    """Equal once the issuer's figure is rounded to the vendor's decimals, which is all the vendor carries."""
+    if vendor is None:
+        return False
+    value = Decimal(vendor)
+    return issuer.quantize(Decimal(1).scaleb(value.as_tuple().exponent)) == value
+
+
 def check_reference(root: Path, symbol: str, dividends: Sequence[Mapping[str, Any]]) -> dict[str, int] | None:
     """Q5: the issuer's distributions, read by hand into reference/SYMBOL.csv, against the vendor's, as
     counts. A reference covering a shorter span counts the rest as extra, so read the counts with it."""
@@ -398,9 +446,7 @@ def check_reference(root: Path, symbol: str, dividends: Sequence[Mapping[str, An
     issuer = {row["ex_date"]: Decimal(row["amount"]) for row in csv.DictReader(path.open())}
     vendor = {str(r["date"]): r.get("unadjustedValue") for r in dividends}
     both = issuer.keys() & vendor.keys()
-    differs = sum(
-        1 for d in both if vendor[d] is None or abs(Decimal(vendor[d]) - issuer[d]) > Decimal("0.000001")
-    )
+    differs = sum(1 for d in both if not _agrees(vendor[d], issuer[d]))
     return {
         "issuer_rows": len(issuer),
         "matched": len(both) - differs,
@@ -610,7 +656,21 @@ def _table(results: Mapping[str, Any]) -> list[str]:
     return lines
 
 
-def render_owner_report(results: Mapping[str, Any] | None) -> str:
+def reference_detail(root: Path, symbol: str, dividends: Sequence[Mapping[str, Any]]) -> list[str]:
+    """For the owner only: each date where the vendor's distribution differs from the issuer's."""
+    path = root / "reference" / f"{symbol}.csv"
+    if not path.is_file():
+        return []
+    vendor = {str(r["date"]): r.get("unadjustedValue") for r in dividends}
+    lines = []
+    for row in csv.DictReader(path.open()):
+        amount = Decimal(row["amount"])
+        if row["ex_date"] in vendor and not _agrees(vendor[row["ex_date"]], amount):
+            lines.append(f"- {symbol} {row['ex_date']}: vendor {vendor[row['ex_date']]}, issuer {amount}.")
+    return lines
+
+
+def render_owner_report(results: Mapping[str, Any] | None, differences: Sequence[str] = ()) -> str:
     lines = [
         "# E-0002: for the owner only. Holds licensed-derived values: don't commit, share or paste into AI.",
         "",
@@ -622,6 +682,8 @@ def render_owner_report(results: Mapping[str, Any] | None) -> str:
         lines.append("\nThe comparison didn't run: Q1 to Q3 didn't pass for all three sleeves.")
     else:
         lines += _table(results)
+    if differences:
+        lines += ["\n## Distributions that differ from the issuer's\n", *differences]
     return "\n".join(lines) + "\n"
 
 
@@ -637,6 +699,7 @@ def run(
         series[symbol] = analyse(
             symbol,
             currency,
+            quote_currency(_read(root, manifest, f"EXCHANGE.{symbol.rsplit('.', 1)[1]}", "symbols"), symbol),
             _read(root, manifest, symbol, "eod"),
             _read(root, manifest, symbol, "div"),
             _read(root, manifest, symbol, "splits"),
@@ -674,9 +737,12 @@ def run(
         summary["omitted_dates"] = dict(panel.omitted_dates)
         summary["windows_available"] = {k: v["available"] for k, v in results["windows"].items()}
         summary["inputs_read"] = [r["content_sha256"] for r in read]
+    if (root / "store").exists():
+        make_private(root / "store")
     reports = root / "reports"
     reports.mkdir(exist_ok=True)
-    (reports / "owner-report.md").write_text(render_owner_report(results))
+    differences = [line for s in ETFS for line in reference_detail(root, s, _read(root, manifest, s, "div"))]
+    (reports / "owner-report.md").write_text(render_owner_report(results, differences))
     if results is not None:
         (reports / "owner-values.json").write_text(json.dumps(results, indent=1, sort_keys=True) + "\n")
     (root / "summary.json").write_text(json.dumps(summary, indent=1, sort_keys=True) + "\n")

@@ -20,6 +20,20 @@ _spec.loader.exec_module(tool)
 MARKER = "invented-value-0123"
 
 
+@pytest.fixture(autouse=True)
+def private_tmp(tmp_path):
+    tmp_path.chmod(0o700)
+
+
+def an(currency, eod_rows, dividends, splits, listed="same"):
+    return tool.analyse("X", currency, currency if listed == "same" else listed, eod_rows, dividends, splits)
+
+
+def symbol_rows(exchange):
+    wanted = [s.rsplit(".", 1)[0] for s in tool.ETFS if s.endswith(f".{exchange}")]
+    return [{"Code": c, "Currency": "USD" if exchange == "US" else "AUD"} for c in wanted]
+
+
 def trading_days(start: date, count: int) -> list[date]:
     out, day = [], start
     while len(out) < count:
@@ -44,6 +58,8 @@ def responder(days, calls):
         kind = path[1]
         if kind == "eod":
             return 200, json.dumps(invented_eod(days)).encode()
+        if kind == "exchange-symbol-list":
+            return 200, json.dumps(symbol_rows(path[2])).encode()
         return 200, b"[]"
 
     return get
@@ -99,6 +115,36 @@ def test_the_parent_row_stays_refused():
 def test_a_root_inside_the_repository_refuses():
     with pytest.raises(tool.Stop, match="outside the repository"):
         tool.fetch(REPO / "data" / "x", "s1", gate=gate(), commit="c", get=lambda _r: (200, b"[]"))
+
+
+@pytest.mark.parametrize("name", ["/tmp/elsewhere", "../escape", "a/b", "", ".", "..", "x" * 41])
+def test_an_unsafe_snapshot_name_refuses_before_any_request(tmp_path, name):
+    calls = []
+    with pytest.raises(tool.Stop, match="snapshot name"):
+        tool.fetch(tmp_path, name, gate=gate(), commit="c", get=lambda r: calls.append(r) or (200, b"[]"))
+    assert calls == []
+
+
+def test_a_root_readable_by_others_refuses(tmp_path):
+    tmp_path.chmod(0o755)
+    with pytest.raises(tool.Stop, match="mode 700"):
+        tool.fetch(tmp_path, "s1", gate=gate(), commit="c", get=lambda _r: (200, b"[]"))
+
+
+def test_a_missing_root_refuses(tmp_path):
+    with pytest.raises(tool.Stop, match="existing directory"):
+        tool.check_root(tmp_path / "absent")
+
+
+def test_everything_created_under_the_root_is_private(tmp_path):
+    previous = tool.os.umask(0o022)
+    try:
+        full_run(tmp_path)
+    finally:
+        tool.os.umask(previous)
+    made = [p for p in tmp_path.rglob("*")]
+    assert made
+    assert [str(p) for p in made if p.stat().st_mode & 0o077] == []
 
 
 def test_a_snapshot_is_never_overwritten(tmp_path):
@@ -205,14 +251,13 @@ def div(day, amount, currency="USD", **extra):
 
 
 def test_a_distribution_enters_on_its_ex_date_from_the_unadjusted_amount():
-    s = tool.analyse("X", "USD", eod(100, 99), [div(DAYS[1], 2)], [])
+    s = an("USD", eod(100, 99), [div(DAYS[1], 2)], [])
     assert s.periods[0].total_return == D("0.01")
     assert s.qualified["Q2"] is True
 
 
 def test_a_split_alone_gives_no_return_and_the_adjusted_series_agrees():
-    s = tool.analyse(
-        "X",
+    s = an(
         "USD",
         eod(100, 50, adjusted=[50, 50]),
         [],
@@ -224,46 +269,44 @@ def test_a_split_alone_gives_no_return_and_the_adjusted_series_agrees():
 
 def test_a_split_adjusted_value_is_counted_and_the_paid_amount_used():
     rec = {**div(DAYS[1], 2), "value": D(1)}
-    s = tool.analyse("X", "USD", eod(100, 100), [rec], [])
+    s = an("USD", eod(100, 100), [rec], [])
     assert s.profile["counts"]["distributions_split_adjusted_value_differs"] == 1
     assert s.periods[0].income_return == D("0.02")
 
 
 def test_a_missing_paid_amount_fails_q2_and_is_never_guessed():
-    s = tool.analyse(
-        "X", "USD", eod(100, 100), [{"date": DAYS[1].isoformat(), "value": D(2), "currency": "USD"}], []
-    )
+    s = an("USD", eod(100, 100), [{"date": DAYS[1].isoformat(), "value": D(2), "currency": "USD"}], [])
     assert s.qualified["Q2"] is False
     assert s.profile["counts"]["distributions_missing_unadjusted"] == 1
     assert s.periods[0].income_return == 0
 
 
 def test_another_currency_fails_q2():
-    s = tool.analyse("X", "AUD", eod(100, 100), [div(DAYS[1], 2, "USD")], [])
+    s = an("AUD", eod(100, 100), [div(DAYS[1], 2, "USD")], [])
     assert s.qualified["Q2"] is False
     assert s.profile["counts"]["distributions_other_currency"] == 1
 
 
 def test_an_unparseable_split_fails_q2():
-    s = tool.analyse("X", "USD", eod(100, 100), [], [{"date": DAYS[1].isoformat(), "split": "two for one"}])
+    s = an("USD", eod(100, 100), [], [{"date": DAYS[1].isoformat(), "split": "two for one"}])
     assert s.qualified["Q2"] is False
 
 
 def test_an_action_on_an_unobserved_day_moves_forward_and_is_counted():
     rows = [eod(100, 100, 100)[0], eod(100, 100, 100)[2]]  # the middle day has no price
-    s = tool.analyse("X", "USD", rows, [div(DAYS[1], 1)], [])
+    s = an("USD", rows, [div(DAYS[1], 1)], [])
     assert s.periods[0].end == DAYS[2]
     assert s.periods[0].income_return == D("0.01")
     assert s.profile["counts"]["actions_moved_to_next_day"] == 1
 
 
 def test_an_action_after_the_last_close_is_counted_not_used():
-    s = tool.analyse("X", "USD", eod(100, 100), [div(DAYS[4], 1)], [])
+    s = an("USD", eod(100, 100), [div(DAYS[4], 1)], [])
     assert s.profile["counts"]["actions_after_the_last_close"] == 1
 
 
 def test_a_missing_payment_date_is_counted():
-    s = tool.analyse("X", "USD", eod(100, 100), [div(DAYS[1], 1, paymentDate=None)], [])
+    s = an("USD", eod(100, 100), [div(DAYS[1], 1, paymentDate=None)], [])
     assert s.profile["counts"]["distributions_missing_paymentDate"] == 1
 
 
@@ -280,18 +323,60 @@ def test_a_missing_payment_date_is_counted():
     ],
 )
 def test_bad_series_fail_q1_and_nothing_is_built(rows, field):
-    s = tool.analyse("X", "USD", rows, [], [])
+    s = an("USD", rows, [], [])
     assert s.qualified == {"Q1": False, "Q2": False, "Q3": False}
     assert s.profile["counts"][field] == 1 and s.periods == []
 
 
 def test_an_adjusted_close_that_disagrees_fails_the_internal_check():
-    s = tool.analyse("X", "USD", eod(100, 100, 100, 100, 100, adjusted=[100, 101, 102, 103, 104]), [], [])
+    s = an("USD", eod(100, 100, 100, 100, 100, adjusted=[100, 101, 102, 103, 104]), [], [])
     assert s.qualified["Q3"] is False
 
 
+def test_a_period_without_an_adjusted_close_counts_against_q3():
+    rows = eod(100, 100, 100, 100)
+    for row in rows[1:3]:
+        row["adjusted_close"] = None
+    s = an("USD", rows, [], [])
+    assert s.qualified["Q3"] is False
+    assert s.profile["counts"]["internal_periods_without_adjusted"] == 3
+
+
+@pytest.mark.parametrize("listed", ["EUR", None])
+def test_a_wrong_or_unknown_quote_currency_fails_q1(listed):
+    s = an("USD", eod(100, 100), [], [], listed=listed)
+    assert s.qualified == {"Q1": False, "Q2": False, "Q3": False}
+    assert s.periods == []
+
+
+def test_the_quote_currency_comes_from_the_listing_and_ambiguity_is_unknown():
+    assert tool.quote_currency([{"Code": "SPY", "Currency": "USD"}], "SPY.US") == "USD"
+    assert tool.quote_currency([{"Code": "OTHER", "Currency": "USD"}], "SPY.US") is None
+    both = [{"Code": "SPY", "Currency": "USD"}, {"Code": "SPY", "Currency": "EUR"}]
+    assert tool.quote_currency(both, "SPY.US") is None
+
+
+def test_a_reference_amount_is_compared_at_the_vendors_decimals(tmp_path):
+    write_reference(tmp_path, "X", ["2020-01-07,0.607346"])
+    assert (
+        tool.check_reference(tmp_path, "X", [{"date": "2020-01-07", "unadjustedValue": D("0.60735")}])[
+            "matched"
+        ]
+        == 1
+    )
+    other = tool.check_reference(tmp_path, "X", [{"date": "2020-01-07", "unadjustedValue": D("0.5")}])
+    assert other["amount_differs"] == 1
+
+
+def test_the_owner_report_alone_shows_a_differing_amount(tmp_path):
+    write_reference(tmp_path, "BGBL.AU", ["2020-01-07,1.25"])
+    lines = tool.reference_detail(tmp_path, "BGBL.AU", [{"date": "2020-01-07", "unadjustedValue": D("1.1")}])
+    assert "vendor 1.1, issuer 1.25" in lines[0]
+    assert "1.25" in tool.render_owner_report(None, lines)
+
+
 def test_the_empty_series_fails():
-    assert tool.analyse("X", "USD", [], [], []).qualified["Q1"] is False
+    assert an("USD", [], [], []).qualified["Q1"] is False
 
 
 def test_snapshot_changes_are_counted(tmp_path):
@@ -309,7 +394,7 @@ def test_snapshot_changes_are_counted(tmp_path):
 def test_a_factor_style_difference_is_explained_and_counted():
     # P 100 to 90 with 2 paid: reinvested TR is -8.00%; a factor adjustment gives 90 / 98 - 1, about -8.16%.
     adjusted = [D("98"), D("90")]
-    s = tool.analyse("X", "USD", eod(100, 90, adjusted=adjusted), [div(DAYS[1], 2)], [])
+    s = an("USD", eod(100, 90, adjusted=adjusted), [div(DAYS[1], 2)], [])
     counts = s.profile["counts"]
     assert counts["internal_differences_on_action_dates"] == 1
     assert counts["internal_differences_explained_by_factor_formula"] == 1
@@ -317,7 +402,7 @@ def test_a_factor_style_difference_is_explained_and_counted():
 
 
 def test_a_difference_off_an_action_date_is_not_explained():
-    s = tool.analyse("X", "USD", eod(100, 100, adjusted=[100, 101]), [], [])
+    s = an("USD", eod(100, 100, adjusted=[100, 101]), [], [])
     assert s.profile["counts"]["internal_differences_off_action_dates"] == 1
     assert not s.profile["counts"]["internal_differences_explained_by_factor_formula"]
 
