@@ -39,3 +39,5 @@ The compute, derivation, derived storage and `hio_internal` conditions wait for 
 Any purchase, account, or retrieval from any vendor; a second Treasury download; scheduled capture; any value in the repository.
 
 ## Corrections (append-only)
+
+1. **2026-11-04: the remaining conditions.** `internal_compute`, `derivation`, `derived_storage` and `distribution.hio_internal` are recorded as met on the par curve, because `tools/e0001_run.py` puts the Treasury citation and no-endorsement notice in the release. OD-0157 item 4 authorised this. `external_processing` isn't recorded: E-0001 runs locally, and CI sees only invented data. It approves no consumer.

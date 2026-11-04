@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from hio.contracts.rights import Operation, RightsRefused
-from hio.rights.gate import RightsGate
+from hio.rights.gate import GateContext, RightsGate
 from hio.rights.register import load_genuine
 
 REPO = Path(__file__).resolve().parent.parent
@@ -30,12 +30,21 @@ def run(tmp_path, years, get, gate=GATE):
     return tool.fetch(tmp_path / "out", years, gate=gate, commit="c" * 40, get=get, pause=0)
 
 
-def test_the_gate_allows_fetch_and_raw_storage_but_nothing_else_yet():
-    GATE.authorise(Operation.FETCH, [tool.SOURCE_ID])
-    GATE.authorise(Operation.STORE_RAW, [tool.SOURCE_ID])
-    for op in (Operation.BUILD, Operation.STORE_DERIVED, Operation.REBUILD):
-        with pytest.raises(RightsRefused):
-            GATE.authorise(op, [tool.SOURCE_ID])
+def test_the_gate_allows_the_experiment_locally_and_nothing_wider():
+    for op in (
+        Operation.FETCH,
+        Operation.STORE_RAW,
+        Operation.BUILD,
+        Operation.STORE_DERIVED,
+        Operation.REBUILD,
+    ):
+        GATE.authorise(op, [tool.SOURCE_ID])
+    GATE.authorise(Operation.PUBLISH, [tool.SOURCE_ID], "hio_internal")
+    with pytest.raises(RightsRefused):
+        GATE.authorise(Operation.PUBLISH, [tool.SOURCE_ID], "smsf_trustee_pack")
+    external = RightsGate(GATE.records, GateContext(on_external_host=True))
+    with pytest.raises(RightsRefused):
+        external.authorise(Operation.BUILD, [tool.SOURCE_ID])
 
 
 def test_the_parent_row_still_refuses_bills_and_all():
