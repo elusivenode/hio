@@ -99,7 +99,7 @@ def episode_measures(panel: common.FrozenPanel, window: tuple[date, date], month
     if len(kept) != months:
         raise ev.Stop(f"the episode {start} to {end} holds {len(kept)} months, not {months}")
     dates = [panel.months[kept[0]], *(panel.months[i + 1] for i in kept)]
-    if dates[0] != start or dates[-1] != end:
+    if (dates[0] - start).days > base.MAX_STALE_DAYS or (end - dates[-1]).days > base.MAX_STALE_DAYS:
         raise ev.Stop(f"the episode {start} to {end} isn't covered by month ends")
     part = panel.returns[kept]
     stats = {p: aud_tool._path_stats(dates, part @ base.weights_vector(p)) for p in base.PORTFOLIOS}

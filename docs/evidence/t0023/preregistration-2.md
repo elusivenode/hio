@@ -55,3 +55,5 @@ Set before the result, on the two primary effects, `cash_rate_and_currency` and 
 Whichever row applies, **the recommendation states the C1 to C5 failures and gaps it rests on,** and that a contrast across three hand-named episodes is a reason to design a test, not evidence of a relationship. The architect is consulted before it's put to the owner, and any difference is reported.
 
 ## Amendments
+
+1. **2026-11-04, month ends.** The table's dates are window bounds, as in E-0003 V1. A month end is the last trading day, within 5 days of the bound (2022 ends on 30 December). Found when the run stopped, before any result. No episode or rule changes.

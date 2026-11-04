@@ -380,3 +380,12 @@ def test_main_exits_two_on_a_stop_and_prints_no_values(workspace, monkeypatch, c
     assert tool.main(["--root", str(workspace)]) == 2
     captured = capsys.readouterr()
     assert captured.out == "" and "stopped: a month is missing" in captured.err
+
+
+def test_a_last_trading_day_within_five_days_of_the_bound_is_covered_and_further_stops():
+    months = [date(2021, 12, 31), date(2022, 1, 31), date(2022, 2, 28), date(2022, 3, 28)]
+    panel = common.FrozenPanel(months, np.full((3, 4), 0.01), np.full(3, 0.01), np.zeros(3))
+    window = (date(2021, 12, 31), date(2022, 3, 31))
+    assert tool.episode_measures(panel, window, 3)["end"] == "2022-03-28"
+    with pytest.raises(tool.ev.Stop, match="covered by month ends"):
+        tool.episode_measures(panel, (date(2021, 12, 31), date(2022, 4, 4)), 3)
