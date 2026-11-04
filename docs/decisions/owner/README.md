@@ -181,6 +181,7 @@ are in operating model §1.1; the template is
 | [OD-0164](OD-0164-eodhd-key-vault.md) | authorise_work | one small key vault in `hnf-prod` for the EODHD key; credential only, no data | `183d6d3` | recorded |
 | [OD-0165](OD-0165-h10-reading-pack.md) | authorise_work | H.10 reading pack (row H3), draft; nothing downloaded or decided | `4f9929b` | recorded |
 | [OD-0166](OD-0166-h10-rights.md) | authorise_work | H.10 AUD/USD rights decided, pages read; `frb_h10.aud_usd` owner_verified, no condition met; no download | `05222af` | recorded |
+| [OD-0167](OD-0167-history-verify-aud-variant.md) | authorise_work | bound stays in branch history; VERIFY-2026-11-04-t0022-1-1 assigned; AUD variant of E-0002 on H.10 authorised | `13859ca` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
