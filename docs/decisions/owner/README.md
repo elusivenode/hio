@@ -164,6 +164,7 @@ are in operating model §1.1; the template is
 | [OD-0147](OD-0147-next-development-block.md) | authorise_work | local cash rebuild from live receipts; proposed US duration spec; draft vendor questions; proposed planning patch; plan differences read | `ac36cbf` | recorded |
 | [OD-0148](OD-0148-repeatable-cash-rebuild.md) | authorise_work | "proceed with next steps. approved", read narrowly as T-0018, the repeatable cash rebuild; T-0018 accepted (correction 1) | `ac36cbf` | recorded |
 | [OD-0149](OD-0149-i5-met-soak-boundaries.md) | authorise_work | run `41741724257` accepted as meeting I-5; deliberate test dropped; soak boundaries declared | `a881882` | recorded |
+| [OD-0150](OD-0150-synthetic-cmt-construction.md) | authorise_work | "you are authorised to proceed", read narrowly as T-0019 (CMT construction on invented inputs) and the H2 reading pack | `cbd6c8c` | recorded |
 | [OD-0151](OD-0151-assign-t0019-review.md) | authorise_work | one Codex review of T-0019 at `b4929f7` | `cbd6c8c` | recorded |
 | [OD-0152](OD-0152-receive-t0019-review-remediate.md) | authorise_work | REVIEW-2026-11-04-t0019-1 received (NOT READY, three findings open); remediation; one verification | `6e2e60d` | recorded |
 

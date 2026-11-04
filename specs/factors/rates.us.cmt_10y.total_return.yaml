@@ -1,7 +1,7 @@
 # PROPOSED under OD-0147. Authorises no download, build or experiment. External facts are marked [EXT] and are unverified.
 identity:
   factor_id: rates.us.cmt_10y.total_return
-  version: 0.1.0
+  version: 0.1.2
   status: proposed
   owner: quantitative researcher
   family: rates
@@ -36,6 +36,10 @@ observations:
     source_id: us_treasury_rates   # OPEN: as above
     unit: percent per annum, bond-equivalent semi-annual [EXT]
     knowledge_mode_required: latest
+  - series_id: "us_treasury.par_yield.{1m to 5y}, for the pricing-basis sensitivity only; not an input to the return"
+    source_id: us_treasury_rates   # OPEN: as above
+    unit: percent per annum, bond-equivalent semi-annual [EXT]
+    knowledge_mode_required: latest
 availability:
   knowable_rule: >-
     Every value is labelled reconstructed(T): one one-off download at T. No publication instant is
@@ -51,21 +55,29 @@ construction:
   algorithm: |
     Let t-1 and t be consecutive observation dates and y(d, m) the par yield at date d, maturity m.
     Curve: Treasury par curve as published. Par yields are used as yields of the aged bond: this is
-    the declared flat-yield approximation (RA §6). The aged bond's coupon differs from its par yield
-    by about one day of curve change, so the approximation error is second order. Its size is
-    reported through the decomposition residual.
-    1. Strike at t-1: a 10-year bond, maturity = t-1 + 120 months, coupon c = y(t-1, 10y), paying c/2
-       on the maturity's semi-annual schedule. P_dirty(t-1) = 100, by construction.
+    the declared flat-yield approximation (RA §6). Its error isn't measured by this construction: see
+    the pricing basis below.
+    1. Strike at t-1: a 10-year bond with coupon c = y(t-1, 10y). Its coupon dates are anchored to the
+       STRIKE: strike + 6k months, k = 1..20, each with the day clamped to the month's length, and the last
+       is the maturity. So the first coupon period starts on the strike date, the bond has no stub, and
+       P_dirty(t-1) = 100 by construction, on every date. A 2024-02-29 strike pays on 2024-08-29 and
+       matures on 2034-02-28.
     2. Remaining maturity at t: M - tau, in years, on actual/365.25.
     3. Yield at t: interpolate y(t, M - tau) linearly in maturity between y(t, 7y) and y(t, 10y). Refuse if
        either is absent. Never extrapolate: M - tau < 10y always, and a period long enough to
        take M - tau below 7y refuses.
     4. Price: P_dirty(t) = sum over remaining cash flows CF_j / (1 + y/2)^(w + j), where w = (days to next
        coupon) / (days in the coupon period), j = 0, 1, ...
-    5. Coupon cash: C = any coupon paid in (t-1, t]. With a daily re-strike, none falls due unless a gap exceeds
-       six months, which refuses. The formula still carries C so that RA-INV-013 holds.
+    5. Coupon cash: C = any coupon paid in (t-1, t]. With a daily re-strike, none falls due unless a gap reaches
+       six months. A longer gap refuses. The formula always carries C, so that RA-INV-013 holds.
     6. R_t = (P_dirty(t) + C) / P_dirty(t-1) - 1. Re-strike at t on total wealth (RA §6).
-    7. Report, per period, the decomposition: carry, roll-down, curve change, convexity and residual.
+    7. Report, per period, the decomposition: carry, roll-down, curve change, convexity and residual. The
+       residual is (this return - those Taylor terms), both on the same flat yield. It tests the decomposition
+       only. A small residual says nothing about pricing-basis error.
+    Pricing basis: the error from using flat-yield pricing instead of a discount curve is UNMEASURED by the
+    return and its residual. The experiment must report it as a separate sensitivity: reprice the same bond
+    on a zero curve bootstrapped from the published par curve (which needs the other tenors of the same
+    source, up to 10y), per period, and report the difference. Until that exists, it is stated as unmeasured.
     Arithmetic: exact decimal to the numerical boundary of the power in step 4, in the library's context.
   rebalancing_and_rolls: "daily re-strike to a new par 10-year bond; no transaction costs"
   costs: "none: a gross, frictionless return. Stated as a limitation"
@@ -81,7 +93,9 @@ invariants:
     - id: CMT-INV-4
       statement: "a missing tenor refuses; nothing is forward-filled"
     - id: CMT-INV-5
-      statement: "decomposition residual below 1 bp a day when |dy| < 25 bp (RA §6); a test of the approximation, not an identity. A breach is reported, never hidden"
+      statement: "decomposition residual below 1 bp a day when |dy| < 25 bp (RA §6); a test of the Taylor decomposition, not of the pricing basis and not an identity. A breach is reported, never hidden"
+    - id: CMT-INV-6
+      statement: "coupon dates are strike + 6k months with the day clamped; on a month-end or leap-day strike the coupon falls on that schedule, and the bond is at par on its strike date"
 triangulation:
   - reference: "OPEN: a separately cleared reference. Candidates: a 7-10 year Treasury ETF's total return (needs an equity data licence, T-0003), or a licensed 7-10 year Treasury index. H.15 and FRED are not references: they repeat the same curve."
     why_comparable: "same exposure family, and a traded or index-tracked return, so it can catch sign, scale and carry errors"
@@ -102,9 +116,13 @@ limitations:
   - "Linear interpolation over 7y-10y is a simplification: a monotone-convex-consistent alternative is a sensitivity to report, not the definition."
   - "One tenor only. It demonstrates the construction and shows nothing about diversification (OD-0139)."
   - "Reference and experiment both need rights not yet granted."
+  - "A strike-anchored schedule is a synthetic convention: real Treasury coupon dates differ. It affects only the dates of the accrual within a period."
+  - "Pricing-basis error from flat-yield pricing is unmeasured until the sensitivity above exists."
 rights_required:
   internal_compute: allow
   derivation: allow
   distribution: {hio_internal: allow}
 changelog:
+  - "0.1.2 (2026-11-04): F-REVIEW-2026-11-04-t0019-1-1, the coupon schedule is anchored to the strike; F-REVIEW-2026-11-04-t0019-1-2, the residual no longer claims to measure pricing error, and a pricing-basis sensitivity is required (OD-0152). Still proposed."
+  - "0.1.1 (2026-11-04): step 5 corrected; a gap of exactly six months pays a coupon (found building T-0019, OD-0150). Still proposed."
   - 0.1.0 (2026-11-04): first proposed version (OD-0147). The method reproduces RA §14.6 (about -0.397% for the worked one-day case) in a scratch calculation; no real data used.
