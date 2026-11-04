@@ -154,9 +154,17 @@ sources:
     parent: us_treasury_rates
     task: T-0002
     verification: owner_verified
-    verified_by: OD-0156            # with OD-0155 (retention, V2, V3). Rests on the 17 U.S.C. §105 presumption, not a licence; the owner's own reading of the live pages is unconfirmed (OD-0156)
+    verified_by: OD-0156            # with OD-0155 (retention, V2, V3). Rests on the 17 U.S.C. §105 presumption, not a licence; the owner read the live pages (OD-0161)
     evidence: [https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics, https://home.treasury.gov/subfooter/site-policies-and-notices, docs/research/T-0002-h2-reading-pack.md]
     raw_retention_duration: indefinite   # for audit and rebuild (OD-0155)
+    satisfied_conditions:          # OD-0161, OD-0157 item 4; compute, derivation, derived storage and hio_internal rest on the release's notice, tools/e0001_run.py (OD-0161 correction 1)
+      internal_compute: "OD-0161 correction 1: the E-0001 release carries the Treasury citation and no-endorsement notice in quality_summary.notices"
+      derivation: "OD-0161 correction 1: the E-0001 release carries the Treasury citation and no-endorsement notice in quality_summary.notices"
+      derived_storage: "OD-0161 correction 1: the E-0001 release carries the Treasury citation and no-endorsement notice in quality_summary.notices; local store only"
+      distribution.hio_internal: "OD-0161 correction 1: the E-0001 release carries the Treasury citation and no-endorsement notice; exploratory, no consumer approved"
+      automated_retrieval: "OD-0157, OD-0161: one one-off download, at most 40 requests, declared User-Agent, on the owner's Mac; tools/treasury_par_fetch.py"
+      raw_retention: "OD-0161: bytes outside the repository, under a manifest citing Treasury and stating no implied endorsement"
+      agent_context: "OD-0161: Claude reads the retained file to build the parser, on the same notice; no value in the repository"
     rights: {automated_retrieval: "conditional(one modest one-off download with a declared User-Agent, after the duration experiment's own owner yes)", raw_retention: "conditional(cite US Treasury; no implied endorsement)", internal_compute: "conditional(cite US Treasury; no implied endorsement)", derivation: "conditional(cite US Treasury; no implied endorsement)", derived_storage: "conditional(cite US Treasury; no implied endorsement)", post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: "conditional(cite US Treasury; no implied endorsement)", smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: "conditional(cite US Treasury; no implied endorsement)", external_processing: "conditional(cite US Treasury; no implied endorsement)", audit_retention: unknown, attribution_required: "cite US Treasury; no implied endorsement"}
   - id: frb_h10
     name: Federal Reserve Board H.10 foreign exchange rates

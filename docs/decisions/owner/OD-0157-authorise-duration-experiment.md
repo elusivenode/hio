@@ -42,3 +42,5 @@ The strongest result allowed is **"construction diagnostics completed; UNREFEREN
 - **Values in the repository.** `quotation_in_documents` is `unknown`, so raw data and return values stay outside it. The repository gets only counts, hashes and pass or fail results.
 
 ## Corrections (append-only)
+
+1. **2026-11-04:** the page-reading hold is lifted (OD-0161).

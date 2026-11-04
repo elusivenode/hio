@@ -1,5 +1,5 @@
 # HIO hypothesis register. Schema: templates/hypothesis.yaml. Governance: docs/harness/operating-model.md §4.
-# All entries are `proposed`: none is registered for testing, and no data exists yet.
+# Entries are `proposed` unless marked: H-0005 was tested by E-0001.
 - id: H-0001
   title: Duration diversifies equity only in some inflation regimes
   status: proposed
@@ -71,7 +71,7 @@
   owner: quantitative researcher
 - id: H-0005
   title: The declared flat-yield CMT construction is reproducible and adequate for its stated purpose
-  status: proposed
+  status: not_supported   # E-0001: B6 and B7 failed
   pillar: other
   model_kind: explanatory
   thesis: >-

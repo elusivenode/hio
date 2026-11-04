@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-04
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0160"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0161"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -25,7 +25,7 @@ datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
 **B-2 ran** (OD-0132), then **re-ran with 7b** (OD-0140, `docs/evidence/b2/rerun-1.md`); the probe account is **held** (OD-0134). **CAPTURE IS LIVE (B-3, OD-0143, 2026-11-04 Sydney):** four files on schedule, exploratory and `schedule_only`; reviewer rule removed, alert on; first runs in `docs/evidence/b3/first-run.md`. **I-5 met** (OD-0149). **The soak starts 2026-11-05 09:45 Sydney** and ends 2026-11-19 (`docs/evidence/b3/soak-1.md`). T-0016, T-0017 and T-0018 accepted. **First real cash rebuild** done and repeatable (`docs/evidence/b3/cash-rebuild-1.md`, `tools/cash_rebuild.py`): no unexplained residual; dispositions await the owner; criterion 3 not established. **C5 undecided:** no longer gates capture; still owed before any final claim.
-**Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **US duration:** spec 0.1.2 proposed (`specs/factors/rates.us.cmt_10y.total_return.yaml`); calculation accepted on invented inputs (T-0019, `src/hio/library/cmt.py`); pricing-basis error unmeasured; H2 rights decided for the par curve only (`us_treasury.par_yield_curve`, OD-0155, OD-0156); experiment E-0001 authorised (T-0020, OD-0157), UNREFERENCED; download held for the page-reading confirmation; the comparison reference is open. **E-0002 Stage A** (USD equity with bills or Treasuries; T-0021, OD-0159): synthetic code only; no equity data is cleared. Base camp, the roadmap and the plan are still proposed, patched to that order (OD-0147). `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-11-04-go-live-and-first-factor-code.md`.
+**Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **US duration:** spec 0.1.2 proposed (`specs/factors/rates.us.cmt_10y.total_return.yaml`); calculation accepted on invented inputs (T-0019, `src/hio/library/cmt.py`); pricing-basis error unmeasured; H2 rights decided for the par curve only (`us_treasury.par_yield_curve`, OD-0155, OD-0156); **E-0001 ran: approximation not adequate** (B6, B7 failed; `docs/evidence/e0001/result-1.md`), UNREFERENCED; the comparison reference is open. **E-0002 Stage A** (USD equity with bills or Treasuries; T-0021, OD-0159): synthetic code only; no equity data is cleared. Base camp, the roadmap and the plan are still proposed, patched to that order (OD-0147). `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-11-04-go-live-and-first-factor-code.md`.
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
 **Phase A is approved and applied as harness-0.9a** (OD-0091). **Distil 1 accepted** (46 Settled findings,
 OD-0093); **distil 2 accepted** (39 lines, OD-0135). Phase B work on H6 then H11 is authorised (OD-0092); activation of either needs Codex review and approval. **hiomux** is a tmux
@@ -89,7 +89,7 @@ No finding is waived.
 | B-2 | done; see `docs/evidence/b2/`. Destroy `rg-hio-probe` authorised (OD-0155), from 2026-11-04T06:36:50Z; not yet run |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** whether the H2 pages were read (holds the E-0001 download, OD-0157); sending the T-0003 vendor questions (OD-0155); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
+| Next permissible actions | **Owner:** the equity data route, now that no vendor letters will go (OD-0161); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
@@ -105,7 +105,7 @@ No finding is waived.
 |---|---|---|
 | A01 decisions review | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed (criteria met by OD-0008, OD-0011; acceptance not recorded) |
 | S1 source rights | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: the five S1b-1 datasets owner_verified (OD-0116 c1, OD-0118); the Treasury par curve (OD-0156); the rest unverified |
-| Equity total-return source | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: vendor assessment drafted, none cleared (OD-0160); questions await the owner |
+| Equity total-return source | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: vendor assessment drafted, none cleared (OD-0160); no letters will go (OD-0161) |
 | HIO-001 boundary (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review; review READY, received (OD-0040); **not accepted, not merged** |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | S1a stage **accepted** (OD-0042); S1b staged under HIO-ADR-0012 |
 | S1b-1.0 cash capture | [T-0009](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) | **accepted** (OD-0079) at `846974b`, integrated `7eba3f9`; finality staging and Authorisation B remain |
@@ -119,8 +119,8 @@ No finding is waived.
 | Expert-judgement parser | [T-0017](registers/tasks/T-0017-expert-judgement-parser.md) | **accepted** (OD-0146) |
 | Repeatable cash rebuild | [T-0018](registers/tasks/T-0018-repeatable-cash-rebuild.md) | **accepted** (OD-0148 c1) |
 | CMT construction, synthetic | [T-0019](registers/tasks/T-0019-cmt-construction-synthetic.md) | **accepted** (OD-0153) |
-| Duration experiment | [T-0020](registers/tasks/T-0020-duration-experiment.md) | **authorised** (OD-0157); pre-registered, nothing downloaded |
-| E-0002 Stage A | [T-0021](registers/tasks/T-0021-e0002-stage-a.md) | **submitted** (OD-0159); synthetic data only; not accepted |
+| Duration experiment | [T-0020](registers/tasks/T-0020-duration-experiment.md) | **in progress** (OD-0157); E-0001 ran; not reviewed or accepted |
+| E-0002 Stage A | [T-0021](registers/tasks/T-0021-e0002-stage-a.md) | **accepted** (OD-0161) at `59d03ab`, no Codex review; synthetic data only |
 | T-0006, T-0007, T-0008 | in `registers/tasks/` | **accepted** (OD-0007, OD-0004, OD-0006) |
 | ETF diagnostic (lives in `macsmsf`) | `macsmsf` branch `docs/etf-diagnostic-card` | proposed; not authorised (OD-0018); not an HIO dependency |
 

@@ -3,7 +3,7 @@
 # entries; keep the variant count honest (docs/harness/operating-model.md §4).
 - id: E-0001
   hypothesis: H-0005
-  status: pre_registered
+  status: complete
   pre_registration:
     committed_revision: "self: the commit that adds this entry, before any Treasury data was downloaded (OD-0157)"
     sample:
@@ -45,10 +45,10 @@
       nothing. Bars aren't changed after results exist; any change is a variant, stated with its reason.
     not_tested: "traded-return agreement, costs, historical availability, diversification, and the alternative interpolation the spec lists as a sensitivity"
   variants: []
-  inputs: {releases: [], specs: ["rates.us.cmt_10y.total_return@0.1.3"]}
-  runs: []
-  results: null
-  negative_findings: null
-  outcome: null
-  follow_up: null
+  inputs: {releases: ["rel-05e05e482265376e8e33c19fcb868a2be69e782eb037a4b1fed196666a904376"], specs: ["rates.us.cmt_10y.total_return@0.1.3"]}
+  runs: ["49e1b4d, docs/evidence/e0001/result-1.md"]
+  results: {estimates: "values held locally; quotation_in_documents is unknown", uncertainty: "not estimated", diagnostics: "B1 to B5, B8, B9 pass; B6 and B7 fail"}
+  negative_findings: "the flat-yield approximation failed B6 and B7"
+  outcome: not_supported
+  follow_up: "owner decision on the valuation basis; any change is a new variant, and no bar moves"
   reviewed_by: null

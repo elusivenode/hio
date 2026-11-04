@@ -49,3 +49,5 @@ Claude's question: do you allow calculate, store derived, rebuild and reconstruc
 - Changing the spec: `rates.us.cmt_10y.total_return` stays proposed and still names the parent row. The experiment's card should repoint it.
 
 ## Corrections (append-only)
+
+1. **2026-11-04:** the owner confirmed reading the three live pages (OD-0161).

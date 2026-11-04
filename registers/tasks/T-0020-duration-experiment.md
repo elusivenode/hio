@@ -44,4 +44,4 @@ As OD-0157 lists. Also: no change to `src/hio/sources/` capture paths, `src/hio/
 
 ## Submission (filled by the implementer)
 
-X-1 merged in `de834d8`. X-2 on branch `feat/t0020-zero-curve`, on invented yields only. X-3 to X-6 not started: the parser waits for the real file's format, because a parser built on an assumed layout failed live in T-0017. No data downloaded.
+X-1 merged in `de834d8`. X-2 merged in `2662e1d`. X-3 to X-6 on `feat/t0020-fetch`: 37 yearly files retained outside the repository, and E-0001 run at `49e1b4d` (`docs/evidence/e0001/result-1.md`). **Verdict: approximation not adequate for this purpose;** B6 and B7 failed. Not accepted; no Codex review yet.
