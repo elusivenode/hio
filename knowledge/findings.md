@@ -174,4 +174,6 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - [sources] SEC www.sec.gov refuses a client with no declared contact, though data.sec.gov answered; audited fund highlights give NAV, distributions and return per fiscal year, public. Source: OD-0179.
 - [data] EODHD's distributions for SPY, BIL and IEF match six audited fund-years covering 2008. Source: docs/evidence/t0023/corroboration-1.md.
 - [data] Reinvesting on the payment date doesn't explain HIO's SPY gap to the issuer. Source: tools/t0023_basis.py.
+- [hiomux] sa ask --rev <sha> reads a pushed branch, so push first; the answer lands in <run>/sa/<id>/out/answer.md, and stored copies need links repointed to pass check_repo. Source: docs/history/2026-11-04-architect-t0023-step7.md.
+- [shell] In this harness set -e didn't stop a failed step, and cmd | tail hides the exit code; gate each step with || exit 1, with no pipe on the gated command. Source: handoffs/s1b1/2026-11-04-t0023-consolidation.md.
 - [build] Reloading a tool module under its own name in a test makes two copies of its exception across a full run; import it once. Source: tests/test_t0022_eodhd_eval.py.
