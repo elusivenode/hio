@@ -176,6 +176,7 @@ are in operating model §1.1; the template is
 | [OD-0159](OD-0159-authorise-e0002-stage-a.md) | authorise_work | E-0002 Stage A (T-0021) on synthetic data; OD-0139 order amended for tracks 5 and 6; NumPy adopted; a trial may precede base camp, separately decided; vendor drafts extended | `cbab2a8` | recorded |
 | [OD-0160](OD-0160-vendor-assessment.md) | authorise_work | equity data vendor assessment (draft): stop condition applies, no candidate cleared; nothing purchased or retrieved | `6c1699b` | recorded |
 | [OD-0161](OD-0161-pages-letters-t0021.md) | accept | Treasury pages read, E-0001 download hold lifted; no vendor letters; T-0021 accepted at `59d03ab`, no Codex review; retrieval, raw-retention and agent conditions recorded | `2662e1d` | recorded |
+| [OD-0162](OD-0162-eodhd-evaluation.md) | authorise_work | one-month EODHD Personal evaluation (T-0022), owner pays; rights decision owed before retrieval; agents see no licensed values | `9b39922` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
