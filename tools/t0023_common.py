@@ -1,5 +1,6 @@
 """What T-0023's corroboration tools share (OD-0178): the frozen panel, read and checked, and a comparison
-with one thing changed. Values stay under ~/.hio-research/T-0023; callers print only hashes, counts and classes.
+with one thing changed. Values stay under ~/.hio-research/T-0023; callers print only hashes, counts and
+classes.
 """
 
 from __future__ import annotations
