@@ -9,7 +9,7 @@ instruction: OD-0180
 
 # T-0023 episodes 1
 
-> **Retrospective description only: three hand-named episodes confirm nothing.** Not a regime model or a forecast. Declared in `preregistration-2.md` before it ran, and not blind. **Signs only here;** sizes are in the owner's local report. Run at `42ad0f3` on panel `1aa29918…`; all nine sensitivities performed. Unreviewed and unaccepted.
+> **Retrospective description only: three hand-named episodes confirm nothing.** Not a regime model or a forecast. Declared in `preregistration-2.md` before it ran, and not blind. **Signs only here;** sizes are in the owner's local report. Run at `8315a0e` on panel `1aa29918…`, repeating `42ad0f3`'s classes and decision, now pinning each sensitivity's inputs and values in the local summary; all nine sensitivities performed. Unreviewed and unaccepted.
 
 ## Compounded return
 
@@ -37,6 +37,10 @@ instruction: OD-0180
 - **Cash rate and currency has one sign on return, in all three.** Within it, the currency move outweighs the rate gap in each episode (descriptive split). Three episodes aren't a reliable hedge, and the sample holds no episode in which the AUD rose in an equity sell-off, by construction of what was named.
 - **Return and drawdown can disagree.** In 2008, USD bills beat AUD cash over the window with a deeper month-end drawdown on the way. A fixed window's return isn't what an investor lived through; month ends hide more.
 - **Q1 2020 is three months:** one path, not a sample.
+
+## How far the signs have to go
+
+**No effect on compounded return comes near zero under any sensitivity;** the margins are in the local report. **That isn't evidence about data error of unknown size.** The sensitivities are small substitutions, and on the duration effect's return S6 to S9 can't change the sign at all: both portfolios are wholly in USD, so `W_T_AUD - W_B_AUD = W_FX (W_T_USD - W_B_USD)` with `W_FX` positive. A test pins this.
 
 ## What this rests on
 
