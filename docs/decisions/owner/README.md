@@ -183,6 +183,7 @@ are in operating model §1.1; the template is
 | [OD-0166](OD-0166-h10-rights.md) | authorise_work | H.10 AUD/USD rights decided, pages read; `frb_h10.aud_usd` owner_verified, no condition met; no download | `05222af` | recorded |
 | [OD-0167](OD-0167-history-verify-aud-variant.md) | authorise_work | bound stays in branch history; VERIFY-2026-11-04-t0022-1-1 assigned; AUD variant of E-0002 on H.10 authorised | `13859ca` | recorded |
 | [OD-0168](OD-0168-verify-2-receipt-exception.md) | authorise_work | VERIFY-2026-11-04-t0022-1-2 assigned (F-3, F-4); front matter on Codex's T-0022 plans accepted as a receipt exception | `0df537d` | recorded |
+| [OD-0169](OD-0169-waive-f4-verification.md) | waive | further verification of F-REVIEW-2026-11-04-t0022-1-4 waived; fix at `75c67a4` accepted; T-0022 not accepted | `75c67a4` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

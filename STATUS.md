@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-04
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0168"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0169"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -78,7 +78,7 @@ use under its protocol, outside the repository (OD-0072, OD-0073). Routine deleg
 | REVIEW-2026-10-24-s1a-1, REVIEW-2026-10-18-a01, REVIEW-2026-10-18-t0004 | all findings `verified_closed`; t0004 READY, received across lineages (OD-0040) |
 | Receipt sweep (2026-10-25) | 17 `review/*` branches on origin, each received or disposed by an OD |
 
-No finding is waived.
+One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other finding is waived.
 
 ## Phase and gate
 
