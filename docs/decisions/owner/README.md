@@ -170,6 +170,7 @@ are in operating model §1.1; the template is
 | [OD-0153](OD-0153-receive-t0019-verification-accept-t0019.md) | authorise_work | VERIFY-2026-11-04-t0019-1-1 received with §5.12; T-0019 accepted at `fa6370d` | `6a73b79` | recorded |
 | [OD-0154](OD-0154-session-handoff-distil.md) | authorise_work | session handoff, Inbox lines, STATUS; no new distil stacked on distil 3 | `9ea3c0f` | recorded |
 | [OD-0155](OD-0155-h2-partial-vendor-probe-architect.md) | authorise_work | "yes to all": H2 retention, V2, V3 (par curve; six operations undecided, row unverified); vendor questions may be sent (by the owner); destroy `rg-hio-probe` from 06:36:50Z; architect budget 120,000; performance review drafted | `354c446` | recorded |
+| [OD-0156](OD-0156-h2-six-operations.md) | authorise_work | six remaining H2 operations allowed; `us_treasury.par_yield_curve` owner_verified, every condition unsatisfied so the gate still refuses; no download, no experiment | `2e1ded8` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
