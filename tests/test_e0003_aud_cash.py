@@ -134,7 +134,7 @@ def test_the_earlier_history_rule_is_two_points_in_a_named_window():
 def test_the_report_states_who_it_is_for_and_the_missing_2008():
     months, returns, bills, s = invented()
     text = tool.render(tool.evaluate(months, returns, bills, s))
-    assert text.startswith("# E-0003: for the owner only")
+    assert text.startswith("# E-0003: for the owner and HIO's agents")
     assert "2008 isn't in the sample" in text
     assert "Reserve Bank of Australia" in text
 
@@ -155,11 +155,13 @@ def test_no_2008_window_exists():
     assert min(s for s, _ in tool.WINDOWS.values() if s != date.min) >= date(2011, 1, 1)
 
 
-def test_the_rights_allow_each_source_locally_and_no_agent_use_of_eodhd():
+def test_the_rights_allow_each_source_locally_and_limit_agent_use_of_eodhd():
     gate = tool.ev.make_gate({})
     for source in (tool.RBA_SOURCE, tool.aud_tool.H10_SOURCE, tool.ev.SOURCE_ID):
         gate.authorise(tool.Operation.BUILD, [source])
-    assert str(gate.records[tool.ev.SOURCE_ID].get("agent_context")) == "deny"
+    assert str(gate.records[tool.ev.SOURCE_ID].get("agent_context")).startswith(
+        "conditional(HIO's own agents"
+    )
 
 
 def test_a_tampered_receipt_stops(tmp_path):

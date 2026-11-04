@@ -132,10 +132,14 @@ def bills_against_cash(usd_bills: fa.Floats, s: fa.Floats, cash: fa.Floats) -> d
 
 
 def evaluate(
-    months: Sequence[date], returns: fa.Floats, usd_bills: fa.Floats, s: fa.Floats
+    months: Sequence[date],
+    returns: fa.Floats,
+    usd_bills: fa.Floats,
+    s: fa.Floats,
+    windows: Mapping[str, tuple[date, date]] = WINDOWS,
 ) -> dict[str, Any]:
     results: dict[str, Any] = {"windows": {}, "bootstrap": {}}
-    for name, (start, end) in WINDOWS.items():
+    for name, (start, end) in windows.items():
         kept = [i for i in range(returns.shape[0]) if start <= months[i] and months[i + 1] <= end]
         if len(kept) < 3:
             results["windows"][name] = {"available": False}
@@ -236,7 +240,7 @@ def conclusion(results: Mapping[str, Any]) -> list[str]:
 
 def render(results: Mapping[str, Any]) -> str:
     lines = [
-        "# E-0003: for the owner only. Licensed-derived: don't commit, share or paste into AI.",
+        "# E-0003: for the owner and HIO's agents. Licensed-derived: don't commit or share.",
         "",
         "AUD, monthly, unhedged, no costs or tax. Equity is SPY; USD bills are BIL, a bill ETF; "
         "Treasuries are IEF.",

@@ -267,20 +267,21 @@ sources:
     research_note: docs/research/T-0003-equity-total-return-sources.md   # published terms read 2026-10-18; unverified
     <<: *unverified
   - id: eodhd.personal_evaluation
-    name: "EODHD Personal plan, end-of-day data, for the one-month evaluation only"
+    name: "EODHD Personal plan, end-of-day data, for the owner's research in this project"
     parent: eodhd
-    task: T-0022
+    task: T-0023
     verification: owner_verified
     verified_by: OD-0163            # the owner's own reading and characterisation; the vendor's position is unknown. Nothing here covers any SMSF use
     evidence: [https://eodhd.com/financial-apis/terms-conditions, docs/research/T-0003-vendor-assessment-2026-11-04.md]
-    satisfied_conditions:          # OD-0163: tools/eodhd_eval.py runs locally, refuses CI, and shows agents no values
+    satisfied_conditions:          # OD-0163, OD-0176: tools/eodhd_eval.py runs locally and refuses CI; agents may review values
       automated_retrieval: "OD-0163, OD-0164: the owner's key from the HIO key vault, on the owner's Mac; tools/eodhd_eval.py"
-      raw_retention: "OD-0163: outside the repository, until the owner's end-of-month decision"
+      raw_retention: "OD-0176: outside the repository, retained for research use in the project"
       internal_compute: "OD-0163: local only"
       derivation: "OD-0163: local only"
       derived_storage: "OD-0163: local store outside the repository"
-      distribution.hio_internal: "OD-0163: exploratory; results visible to the owner only; no consumer approved"
-    rights: {automated_retrieval: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner only; no implied endorsement)", raw_retention: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner only; no implied endorsement)", internal_compute: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner only; no implied endorsement)", derivation: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner only; no implied endorsement)", derived_storage: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner only; no implied endorsement)", post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner only; no implied endorsement)", smsf_app: deny, smsf_trustee_pack: deny, smsf_auditor: deny, third_party: deny}, quotation_in_documents: deny, agent_context: deny, external_processing: deny, audit_retention: unknown, attribution_required: "no implied endorsement"}
+      agent_context: "OD-0176: all HIO agents may review raw and derived data for research in the project; none goes in the repository"
+      distribution.hio_internal: "OD-0163, OD-0176: exploratory; results visible to the owner and HIO's agents only; no consumer approved"
+    rights: {automated_retrieval: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner and HIO's agents only; no implied endorsement)", raw_retention: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner and HIO's agents only; no implied endorsement)", internal_compute: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner and HIO's agents only; no implied endorsement)", derivation: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner and HIO's agents only; no implied endorsement)", derived_storage: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner and HIO's agents only; no implied endorsement)", post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: "conditional(owner's own personal research only; local on the owner's Mac; results visible to the owner and HIO's agents only; no implied endorsement)", smsf_app: deny, smsf_trustee_pack: deny, smsf_auditor: deny, third_party: deny}, quotation_in_documents: deny, agent_context: "conditional(HIO's own agents only, for research in this project; no values in the repository; OD-0176)", external_processing: deny, audit_retention: unknown, attribution_required: "no implied endorsement"}
   - id: barchart
     name: Barchart OnDemand
     home: https://www.barchart.com/ondemand

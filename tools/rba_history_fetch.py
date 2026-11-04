@@ -29,6 +29,7 @@ URL = "https://www.rba.gov.au/statistics/tables/xls-hist/f01dhist.xls"
 USER_AGENT = "HIO-research/0.1 (one-off historical download; non-commercial research)"
 NOTICE = "Source: Reserve Bank of Australia. No endorsement by the RBA is implied."
 FILE_NAME = "f01dhist.xls"
+EXTRACT_NAME = "firmmcrid.csv"
 XLS_MAGIC = bytes.fromhex("D0CF11E0")
 XLSX_MAGIC = b"PK\x03\x04"
 HEADER_LABELS = (
@@ -110,6 +111,28 @@ def read_headers(path: Path) -> list[dict[str, str]]:
     return out
 
 
+def extract_series(path: Path, series_id: str = "FIRMMCRID") -> list[tuple[str, str]]:
+    """The RBA-sourced overnight series, as date and rate text. Refuses if its source isn't the RBA."""
+    import datetime as dt
+
+    import xlrd
+
+    book = xlrd.open_workbook(path)
+    sheet = book.sheet_by_name("Data")
+    head = {str(sheet.cell_value(i, 0)).strip().lower(): i for i in range(min(sheet.nrows, 15))}
+    ids = sheet.row_values(head["series id"])
+    column = ids.index(series_id)
+    if str(sheet.cell_value(head["source"], column)).strip() != "RBA":
+        raise ValueError(f"{series_id} isn't RBA-sourced")
+    out = []
+    for i in range(head["series id"] + 1, sheet.nrows):
+        when, cell = sheet.cell(i, 0), sheet.cell(i, column)
+        if when.ctype == xlrd.XL_CELL_DATE and cell.ctype == xlrd.XL_CELL_NUMBER:
+            day = dt.date(*xlrd.xldate_as_tuple(when.value, book.datemode)[:3])
+            out.append((day.isoformat(), repr(cell.value)))
+    return out
+
+
 def code_commit() -> str:
     git = ("git", "-C", str(REPO))
     status = subprocess.run((*git, "status", "--porcelain"), capture_output=True, text=True, check=True)
@@ -122,13 +145,27 @@ def code_commit() -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["fetch", "headers"])
+    parser.add_argument("command", choices=["fetch", "headers", "extract"])
     parser.add_argument("--output", type=Path, default=Path.home() / ".hio-research" / "RBA-F1-history")
     args = parser.parse_args(argv)
     try:
         if args.command == "fetch":
             gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"))
             print(f"bytes {fetch(args.output, gate=gate, commit=code_commit())['bytes']}")
+        elif args.command == "extract":
+            rows = extract_series(args.output / FILE_NAME)
+            body = "date,rate_pct\n" + "".join(f"{d},{r}\n" for d, r in rows)
+            (args.output / EXTRACT_NAME).write_text(body)
+            source = hashlib.sha256((args.output / FILE_NAME).read_bytes()).hexdigest()
+            meta = {
+                "rows": len(rows),
+                "from_file_sha256": source,
+                "sha256": hashlib.sha256(body.encode()).hexdigest(),
+            }
+            (args.output / "extract-manifest.json").write_text(
+                json.dumps(meta, indent=1, sort_keys=True) + "\n"
+            )
+            print(json.dumps({"rows": len(rows), "first": rows[0][0], "last": rows[-1][0]}))
         else:
             for column in read_headers(args.output / FILE_NAME):
                 print(json.dumps({k: column.get(k, "") for k in ("sheet", "title", "series id", "source")}))

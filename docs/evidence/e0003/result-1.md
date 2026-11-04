@@ -28,3 +28,16 @@ Run at `b1b3a9f`. Summary sha256 `75147b4ee90f9b4234a8837883ba44aafb02829a57b011
 ## Limitations
 
 **No 2008, the period of most interest.** About five non-overlapping three-year periods and few stress episodes; intervals are conditional on this history. Month-end drawdowns. BIL is a bill ETF, and IEF a basket, so the duration effect includes vehicle basis. SPY, IEF and BIL have no independent check, and EODHD's price source is unresolved. The currency-and-rate split is descriptive and makes no causal claim. No costs, tax or hedging. Not reviewed by Codex; the brief asks only for V3's verification.
+
+## Variant V1: back to May 2007 (OD-0173)
+
+**2008 is now in the sample.** Run at `7d4ef02`, summary sha256 `d41aeb34a4fb06839ccab4b96527f1522481a8b12a66895e0bc841117e493509`. 233 months, 2007-05-31 to 2026-10-30; all windows available. AUD cash before 2011 is HIO's accrual of the RBA's `FIRMMCRID`, 932 rates, then the Cash Rate TRI from 2011-01-04. Declared before any V1 result.
+
+| Effect | Return p.a. | Volatility | Max drawdown |
+|---|---|---|---|
+| Cash rate and currency | not distinguished | **distinguished at every block length** | not distinguished |
+| Treasury duration | not distinguished | not distinguished | not distinguished |
+| Total | not distinguished | **distinguished at every block length** | not distinguished |
+
+The same pattern as from 2011. **Seam check: passed, 189 of 189 months within 1 bp.** That tests the accrual method against the RBA's index from 2011, because the historical file doesn't overlap the index. The historical rates themselves have no independent check, and neither do the US funds' 2008 inputs, since the issuer check starts in 2016. 2008 is one crisis, and resampling can't add others. Results are in the owner's local report, and Claude hasn't read them. Not reviewed by Codex.
+

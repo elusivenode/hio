@@ -230,7 +230,7 @@ def reconcile_reports(usd: Mapping[str, Any], aud: Mapping[str, Any]) -> dict[st
 
 def render(results: Mapping[str, Any]) -> str:
     lines = [
-        "# E-0002 AUD variant: for the owner only. Licensed-derived: don't commit, share or paste into AI.",
+        "# E-0002 AUD variant: for the owner and HIO's agents. Licensed-derived: don't commit or share.",
         "",
         "Monthly, unhedged, on H.10's noon New York rate; no costs or tax. BIL in AUD is USD bills plus "
         "currency risk, not AUD cash. Descriptive: no recommendation or forecast. " + NOTICE,

@@ -162,3 +162,10 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - [process] The classifier refuses gh pr merge from Claude as "Merge Without Review": give the owner the command with --match-head-commit; base branch policy also blocks it until CI ends. Source: PRs #74 to #88.
 - [hiomux] sa ask refuses at main when the bundle exceeds 90,000 bytes; --rev <older> works if the question supplies newer state. Distil 3 doesn't shrink it. Source: OD-0142 correction 1.
 - [review] Codex has now found a real defect or spec overclaim that a passing suite missed in T-0013, T-0014, T-0015 and T-0019, and was READY first time on T-0016 and T-0017, both small. Source: OD-0144, OD-0146, OD-0152.
+- [research] E-0003's report text is adapted by string replacement, which fails silently on a wording change; test each replacement. Source: tools/e0003_extended.py, tests/test_e0003_extended.py.
+- [hiomux] sa ask defaults to local main, so unmerged work is invisible to the architect, and a stale local main fails the checkout; run git fetch origin main:main first. Source: OD-0175.
+- [rights] All HIO agents may review EODHD data, raw and derived, for research in the project; no value goes in the repository. Source: OD-0176, replacing OD-0174.
+- [data] Issuer checks on BIL and IEF match closely, while SPY runs slightly high at every horizon, unexplained. Source: tools/e0002_issuer_check.py.
+- [method] H.10 is usable for AUD translation only monthly, under RA 4.4. Source: tools/e0002_aud.py, OD-0167.
+- [research] E-0003's intervals_span_zero treats any block length excluding zero as "distinguished at every block length"; no recorded result is mixed, and the code is unfixed. Source: OD-0175 correction 1.
+- [hiomux] The architect's clone holds local branches as well as the checkout, so it can read an open PR's branch and say so. Source: docs/history/2026-11-04-architect-calibration.md.

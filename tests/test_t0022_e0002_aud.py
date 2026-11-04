@@ -104,7 +104,7 @@ def test_a_full_comparison_runs_and_the_report_says_who_it_is_for():
     results = tool.compare_aud(("cash", "equity", "treasury"), months, usd, aud, s)
     assert results["windows"]["2008"]["available"] is True
     assert set(results["bootstrap_treasury_minus_cash"]) == {"12", "6", "24"}
-    assert tool.render(results).startswith("# E-0002 AUD variant: for the owner only")
+    assert tool.render(results).startswith("# E-0002 AUD variant: for the owner and HIO's agents")
 
 
 def test_with_no_currency_move_aud_and_usd_paths_are_equal():

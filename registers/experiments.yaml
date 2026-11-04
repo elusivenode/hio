@@ -130,7 +130,14 @@
       prompt for the owner's own rights decision, and establishes nothing about 2008 itself.
     limitations: "no 2008, the period of most interest; about 15 years, so about five non-overlapping three-year periods, and few stress episodes; one rate regime change dominates; month-end drawdowns; BIL isn't AUD cash and SPY, IEF and BIL have no independent check; EODHD's price source is unresolved; TRI differs from a deposit return"
     not_tested: "hedged returns, costs, tax, AUD assets, any period before 2011"
-  variants: []
+  variants:
+    - id: V1
+      change: "back to the first common month end, expected 2007-05-31, so 2008 is a named window. AUD cash before 2011 is HIO's accrual of the RBA's FIRMMCRID: each published rate accrues simple ACT/365 to the next published date; the last rate carries to 2011-01-04; the Cash Rate TRI, level to level, from there. Allocations, FX, rebalancing and bootstrap are otherwise unchanged; windows gain before and from 2011 and 2008. Declared before any V1 result"
+      reason: "OD-0173, after E-0003's pre-registered test indicated earlier history"
+      revision: 7d4ef02
+      result: "docs/evidence/e0003/result-1.md: the same pattern as from 2011; seam check 189 of 189"
+      seam_check: "the same accrual on the current F1's FIRMMCRID against the TRI, monthly, from 2011: passes if within 1 bp in at least 95% of months. The historical file doesn't overlap the TRI, so this tests the method, not the historical rates"
+      decision_rule: "descriptive, as E-0003's. A failed seam check is reported, and the pre-2011 AUD cash isn't relied on until explained. The US funds' 2008 inputs have no independent check, and 2008 is one crisis"
   inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
   runs: ["docs/evidence/e0003/result-1.md"]
   results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "volatility distinguished for cash rate and currency and for total; all other intervals span zero"}

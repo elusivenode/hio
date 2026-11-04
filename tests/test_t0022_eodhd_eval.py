@@ -99,7 +99,7 @@ def test_the_record_allows_local_evaluation_and_denies_everything_wider():
     for consumer in ("smsf_app", "smsf_trustee_pack", "smsf_auditor", "third_party"):
         with pytest.raises(RightsRefused):
             g.authorise(Operation.PUBLISH, [tool.SOURCE_ID], consumer)
-    assert str(g.records[tool.SOURCE_ID].get("agent_context")) == "deny"
+    assert str(g.records[tool.SOURCE_ID].get("agent_context")).startswith("conditional(HIO's own agents")
     assert str(g.records[tool.SOURCE_ID].get("quotation_in_documents")) == "deny"
 
 
@@ -510,7 +510,11 @@ def test_end_to_end_the_reader_and_comparison_run_on_invented_data(tmp_path):
     assert set(summary["releases"]) == {"equity", "treasury", "cash"}
     assert summary["windows_available"]["2008"] is True
     assert summary["independent_reference"]["SPY.US"].startswith("not read")
-    assert (tmp_path / "reports" / "owner-report.md").read_text().startswith("# E-0002: for the owner only")
+    assert (
+        (tmp_path / "reports" / "owner-report.md")
+        .read_text()
+        .startswith("# E-0002: for the owner and HIO's agents")
+    )
     values = json.loads((tmp_path / "reports" / "owner-values.json").read_text())
     assert set(values["windows"]["full"]["allocations"]) == set(tool.ALLOCATIONS)
     assert set(values["bootstrap_treasury_minus_cash"]) == {"12", "6", "24"}

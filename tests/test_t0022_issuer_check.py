@@ -56,4 +56,4 @@ def test_the_tally_counts_passes_and_holds_no_value():
 
 def test_the_report_is_marked_for_the_owner():
     rows = tool.evaluate([check(date(2020, 12, 31), date(2021, 12, 31), 1, 21.0)], {"X": PERIODS})
-    assert tool.render(rows).startswith("# E-0002 issuer check: for the owner only")
+    assert tool.render(rows).startswith("# E-0002 issuer check: for the owner and HIO's agents")
