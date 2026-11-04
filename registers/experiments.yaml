@@ -85,6 +85,7 @@
     not_tested: "AUD translation, costs, tax, other funds, tail dependence, predictive use"
   variants:
     - {id: V1, change: "qualification corrected to its pre-registered meaning: quote currency checked, every period in Q3's denominator; run on snapshot s2", reason: "REVIEW-2026-11-04-t0022-1 F-1, F-2; allocations, windows and bootstrap unchanged", revision: 185c33a}
+    - {id: V2, change: "AUD variant: the three allocations, unhedged under RA 4.1, monthly only, on H.10 AUD/USD noon New York rates; a rate up to 5 days old is used and counted, older stops; compounded asset, currency and cross contributions; the same windows, seed and blocks. EODHD's AUD/USD compared with H.10: passes if within 1% on at least 95% of common dates, and can flag but not validate. Declared before any AUD result", reason: "OD-0167", revision: "the commit adding tools/e0002_aud.py"}
   inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
   runs: ["14e8e1a, snapshot s1", "185c33a, snapshot s2, docs/evidence/e0002/assessment-1.md"]
   results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "Q1 to Q3 pass for all sleeves; Q4 no changes over minutes only; Q5 BGBL only, one unresolved difference; no independent check of SPY, IEF or BIL"}
