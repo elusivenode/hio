@@ -1,7 +1,7 @@
 ---
 id: T-0022
 title: "One-month EODHD Personal plan evaluation: data qualification and first USD portfolio comparison"
-status: authorised
+status: submitted_for_review
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator); independent reviewer: Codex, one focused review"
 created_at: 2026-11-04
@@ -36,3 +36,5 @@ Phases A to E of the brief, then its single consolidated assessment. Tests cover
 As OD-0162 lists. No change under `src/hio/sources/`, `src/hio/jobs/`, `.github/` or `infra/`.
 
 ## Submission (filled by the implementer)
+
+Branch `feat/t0022-eodhd`. Snapshot `s1` taken; assessment 1 in `docs/evidence/e0002/`: continue conditionally. Full suite passes. Not accepted. Codex review assigned by OD-0162 correction 1.

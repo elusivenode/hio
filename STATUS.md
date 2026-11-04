@@ -89,7 +89,7 @@ No finding is waived.
 | B-2 | done; see `docs/evidence/b2/`. Destroy `rg-hio-probe` authorised (OD-0155), from 2026-11-04T06:36:50Z; not yet run |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** the EODHD subscription (OD-0162 to OD-0164); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
+| Next permissible actions | **Owner:** reading the E-0002 results; the EODHD renewal (`docs/evidence/e0002/assessment-1.md`); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
