@@ -394,3 +394,13 @@ def test_main_exits_2_on_a_stop(
     code = t.main(["--root", str(tmp_path / "nowhere"), "--e0003", str(tmp_path), "--history", str(tmp_path)])
     assert code == 2
     assert capsys.readouterr().out == ""
+
+
+def test_the_target_is_the_third_cell_when_a_links_column_follows():
+    page = (
+        '<table><tr><th scope="row">4 Nov 2026</th><td>+0.25</td><td>4.85</td>'
+        '<td class="links"><a href="/x">Statement</a></td></tr></table>'
+    )
+    steps, unreadable = t.parse_target_page(page, WINDOW)
+    assert steps == {date(2026, 11, 4): D("4.85")}
+    assert unreadable == []

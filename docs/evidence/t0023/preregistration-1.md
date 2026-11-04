@@ -68,3 +68,5 @@ Each reruns the same comparison, seed and block lengths with one thing changed. 
 | S9 | FX on H.10 the next published day, the timing shift |
 
 ## Amendments
+
+1. **2026-11-04, S9.** H.10 has no published date after the panel's last month end, so that one month keeps its own rate. Found when the run stopped, before any S9 result. No bar changes.

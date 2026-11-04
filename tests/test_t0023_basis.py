@@ -65,11 +65,10 @@ def test_s9_takes_the_next_published_date_after_the_one_chosen():
     assert tool.next_published_rates([date(2020, 1, 31), date(2020, 1, 30)], rates) == [D("0.8"), D("0.8")]
 
 
-def test_s9_stops_when_nothing_is_published_after_the_chosen_date_or_the_choice_is_stale():
-    rates = {date(2020, 1, 30): D("0.7")}
-    with pytest.raises(ev.Stop, match=r"no H\.10 date after"):
-        tool.next_published_rates([date(2020, 1, 31)], rates)
-    with pytest.raises(ev.Stop, match="days old"):
+def test_s9_keeps_the_final_rate_when_nothing_is_published_later_and_a_stale_choice_stops():
+    rates = {date(2020, 1, 30): D("0.7"), date(2020, 1, 31): D("0.8")}
+    assert tool.next_published_rates([date(2020, 1, 31)], rates) == [D("0.8")]
+    with pytest.raises(tool.ev.Stop):
         tool.next_published_rates([date(2020, 3, 1)], {**rates, date(2020, 4, 1): D("0.8")})
 
 

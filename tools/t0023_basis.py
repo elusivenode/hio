@@ -63,15 +63,14 @@ def month_end_rates(months: Sequence[date], rates: Mapping[date, Decimal]) -> li
 
 
 def next_published_rates(months: Sequence[date], rates: Mapping[date, Decimal]) -> list[Decimal]:
-    """For each month end, the rate of the next published date after the one `rate_on` would choose."""
+    """For each month end, the rate of the next published date after the one `rate_on` would choose. A month
+    end with no later date keeps its own rate (preregistration-1, amendment 1)."""
     ordered = sorted(rates)
     out = []
     for day in months:
         aud_tool.rate_on(rates, ordered, day)  # a stale choice stops here
         later = bisect_right(ordered, day)
-        if later == len(ordered):
-            raise ev.Stop(f"no H.10 date after the one chosen for {day}")
-        out.append(rates[ordered[later]])
+        out.append(rates[ordered[min(later, len(ordered) - 1)]])
     return out
 
 

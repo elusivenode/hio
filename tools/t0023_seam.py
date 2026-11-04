@@ -104,7 +104,8 @@ def parse_target_page(text: str, window_start: date) -> tuple[dict[date, Decimal
         if not cells or not any(ch.isdigit() for ch in cells[0]):
             continue  # a header or a spacer
         day = _effective(cells[0])
-        target = cells[-1].replace("%", "").replace("\xa0", " ").strip() if len(cells) >= 2 else ""
+        # The page's columns are date, change, target and links, so the target is the third cell.
+        target = cells[2].replace("%", "").replace("\xa0", " ").strip() if len(cells) >= 3 else ""
         if day is None or not _NUMBER.match(target):
             unreadable.append(" | ".join(cells))
             if day is not None and day >= window_start:
