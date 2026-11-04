@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-04
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0175"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0176"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -89,7 +89,7 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 | B-2 | done; see `docs/evidence/b2/`. `rg-hio-probe` destroyed (OD-0155 correction 2) |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** whether to adopt the architect's §6 consolidation milestone (`docs/history/2026-11-04-architect-calibration.md`, OD-0175); the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** nothing beyond what an OD authorises |
+| Next permissible actions | **Owner:** the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** T-0023, the consolidation milestone (OD-0176) |
 
 ## Branches holding work not on `main`
 
@@ -105,7 +105,7 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 |---|---|---|
 | A01 decisions review | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed (criteria met by OD-0008, OD-0011; acceptance not recorded) |
 | S1 source rights | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: the five S1b-1 datasets owner_verified (OD-0116 c1, OD-0118); the Treasury par curve (OD-0156); H.10 AUD/USD (OD-0166); RBA historical cash (OD-0172); the rest unverified |
-| Equity total-return source | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: EODHD evaluation run, T-0022 accepted, no data accepted (OD-0162, OD-0171); no letters (OD-0161) |
+| Equity total-return source | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: EODHD evaluation run, T-0022 accepted, no data accepted (OD-0162, OD-0171); retained for research (OD-0176); no letters (OD-0161) |
 | HIO-001 boundary (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review; review READY, received (OD-0040); **not accepted, not merged** |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | S1a stage **accepted** (OD-0042); S1b staged under HIO-ADR-0012 |
 | S1b-1.0 cash capture | [T-0009](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) | **accepted** (OD-0079) at `846974b`, integrated `7eba3f9`; finality staging and Authorisation B remain |

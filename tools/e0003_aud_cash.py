@@ -240,7 +240,7 @@ def conclusion(results: Mapping[str, Any]) -> list[str]:
 
 def render(results: Mapping[str, Any]) -> str:
     lines = [
-        "# E-0003: for the owner only. Licensed-derived: don't commit, share or paste into AI.",
+        "# E-0003: for the owner and HIO's agents. Licensed-derived: don't commit or share.",
         "",
         "AUD, monthly, unhedged, no costs or tax. Equity is SPY; USD bills are BIL, a bill ETF; "
         "Treasuries are IEF.",

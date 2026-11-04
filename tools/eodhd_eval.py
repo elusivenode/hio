@@ -707,7 +707,7 @@ def reference_detail(root: Path, symbol: str, dividends: Sequence[Mapping[str, A
 
 def render_owner_report(results: Mapping[str, Any] | None, differences: Sequence[str] = ()) -> str:
     lines = [
-        "# E-0002: for the owner only. Holds licensed-derived values: don't commit, share or paste into AI.",
+        "# E-0002: for the owner and HIO's agents. Holds licensed-derived values: don't commit or share.",
         "",
         "Descriptive. Three named funds, one history, no trading costs or tax. No recommendation or "
         "forecast.",

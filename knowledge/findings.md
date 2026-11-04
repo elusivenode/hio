@@ -164,7 +164,7 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - [review] Codex has now found a real defect or spec overclaim that a passing suite missed in T-0013, T-0014, T-0015 and T-0019, and was READY first time on T-0016 and T-0017, both small. Source: OD-0144, OD-0146, OD-0152.
 - [research] E-0003's report text is adapted by string replacement, which fails silently on a wording change; test each replacement. Source: tools/e0003_extended.py, tests/test_e0003_extended.py.
 - [hiomux] sa ask defaults to local main, so unmerged work is invisible to the architect, and a stale local main fails the checkout; run git fetch origin main:main first. Source: OD-0175.
-- [rights] Claude may read EODHD-derived statistics; raw prices stay out, and Codex, the architect and the repository get no values. Source: OD-0174.
+- [rights] All HIO agents may review EODHD data, raw and derived, for research in the project; no value goes in the repository. Source: OD-0176, replacing OD-0174.
 - [data] Issuer checks on BIL and IEF match closely, while SPY runs slightly high at every horizon, unexplained. Source: tools/e0002_issuer_check.py.
 - [method] H.10 is usable for AUD translation only monthly, under RA 4.4. Source: tools/e0002_aud.py, OD-0167.
 - [research] E-0003's intervals_span_zero treats any block length excluding zero as "distinguished at every block length"; no recorded result is mixed, and the code is unfixed. Source: OD-0175 correction 1.

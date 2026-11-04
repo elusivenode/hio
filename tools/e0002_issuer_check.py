@@ -103,7 +103,7 @@ def tally(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, int]]:
 
 def render(rows: Sequence[Mapping[str, Any]]) -> str:
     lines = [
-        "# E-0002 issuer check: for the owner only. Licensed-derived: don't commit, share or paste into AI.",
+        "# E-0002 issuer check: for the owner and HIO's agents. Licensed-derived: don't commit or share.",
         "",
         f"HIO's return against the issuer's published one. Pass: within {TOLERANCE_PCT} points a year.",
         "A pass says income is about right in aggregate, not that every record is right.\n",

@@ -77,7 +77,7 @@ def test_2008_is_a_named_window_and_the_report_says_so():
     results = tool.base.evaluate(months, returns, bills, s, tool.WINDOWS)
     assert results["windows"]["2008"]["available"] is True
     text = tool.render(results, {"passes": True, "within_1bp": 180, "months": 189})
-    assert text.startswith("# E-0003 V1 (from May 2007): for the owner only")
+    assert text.startswith("# E-0003 V1 (from May 2007): for the owner and HIO's agents")
     assert "**2008 is in this sample:**" in text
     assert "2008 isn't in the sample" not in text
     assert "anything about 2008" not in text
