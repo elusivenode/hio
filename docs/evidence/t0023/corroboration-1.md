@@ -9,16 +9,16 @@ instruction: OD-0178
 
 # T-0023 corroboration 1
 
-> **Exploratory and unaccepted.** Bars are in `preregistration-1.md`, declared before any comparison. **No EODHD-derived value is recorded here;** gaps and sizes are in the local reports under `~/.hio-research/T-0023/corroboration/`. Not reviewed by Codex. Tools run at `ab4c870` (step 3 and 5) and `baff168` (step 4), on panel `1aa29918…`.
+> **Exploratory and unaccepted.** Bars are in `preregistration-1.md`, declared before any comparison. **No EODHD-derived value is recorded here;** gaps and sizes are in the local reports under `~/.hio-research/T-0023/corroboration/`. Not reviewed by Codex. Tools run at `ab4c870` (step 5), `baff168` (step 4) and `504f685` (step 3, with C5 under OD-0179), on panel `1aa29918…`.
 
 ## The conclusion so far
 
 **The pre-registered classes held under all nine sensitivities:** cash rate and currency, and total, are distinguished on volatility at every block length, and nothing else is distinguished. **That is narrower than it sounds.** Classes are full-sample. They don't test the size of any 2008 effect, and that's what step 6 would lean on.
 
 **2008 is partly corroborated, not established:**
-- **SPY:** its close and return agree with the issuer's NAV, including 2008. Its income isn't independently checked.
-- **BIL:** agrees with the issuer's NAV and the 1-month Treasury yield, except that one month end falls outside the close bar.
-- **IEF:** the weakest. No issuer NAV was obtained, and its only 2008 check failed its bar.
+- **SPY:** income matches its audited reports, and its NAV agrees with them. Its close-based return fails the audited-return bar in both fiscal years, which a post-hoc diagnostic traces to the close's discount to NAV at 2008-09-30.
+- **BIL:** income, NAV and return agree with its audited reports, and with the 1-month Treasury yield. One month end falls outside the close bar.
+- **IEF:** income and return agree with its audited reports. It's still the least checked: no issuer NAV was obtained, and its check against the 10-year construction failed.
 - **AUD cash:** consistent with the RBA's own target every day, but no third party checks it.
 
 ## Step 3: the sleeves
@@ -29,12 +29,26 @@ instruction: OD-0178
 | C2 market return against NAV return | pass | pass | not performed |
 | C3 against the 1-month par yield | | pass | |
 | C4 against the 10-year construction | | | **fail** |
-| C5 audited reports | not performed | not performed | not performed |
+| C5 distributions per share, two fiscal years | pass | pass | pass |
+| C5 total return, two fiscal years | **fail** | pass | pass |
+| C5 NAV against the issuer's file | pass | pass | not performed |
 
 - **C1, BIL:** within the bar at over 99% of month ends, but 2008-09-30 is outside it, and the bar requires every month of 2008. That was the month of Lehman's failure, so a real dislocation is plausible; that's a guess, and this check can't tell a real one from a bad record.
 - **C2 doesn't test income:** the NAV return uses EODHD's distributions, so a wrong distribution would pass.
 - **C4, IEF:** correlation passes in full and over 2008-2009, but the 2008 gap exceeds its bar. A 10-year construction has more duration than a 7-to-10-year fund, which would push the gap this way in a year when yields fell. That's untested, and the construction is itself unreferenced (E-0001).
-- **C5 and IEF's NAV weren't obtained.** SEC EDGAR refuses an automated tool that doesn't declare a contact, and iShares' page didn't give its file to a plain request. Neither was worked around.
+- **C5, SPY's return:** the bar compares HIO's close-based return with an audited return at NAV. It fails in both fiscal years, in opposite directions, and they share the 2008-09-30 boundary. **The fail stands.** A diagnostic declared after it (`tools/t0023_spy_diagnostic.py`, run at `ba15db9`) finds SPY's NAV return within 0.25 points of the audited figure in both years, and a discount of the close to NAV at that boundary. So this looks like close against NAV, not a bad record; it isn't an independent test, because it was chosen after the result.
+- **C4 against C5, IEF:** IEF's return agrees with its audited reports while failing against the 10-year construction, which points to the construction's longer maturity rather than IEF's data. That's an inference, and still untested.
+- **C5's limits:** the fiscal years straddle calendar 2008 (SPY to September, BIL to June, IEF to February), so they don't isolate it, and gaps within a year could offset. Annual figures can't show every record is right. Fund reports state figures to two decimals.
+- **IEF's NAV wasn't obtained.** iShares' page didn't give its file to a plain request, and that wasn't worked around; the file needs the owner's browser. C1, C2 and C5's NAV row for IEF wait on it.
+
+**Tracing C5.** The figures were transcribed by the author into a local file. A verifier can read them from the public filings, each under "Financial Highlights":
+
+| Fund | Fiscal years | SEC accession number |
+|---|---|---|
+| SPY | to 2008-09-30 | `0000950135-08-007648` |
+| SPY | to 2009-09-30 | `0000950123-09-066888` |
+| BIL | to 2008-06-30 and 2009-06-30 | `0000950123-09-040926` (SPDR Series Trust) |
+| IEF | to 2008-02-29 and 2009-02-28 | `0001193125-09-101817` (iShares Trust) |
 
 ## Step 4: the cash seam
 

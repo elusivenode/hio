@@ -70,3 +70,4 @@ Each reruns the same comparison, seed and block lengths with one thing changed. 
 ## Amendments
 
 1. **2026-11-04, S9.** H.10 has no published date after the panel's last month end, so that one month keeps its own rate. Found when the run stopped, before any S9 result. No bar changes.
+2. **2026-11-04, independence table.** The audited reports were obtained under OD-0179, after this table was written. IEF's NAV file still wasn't. No bar changes.
