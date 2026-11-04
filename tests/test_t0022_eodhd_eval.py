@@ -147,6 +147,55 @@ def test_everything_created_under_the_root_is_private(tmp_path):
     assert [str(p) for p in made if p.stat().st_mode & 0o077] == []
 
 
+@pytest.mark.parametrize("part", ["raw", "reports", "store", "reference"])
+def test_a_linked_workspace_part_refuses_before_any_write(tmp_path, part):
+    root, outside = tmp_path / "root", tmp_path / "outside"
+    root.mkdir(mode=0o700)
+    outside.mkdir(mode=0o700)
+    (root / part).symlink_to(outside, target_is_directory=True)
+    with pytest.raises(tool.Stop, match="must not be a link"):
+        tool.fetch(root, "s1", gate=gate(), commit="c", get=lambda _r: pytest.fail("requested"))
+    assert list(outside.iterdir()) == []
+
+
+def test_a_linked_snapshot_refuses(tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir(mode=0o700)
+    root = tmp_path / "root"
+    (root / "raw").mkdir(parents=True, mode=0o700)
+    root.chmod(0o700)
+    (root / "raw" / "s1").symlink_to(outside, target_is_directory=True)
+    with pytest.raises(tool.Stop, match="stay under raw"):
+        tool.fetch(root, "s1", gate=gate(), commit="c", get=lambda _r: pytest.fail("requested"))
+
+
+def test_an_open_workspace_part_refuses(tmp_path):
+    (tmp_path / "reports").mkdir(mode=0o755)
+    (tmp_path / "reports").chmod(0o755)
+    with pytest.raises(tool.Stop, match="reports must be private"):
+        tool.check_root(tmp_path)
+
+
+def test_a_report_file_that_is_a_link_is_never_written_through(tmp_path):
+    outside = tmp_path / "outside.md"
+    outside.write_text("untouched")
+    (tmp_path / "reports").mkdir(mode=0o700)
+    (tmp_path / "reports" / "owner-report.md").symlink_to(outside)
+    with pytest.raises(OSError):
+        full_run(tmp_path)
+    assert outside.read_text() == "untouched"
+
+
+def test_an_existing_open_report_becomes_private(tmp_path):
+    (tmp_path / "reports").mkdir(mode=0o700)
+    existing = tmp_path / "reports" / "owner-report.md"
+    existing.write_text("old")
+    existing.chmod(0o644)
+    full_run(tmp_path)
+    assert existing.stat().st_mode & 0o077 == 0
+    assert existing.read_text().startswith("# E-0002")
+
+
 def test_a_snapshot_is_never_overwritten(tmp_path):
     days = trading_days(date(2020, 1, 6), 10)
     snapshot(tmp_path, days)

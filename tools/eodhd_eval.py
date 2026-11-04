@@ -66,6 +66,7 @@ ETFS = {
 }
 FOREX = "AUDUSD.FOREX"
 EXCHANGES = ("US", "AU")
+WORKSPACE_PARTS = ("raw", "reports", "store", "reference")
 SNAPSHOT_NAME = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 KINDS = ("eod", "div", "splits")
 MAX_REQUESTS_PER_SNAPSHOT = 40
@@ -184,6 +185,22 @@ def check_root(root: Path) -> None:
     if resolved.stat().st_mode & 0o077:
         raise Stop("--root must be mode 700")
     os.umask(0o077)
+    for (
+        name
+    ) in WORKSPACE_PARTS:  # a link or an open part would carry data out of the workspace (VERIFY ...-1-1)
+        part = root / name
+        if part.is_symlink():
+            raise Stop(f"{name} must not be a link")
+        if part.exists() and part.stat().st_mode & 0o077:
+            raise Stop(f"{name} must be private")
+
+
+def private_write(path: Path, data: bytes) -> None:
+    """Never through a link, and private even if the file already exists with an open mode."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "wb") as out:
+        os.fchmod(out.fileno(), 0o600)
+        out.write(data)
 
 
 def make_private(path: Path) -> None:
@@ -196,9 +213,10 @@ def snapshot_dir(root: Path, snapshot: str) -> Path:
     """A snapshot is one safe name directly under raw/ (F-REVIEW-2026-11-04-t0022-1-3)."""
     if not SNAPSHOT_NAME.fullmatch(snapshot):
         raise Stop("a snapshot name must be letters, digits, hyphens or underscores")
-    target = (root / "raw" / snapshot).resolve()
-    if target.parent != (root / "raw").resolve():
-        raise Stop("a snapshot must stay under raw/")
+    raw = root.resolve() / "raw"
+    target = raw / snapshot
+    if raw.is_symlink() or target.is_symlink() or raw.resolve() != raw or target.resolve().parent != raw:
+        raise Stop("a snapshot must stay under raw/ in the workspace")
     return target
 
 
@@ -222,7 +240,7 @@ def fetch(
     planned = requests_for()
     if len(planned) > MAX_REQUESTS_PER_SNAPSHOT:
         raise Stop("too many requests")
-    target.mkdir(parents=True)
+    target.mkdir(parents=True, mode=0o700)
     files, stopped = [], None
     for index, (symbol, kind, request) in enumerate(planned):
         if index:
@@ -238,7 +256,7 @@ def fetch(
             stopped = f"{symbol} {kind}: not JSON"
             break
         name = f"{symbol}.{kind}.json"
-        (target / name).write_bytes(body)
+        private_write(target / name, body)
         files.append(
             {
                 "symbol": symbol,
@@ -259,7 +277,7 @@ def fetch(
         "files": files,
         "stopped": stopped,
     }
-    (target / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
+    private_write(target / "manifest.json", (json.dumps(manifest, indent=1, sort_keys=True) + "\n").encode())
     return manifest
 
 
@@ -740,12 +758,14 @@ def run(
     if (root / "store").exists():
         make_private(root / "store")
     reports = root / "reports"
-    reports.mkdir(exist_ok=True)
+    reports.mkdir(mode=0o700, exist_ok=True)
     differences = [line for s in ETFS for line in reference_detail(root, s, _read(root, manifest, s, "div"))]
-    (reports / "owner-report.md").write_text(render_owner_report(results, differences))
+    private_write(reports / "owner-report.md", render_owner_report(results, differences).encode())
     if results is not None:
-        (reports / "owner-values.json").write_text(json.dumps(results, indent=1, sort_keys=True) + "\n")
-    (root / "summary.json").write_text(json.dumps(summary, indent=1, sort_keys=True) + "\n")
+        private_write(
+            reports / "owner-values.json", (json.dumps(results, indent=1, sort_keys=True) + "\n").encode()
+        )
+    private_write(root / "summary.json", (json.dumps(summary, indent=1, sort_keys=True) + "\n").encode())
     return summary
 
 

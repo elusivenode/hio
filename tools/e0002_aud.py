@@ -268,8 +268,10 @@ def run(root: Path, h10_root: Path, snapshot: str, *, gate: RightsGate) -> dict[
     manifest = ev.load_snapshot(root, snapshot)
     fx = compare_fx_sources(ev._read(root, manifest, ev.FOREX, "eod"), rates, months[0])
     reports = root / "reports"
-    (reports / "owner-report-aud.md").write_text(render(results))
-    (reports / "owner-values-aud.json").write_text(json.dumps(results, indent=1, sort_keys=True) + "\n")
+    ev.private_write(reports / "owner-report-aud.md", render(results).encode())
+    ev.private_write(
+        reports / "owner-values-aud.json", (json.dumps(results, indent=1, sort_keys=True) + "\n").encode()
+    )
     out = {
         "snapshot": snapshot,
         "h10_rows": len(rates),
@@ -282,7 +284,7 @@ def run(root: Path, h10_root: Path, snapshot: str, *, gate: RightsGate) -> dict[
         "windows_available": {k: v["available"] for k, v in results["windows"].items()},
         "eodhd_fx_against_h10": fx,
     }
-    (root / "summary-aud.json").write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
+    ev.private_write(root / "summary-aud.json", (json.dumps(out, indent=1, sort_keys=True) + "\n").encode())
     return out
 
 
