@@ -215,10 +215,20 @@ def test_each_gap_is_reported_under_both_conventions_by_hand():
     assert abs(out[0]["gap_ex"] - 2.0) < 1e-9 and abs(out[0]["gap_pay"] + 3.0) < 1e-9
 
 
-def test_a_split_stops_g1_for_that_fund_and_says_so():
-    data = {s: ([], []) for s in tool.FUNDS} | {"BIL.US": ([], [{"date": "2020-01-02", "split": "2/1"}])}
-    out = tool.g1([], {s: [] for s in tool.FUNDS}, data)
-    assert out["verdict"].startswith("not performed: BIL.US has split records")
+def test_a_split_alone_gives_no_payment_date_return_by_hand():
+    closes = [(date(2020, 1, 1), D(100)), (date(2020, 1, 2), D(200)), (date(2020, 1, 3), D(210))]
+    periods, _ = tool.payment_date_periods(closes, [], {date(2020, 1, 2): D("0.5")})
+    assert periods[0].total_return == 0
+    assert periods[0].price_return == 0
+    assert periods[1].total_return == pytest.approx(D("0.05"))
+
+
+def test_a_distribution_on_a_split_day_is_per_unit_after_the_split_by_hand():
+    closes = [(date(2020, 1, 1), D(100)), (date(2020, 1, 2), D(200))]
+    record = tool.Distribution(date(2020, 1, 2), date(2020, 1, 2), D(2))
+    periods, _ = tool.payment_date_periods(closes, [record], {date(2020, 1, 2): D("0.5")})
+    # One unit at 100 becomes half a unit at 200; 2 on half a unit buys 0.005 units at 200: wealth 101.
+    assert periods[0].total_return == pytest.approx(D("0.01"))
 
 
 def test_records_without_an_unadjusted_value_are_counted_and_left_out():

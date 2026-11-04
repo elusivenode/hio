@@ -117,14 +117,18 @@ def sensitivity(
 
 
 def payment_date_periods(
-    closes: Sequence[tuple[date, Decimal]], records: Sequence[Distribution]
+    closes: Sequence[tuple[date, Decimal]],
+    records: Sequence[Distribution],
+    splits: Mapping[date, Decimal] | None = None,
 ) -> tuple[list[VehiclePeriod], dict[str, int]]:
     """Daily periods when each distribution is reinvested on its payment date, not its ex-date.
 
     The holder owns u units. On the ex-date the price drop stays in the price return and the cash, D per unit
     held at the close before, is set aside: it earns nothing and isn't in wealth. On the first trading day on
     or after paymentDate it buys units at that day's close. A record with no paymentDate stays on its ex-date.
-    Wealth is u times the close, so a period's return is u_after P_t / (u_before P_{t-1}) - 1.
+    Wealth is u times the close, so a period's return is u_after P_t / (u_before P_{t-1}) - 1. A split factor
+    f (new units per old unit, as vehicle_series) multiplies u on its day, before that day's distribution,
+    so a split alone gives no return.
     """
     days = [d for d, _ in closes]
     counts: Counter = Counter()
@@ -148,6 +152,13 @@ def payment_date_periods(
                 counts["payment_before_ex_left_on_ex_date"] += 1
                 paid = i
         ex_at.setdefault(i, []).append((record.amount, paid))
+    factors: dict[int, Decimal] = {}
+    for day, factor in (splits or {}).items():
+        i = _first_on_or_after(days, day)
+        if i is None or i == 0:
+            counts["splits_outside_the_closes"] += 1
+            continue
+        factors[i] = CTX.multiply(factors.get(i, ONE), factor)
     units = CTX.divide(ONE, closes[0][1])
     pending: dict[int, Decimal] = {}
     periods = []
@@ -155,16 +166,18 @@ def payment_date_periods(
         (day, close), (_, before) = closes[i], closes[i - 1]
         if close <= 0 or before <= 0:
             raise ValueError(f"a close is not positive at {day}")
+        factor = factors.get(i, ONE)
+        split_units = CTX.multiply(units, factor)
         cash = pending.pop(i, Decimal(0))
         for amount, paid in ex_at.get(i, []):
-            held = CTX.multiply(amount, units)
+            held = CTX.multiply(amount, split_units)
             if paid == i:
                 cash = CTX.add(cash, held)
             elif paid is not None:
                 pending[paid] = CTX.add(pending.get(paid, Decimal(0)), held)
-        after = CTX.add(units, CTX.divide(cash, close))
+        after = CTX.add(split_units, CTX.divide(cash, close))
         total = CTX.subtract(CTX.divide(CTX.multiply(after, close), CTX.multiply(units, before)), ONE)
-        price = CTX.subtract(CTX.divide(close, before), ONE)
+        price = CTX.subtract(CTX.divide(CTX.multiply(close, factor), before), ONE)
         periods.append(VehiclePeriod(closes[i - 1][0], day, price, CTX.subtract(total, price), total))
         units = after
     return periods, dict(counts)
@@ -239,9 +252,6 @@ def g1(
     pay: dict[str, list[VehiclePeriod]] = {}
     facts: dict[str, Any] = {}
     for symbol in FUNDS:
-        if fund_data[symbol][1]:
-            return {"verdict": f"not performed: {symbol} has split records, which G1 doesn't handle"}
-    for symbol in FUNDS:
         dividends, splits = fund_data[symbol]
         built = ev.analyse(symbol, ev.ETFS[symbol], ev.ETFS[symbol], eods[symbol], dividends, splits)
         if not built.periods:
@@ -249,7 +259,8 @@ def g1(
         records, missing = fund_records(dividends)
         closes = [(date.fromisoformat(str(r["date"])), Decimal(r["close"])) for r in eods[symbol]]
         ex[symbol] = built.periods
-        pay[symbol], counts = payment_date_periods(closes, records)
+        factors = {date.fromisoformat(str(r["date"])): ev.parse_split(r["split"]) for r in splits}
+        pay[symbol], counts = payment_date_periods(closes, records, factors)
         facts[symbol] = {"distributions": len(records), "missing_unadjusted": missing, **counts}
     rows = compare_gaps(checks, ex, pay)
     return {"verdict": g1_verdict(rows), "rows": rows, "records": facts}
