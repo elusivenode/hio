@@ -32,3 +32,5 @@ The brief selects EODHD for one month, with the owner completing the subscriptio
 As brief section 10 lists. Also no second vendor, no evidence-store write, and any retention after cancellation until the owner decides.
 
 ## Corrections (append-only)
+
+1. **2026-11-04: the Codex review the brief requires (section 9) is assigned.** Review id `REVIEW-2026-11-04-t0022-1`, at `34d2f33a6ab7327493a6e877b6720c7ac20d8a48`. Scope: `tools/eodhd_eval.py`, `tools/research_reader.py`, `src/hio/library/vehicle_return.py`, `src/hio/portfolio/fixed_allocation.py`, their tests, the rights record, E-0002's pre-registration and `docs/evidence/e0002/assessment-1.md`'s claims. **Codex receives no licensed bytes or values:** the evaluation workspace is made unreadable for the run. It reviews code, invented fixtures, counts and claims. One focused review, not a general one. It writes only under `reviews/`.
