@@ -1,6 +1,6 @@
 """E-0002's AUD variant, on invented XML, rates and returns only."""
 
-import importlib.util
+import importlib
 import sys
 from datetime import date, timedelta
 from decimal import Decimal as D
@@ -11,10 +11,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
-_spec = importlib.util.spec_from_file_location("e0002_aud", REPO / "tools" / "e0002_aud.py")
-tool = importlib.util.module_from_spec(_spec)
-sys.modules["e0002_aud"] = tool
-_spec.loader.exec_module(tool)
+tool = importlib.import_module("e0002_aud")  # one copy, so its Stop is the one other tools raise
 
 
 def xml(*obs, series="RXI$US_N.B.AL"):

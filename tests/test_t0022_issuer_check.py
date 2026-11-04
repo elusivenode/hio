@@ -1,6 +1,6 @@
 """E-0002's issuer check, on invented numbers only."""
 
-import importlib.util
+import importlib
 import sys
 from datetime import date
 from decimal import Decimal as D
@@ -11,10 +11,7 @@ from hio.library.vehicle_return import VehiclePeriod
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
-_spec = importlib.util.spec_from_file_location("e0002_issuer_check", REPO / "tools" / "e0002_issuer_check.py")
-tool = importlib.util.module_from_spec(_spec)
-sys.modules["e0002_issuer_check"] = tool
-_spec.loader.exec_module(tool)
+tool = importlib.import_module("e0002_issuer_check")  # one copy, so its Stop is the one other tools raise
 
 P = VehiclePeriod
 DAYS = [date(2020, 1, 31), date(2020, 6, 30), date(2020, 12, 31), date(2021, 6, 30), date(2021, 12, 31)]
