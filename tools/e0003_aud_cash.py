@@ -200,6 +200,40 @@ def intervals_span_zero(results: Mapping[str, Any]) -> dict[str, dict[str, bool]
     return out
 
 
+def conclusion(results: Mapping[str, Any]) -> list[str]:
+    """Built from the pre-registered tests only, so it reads the same to anyone who holds the same results."""
+    spans = intervals_span_zero(results)
+
+    def verdict(effect: str) -> str:
+        words = {True: "not distinguished", False: "distinguished at every block length"}
+        metrics = ("annualised_return", "volatility", "max_drawdown")
+        return "; ".join(f"{m.replace('_', ' ')}: {words[spans[effect][m]]}" for m in metrics)
+
+    if earlier_history_indicated(results):
+        earlier = (
+            "**indicated by the pre-registered test.** The cash-rate and currency effect moved maximum "
+            "drawdown by 2 points or more in a named window, so the missing 2008 matters. That prompts "
+            "your own rights decision."
+        )
+    else:
+        earlier = (
+            "**not indicated by the pre-registered test.** The cash-rate and currency effect moved maximum "
+            "drawdown by under 2 points in every named window. This says nothing about 2008 itself."
+        )
+    return [
+        "\n## Conclusion\n",
+        f"- **Cash rate and currency (USD bills against AUD cash).** {verdict('cash_rate_and_currency')}.",
+        f"- **Treasury duration (Treasuries against USD bills).** {verdict('treasury_duration')}.",
+        f"- **Total (Treasuries against AUD cash).** {verdict('total')}.",
+        "- **Establishes:** what these hypothetical sleeves did from 2011, separating currency and rate "
+        "from duration. Read the direction and size from the tables above.",
+        "- **Doesn't establish:** anything about 2008, a forecast, or a recommendation. About five "
+        "non-overlapping three-year periods, few stress episodes, one history; intervals rest on it.",
+        "- **Unresolved:** SPY, IEF and BIL have no independent check; EODHD's prices; costs, tax, hedging.",
+        f"- **Earlier AUD cash history:** {earlier}",
+    ]
+
+
 def render(results: Mapping[str, Any]) -> str:
     lines = [
         "# E-0003: for the owner only. Licensed-derived: don't commit, share or paste into AI.",
@@ -248,6 +282,7 @@ def render(results: Mapping[str, Any]) -> str:
                     f"| {effect} | {block} | {m} | {v['estimate']:+.2%} | {v['low']:+.2%} | {v['high']:+.2%} "
                     f"|"
                 )
+    lines += conclusion(results)
     return "\n".join(lines) + "\n"
 
 

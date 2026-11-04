@@ -139,6 +139,17 @@ def test_the_report_states_who_it_is_for_and_the_missing_2008():
     assert "Reserve Bank of Australia" in text
 
 
+def test_the_conclusion_follows_the_tests_and_never_quotes_a_size():
+    months, returns, bills, s = invented(same=True)
+    results = tool.evaluate(months, returns, bills, s)
+    text = "\n".join(tool.conclusion(results))
+    assert "not indicated by the pre-registered test" in text
+    assert "anything about 2008" in text
+    months, returns, bills, s = invented()
+    other = "\n".join(tool.conclusion(tool.evaluate(months, returns, bills, s)))
+    assert "indicated by the pre-registered test" in other
+
+
 def test_no_2008_window_exists():
     assert "2008" not in tool.WINDOWS
     assert min(s for s, _ in tool.WINDOWS.values() if s != date.min) >= date(2011, 1, 1)
