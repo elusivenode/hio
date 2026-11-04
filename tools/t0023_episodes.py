@@ -208,7 +208,77 @@ def analyse(frozen: common.FrozenPanel, variants: Mapping[str, Variant]) -> dict
         },
         "robustness": robustness,
         "decision": decision(robustness),
+        "sensitivity_effects": sensitivity_effects(episodes, under),
     }
+
+
+def sensitivity_effects(
+    episodes: Mapping[str, Mapping[str, Any]], under: Mapping[str, Mapping[str, Any] | None]
+) -> dict[str, dict[str, dict[str, dict[str, float | None]]]]:
+    """For each effect, episode and measure: the frozen value and S1 to S9's, `None` if not performed."""
+    return {
+        effect: {
+            name: {
+                m: {
+                    "frozen": episodes[name]["effects"][effect][m],
+                    **{sid: None if under[sid] is None else under[sid][name][effect][m] for sid in under},
+                }
+                for m in MEASURES
+            }
+            for name in episodes
+        }
+        for effect in base.EFFECTS
+    }
+
+
+# --- what the sensitivities read
+
+E0001_PATTERN = "raw/*.xml"
+
+
+def file_sha256(path: Path) -> str | None:
+    """The file's sha256, or `None` if it isn't there."""
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+
+def xml_sha256(raw: Path) -> str | None:
+    """One sha256 over the *.xml files directly in raw, sorted by name, each name and its bytes."""
+    names = sorted(p.name for p in raw.glob("*.xml") if p.is_file()) if raw.is_dir() else []
+    if not names:
+        return None
+    digest = hashlib.sha256()
+    for name in names:
+        digest.update(name.encode())
+        digest.update((raw / name).read_bytes())
+    return digest.hexdigest()
+
+
+def sensitivity_inputs(
+    root: Path, e0002: Path, e0001: Path, e0003: Path, history_root: Path, h10_root: Path
+) -> dict[str, str | None]:
+    """The sha256 of every file the sensitivities read, by path relative to its workspace. A missing file,
+    or one that can't be located, is `None`."""
+    out: dict[str, str | None] = {}
+    for name in ("spy", "bil", "ief"):
+        out[f"reference/nav-{name}.csv"] = file_sha256(root / "reference" / f"nav-{name}.csv")
+    out["reference/raw/rba-cash-rate.html"] = file_sha256(root / "reference" / seam.PAGE)
+    out["reference/manifest.json"] = file_sha256(root / "reference" / "manifest.json")
+    out["E-0003/raw/rba_f1.csv"] = file_sha256(e0003 / "raw" / "rba_f1.csv")
+    out["RBA-F1-history/firmmcrid.csv"] = file_sha256(history_root / "firmmcrid.csv")
+    out["H10/FRB_h10_xml.zip"] = file_sha256(h10_root / "FRB_h10_xml.zip")
+    out["E-0001/variant-summary.json"] = file_sha256(e0001 / "variant-summary.json")
+    data = None
+    try:
+        release = json.loads((e0001 / "variant-summary.json").read_text())["release"]
+        data = e0001 / "store-variant" / "releases" / e1.DATASET_ID / release / "data.csv"
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    out["E-0001/variant release data.csv"] = None if data is None else file_sha256(data)
+    out[f"E-0001/{E0001_PATTERN}"] = xml_sha256(e0001 / "raw")
+    out["E-0002/raw/s2/manifest.json"] = file_sha256(
+        ev.snapshot_dir(e0002, panel_tool.SNAPSHOT) / "manifest.json"
+    )
+    return out
 
 
 # --- the nine sensitivity panels, from the tools that define them
@@ -339,6 +409,32 @@ def robust_word(result: Mapping[str, Any]) -> str:
     return "robust" if result["robust"] else "not robust"
 
 
+MARGINS_NOTE = (
+    "For each effect on compounded return in each episode, the sensitivity whose value is nearest zero "
+    "(S1 to S9 only, those performed)."
+)
+CAN_TEST_NOTE = (
+    "Under common FX translation, with cash absent from both portfolios, S6, S7, S8 and S9 can't change the "
+    "sign of treasury_duration on compounded return, because W_T_AUD - W_B_AUD = W_FX (W_T_USD - W_B_USD) "
+    "with W_FX positive. On that effect only S1 to S5 are a challenge."
+)
+
+
+def margin_rows(result: Mapping[str, Any]) -> list[list[str]]:
+    rows = []
+    for effect, episodes in result["sensitivity_effects"].items():
+        for name, measures in episodes.items():
+            found = {
+                sid: v for sid, v in measures[DECISION_MEASURE].items() if sid != "frozen" and v is not None
+            }
+            if not found:
+                rows.append([effect, name, "none performed", ""])
+                continue
+            sid = min(found, key=lambda s: abs(found[s]))
+            rows.append([effect, name, sid, pct(found[sid])])
+    return rows
+
+
 def render(result: Mapping[str, Any], panel_id: str, commit: str) -> str:
     lines = [
         "# T-0023 step 6: three stress episodes. For the owner: licensed-derived values; don't share.",
@@ -401,6 +497,9 @@ def render(result: Mapping[str, Any], panel_id: str, commit: str) -> str:
             for sid, s in result["sensitivities"].items()
         ],
     )
+    lines += ["", "## Margins", "", MARGINS_NOTE, ""]
+    lines += table(["Effect", "Episode", "Nearest zero", "Value (points)"], margin_rows(result))
+    lines += ["", "## What each sensitivity can test", "", CAN_TEST_NOTE]
     decided = result["decision"]
     lines += ["", "## Decision rule (step 7)", "", f"Row {decided['row']}: {decided['text']}", ""]
     for effect, f in decided["effects"].items():
@@ -449,6 +548,7 @@ def run(
         "code": dict(code),
         "words": WORDS,
         **result,
+        "sensitivity_inputs": sensitivity_inputs(root, e0002, e0001, e0003, history_root, h10_root),
         "report_sha256": hashlib.sha256(report.encode()).hexdigest(),
         "output": out.name,
     }

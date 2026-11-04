@@ -382,6 +382,156 @@ def test_main_exits_two_on_a_stop_and_prints_no_values(workspace, monkeypatch, c
     assert captured.out == "" and "stopped: a month is missing" in captured.err
 
 
+# sensitivity effects, inputs and what each sensitivity can test
+
+
+def varied_panel():
+    shocks = {(i, c): 0.01 * ((i * (c + 3)) % 7 - 3) for i in range(180) for c in range(3)}
+    return make_panel(shocks=shocks)
+
+
+def test_common_fx_and_cash_cannot_change_the_treasury_duration_sign_and_only_scale_it():
+    base_panel = varied_panel()
+    n = base_panel.returns.shape[0]
+    window, months = tool.EPISODES["2008"]
+    zero = tool.episode_measures(base_panel, window, months)["effects"]["treasury_duration"]
+    fx = np.array([0.03 if i % 2 else -0.04 for i in range(n)])
+    cash = np.array([0.0 if i % 3 else 0.05 for i in range(n)])
+    for variant in (
+        common.with_changes(base_panel, s=fx),
+        common.with_changes(base_panel, cash=cash),
+        common.with_changes(base_panel, s=fx, cash=cash),
+    ):
+        got = tool.episode_measures(variant, window, months)["effects"]["treasury_duration"]
+        # by hand: W_FX is the product of the 12 months of (1 + s) in the window
+        kept = [
+            i for i in range(n) if window[0] <= base_panel.months[i] and base_panel.months[i + 1] <= window[1]
+        ]
+        w_fx = float(np.prod(1 + variant.s[kept]))
+        assert w_fx > 0
+        assert got["compounded_return"] == pytest.approx(w_fx * zero["compounded_return"], abs=1e-12)
+        assert tool.sign_of(got["compounded_return"]) == tool.sign_of(zero["compounded_return"]) != 0
+
+
+def test_sensitivity_effects_hold_the_frozen_value_and_each_sensitivity_or_none():
+    frozen = large_effect_panel()
+    flipped = large_effect_panel(cash=0.02)
+    variants = {sid: tool.Variant(frozen) for sid in IDS[:8]}
+    variants["S4"] = tool.Variant(flipped)
+    result = tool.analyse(frozen, variants)
+    cell = result["sensitivity_effects"]["cash_rate_and_currency"]["2008"]["compounded_return"]
+    assert set(cell) == {"frozen", *IDS}
+    assert (
+        cell["frozen"] == result["episodes"]["2008"]["effects"]["cash_rate_and_currency"]["compounded_return"]
+    )
+    assert cell["S1"] == cell["frozen"] and cell["S9"] is None
+    assert (
+        cell["S4"]
+        == tool.episode_measures(flipped, *tool.EPISODES["2008"])["effects"]["cash_rate_and_currency"][
+            "compounded_return"
+        ]
+    )
+    assert set(result["sensitivity_effects"]) == set(tool.base.EFFECTS)
+
+
+def test_the_report_has_margins_and_what_each_sensitivity_can_test():
+    frozen = large_effect_panel()
+    flipped = large_effect_panel(cash=0.012)  # the effect shrinks to about -1 point, nearer zero
+    variants = {sid: tool.Variant(frozen) for sid in IDS[:8]}
+    variants["S4"] = tool.Variant(flipped)
+    result = tool.analyse(frozen, variants)
+    report = tool.render(result, "panel", "abc")
+    assert "## Margins" in report and "## What each sensitivity can test" in report
+    assert tool.CAN_TEST_NOTE in report and "only S1 to S5 are a challenge" in report
+    rows = tool.margin_rows(result)
+    assert len(rows) == 9
+    cash_2008 = next(r for r in rows if r[:2] == ["cash_rate_and_currency", "2008"])
+    assert cash_2008[2] == "S4"  # the flipped cash rate is nearest zero
+    cell = result["sensitivity_effects"]["cash_rate_and_currency"]["2008"]["compounded_return"]
+    assert cash_2008[3] == tool.pct(cell["S4"])
+
+
+def test_sensitivity_inputs_hash_each_file_and_record_a_missing_one_as_null(tmp_path):
+    root, e2, e1, e3, hist, h10 = (tmp_path / n for n in ("t", "e2", "e1", "e3", "h", "h10"))
+    (root / "reference" / "raw").mkdir(parents=True)
+    (root / "reference" / "nav-spy.csv").write_bytes(b"spy")
+    (root / "reference" / "raw" / "rba-cash-rate.html").write_bytes(b"page")
+    (e3 / "raw").mkdir(parents=True)
+    (e3 / "raw" / "rba_f1.csv").write_bytes(b"f1")
+    hist.mkdir()
+    (hist / "firmmcrid.csv").write_bytes(b"hist")
+    (e1 / "raw").mkdir(parents=True)
+    (e1 / "variant-summary.json").write_text(json.dumps({"release": "rel"}))
+    folder = e1 / "store-variant" / "releases" / tool.e1.DATASET_ID / "rel"
+    folder.mkdir(parents=True)
+    (folder / "data.csv").write_bytes(b"v1")
+    (e1 / "raw" / "b.xml").write_bytes(b"BB")
+    (e1 / "raw" / "a.xml").write_bytes(b"AA")
+    (e1 / "raw" / "c.txt").write_bytes(b"ignored")
+    snap = tool.ev.snapshot_dir(e2, tool.panel_tool.SNAPSHOT)
+    snap.mkdir(parents=True)
+    (snap / "manifest.json").write_bytes(b"{}")
+
+    def sha(data):
+        return tool.hashlib.sha256(data).hexdigest()
+
+    got = tool.sensitivity_inputs(root, e2, e1, e3, hist, h10)
+    assert got["reference/nav-spy.csv"] == sha(b"spy")
+    assert got["reference/nav-bil.csv"] is None and got["reference/nav-ief.csv"] is None
+    assert got["reference/raw/rba-cash-rate.html"] == sha(b"page")
+    assert got["reference/manifest.json"] is None and got["H10/FRB_h10_xml.zip"] is None
+    assert got["E-0003/raw/rba_f1.csv"] == sha(b"f1") and got["RBA-F1-history/firmmcrid.csv"] == sha(b"hist")
+    assert got["E-0001/variant-summary.json"] == sha((e1 / "variant-summary.json").read_bytes())
+    assert got["E-0001/variant release data.csv"] == sha(b"v1")
+    assert got["E-0001/raw/*.xml"] == sha(b"a.xml" + b"AA" + b"b.xml" + b"BB")
+    assert got["E-0002/raw/s2/manifest.json"] == sha(b"{}")
+
+
+def test_the_xml_hash_changes_when_one_files_bytes_change(tmp_path):
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    (raw / "a.xml").write_bytes(b"AA")
+    (raw / "b.xml").write_bytes(b"BB")
+    before = tool.xml_sha256(raw)
+    (raw / "b.xml").write_bytes(b"BC")
+    assert tool.xml_sha256(raw) != before
+    assert tool.xml_sha256(tmp_path / "none") is None
+
+
+def test_missing_workspaces_give_null_inputs_and_run_keeps_both_new_keys(workspace, monkeypatch):
+    frozen = large_effect_panel()
+    fake_loader(monkeypatch, frozen)
+    summary = tool.run(
+        workspace,
+        workspace / "e2",
+        workspace / "e1",
+        workspace / "e3",
+        workspace / "h",
+        workspace / "h10",
+        gate=None,
+        code={"commit": "0123456789abcdef"},
+        variants_of=lambda *_: {sid: tool.Variant(frozen) for sid in IDS},
+    )
+    out = workspace / "corroboration" / "step6" / summary["output"]
+    saved = json.loads((out / "summary.json").read_text())
+    assert set(saved["sensitivity_inputs"].values()) == {None}
+    assert "reference/nav-spy.csv" in saved["sensitivity_inputs"]
+    assert saved["sensitivity_effects"]["treasury_duration"]["2008"]["max_drawdown"]["S9"] is not None
+    assert "## Margins" in (out / "report.md").read_text()
+
+
+def test_stdout_still_holds_no_sizes_or_hashes():
+    frozen = large_effect_panel()
+    result = tool.analyse(frozen, {sid: tool.Variant(frozen) for sid in IDS})
+    text = "\n".join(tool.stdout_lines(result))
+    assert "sensitivity_inputs" not in text and "Margins" not in text
+    for line in tool.stdout_lines(result):
+        assert line.startswith(("S", "decision: row ")) or line.endswith(
+            ("robust, +", "robust, -", "robust, 0")
+        )
+    assert "%" not in text
+
+
 def test_a_last_trading_day_within_five_days_of_the_bound_is_covered_and_further_stops():
     months = [date(2021, 12, 31), date(2022, 1, 31), date(2022, 2, 28), date(2022, 3, 28)]
     panel = common.FrozenPanel(months, np.full((3, 4), 0.01), np.full(3, 0.01), np.zeros(3))
