@@ -43,3 +43,5 @@ Outside the repository, in `~/.hio-research/E-0001/`: raw bytes, the manifest, t
 As OD-0157 lists. Also: no change to `src/hio/sources/` capture paths, `src/hio/jobs/s1b1*`, workflows or `infra/`; no new dependency (numpy waits for its own decision).
 
 ## Submission (filled by the implementer)
+
+X-1 merged in `de834d8`. X-2 on branch `feat/t0020-zero-curve`, on invented yields only. X-3 to X-6 not started: the parser waits for the real file's format, because a parser built on an assumed layout failed live in T-0017. No data downloaded.
