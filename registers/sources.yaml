@@ -143,13 +143,21 @@ sources:
     home: https://home.treasury.gov/
     intended_use: [S1 USD cash triangulation (bills), S3 US CMT returns]
     task: T-0002
-    verification: unverified          # no site terms located; 17 U.S.C. §105 presumption only [EXT]. OD-0155 decided retention, V2 and V3 for the par yield curve only; six operations undecided, so the row stays unverified and the gate denies
-    owner_decisions_partial: "OD-0155, par yield curve only: raw retention indefinite, for audit and rebuild (cite Treasury, no implied endorsement); one modest one-off download acceptable, none authorised until the experiment has its own yes; NY Fed collection leaves the public-domain presumption intact. Undecided: calculate, store derived, rebuild, external processing, hio_internal, agent context"
+    verification: unverified          # no site terms located; 17 U.S.C. §105 presumption only [EXT]. the par yield curve has its own record below (us_treasury.par_yield_curve, OD-0155, OD-0156); bills are undecided, so this row stays unverified and the gate denies
     blocked_by: OD-0013
     evidence: [https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics, https://home.treasury.gov/subfooter/site-policies-and-notices]
     research_note: docs/research/T-0002-source-rights-and-timing.md
     timing: "bill quotes obtained by the NY Fed at about 15:30 ET each business day; posting time not stated"
     <<: *unverified
+  - id: us_treasury.par_yield_curve
+    name: "US Treasury daily par yield curve rates (par curve only; bills not included)"
+    parent: us_treasury_rates
+    task: T-0002
+    verification: owner_verified
+    verified_by: OD-0156            # with OD-0155 (retention, V2, V3). Rests on the 17 U.S.C. §105 presumption, not a licence; the owner's own reading of the live pages is unconfirmed (OD-0156)
+    evidence: [https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics, https://home.treasury.gov/subfooter/site-policies-and-notices, docs/research/T-0002-h2-reading-pack.md]
+    raw_retention_duration: indefinite   # for audit and rebuild (OD-0155)
+    rights: {automated_retrieval: "conditional(one modest one-off download with a declared User-Agent, after the duration experiment's own owner yes)", raw_retention: "conditional(cite US Treasury; no implied endorsement)", internal_compute: "conditional(cite US Treasury; no implied endorsement)", derivation: "conditional(cite US Treasury; no implied endorsement)", derived_storage: "conditional(cite US Treasury; no implied endorsement)", post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: "conditional(cite US Treasury; no implied endorsement)", smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: "conditional(cite US Treasury; no implied endorsement)", external_processing: "conditional(cite US Treasury; no implied endorsement)", audit_retention: unknown, attribution_required: "cite US Treasury; no implied endorsement"}
   - id: frb_h10
     name: Federal Reserve Board H.10 foreign exchange rates
     home: https://www.federalreserve.gov/releases/h10/
