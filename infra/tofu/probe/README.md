@@ -29,6 +29,8 @@ so the probe has its own account with a **one-day** immutability period, destroy
   Soft-delete retention is deliberately not enabled, so nothing outlives the period.
 - **Destroy afterwards**, once the policy period has passed for every probe object. Destroying earlier
   fails because the objects are still immutable.
+- **`tofu destroy` alone isn't enough.** Azure refuses to delete a container or account with version-level
+  immutability while it holds blobs, even expired. Delete every blob version first (OD-0155 correction 2).
 
 ## Resources
 
