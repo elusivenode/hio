@@ -196,6 +196,7 @@ def rebuild(ws: Workspace, **kwargs):
         "extract": ws.extract,
         "tool_versions": lambda: {"python": "invented"},
         "now": lambda: NOW,
+        "frozen": None,
     }
     return tool.rebuild(ws.root, ws.e0002, ws.e0003, ws.h10, ws.history, **(options | kwargs))
 
@@ -380,6 +381,23 @@ def test_values_equal_recorded_is_true_only_for_the_runs_own_values_hash(ws):
     other = rebuild(ws, recorded_values="0" * 64, now=lambda: NOW2 + timedelta(seconds=1))
     assert other["checks"]["values_equal_recorded_v1"] is False
     assert other["values_sha256"] == first["values_sha256"]
+
+
+def test_the_default_is_the_frozen_id_so_an_invented_panel_differs(ws):
+    assert tool.FROZEN_PANEL_ID is not None
+    out = tool.rebuild(
+        ws.root,
+        ws.e0002,
+        ws.e0003,
+        ws.h10,
+        ws.history,
+        gate=ws.gate,
+        code=CODE,
+        extract=ws.extract,
+        tool_versions=lambda: {"python": "invented"},
+        now=lambda: NOW,
+    )
+    assert out["checks"]["panel_id_equals_frozen"] is False
 
 
 def test_panel_id_equals_frozen_is_none_true_or_false(ws):
