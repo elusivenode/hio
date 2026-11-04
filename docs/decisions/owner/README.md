@@ -174,6 +174,7 @@ are in operating model §1.1; the template is
 | [OD-0157](OD-0157-authorise-duration-experiment.md) | authorise_work | duration experiment E-0001 / T-0020: pre-registered, local `exploratory` release, UNREFERENCED; download held for the page-reading confirmation | `bde61d7` | recorded |
 | [OD-0158](OD-0158-store-architect-assessment.md) | authorise_work | the architect's strategic assessment stored verbatim in `docs/history/`; advice only, nothing adopted | `09e29e5` | recorded |
 | [OD-0159](OD-0159-authorise-e0002-stage-a.md) | authorise_work | E-0002 Stage A (T-0021) on synthetic data; OD-0139 order amended for tracks 5 and 6; NumPy adopted; a trial may precede base camp, separately decided; vendor drafts extended | `cbab2a8` | recorded |
+| [OD-0160](OD-0160-vendor-assessment.md) | authorise_work | equity data vendor assessment (draft): stop condition applies, no candidate cleared; nothing purchased or retrieved | `6c1699b` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
