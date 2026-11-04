@@ -1,4 +1,54 @@
 # HIO experiment register. Schema: templates/experiment.yaml.
-# No experiments yet. Rules: pre-register before results; never delete failed or abandoned
+# Rules: pre-register before results; never delete failed or abandoned
 # entries; keep the variant count honest (docs/harness/operating-model.md §4).
-[]
+- id: E-0001
+  hypothesis: H-0005
+  status: pre_registered
+  pre_registration:
+    committed_revision: "self: the commit that adds this entry, before any Treasury data was downloaded (OD-0157)"
+    sample:
+      start: "the first date with both 7y and 10y present; expected 1990-01-02 [EXT, unverified]. A later start is stated in the results, never silently taken"
+      end: "the last date with both 7y and 10y present, on or before the download date T"
+      frequency: "consecutive published dates with both tenors"
+      knowledge_mode: "latest; every value reconstructed(T); no as_known_by_market claim"
+      cutoff_rule: "one one-off download at T, at most 40 requests; a later re-download is a new variant"
+    data_handling:
+      missing_tenor: "a date without 7y or 10y is not an observation: the period spans it, and it is counted. Longer than 5 calendar days is flagged; longer than a coupon period refuses that period, and the series is split and reported"
+      missing_knot: "the return stands; that period is counted as uncovered by the sensitivity"
+      duplicate_identical: "one row kept; counted"
+      duplicate_conflicting: "stop: no output until the owner has seen the count"
+      unparseable_or_out_of_range: "stop if any value is non-numeric other than blank or N/A, or outside -5% to 25%"
+      large_moves: "periods with a 10y move above 50 bp are counted and kept, never removed"
+    test: >-
+      Build R_t by spec 0.1.3, with the decomposition and d_t. Report everything for the full sample, for dates up to and
+      after 2021-12-06 (Treasury's par-curve method change [EXT, to be checked at T]) and for the crossing period alone, which
+      stays in the primary sample. A movement there isn't attributed to the method change without evidence.
+    metrics: [periods, excluded_counts_by_reason, gap_counts, residual_max_abs, residual_breaches, d_abs_p50, d_abs_p99, d_abs_max, d_annualised_compounded, coverage, zero_curve_failures, rebuild_byte_identity]
+    bars:
+      implementation:
+        B1: "RA-INV-013, CMT-INV-1 to 6 and ZC-INV-1 to 3 pass on the code that runs"
+        B2: "real data: no CMT-INV-5 breach, residual below 1 bp when |dy| < 25 bp"
+        B3: "real data: ZC-INV-1 holds, and no D_n <= 0, on every covered date"
+        B4: "two runs from the retained bytes are byte-identical"
+        B5: "every parsed row is accounted for: included plus excluded by reason equals parsed; retained bytes match their manifest"
+      approximation:
+        B6: "|d_t| at most 1 bp in at least 99% of covered periods"
+        B7: "max |d_t| at most 5 bp"
+        B8: "|compounded annualised difference| at most 10 bp a year, in the full sample and in each of the two sub-samples"
+      coverage:
+        B9: "the sensitivity covers at least 95% of periods"
+    costs: "n/a (gross, frictionless, explanatory); a stated limitation"
+    decision_rule: >-
+      All bars pass: "construction diagnostics completed; UNREFERENCED", never "factor validated". B1 to B5 failing rejects
+      the implementation until corrected, as a recorded variant. B6 to B8 failing rejects the approximation's adequacy for
+      this purpose. B9 failing leaves B6 to B8 inconclusive. A negative return, or a large drawdown, supports or rejects
+      nothing. Bars aren't changed after results exist; any change is a variant, stated with its reason.
+    not_tested: "traded-return agreement, costs, historical availability, diversification, and the alternative interpolation the spec lists as a sensitivity"
+  variants: []
+  inputs: {releases: [], specs: ["rates.us.cmt_10y.total_return@0.1.3"]}
+  runs: []
+  results: null
+  negative_findings: null
+  outcome: null
+  follow_up: null
+  reviewed_by: null
