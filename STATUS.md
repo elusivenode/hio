@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-04
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0153"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0154"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -25,7 +25,7 @@ datasets owner_verified, OD-0116 c1, OD-0118); **H3/H4 decided** (OD-0119); **H5
 staged** (package on `main`): **B-1 done** (OD-0125 c2): `hnf-prod` holds `rg-hio-tfstate` and `rg-hio-evidence`
 (empty evidence store, writer identity, logs, disabled alert, budget); state in `~/.hio-state/` on the owner's Mac.
 **B-2 ran** (OD-0132), then **re-ran with 7b** (OD-0140, `docs/evidence/b2/rerun-1.md`); the probe account is **held** (OD-0134). **CAPTURE IS LIVE (B-3, OD-0143, 2026-11-04 Sydney):** four files on schedule, exploratory and `schedule_only`; reviewer rule removed, alert on; first runs in `docs/evidence/b3/first-run.md`. **I-5 met** (OD-0149). **The soak starts 2026-11-05 09:45 Sydney** and ends 2026-11-19 (`docs/evidence/b3/soak-1.md`). T-0016, T-0017 and T-0018 accepted. **First real cash rebuild** done and repeatable (`docs/evidence/b3/cash-rebuild-1.md`, `tools/cash_rebuild.py`): no unexplained residual; dispositions await the owner; criterion 3 not established. **C5 undecided:** no longer gates capture; still owed before any final claim.
-**Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **US duration:** spec 0.1.2 proposed (`specs/factors/rates.us.cmt_10y.total_return.yaml`); calculation accepted on invented inputs (T-0019, `src/hio/library/cmt.py`); pricing-basis error unmeasured; real data blocked on the owner's H2 rights reading (`docs/research/T-0002-h2-reading-pack.md`). Base camp, the roadmap and the plan are still proposed, patched to that order (OD-0147). `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-11-03-capture-gate-factor-first.md` (newer state is in the ODs above).
+**Working order: factor-first** (`docs/decisions/factor-first-sequencing-proposal.md`, OD-0139; each track keeps its own yes). **US duration:** spec 0.1.2 proposed (`specs/factors/rates.us.cmt_10y.total_return.yaml`); calculation accepted on invented inputs (T-0019, `src/hio/library/cmt.py`); pricing-basis error unmeasured; real data blocked on the owner's H2 rights reading (`docs/research/T-0002-h2-reading-pack.md`). Base camp, the roadmap and the plan are still proposed, patched to that order (OD-0147). `main` is protected (PRs only; OD-0118). Session handoff: `handoffs/s1b1/2026-11-04-go-live-and-first-factor-code.md`.
 **Harness-0.9** (a knowledge layer for Claude and Codex) has its direction adopted (OD-0070); its
 **Phase A is approved and applied as harness-0.9a** (OD-0091). **Distil 1 accepted** (46 Settled findings,
 OD-0093); **distil 2 accepted** (39 lines, OD-0135). Phase B work on H6 then H11 is authorised (OD-0092); activation of either needs Codex review and approval. **hiomux** is a tmux
