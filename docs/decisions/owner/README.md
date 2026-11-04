@@ -179,6 +179,7 @@ are in operating model §1.1; the template is
 | [OD-0162](OD-0162-eodhd-evaluation.md) | authorise_work | one-month EODHD Personal evaluation (T-0022), owner pays; rights decision owed before retrieval; agents see no licensed values | `9b39922` | recorded |
 | [OD-0163](OD-0163-eodhd-rights-zero-curve-variant.md) | authorise_work | `eodhd.personal_evaluation` owner_verified for the evaluation only; zero-curve variant authorised, UNREFERENCED, no promotion | `bae70d9` | recorded |
 | [OD-0164](OD-0164-eodhd-key-vault.md) | authorise_work | one small key vault in `hnf-prod` for the EODHD key; credential only, no data | `183d6d3` | recorded |
+| [OD-0165](OD-0165-h10-reading-pack.md) | authorise_work | H.10 reading pack (row H3), draft; nothing downloaded or decided | `4f9929b` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
