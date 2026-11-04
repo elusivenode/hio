@@ -25,3 +25,5 @@ related: {adrs: [], tasks: [T-0022], findings: [F-REVIEW-2026-11-04-t0022-1-3, F
 Accepting T-0022; closing a finding before verification; changing the receipt procedure generally.
 
 ## Corrections (append-only)
+
+1. **2026-11-04:** item 2 says the same block was added to the verification's plan. It wasn't needed: that plan already had front matter, so it is byte-identical, and the two hashes in item 2 are equal. The exception is used only for the review's test plan.
