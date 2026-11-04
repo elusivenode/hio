@@ -34,7 +34,7 @@ For `us_treasury_rates`, par yield curve only. Recommendations are from `docs/re
 | Operation | Recommended | Condition |
 |---|---|---|
 | Retrieve, one-off | your judgement | modest, declared User-Agent |
-| Retain raw | allow | cite Treasury; no implied endorsement |
+| Retain raw | allow | cite Treasury; no implied endorsement. **You must also state a duration:** proposed "indefinite, for audit and rebuild", as for the five capture datasets (`docs/research/T-0002-owner-verification-matrix.md`) |
 | Calculate | allow | same |
 | Store derived | allow | same |
 | Rebuild and reconstruct | allow | same |

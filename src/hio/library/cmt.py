@@ -4,8 +4,9 @@ For consecutive observation dates t−1 and t:
   strike at t−1:  a 10-year bond, coupon = y(t−1, 10y), semi-annual, dirty price 100
   value at t:     P_dirty(t) = Σ CF_j / (1 + y/2)^(w + j), at y = y(t, 10y − τ), between the 7y and 10y points
   return:         R_t = (P_dirty(t) + C) / P_dirty(t−1) − 1   (RA-INV-013; C is coupon cash in the period)
-The decomposition is reported, and is not the definition. Pure compute on the numbers it is given: no source,
-no storage. Nothing is forward-filled, and a missing tenor refuses.
+Coupon dates are strike + 6k months, day clamped (CMT-INV-6). The decomposition is reported, and is not the
+definition; its residual tests the Taylor terms, not the error from flat-yield pricing. Pure compute on the
+numbers it is given: no source, no storage. Nothing is forward-filled, and a missing tenor refuses.
 """
 
 from __future__ import annotations

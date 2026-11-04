@@ -14,6 +14,7 @@ from hio.library.cmt import (
 from hio.library.cmt import (
     MissingTenor,
     PeriodTooLong,
+    _add_months,
     _duration_and_convexity,
     aged_yield,
     chain,
@@ -84,6 +85,23 @@ def test_a_period_ending_on_a_coupon_date_pays_it_and_wealth_is_kept():
     assert p.coupon_cash == D(2) and p.long_gap
     assert rel(p.dirty, D(100)) < D("1e-12")  # still flat at the coupon: ex-coupon back at par
     assert abs(p.r - D("0.02")) < D("1e-12")
+
+
+@pytest.mark.parametrize(
+    ("strike", "before", "coupon_day", "maturity"),
+    [
+        (date(2024, 2, 29), date(2024, 8, 28), date(2024, 8, 29), date(2034, 2, 28)),  # leap day
+        (date(2026, 8, 31), date(2027, 2, 27), date(2027, 2, 28), date(2036, 8, 31)),  # clamped month-end
+    ],
+)
+def test_the_coupon_schedule_is_anchored_to_the_strike(strike, before, coupon_day, maturity):
+    flat = Obs(strike, D(4), D(4))
+    dirty, cash = dirty_and_coupon(strike, strike, D(4), D(4))
+    assert abs(dirty - 100) < D("1e-10") and cash == 0
+    assert cmt_period(flat, Obs(before, D(4), D(4))).coupon_cash == 0
+    paid = cmt_period(flat, Obs(coupon_day, D(4), D(4)))
+    assert paid.coupon_cash == D(2) and abs(paid.dirty - 100) < D("1e-10")
+    assert _add_months(strike, 120) == maturity
 
 
 def test_a_gap_longer_than_a_coupon_period_refuses():
