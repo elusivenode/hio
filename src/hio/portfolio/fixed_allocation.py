@@ -157,13 +157,15 @@ def _period_key(day: date, frequency: str) -> tuple[int, int]:
     raise ValueError(f"unknown frequency {frequency}")
 
 
-def period_ends(dates: Sequence[date], frequency: str) -> list[int]:
-    """Indices of the last date of each calendar period, without the final period, which may be partial."""
-    return [
+def period_ends(dates: Sequence[date], frequency: str, *, include_final: bool = False) -> list[int]:
+    """Indices of the last date of each calendar period. The final period is left out, as it may be partial,
+    unless the caller knows the span ends on a complete period (a named window, E-0002 V3)."""
+    ends = [
         i
         for i, (a, b) in enumerate(pairwise(dates))
         if _period_key(a, frequency) != _period_key(b, frequency)
     ]
+    return [*ends, len(dates) - 1] if include_final else ends
 
 
 def wealth_path(panel: Panel, weights: Mapping[str, float]) -> WealthPath:
@@ -191,9 +193,11 @@ def reconcile(panel: Panel, weights: Mapping[str, float], path: WealthPath) -> f
     return difference
 
 
-def period_returns(dates: Sequence[date], levels: Floats, frequency: str) -> Floats:
+def period_returns(
+    dates: Sequence[date], levels: Floats, frequency: str, *, include_final: bool = False
+) -> Floats:
     """Simple returns of a level series, or of each column of one, between calendar-period ends."""
-    ends = period_ends(dates, frequency)
+    ends = period_ends(dates, frequency, include_final=include_final)
     if len(ends) < 2:
         raise ValueError(f"fewer than two complete {frequency} marks")
     marks = levels[ends]

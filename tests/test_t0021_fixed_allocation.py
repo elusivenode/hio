@@ -181,6 +181,16 @@ def test_period_ends_drop_the_final_partial_period():
     assert period_ends(dates, "monthly") == [0, 2]
 
 
+def test_a_closed_span_keeps_its_last_complete_month():
+    dates = [date(2019, 12, 31), date(2020, 1, 31), date(2020, 2, 28), date(2020, 3, 31)]
+    levels = np.array([1.0, 1.1, 1.1, 0.77])
+    assert period_ends(dates, "monthly") == [0, 1, 2]
+    assert period_ends(dates, "monthly", include_final=True) == [0, 1, 2, 3]
+    returned = period_returns(dates, levels, "monthly", include_final=True)
+    assert returned.tolist() == pytest.approx([0.1, 0.0, -0.3])
+    assert period_returns(dates, levels, "monthly").tolist() == pytest.approx([0.1, 0.0])
+
+
 def test_weekly_ends_cross_a_year_end_by_iso_week():
     dates = [date(2025, 12, 29), date(2026, 1, 2), date(2026, 1, 5)]
     assert period_ends(dates, "weekly") == [1]

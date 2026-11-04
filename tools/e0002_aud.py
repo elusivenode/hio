@@ -196,6 +196,38 @@ def compare_fx_sources(
     return {"common_dates": len(gaps), **counts, "weekend_rows": weekend, "within_1pct_on_95pct": ok}
 
 
+def reconcile_reports(usd: Mapping[str, Any], aud: Mapping[str, Any]) -> dict[str, dict[str, bool | None]]:
+    """The USD report against the AUD report's USD column, by window (V3). A check not made is None, not True:
+    wealth is compared only where the spans match, and an availability mismatch is a failure."""
+    out: dict[str, dict[str, bool | None]] = {}
+    for name in sorted(usd["windows"].keys() | aud["windows"].keys()):
+        window, other = usd["windows"].get(name, {}), aud["windows"].get(name, {})
+        here, there = bool(window.get("available")), bool(other.get("available"))
+        row: dict[str, bool | None] = {"availability_matches": here == there}
+        if not (here and there):
+            row |= dict.fromkeys(
+                ("monthly_volatility_equal", "month_end_drawdown_at_most_daily", "wealth_equal")
+            )
+            out[name] = row
+            continue
+        spans_match = name in {"2008", "q1_2020", "2022"}
+        row |= {
+            "monthly_volatility_equal": True,
+            "month_end_drawdown_at_most_daily": True,
+            "wealth_equal": True if spans_match else None,
+        }
+        for allocation, daily in window["allocations"].items():
+            monthly = other["allocations"][allocation]["usd"]
+            row["monthly_volatility_equal"] &= abs(daily["volatility_monthly"] - monthly["volatility"]) < 1e-9
+            row["month_end_drawdown_at_most_daily"] &= (
+                monthly["max_drawdown"] <= daily["max_drawdown"] + 1e-12
+            )
+            if spans_match:
+                row["wealth_equal"] &= abs(daily["final_wealth"] - monthly["final_wealth"]) < 1e-9
+        out[name] = row
+    return out
+
+
 def render(results: Mapping[str, Any]) -> str:
     lines = [
         "# E-0002 AUD variant: for the owner only. Licensed-derived: don't commit, share or paste into AI.",
@@ -284,6 +316,9 @@ def run(root: Path, h10_root: Path, snapshot: str, *, gate: RightsGate) -> dict[
         "windows_available": {k: v["available"] for k, v in results["windows"].items()},
         "eodhd_fx_against_h10": fx,
     }
+    usd_values = reports / "owner-values.json"
+    if usd_values.is_file():
+        out["reports_reconciled"] = reconcile_reports(json.loads(usd_values.read_text()), results)
     ev.private_write(root / "summary-aud.json", (json.dumps(out, indent=1, sort_keys=True) + "\n").encode())
     return out
 

@@ -86,7 +86,7 @@ ALLOCATIONS = {
 WINDOWS = {
     "full": (date.min, date.max),
     "before_2020": (date.min, date(2019, 12, 31)),
-    "from_2020": (date(2020, 1, 1), date.max),
+    "from_2020": (date(2019, 12, 31), date.max),
     "2008": (date(2007, 12, 31), date(2008, 12, 31)),
     "q1_2020": (date(2019, 12, 31), date(2020, 3, 31)),
     "2022": (date(2021, 12, 31), date(2022, 12, 31)),
@@ -564,7 +564,9 @@ def write_releases(
     return hashes, cutoff
 
 
-def describe(panel: fa.Panel, weights: Mapping[str, float]) -> dict[str, Any]:
+def describe(panel: fa.Panel, weights: Mapping[str, float], *, closed: bool = False) -> dict[str, Any]:
+    """`closed`: the span ends on a window's stated month end, so its last month counts (V3). A
+    final week is left out either way, because a window's end date rarely ends a week."""
     path = fa.wealth_path(panel, weights)
     fa.reconcile(panel, weights, path)
     dd = fa.drawdown(path.dates, path.wealth)
@@ -582,42 +584,52 @@ def describe(panel: fa.Panel, weights: Mapping[str, float]) -> dict[str, Any]:
     }
     for frequency in ("monthly", "weekly"):
         try:
-            returns = fa.period_returns(path.dates, path.wealth, frequency)
+            final = closed and frequency == "monthly"
+            returns = fa.period_returns(path.dates, path.wealth, frequency, include_final=final)
             out[f"volatility_{frequency}"] = fa.annualised_volatility(returns, frequency)
         except ValueError:
             out[f"volatility_{frequency}"] = None
     return out
 
 
-def dependence(panel: fa.Panel) -> dict[str, Any]:
+def dependence(panel: fa.Panel, *, closed: bool = False) -> dict[str, Any]:
     levels = fa.sleeve_levels(panel)
     out = {"sleeves": list(panel.sleeves)}
     for frequency in ("monthly", "weekly"):
         try:
-            cov, corr = fa.covariance(fa.period_returns(panel.dates, levels, frequency))
+            final = closed and frequency == "monthly"
+            returns = fa.period_returns(panel.dates, levels, frequency, include_final=final)
+            cov, corr = fa.covariance(returns)
             out[frequency] = {"covariance": cov.tolist(), "correlation": corr.tolist()}
         except ValueError:
             out[frequency] = None
     return out
 
 
-def compare(panel: fa.Panel) -> dict[str, Any]:
-    results: dict[str, Any] = {"windows": {}}
+def compare_windows_only(panel: fa.Panel) -> dict[str, Any]:
+    windows: dict[str, Any] = {}
     for name, (start, end) in WINDOWS.items():
         low, high = max(start, panel.dates[0]), min(end, panel.dates[-1])
         if start != date.min and start < panel.dates[0]:
-            results["windows"][name] = {"available": False}
+            windows[name] = {"available": False}
             continue
         try:
             part = fa.window(panel, low, high)
         except fa.AlignmentError:
-            results["windows"][name] = {"available": False}
+            windows[name] = {"available": False}
             continue
-        results["windows"][name] = {
+        # Its last month counts only if the data reaches the window's stated end; otherwise it may be partial.
+        closed = end != date.max and panel.dates[-1] >= end
+        windows[name] = {
             "available": True,
-            "allocations": {a: describe(part, w) for a, w in ALLOCATIONS.items()},
-            "dependence": dependence(part),
+            "allocations": {a: describe(part, w, closed=closed) for a, w in ALLOCATIONS.items()},
+            "dependence": dependence(part, closed=closed),
         }
+    return windows
+
+
+def compare(panel: fa.Panel) -> dict[str, Any]:
+    results: dict[str, Any] = {"windows": compare_windows_only(panel)}
     monthly = fa.period_returns(panel.dates, fa.sleeve_levels(panel), "monthly")
     weights = {a: np.array([w[s] for s in panel.sleeves]) for a, w in ALLOCATIONS.items()}
     results["bootstrap_treasury_minus_cash"] = {}

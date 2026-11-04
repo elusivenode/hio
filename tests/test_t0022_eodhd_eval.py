@@ -1,10 +1,12 @@
 """T-0022: the EODHD evaluation tool, on invented JSON only. Nothing here touches the network or a key."""
 
 import importlib.util
+import itertools
 import json
 import sys
 from datetime import date, timedelta
 from decimal import Decimal as D
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
@@ -512,6 +514,52 @@ def test_end_to_end_the_reader_and_comparison_run_on_invented_data(tmp_path):
     values = json.loads((tmp_path / "reports" / "owner-values.json").read_text())
     assert set(values["windows"]["full"]["allocations"]) == set(tool.ALLOCATIONS)
     assert set(values["bootstrap_treasury_minus_cash"]) == {"12", "6", "24"}
+
+
+def test_a_named_window_counts_its_last_month_and_the_open_window_does_not(tmp_path):
+    full_run(tmp_path)
+    values = json.loads((tmp_path / "reports" / "owner-values.json").read_text())
+    days = trading_days(date(2006, 1, 2), 5400)
+    panel = tool.fa.align(
+        {
+            s: [tool.fa.Interval(a, b, D("0")) for a, b in itertools.pairwise(days)]
+            for s in ("equity", "treasury", "cash")
+        }
+    )
+    part = tool.fa.window(panel, date(2019, 12, 31), date(2020, 3, 31))
+    assert tool.describe(part, tool.ALLOCATIONS["100_equity"], closed=True)["volatility_monthly"] == 0
+    assert values["windows"]["q1_2020"]["available"] is True
+    assert tool.WINDOWS["from_2020"][0] == date(2019, 12, 31)
+
+
+def _panel(days, returns):
+    series = {
+        name: [
+            tool.fa.Interval(a, b, D(str(r if name == "equity" else 0)))
+            for (a, b), r in zip(pairwise(days), returns, strict=True)
+        ]
+        for name in ("equity", "treasury", "cash")
+    }
+    return tool.fa.align(series)
+
+
+def test_a_truncated_named_window_leaves_out_its_partial_last_month():
+    # Reviewer's case: flat to the end of May 2008, then a 50% rise to 16 June, with the data stopping there.
+    days = [date(2007, 12, 31), date(2008, 1, 31), date(2008, 2, 29), date(2008, 3, 31)]
+    days += [date(2008, 4, 30), date(2008, 5, 30), date(2008, 6, 16)]
+    panel = _panel(days, [0, 0, 0, 0, 0, 0.5])
+    window = tool.compare_windows_only(panel)["2008"]
+    equity = window["allocations"]["100_equity"]
+    assert equity["volatility_monthly"] == 0
+    a = window["dependence"]["sleeves"].index("equity")
+    assert window["dependence"]["monthly"]["covariance"][a][a] == 0
+
+
+def test_a_window_the_data_reaches_counts_its_last_month():
+    days = [date(2019, 12, 31), date(2020, 1, 31), date(2020, 2, 28), date(2020, 3, 31), date(2020, 4, 30)]
+    panel = _panel(days, [0, 0, -0.3, 0])
+    equity = tool.compare_windows_only(panel)["q1_2020"]["allocations"]["100_equity"]
+    assert equity["volatility_monthly"] > 0
 
 
 def test_the_summary_for_agents_holds_no_value(tmp_path):

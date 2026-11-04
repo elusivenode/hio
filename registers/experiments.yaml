@@ -91,6 +91,7 @@
     not_tested: "AUD translation, costs, tax, other funds, tail dependence, predictive use"
   variants:
     - {id: V1, change: "qualification corrected to its pre-registered meaning: quote currency checked, every period in Q3's denominator; run on snapshot s2", reason: "REVIEW-2026-11-04-t0022-1 F-1, F-2; allocations, windows and bootstrap unchanged", revision: 185c33a}
+    - {id: V3, change: "correction: a named window's monthly volatility and dependence now count its last complete month, which V0 and V1 left out; the from-2020 window starts at 2019-12-31 in both reports. Weekly figures still leave out a final week. A last month counts only if the data reaches the window's stated end (F-VERIFY-2026-11-04-e0002-v3-1); the reconciliation fails on an availability mismatch and marks a check not made as null (-2)", reason: "found comparing the USD and AUD reports at the owner's question; earlier monthly volatility for before_2020, 2008, q1_2020 and 2022 must not be relied on", revision: "the commit adding this entry"}
     - {id: V2, change: "AUD variant: the three allocations, unhedged under RA 4.1, monthly only, on H.10 AUD/USD noon New York rates; a rate up to 5 days old is used and counted, older stops; compounded asset, currency and cross contributions; the same windows, seed and blocks. EODHD's AUD/USD compared with H.10: passes if within 1% on at least 95% of common dates, and can flag but not validate. Declared before any AUD result", reason: "OD-0167", revision: "the commit adding tools/e0002_aud.py"}
   inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
   runs: ["14e8e1a, snapshot s1", "185c33a, snapshot s2, docs/evidence/e0002/assessment-1.md", "475173b, snapshot s2 and V2"]
@@ -98,4 +99,42 @@
   negative_findings: "F-1: BGBL 2026-07-01 distribution record differs from the issuer's"
   outcome: null
   follow_up: "a second snapshot, and independent checks of the sleeves"
+  reviewed_by: null
+- id: E-0003
+  hypothesis: H-0007
+  status: complete
+  pre_registration:
+    committed_revision: "self: the commit that adds this entry, before retained RBA data was read for it (OD-0170)"
+    sample:
+      start: "the first month end on or after the first Cash Rate TRI level, expected 2011-01-31; the same for all three allocations"
+      end: "the last complete month end in E-0002's snapshot s2; expected 2026-10-30"
+      frequency: monthly
+      knowledge_mode: "latest; reconstructed(T); no as_known_by_market claim"
+      cutoff_rule: "the newest retained F1 receipt, and snapshot s2"
+    cash_accrual: "the RBA Cash Rate TRI (FIRMMCTRI), level to level at the latest level within 5 days on or before each month end. HIO accrues nothing itself. TRI labels are publication dates, so a month's boundary can differ by a day: a limitation"
+    fx_translation: "RA 4.1, s = q(t-1)/q(t) - 1 for H.10 USD per AUD, noon New York, the latest rate within 5 days; equity, bills and Treasuries unhedged; AUD cash not translated"
+    return_conventions: "market-price total return under RA 3.1 and 5 from E-0002 snapshot s2; simple returns compounded; no trading costs or tax"
+    rebalance: "to target at every month end; fractional holdings"
+    allocations: "60% SPY in every case, with 40% in AUD cash, USD bills (BIL) or US Treasuries (IEF)"
+    primary_comparisons:
+      cash_rate_and_currency: "USD bills minus AUD cash: the combined effect of the rate gap and the currency. The compounded split into rate gap, currency and cross is labelled descriptive"
+      treasury_duration: "US Treasuries minus USD bills, both unhedged: the incremental duration effect, with vehicle basis included"
+      total: "US Treasuries minus AUD cash"
+    windows: "full; before and from 2019-12-31; Q1 2020; 2022. No period is spliced out"
+    test: "paired joint block bootstrap of aligned monthly constituent returns, rebuilding each path with monthly rebalancing: 10,000 replications, seed 20260002, blocks 12, 6 and 24 months; 2.5th to 97.5th percentile"
+    metrics: [compounded_wealth, annualised_return, annualised_volatility, max_drawdown, recovery_date, longest_underwater_days, correlations]
+    costs: "fund fees in market prices; no trading costs or tax"
+    decision_rule: >-
+      Descriptive. An interval spanning zero means the evidence doesn't distinguish that pair on that metric. Earlier AUD cash history is indicated
+      if the cash-rate and currency effect moves maximum drawdown by 2 percentage points or more in the full window, Q1 2020 or 2022: that is a
+      prompt for the owner's own rights decision, and establishes nothing about 2008 itself.
+    limitations: "no 2008, the period of most interest; about 15 years, so about five non-overlapping three-year periods, and few stress episodes; one rate regime change dominates; month-end drawdowns; BIL isn't AUD cash and SPY, IEF and BIL have no independent check; EODHD's price source is unresolved; TRI differs from a deposit return"
+    not_tested: "hedged returns, costs, tax, AUD assets, any period before 2011"
+  variants: []
+  inputs: {releases: [], specs: ["equity.us.spy.market_total_return@0.1.0", "rates.us.ief.market_total_return@0.1.0", "cash.us.bil.market_total_return@0.1.0"]}
+  runs: ["docs/evidence/e0003/result-1.md"]
+  results: {estimates: "values held locally for the owner; agent use and quotation are denied", uncertainty: "paired block bootstrap, held locally", diagnostics: "volatility distinguished for cash rate and currency and for total; all other intervals span zero"}
+  negative_findings: "the Treasury duration effect isn't distinguished on any metric in this sample"
+  outcome: inconclusive
+  follow_up: "earlier AUD cash history indicated by the pre-registered test; the owner's rights decision"
   reviewed_by: null

@@ -184,6 +184,7 @@ are in operating model §1.1; the template is
 | [OD-0167](OD-0167-history-verify-aud-variant.md) | authorise_work | bound stays in branch history; VERIFY-2026-11-04-t0022-1-1 assigned; AUD variant of E-0002 on H.10 authorised | `13859ca` | recorded |
 | [OD-0168](OD-0168-verify-2-receipt-exception.md) | authorise_work | VERIFY-2026-11-04-t0022-1-2 assigned (F-3, F-4); front matter on Codex's T-0022 plans accepted as a receipt exception | `0df537d` | recorded |
 | [OD-0169](OD-0169-waive-f4-verification.md) | waive | further verification of F-REVIEW-2026-11-04-t0022-1-4 waived; fix at `75c67a4` accepted; T-0022 not accepted | `75c67a4` | recorded |
+| [OD-0170](OD-0170-e0003-aud-cash.md) | authorise_work | E-0003 AUD cash comparator from 2011, retained RBA data; E-0002 V3 correction verified first | `1c05d47` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
