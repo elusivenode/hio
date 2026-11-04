@@ -31,3 +31,5 @@ The owner read the live pages and answered yes to all four questions in `docs/re
 Extending E-0003, which needs its own yes and pre-registration; third-party columns; quotation in documents, including this repository; any consumer release; scheduled capture; other RBA tables.
 
 ## Corrections (append-only)
+
+1. **2026-11-04: downloaded once, and it qualifies.** One request, sha256 `e5c18581e30081309a50dc8dce87f1ef04095538958b6e95e59f18a7868884dc`, retained in `~/.hio-research/RBA-F1-history/`. The overnight series is **Interbank Overnight Cash Rate, `FIRMMCRID`, source RBA**, the same series id as the current F1's AONIA. The file also holds AFMA and Tullett Prebon columns, which stay as sealed bytes and are never used. Which rows are used is for E-0003's extension, not yet authorised.
