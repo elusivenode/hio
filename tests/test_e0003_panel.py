@@ -493,6 +493,12 @@ def test_main_hides_the_message_of_any_other_error(ws, monkeypatch, capsys):
 
 
 def test_main_over_a_real_rebuild_prints_hashes_and_classes_but_no_panel_value(ws, monkeypatch, capsys):
+    for name in (
+        "CI",
+        "GITHUB_ACTIONS",
+        "AZURE_HTTP_USER_AGENT",
+    ):  # a CI host is refused by the rights record
+        monkeypatch.delenv(name, raising=False)
     original = tool.rebuild
 
     def injected(*args, **kwargs):
