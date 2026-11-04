@@ -306,6 +306,48 @@ def test_snapshot_changes_are_counted(tmp_path):
     assert changes["SPY.US"]["closes_changed"] == 0
 
 
+def test_a_factor_style_difference_is_explained_and_counted():
+    # P 100 to 90 with 2 paid: reinvested TR is -8.00%; a factor adjustment gives 90 / 98 - 1, about -8.16%.
+    adjusted = [D("98"), D("90")]
+    s = tool.analyse("X", "USD", eod(100, 90, adjusted=adjusted), [div(DAYS[1], 2)], [])
+    counts = s.profile["counts"]
+    assert counts["internal_differences_on_action_dates"] == 1
+    assert counts["internal_differences_explained_by_factor_formula"] == 1
+    assert s.periods[0].total_return == D("-0.08")
+
+
+def test_a_difference_off_an_action_date_is_not_explained():
+    s = tool.analyse("X", "USD", eod(100, 100, adjusted=[100, 101]), [], [])
+    assert s.profile["counts"]["internal_differences_off_action_dates"] == 1
+    assert not s.profile["counts"]["internal_differences_explained_by_factor_formula"]
+
+
+def write_reference(root, symbol, rows):
+    (root / "reference").mkdir(exist_ok=True)
+    lines = ["ex_date,amount", *rows]
+    (root / "reference" / f"{symbol}.csv").write_text("\n".join(lines) + "\n")
+
+
+def test_the_reference_check_counts_each_outcome(tmp_path):
+    write_reference(tmp_path, "X", ["2020-01-07,1.00", "2020-01-08,2.00", "2020-01-09,3.00"])
+    vendor = [
+        {"date": "2020-01-07", "unadjustedValue": D("1.00")},
+        {"date": "2020-01-08", "unadjustedValue": D("2.50")},
+        {"date": "2020-01-10", "unadjustedValue": D("4.00")},
+    ]
+    assert tool.check_reference(tmp_path, "X", vendor) == {
+        "issuer_rows": 3,
+        "matched": 1,
+        "amount_differs": 1,
+        "missing_from_vendor": 1,
+        "only_in_vendor": 1,
+    }
+
+
+def test_no_reference_file_is_not_a_pass(tmp_path):
+    assert tool.check_reference(tmp_path, "X", []) is None
+
+
 # --- end to end, on invented data
 
 
@@ -320,7 +362,7 @@ def test_end_to_end_the_reader_and_comparison_run_on_invented_data(tmp_path):
     assert summary["comparison_ran"] is True
     assert set(summary["releases"]) == {"equity", "treasury", "cash"}
     assert summary["windows_available"]["2008"] is True
-    assert "not read" in summary["independent_reference"]
+    assert summary["independent_reference"]["SPY.US"].startswith("not read")
     assert (tmp_path / "reports" / "owner-report.md").read_text().startswith("# E-0002: for the owner only")
     values = json.loads((tmp_path / "reports" / "owner-values.json").read_text())
     assert set(values["windows"]["full"]["allocations"]) == set(tool.ALLOCATIONS)

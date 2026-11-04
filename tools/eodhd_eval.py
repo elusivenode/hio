@@ -10,6 +10,7 @@ refuses. Qualification says nothing about consumer use, and no series here is a 
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -356,15 +357,57 @@ def analyse(
     within = sum(1 for g in compared if g <= BP)
     counts["internal_periods_compared"] = len(compared)
     counts["internal_periods_within_1bp"] = within
+    # Which periods differ, and whether a factor-style adjustment explains them. A diagnostic only: it
+    # compares EODHD with itself and changes no return. HIO's TR reinvests at the ex-date close (RA 3.1).
+    for (a, b), period in zip(pairwise(bars), periods, strict=True):
+        if period.end not in adjusted or abs(adjusted[period.end] - period.total_return) <= BP:
+            continue
+        key = "on_action_dates" if b.distribution or b.split_factor != 1 else "off_action_dates"
+        counts[f"internal_differences_{key}"] += 1
+        denominator = CTX.subtract(a.close, CTX.multiply(b.split_factor, b.distribution))
+        if denominator > 0:
+            factor_style = CTX.subtract(
+                CTX.divide(CTX.multiply(b.split_factor, b.close), denominator), Decimal(1)
+            )
+            counts["internal_differences_explained_by_factor_formula"] += int(
+                abs(adjusted[period.end] - factor_style) <= BP
+            )
     internal_ok = bool(compared) and Decimal(within) / Decimal(len(compared)) >= Decimal("0.99")
+    by_year = Counter(str(record["date"])[:4] for record in dividends)
     return Series(
         symbol,
         periods,
         adjusted,
         days,
-        {"counts": dict(counts), "first": days[0].isoformat(), "last": days[-1].isoformat()},
+        {
+            "counts": dict(counts),
+            "first": days[0].isoformat(),
+            "last": days[-1].isoformat(),
+            "distributions_by_year": dict(sorted(by_year.items())),
+        },
         {"Q1": True, "Q2": actions_ok, "Q3": internal_ok},
     )
+
+
+def check_reference(root: Path, symbol: str, dividends: Sequence[Mapping[str, Any]]) -> dict[str, int] | None:
+    """Q5: the issuer's distributions, read by hand into reference/SYMBOL.csv, against the vendor's, as
+    counts. A reference covering a shorter span counts the rest as extra, so read the counts with it."""
+    path = root / "reference" / f"{symbol}.csv"
+    if not path.is_file():
+        return None
+    issuer = {row["ex_date"]: Decimal(row["amount"]) for row in csv.DictReader(path.open())}
+    vendor = {str(r["date"]): r.get("unadjustedValue") for r in dividends}
+    both = issuer.keys() & vendor.keys()
+    differs = sum(
+        1 for d in both if vendor[d] is None or abs(Decimal(vendor[d]) - issuer[d]) > Decimal("0.000001")
+    )
+    return {
+        "issuer_rows": len(issuer),
+        "matched": len(both) - differs,
+        "amount_differs": differs,
+        "missing_from_vendor": len(issuer.keys() - vendor.keys()),
+        "only_in_vendor": len(vendor.keys() - issuer.keys()),
+    }
 
 
 def compare_snapshots(
@@ -605,7 +648,10 @@ def run(
         "instruments": {s: {"qualified": v.qualified, **v.profile} for s, v in series.items()},
         "forex": {"symbol": FOREX, "rows": len(fx_rows)},
         "comparison_ran": gate_ok,
-        "independent_reference": "not read: no independent check is claimed by this run",
+    }
+    references = {s: check_reference(root, s, _read(root, manifest, s, "div")) for s in ETFS}
+    summary["independent_reference"] = {
+        s: r if r else "not read: no independent check" for s, r in references.items()
     }
     if compare_to:
         summary["snapshot_changes"] = compare_snapshots(root, load_snapshot(root, compare_to), manifest)
