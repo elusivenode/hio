@@ -172,6 +172,7 @@ are in operating model §1.1; the template is
 | [OD-0155](OD-0155-h2-partial-vendor-probe-architect.md) | authorise_work | "yes to all": H2 retention, V2, V3 (par curve; six operations undecided, row unverified); vendor questions may be sent (by the owner); destroy `rg-hio-probe` from 06:36:50Z; architect budget 120,000; performance review drafted | `354c446` | recorded |
 | [OD-0156](OD-0156-h2-six-operations.md) | authorise_work | six remaining H2 operations allowed; `us_treasury.par_yield_curve` owner_verified, every condition unsatisfied so the gate still refuses; no download, no experiment | `2e1ded8` | recorded |
 | [OD-0157](OD-0157-authorise-duration-experiment.md) | authorise_work | duration experiment E-0001 / T-0020: pre-registered, local `exploratory` release, UNREFERENCED; download held for the page-reading confirmation | `bde61d7` | recorded |
+| [OD-0158](OD-0158-store-architect-assessment.md) | authorise_work | the architect's strategic assessment stored verbatim in `docs/history/`; advice only, nothing adopted | `09e29e5` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

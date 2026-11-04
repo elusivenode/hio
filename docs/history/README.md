@@ -92,6 +92,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-28-owner-adopt-harness-0.9-disposition.md` | the owner's adoption and adjudication, verbatim | authority for OD-0070 | — |
 | `2026-10-28-owner-documentation-merge-and-handoff.md` | the owner's "yes, do the documentation merge and handoff", with the proposal it answers | authority for OD-0071 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
+| `2026-11-04-architect-strategic-assessment.md` | the solution architect's strategic assessment for the owner, byte-identical to consultation `20261104T124411-ask-c902` (OD-0158) | historical; advice only, nothing adopted | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
 committed here, and the decisions it makes become ADRs. Directives no longer live only in
