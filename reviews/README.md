@@ -75,6 +75,7 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
+| REVIEW-2026-11-04-t0022-1 | T-0022 EODHD personal evaluation, focused code and claims review | `9b399221684defd643c4d68fbb42b42e80b80b4d..6f3b1e006913caa269d41cf6db3f9f3bfcf1c8be` (base from task card; assignment omits it) | Codex, assigned by OD-0162 corrections 1–2 | **NOT READY** | [record](records/REVIEW-2026-11-04-t0022-1.md) |
 | REVIEW-2026-10-29-t0014-1 | T-0014 base-camp completion build, P-1 through P-4 | `651eb95..13d2ea5` | Codex, assigned by OD-0133 | **NOT READY** | [record](records/REVIEW-2026-10-29-t0014-1.md) |
 | REVIEW-2026-11-03-t0015-1 | T-0015 B-2 follow-up, F-1 through F-3 | `a71f0ff..3d259d3` | Codex, assigned by OD-0135 | **NOT READY** | [record](records/REVIEW-2026-11-03-t0015-1.md) |
 | REVIEW-2026-11-03-t0016-1 | T-0016 B-3 go-live PR, G-1 through G-4 | `490df8a5dda42550e4572ca598a3deeeec10caed..d77e6e21c2fd8f867b4b6a5dc5b552511c7383f7` | Codex, assigned by [OD-0143](../docs/decisions/owner/OD-0143-go-live-b3.md) | **READY** | [record](records/REVIEW-2026-11-03-t0016-1.md) |
@@ -153,6 +154,11 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
+| F-REVIEW-2026-11-04-t0022-1-1 | REVIEW-2026-11-04-t0022-1 | high | **open**: Q1 omits quote-currency check | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-2 | REVIEW-2026-11-04-t0022-1 | high | **open**: Q3 excludes missing adjusted-close periods | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-3 | REVIEW-2026-11-04-t0022-1 | high | **open**: snapshot path can escape the workspace | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-4 | REVIEW-2026-11-04-t0022-1 | high | **open**: private workspace mode is not enforced | — | — | — |
+| F-REVIEW-2026-11-04-t0022-1-5 | REVIEW-2026-11-04-t0022-1 | high | **open**: assessment has a licensed-derived magnitude claim | — | — | — |
 | F-REVIEW-2026-10-29-t0014-1-1 | REVIEW-2026-10-29-t0014-1 | high | **verified_closed** at `e0aaa4d` by [VERIFY-2026-10-29-t0014-1-1](records/VERIFY-2026-10-29-t0014-1-1.md) (received by OD-0135; row updated administratively by OD-0135) | — | — | — |
 | F-REVIEW-2026-10-29-t0014-1-2 | REVIEW-2026-10-29-t0014-1 | medium | **verified_closed** at `e0aaa4d` by [VERIFY-2026-10-29-t0014-1-1](records/VERIFY-2026-10-29-t0014-1-1.md) (received by OD-0135; row updated administratively by OD-0135) | — | — | — |
 | F-REVIEW-2026-11-03-t0015-1-1 | REVIEW-2026-11-03-t0015-1 | medium | **verified_closed** at `a05219a` by [VERIFY-2026-11-03-t0015-1-1](records/VERIFY-2026-11-03-t0015-1-1.md) (received by OD-0138; row updated administratively by OD-0138) | — | — | — |
