@@ -167,6 +167,20 @@ def test_tampered_bytes_stop(tmp_path):
         tool.load_snapshot(tmp_path, "s1")
 
 
+def test_a_missing_vault_name_stops(tmp_path):
+    with pytest.raises(tool.Stop, match="no vault name"):
+        tool.vault_key(tmp_path)
+
+
+def test_a_vault_failure_stops_and_shows_nothing_from_az(tmp_path, monkeypatch):
+    (tmp_path / "vault-name").write_text("invented-vault")
+    done = tool.subprocess.CompletedProcess([], 1, stdout="", stderr="provider text")
+    monkeypatch.setattr(tool.subprocess, "run", lambda *_a, **_k: done)
+    with pytest.raises(tool.Stop) as caught:
+        tool.vault_key(tmp_path)
+    assert "provider text" not in str(caught.value)
+
+
 # --- events and return accounting
 
 

@@ -25,7 +25,7 @@ links:
 
 ## Workspace
 
-`~/.hio-research/E-0002-eodhd/`, mode 700, outside the repository and separate from E-0001: `raw/` response bytes, `manifest.json`, `store/` local releases, `reports/` for the owner. The key lives in the macOS login keychain, service `hio-eodhd-api`, and never in a file, argument, log or URL on record.
+`~/.hio-research/E-0002-eodhd/`, mode 700, outside the repository and separate from E-0001: `raw/` response bytes, `manifest.json`, `store/` local releases, `reports/` for the owner. The key lives in the HIO key vault (OD-0164), and never in a file, argument, log or URL on record.
 
 ## Scope
 

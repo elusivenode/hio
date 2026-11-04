@@ -3,7 +3,7 @@
 `whoami` prints the plan's name. `fetch --snapshot NAME` retains one snapshot of the raw responses. `run`
 profiles and evaluates them. All of it runs locally under a rights record that denies agent use, so stdout and
 summary.json hold only counts, hashes and pass or fail. Values go to reports/ under --root, for the owner. The
-key comes from the login keychain, and never enters a file, a log, a manifest or an error. A CI environment
+key comes from the HIO key vault, and never enters a file, a log, a manifest or an error. A CI environment
 refuses. Qualification says nothing about consumer use, and no series here is a validated factor.
 """
 
@@ -51,7 +51,8 @@ from research_reader import Pin, read_panel
 REPO = Path(__file__).resolve().parent.parent
 SOURCE_ID = "eodhd.personal_evaluation"
 BASE = "https://eodhd.com/api"
-KEYCHAIN_SERVICE = "hio-eodhd-api"
+KEY_VAULT_SUBSCRIPTION = "hnf-prod"
+KEY_VAULT_SECRET = "eodhd-api-key"
 ETFS = {
     "SPY.US": "USD",
     "VTI.US": "USD",
@@ -107,14 +108,33 @@ def make_gate(environ: Mapping[str, str] = os.environ) -> RightsGate:
     )
 
 
-def keychain_key() -> str:
+def vault_key(root: Path) -> str:
+    """The key from the HIO vault (OD-0164), by the signed-in owner's identity. Nothing from az is shown."""
+    name = root / "vault-name"
+    if not name.is_file():
+        raise Stop("no vault name in the workspace")
     done = subprocess.run(
-        ["security", "find-generic-password", "-a", os.environ["USER"], "-s", KEYCHAIN_SERVICE, "-w"],
+        [
+            "az",
+            "keyvault",
+            "secret",
+            "show",
+            "--subscription",
+            KEY_VAULT_SUBSCRIPTION,
+            "--vault-name",
+            name.read_text().strip(),
+            "-n",
+            KEY_VAULT_SECRET,
+            "--query",
+            "value",
+            "-o",
+            "tsv",
+        ],
         capture_output=True,
         text=True,
     )
     if done.returncode != 0 or not done.stdout.strip():
-        raise Stop("no EODHD key in the login keychain")
+        raise Stop("the EODHD key could not be read from the vault")
     return done.stdout.strip()
 
 
@@ -639,7 +659,7 @@ def main(argv: list[str] | None = None) -> int:
         gate = make_gate()
         gate.authorise(Operation.FETCH if args.command != "run" else Operation.BUILD, [SOURCE_ID])
         if args.command == "whoami":
-            status, body = http_getter(keychain_key())("/user?fmt=json")
+            status, body = http_getter(vault_key(args.root))("/user?fmt=json")
             if status != 200:
                 raise Stop(f"HTTP {status}")
             print(json.dumps({"subscriptionType": json.loads(body).get("subscriptionType")}))
@@ -649,7 +669,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.snapshot,
                 gate=gate,
                 commit=code_commit()["commit"],
-                get=http_getter(keychain_key()),
+                get=http_getter(vault_key(args.root)),
             )
             print(json.dumps({"files": len(manifest["files"]), "stopped": manifest["stopped"]}))
         else:

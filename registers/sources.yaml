@@ -238,7 +238,7 @@ sources:
     verified_by: OD-0163            # the owner's own reading and characterisation; the vendor's position is unknown. Nothing here covers any SMSF use
     evidence: [https://eodhd.com/financial-apis/terms-conditions, docs/research/T-0003-vendor-assessment-2026-11-04.md]
     satisfied_conditions:          # OD-0163: tools/eodhd_eval.py runs locally, refuses CI, and shows agents no values
-      automated_retrieval: "OD-0163: the owner's key from the login keychain, on the owner's Mac; tools/eodhd_eval.py"
+      automated_retrieval: "OD-0163, OD-0164: the owner's key from the HIO key vault, on the owner's Mac; tools/eodhd_eval.py"
       raw_retention: "OD-0163: outside the repository, until the owner's end-of-month decision"
       internal_compute: "OD-0163: local only"
       derivation: "OD-0163: local only"
