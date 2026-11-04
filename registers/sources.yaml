@@ -186,6 +186,15 @@ sources:
     verified_by: OD-0166            # the owner read the live pages; the Board states public domain unless otherwise indicated
     evidence: [https://www.federalreserve.gov/disclaimer.htm, https://www.federalreserve.gov/releases/h10/hist/, docs/research/T-0002-h3-reading-pack.md]
     raw_retention_duration: indefinite   # for audit and rebuild (OD-0166); the archive's other currencies are retained as bytes and not used
+    satisfied_conditions:          # OD-0167
+      automated_retrieval: "OD-0167: one one-off archive request, declared User-Agent; tools/h10_fetch.py"
+      raw_retention: "OD-0167: the variant's manifest and owner report cite the Board and state no implied endorsement"
+      internal_compute: "OD-0167: the variant's manifest and owner report cite the Board and state no implied endorsement"
+      derivation: "OD-0167: the variant's manifest and owner report cite the Board and state no implied endorsement"
+      derived_storage: "OD-0167: the variant's manifest and owner report cite the Board and state no implied endorsement"
+      distribution.hio_internal: "OD-0167: the variant's manifest and owner report cite the Board and state no implied endorsement"
+      agent_context: "OD-0167: the variant's manifest and owner report cite the Board and state no implied endorsement"
+      external_processing: "OD-0167: the variant's manifest and owner report cite the Board and state no implied endorsement"
     rights: {automated_retrieval: "conditional(one one-off archive request with a declared User-Agent, once its use is authorised)", raw_retention: "conditional(cite the Federal Reserve Board; no implied endorsement)", internal_compute: "conditional(cite the Federal Reserve Board; no implied endorsement)", derivation: "conditional(cite the Federal Reserve Board; no implied endorsement)", derived_storage: "conditional(cite the Federal Reserve Board; no implied endorsement)", post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: "conditional(cite the Federal Reserve Board; no implied endorsement)", smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: "conditional(cite the Federal Reserve Board; no implied endorsement)", external_processing: "conditional(cite the Federal Reserve Board; no implied endorsement)", audit_retention: unknown, attribution_required: "cite the Federal Reserve Board; no implied endorsement"}
   - id: alfred_fred
     name: St. Louis Fed FRED / ALFRED (vintages)
