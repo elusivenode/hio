@@ -1,7 +1,8 @@
 ---
 id: T-0019
 title: "CMT synthetic bond return in the library, on invented inputs only"
-status: submitted_for_review
+status: accepted   # OD-0153 at fa6370d, merged into main as 29dab6f; invented inputs only
+accepted_by: OD-0153
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator); independent reviewer: Codex, if the owner assigns one"
 created_at: 2026-11-04
