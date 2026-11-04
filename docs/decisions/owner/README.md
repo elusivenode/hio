@@ -186,6 +186,7 @@ are in operating model §1.1; the template is
 | [OD-0169](OD-0169-waive-f4-verification.md) | waive | further verification of F-REVIEW-2026-11-04-t0022-1-4 waived; fix at `75c67a4` accepted; T-0022 not accepted | `75c67a4` | recorded |
 | [OD-0170](OD-0170-e0003-aud-cash.md) | authorise_work | E-0003 AUD cash comparator from 2011, retained RBA data; E-0002 V3 correction verified first | `1c05d47` | recorded |
 | [OD-0171](OD-0171-accept-t0022-rba-pack.md) | accept | T-0022 accepted at `888c493`; finding states reconciled, F-4 verification waived; RBA history reading pack, draft | `888c493` | recorded |
+| [OD-0172](OD-0172-rba-history-rights.md) | authorise_work | RBA historical overnight cash rights, pages read; one one-off download; E-0003 not extended | `0a816f5` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
