@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-04
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0165"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0166"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -53,7 +53,7 @@ finding states change by owner-authorised reconciliation (§6.2 step 5.12). **H6
 | Accepted | **S1a** (OD-0042); **T-0009** (OD-0079); **T-0010** at `62adccd` (OD-0123); **T-0011** at `c69df9e` (OD-0125); **T-0012** at `efb6fa1` (OD-0128); **T-0013** at `39747c5` (OD-0134); **T-0014** at `e0aaa4d` (OD-0135); **T-0015** at `a05219a` (OD-0138); **T-0016** at `d77e6e2` (OD-0144); **T-0017** at `4576ae5` (OD-0146); **T-0018** at `acf1487`, no Codex review (OD-0148 c1); **T-0019** at `fa6370d` (OD-0153); T-0006, T-0007, T-0008 | [OD-0042](docs/decisions/owner/OD-0042-accept-s1a.md) |
 | Authorised, in progress | **hiomux pilot**
 use under its protocol, outside the repository (OD-0072, OD-0073). Routine delegated receipt (OD-0061). Harness-0.9: drafting only (OD-0068, OD-0070; done to revision 3). Base-camp work (OD-0132) | [T-0009 card](registers/tasks/T-0009-s1b1-cash-capture-and-research.md) (`status: accepted`; `accepted_by: OD-0079`) |
-| Not authorised | **any C5 amendment**; any download beyond E-0001 or vendor contact; S1b-2; any source permission beyond the five S1b-1 datasets (`hio_internal` only), D7 and the par curve (OD-0156); D4–D6; factor specs (drafts); harness-0.9 Phase B activation (H6 parked, OD-0114), H11, H3, H7, H8; settling any finding without its verification | [`docs/decisions/README.md`](docs/decisions/README.md) |
+| Not authorised | **any C5 amendment**; any download beyond E-0001 or vendor contact; S1b-2; any source permission beyond the five S1b-1 datasets (`hio_internal` only), D7, the par curve (OD-0156) and H.10 AUD/USD (OD-0166); D4–D6; factor specs (drafts); harness-0.9 Phase B activation (H6 parked, OD-0114), H11, H3, H7, H8; settling any finding without its verification | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Open owner questions | Q-013 (P3 in force), Q-003, Q-004, Q-005b, Q-006, Q-010 (open; H5 declined for S1b-1), Q-014 (harness-0.9) | [`open-decisions.md`](docs/decisions/open-decisions.md) |
 
 ## Reviews
@@ -89,7 +89,7 @@ No finding is waived.
 | B-2 | done; see `docs/evidence/b2/`. Destroy `rg-hio-probe` authorised (OD-0155), from 2026-11-04T06:36:50Z; not yet run |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** the H.10 rights (`docs/research/T-0002-h3-reading-pack.md`); reading the E-0002 results; the EODHD renewal (`docs/evidence/e0002/assessment-1.md`); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
+| Next permissible actions | **Owner:** the AUD variant of E-0002; reading the E-0002 results; the EODHD renewal (`docs/evidence/e0002/assessment-1.md`); the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. **Claude:** the probe destroy (OD-0155); nothing else beyond what an OD authorises |
 
 ## Branches holding work not on `main`
 
@@ -104,7 +104,7 @@ No finding is waived.
 | Work | Card | Status |
 |---|---|---|
 | A01 decisions review | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed (criteria met by OD-0008, OD-0011; acceptance not recorded) |
-| S1 source rights | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: the five S1b-1 datasets owner_verified (OD-0116 c1, OD-0118); the Treasury par curve (OD-0156); the rest unverified |
+| S1 source rights | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: the five S1b-1 datasets owner_verified (OD-0116 c1, OD-0118); the Treasury par curve (OD-0156); H.10 AUD/USD (OD-0166); the rest unverified |
 | Equity total-return source | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: EODHD evaluation authorised, not bought (OD-0162, T-0022); no letters (OD-0161) |
 | HIO-001 boundary (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review; review READY, received (OD-0040); **not accepted, not merged** |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | S1a stage **accepted** (OD-0042); S1b staged under HIO-ADR-0012 |

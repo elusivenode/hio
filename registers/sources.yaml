@@ -178,6 +178,15 @@ sources:
     rights_proposed: "public domain unless otherwise indicated; cite the Board; automated access not addressed"
     timing: "weekly release, Mondays 16:15 (ET assumed); a daily value is first knowable up to about a week later; DDP being retired in favour of FRED"
     rights: {automated_retrieval: unknown, raw_retention: unknown, internal_compute: unknown, derivation: unknown, derived_storage: unknown, post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: unknown, smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: unknown, external_processing: unknown, audit_retention: unknown, attribution_required: "cite the Federal Reserve Board"}   # effective values stay unknown until owner_verified
+  - id: frb_h10.aud_usd
+    name: "Federal Reserve Board H.10, Australian dollar series only (noon buying rates in New York)"
+    parent: frb_h10
+    task: T-0002
+    verification: owner_verified
+    verified_by: OD-0166            # the owner read the live pages; the Board states public domain unless otherwise indicated
+    evidence: [https://www.federalreserve.gov/disclaimer.htm, https://www.federalreserve.gov/releases/h10/hist/, docs/research/T-0002-h3-reading-pack.md]
+    raw_retention_duration: indefinite   # for audit and rebuild (OD-0166); the archive's other currencies are retained as bytes and not used
+    rights: {automated_retrieval: "conditional(one one-off archive request with a declared User-Agent, once its use is authorised)", raw_retention: "conditional(cite the Federal Reserve Board; no implied endorsement)", internal_compute: "conditional(cite the Federal Reserve Board; no implied endorsement)", derivation: "conditional(cite the Federal Reserve Board; no implied endorsement)", derived_storage: "conditional(cite the Federal Reserve Board; no implied endorsement)", post_termination_raw: unknown, post_termination_derived: unknown, distribution: {hio_internal: "conditional(cite the Federal Reserve Board; no implied endorsement)", smsf_app: unknown, smsf_trustee_pack: unknown, smsf_auditor: unknown, third_party: unknown}, quotation_in_documents: unknown, agent_context: "conditional(cite the Federal Reserve Board; no implied endorsement)", external_processing: "conditional(cite the Federal Reserve Board; no implied endorsement)", audit_retention: unknown, attribution_required: "cite the Federal Reserve Board; no implied endorsement"}
   - id: alfred_fred
     name: St. Louis Fed FRED / ALFRED (vintages)
     home: https://fred.stlouisfed.org/
