@@ -115,7 +115,68 @@ def test_identical_sleeves_give_no_effect_and_no_uncertainty():
     for block in results["bootstrap"]["cash_rate_and_currency"].values():
         assert block["volatility"]["low"] == block["volatility"]["high"] == 0
     assert tool.earlier_history_indicated(results) is False
-    assert tool.intervals_span_zero(results)["cash_rate_and_currency"]["volatility"] is True
+    assert (
+        tool.interval_classes(results)["cash_rate_and_currency"]["volatility"]["class"] == "not_distinguished"
+    )
+
+
+def _bootstrap(volatility_by_block):
+    other = {"low": -1.0, "high": 1.0, "estimate": 0.0}
+    return {
+        "bootstrap": {
+            "total": {
+                size: {
+                    "volatility": {"low": low, "high": high, "estimate": 0.0},
+                    "annualised_return": other,
+                    "max_drawdown": other,
+                }
+                for size, (low, high) in volatility_by_block.items()
+            }
+        }
+    }
+
+
+def test_every_block_excluding_zero_is_distinguished():
+    results = _bootstrap({"6": (0.01, 0.02), "12": (-0.03, -0.01), "24": (0.001, 0.02)})
+    entry = tool.interval_classes(results)["total"]["volatility"]
+    assert entry == {"class": "distinguished", "excludes_zero": [6, 12, 24], "spans_zero": []}
+    assert tool.verdict_words(entry) == "distinguished at every block length"
+
+
+def test_every_block_spanning_zero_is_not_distinguished():
+    entry = tool.interval_classes(_bootstrap({"6": (-0.01, 0.02), "12": (-0.03, 0.01)}))["total"][
+        "volatility"
+    ]
+    assert entry == {"class": "not_distinguished", "excludes_zero": [], "spans_zero": [6, 12]}
+    assert tool.verdict_words(entry) == "not distinguished"
+
+
+def test_mixed_blocks_are_never_called_every_block_length():
+    entry = tool.interval_classes(_bootstrap({"12": (0.01, 0.02), "6": (0.002, 0.03), "24": (-0.01, 0.02)}))
+    entry = entry["total"]["volatility"]
+    assert entry == {"class": "mixed", "excludes_zero": [6, 12], "spans_zero": [24]}
+    words = tool.verdict_words(entry)
+    assert "every block length" not in words
+    assert words == "mixed: distinguished at 6, 12-month blocks, not at 24-month blocks"
+
+
+def test_an_interval_touching_zero_spans_it():
+    entry = tool.interval_classes(_bootstrap({"6": (0.0, 0.02)}))["total"]["volatility"]
+    assert entry["class"] == "not_distinguished"
+
+
+def test_no_block_lengths_stops_rather_than_passing():
+    with pytest.raises(tool.ev.Stop, match="no block lengths"):
+        tool.interval_classes({"bootstrap": {"total": {}}})
+
+
+def test_a_mixed_result_reaches_the_conclusion_text():
+    months, returns, bills, s = invented(same=True)
+    results = tool.evaluate(months, returns, bills, s)
+    blocks = results["bootstrap"]["cash_rate_and_currency"]
+    blocks["6"]["volatility"].update(low=0.01, high=0.02)
+    text = "\n".join(tool.conclusion(results))
+    assert "volatility: mixed: distinguished at 6-month blocks, not at 12, 24-month blocks" in text
 
 
 def _window(size, available=True):

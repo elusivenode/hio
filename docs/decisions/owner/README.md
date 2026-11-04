@@ -191,6 +191,7 @@ are in operating model §1.1; the template is
 | [OD-0174](OD-0174-claude-reads-derived-statistics.md) | authorise_work | Claude may read EODHD-derived statistics in the personal evaluation; raw data, Codex and the architect unchanged | `59429c5` | recorded |
 | [OD-0175](OD-0175-architect-calibration.md) | authorise_work | One bounded architect calibration after E-0002 and E-0003; advice only | `6e4a455` | recorded |
 | [OD-0176](OD-0176-consolidation-milestone-eodhd-retention.md) | authorise_work | Consolidation milestone T-0023; EODHD data retained for research; all agents may review it, no values in the repository | `569f338` | recorded |
+| [OD-0177](OD-0177-start-t0023-steps-1-2.md) | authorise_work | **T-0023 started:** steps 1 and 2 in a branch, reporting back before step 3; no Codex assignment, merge, new source or acceptance | `main` at `db9d7ae` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
