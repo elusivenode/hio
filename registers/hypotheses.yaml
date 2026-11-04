@@ -69,3 +69,20 @@
   variants_tried: 0
   created: 2026-10-18
   owner: quantitative researcher
+- id: H-0005
+  title: The declared flat-yield CMT construction is reproducible and adequate for its stated purpose
+  status: proposed
+  pillar: other
+  model_kind: explanatory
+  thesis: >-
+    Daily re-striking a par 10-year bond and valuing it at a flat yield interpolated from the Treasury par curve
+    gives a reproducible, coupon-inclusive return, whose pricing approximation is small against a zero curve
+    bootstrapped from the same source. A construction claim only: no claim about premia, diversification or traded returns.
+  prediction: {direction: n/a, magnitude: "the bars in E-0001", horizon: "daily, full available history"}
+  data: {factors: ["rates.us.cmt_10y.total_return@0.1.3"], states: [], knowledge_mode: latest, min_knowable_basis: "reconstructed(T)"}
+  competing_explanations: [implementation error, same-source agreement that hides a shared error, Treasury method changes]
+  falsification: "any E-0001 bar fails"
+  experiments: [E-0001]
+  variants_tried: 0
+  created: 2026-11-04
+  owner: quantitative researcher
