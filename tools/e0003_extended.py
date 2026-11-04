@@ -117,6 +117,13 @@ def render(results: Mapping[str, Any], seam: Mapping[str, Any]) -> str:
         "anything about 2008, a forecast, or a recommendation. About five",
         "a forecast or a recommendation. 2008 is one crisis. About six",
     )
+    text = text.replace(
+        "what these hypothetical sleeves did from 2011,", "what these hypothetical sleeves did from May 2007,"
+    )
+    text = text.replace(
+        "SPY, IEF and BIL have no independent check;",
+        "SPY, IEF and BIL before 2016 have no independent check;",
+    )
     text = text[: text.index("- **Earlier AUD cash history:**")].rstrip() + "\n"
     verdict = "passed" if seam["passes"] else "**failed**"
     return text + (

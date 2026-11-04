@@ -82,6 +82,8 @@ def test_2008_is_a_named_window_and_the_report_says_so():
     assert "2008 isn't in the sample" not in text
     assert "anything about 2008" not in text
     assert "About six" in text and "About five" not in text
+    assert "did from May 2007," in text and "did from 2011," not in text
+    assert "before 2016 have no independent check" in text
     assert "Seam check:** passed" in text
     assert "no independent check" in text
 
