@@ -29,3 +29,5 @@ The brief is the record. Its Codex verification of V3 is `VERIFY-2026-11-04-e000
 As the brief lists. Accepting T-0022, E-0002 or E-0003; any AUD cash before 2011; any consumer use.
 
 ## Corrections (append-only)
+
+1. **2026-11-04: the verification is assigned.** `VERIFY-2026-11-04-e0002-v3`'s assigned head is the commit that adds this correction: `git log -n1 --format=%H -- docs/decisions/owner/OD-0170-e0003-aud-cash.md`. Scope: the V3 correction only, in `src/hio/portfolio/fixed_allocation.py` (`period_ends`, `period_returns`), `tools/eodhd_eval.py` (`describe`, `dependence`, `WINDOWS`, `compare`), `tools/e0002_aud.py` (`reconcile_reports`) and their tests. Codex receives no licensed bytes or values, and the workspace is unreadable for the run. It writes only under `reviews/`.
