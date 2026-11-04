@@ -173,6 +173,7 @@ are in operating model §1.1; the template is
 | [OD-0156](OD-0156-h2-six-operations.md) | authorise_work | six remaining H2 operations allowed; `us_treasury.par_yield_curve` owner_verified, every condition unsatisfied so the gate still refuses; no download, no experiment | `2e1ded8` | recorded |
 | [OD-0157](OD-0157-authorise-duration-experiment.md) | authorise_work | duration experiment E-0001 / T-0020: pre-registered, local `exploratory` release, UNREFERENCED; download held for the page-reading confirmation | `bde61d7` | recorded |
 | [OD-0158](OD-0158-store-architect-assessment.md) | authorise_work | the architect's strategic assessment stored verbatim in `docs/history/`; advice only, nothing adopted | `09e29e5` | recorded |
+| [OD-0159](OD-0159-authorise-e0002-stage-a.md) | authorise_work | E-0002 Stage A (T-0021) on synthetic data; OD-0139 order amended for tracks 5 and 6; NumPy adopted; a trial may precede base camp, separately decided; vendor drafts extended | `cbab2a8` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
