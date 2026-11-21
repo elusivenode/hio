@@ -15,6 +15,7 @@ import json
 import sys
 import zipfile
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from itertools import pairwise
@@ -28,6 +29,7 @@ from hio.contracts.observation import parse_instant
 from hio.contracts.rights import Operation
 from hio.contracts.temporal import KnowledgeMode
 from hio.library.numeric import CTX
+from hio.portfolio import fixed_allocation as fa
 from hio.rights.gate import RightsGate
 from hio.sources.datasets import parse_rba_f1
 from hio.storage.objectstore import LocalObjectStore
@@ -134,6 +136,43 @@ def render(results: Mapping[str, Any], seam: Mapping[str, Any]) -> str:
     )
 
 
+@dataclass(frozen=True)
+class Assembled:
+    """The aligned monthly panel: what every allocation and block length reads."""
+
+    months: list[date]
+    returns: fa.Floats  # in AUD, columns as base.SLEEVES
+    usd_bills: fa.Floats
+    s: fa.Floats
+    history_rates_used: int
+    facts: dict[str, int]
+    seam: dict[str, Any]
+
+
+def assemble(
+    panel: fa.Panel,
+    rates: Mapping[date, Decimal],
+    aonia: Mapping[date, Decimal],
+    tri: Mapping[date, Decimal],
+    fx: Mapping[date, Decimal],
+) -> Assembled:
+    months, usd = aud_tool.monthly_usd(panel)
+    first = months[0]
+    wanted = {d: v for d, v in rates.items() if d >= date(first.year, first.month, 1)}
+    levels = joined_levels(accrue(wanted, until=TRI_START), tri)
+    _, s, facts = aud_tool.translate(months, usd, fx)
+    cash = base.cash_returns(months, levels)
+    return Assembled(
+        months,
+        base.matrix(usd, panel.sleeves, s, cash),
+        usd[:, panel.sleeves.index("cash")],
+        s,
+        len(wanted),
+        facts,
+        seam_check(months, aonia, tri),
+    )
+
+
 def run(
     root: Path, e0002_root: Path, h10_root: Path, history: Path, snapshot: str, *, gate: RightsGate
 ) -> dict[str, Any]:
@@ -163,15 +202,10 @@ def run(
     )
     with zipfile.ZipFile(h10_root / "FRB_h10_xml.zip") as archive:
         fx, _ = aud_tool.parse_h10(archive.read("H10_data.xml"))
-    months, usd = aud_tool.monthly_usd(panel)
-    first = months[0]
-    wanted = {d: v for d, v in rates.items() if d >= date(first.year, first.month, 1)}
-    levels = joined_levels(accrue(wanted, until=TRI_START), tri)
-    _, s, facts = aud_tool.translate(months, usd, fx)
-    cash = base.cash_returns(months, levels)
-    returns = base.matrix(usd, panel.sleeves, s, cash)
-    results = base.evaluate(months, returns, usd[:, panel.sleeves.index("cash")], s, WINDOWS)
-    seam = seam_check(months, aonia, tri)
+    built = assemble(panel, rates, aonia, tri, fx)
+    months, returns, s = built.months, built.returns, built.s
+    results = base.evaluate(months, returns, built.usd_bills, s, WINDOWS)
+    seam, facts, wanted = built.seam, built.facts, built.history_rates_used
     reports = root / "reports"
     reports.mkdir(mode=0o700, exist_ok=True)
     ev.private_write(reports / "owner-report-v1.md", render(results, seam).encode())
@@ -181,10 +215,10 @@ def run(
         "first_month": months[0].isoformat(),
         "last_month": months[-1].isoformat(),
         "months": int(returns.shape[0]),
-        "history_rates_used": len(wanted),
+        "history_rates_used": wanted,
         **{k: facts[k] for k in ("rates_not_on_the_day", "oldest_rate_days")},
         "windows_available": {k: v["available"] for k, v in results["windows"].items()},
-        "intervals_span_zero": base.intervals_span_zero(results),
+        "interval_classes": base.interval_classes(results),
         "seam_check": seam,
     }
     ev.private_write(root / "summary-v1.json", (json.dumps(out, indent=1, sort_keys=True) + "\n").encode())

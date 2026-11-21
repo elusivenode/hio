@@ -1,6 +1,6 @@
 """T-0022: the EODHD evaluation tool, on invented JSON only. Nothing here touches the network or a key."""
 
-import importlib.util
+import importlib
 import itertools
 import json
 import sys
@@ -15,10 +15,7 @@ from hio.contracts.rights import Operation, RightsRefused
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
-_spec = importlib.util.spec_from_file_location("eodhd_eval", REPO / "tools" / "eodhd_eval.py")
-tool = importlib.util.module_from_spec(_spec)
-sys.modules["eodhd_eval"] = tool
-_spec.loader.exec_module(tool)
+tool = importlib.import_module("eodhd_eval")  # one copy, so its Stop is the one other tools raise
 MARKER = "invented-value-0123"
 
 
