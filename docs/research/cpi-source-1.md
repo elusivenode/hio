@@ -26,7 +26,7 @@ T-0023 recommendation 1 (adopted, OD-0181) defines the state as follows. At each
 
 **Why the NSA index.** Seasonally adjusted CPI is revised for up to five years, and BLS warns against it for escalation. NSA CPI-U is what escalation contracts use. If it is revised only by flagged corrections, today's values equal the first-published ones, and the release dates are the only point-in-time data needed. **That is unconfirmed.** I didn't find BLS saying it outright, and it is the first thing to check. The archived news releases give the published year-on-year rates directly, so they can test the claim.
 
-**One known gap.** October 2025 CPI wasn't published, because of the 2025 lapse in appropriations. Under the rule, that month's state is unavailable, not filled in.
+**One known gap.** October 2025 CPI wasn't published, because of the 2025 lapse in appropriations. Under E-0004's rule the latest published rate carries forward, so September's rate stayed latest until November's was published, as it did at the time; no state is filled in (corrected 2026-11-22 to match `docs/evidence/e0004/preregistration-1.md`).
 
 ## Rights, as read by search (unverified)
 
