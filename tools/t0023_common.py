@@ -46,19 +46,57 @@ def parse_panel(text: str) -> FrozenPanel:
     return FrozenPanel(months, returns, usd_bills, s)
 
 
-def load_frozen(root: Path, panel_id: str | None = panel_tool.FROZEN_PANEL_ID) -> tuple[FrozenPanel, Path]:
-    """The newest rebuild whose id is the frozen one, with its panel text checked against its own record."""
+# The rebuild's own checks (tools/e0003_panel.py); a run is used only when every one of them passed.
+REQUIRED_CHECKS = (
+    "panel_id_equals_frozen",
+    "release_data_equals_recorded",
+    "seam_check_passes",
+    "values_equal_recorded_v1",
+)
+
+
+def verify_record(run_dir: Path, record: Mapping[str, Any], text: bytes) -> None:
+    """A run's claimed id must recompute from its recorded inputs and the panel text actually on disk, and its
+    rebuild checks must all have passed (F-REVIEW-2026-11-22-t0023-1-2). A record can't vouch for itself."""
+    actual = hashlib.sha256(text).hexdigest()
+    if actual != record.get("panel_sha256"):
+        raise ev.Stop(f"{run_dir.name}'s panel doesn't match its record")
+    if not isinstance(record.get("inputs"), Mapping):
+        raise ev.Stop(f"{run_dir.name}'s record has no inputs to recompute its panel id from")
+    if panel_tool.panel_id(record["inputs"], actual) != record["panel_id"]:
+        raise ev.Stop(f"{run_dir.name}'s panel id doesn't recompute from its inputs and panel")
+    checks = record.get("checks")
+    failed = [c for c in REQUIRED_CHECKS if not isinstance(checks, Mapping) or checks.get(c) is not True]
+    if failed:
+        raise ev.Stop(f"{run_dir.name}'s rebuild checks didn't all pass: {', '.join(failed)}")
+
+
+def load_frozen(root: Path, panel_id: str | None = None) -> tuple[FrozenPanel, Path]:
+    """The newest rebuild whose id is the frozen one (by default the tool's pinned id, read at call
+    time), with its id recomputed and its rebuild checks confirmed (`verify_record`). A failing newest
+    match stops; it never falls back to an older run."""
+    wanted = panel_tool.FROZEN_PANEL_ID if panel_id is None else panel_id
     for run_dir in sorted((root / "runs").glob("*"), reverse=True):
         if not (run_dir / "run.json").is_file():
             continue
         record = json.loads((run_dir / "run.json").read_text())
-        if record["panel_id"] != panel_id:
+        if record.get("panel_id") != wanted:
             continue
         text = (run_dir / "panel.csv").read_bytes()
-        if hashlib.sha256(text).hexdigest() != record["panel_sha256"]:
-            raise ev.Stop(f"{run_dir.name}'s panel doesn't match its record")
+        verify_record(run_dir, record, text)
         return parse_panel(text.decode()), run_dir
     raise ev.Stop("no rebuild holds the frozen panel id")
+
+
+def record_for(text: bytes, inputs: Mapping[str, Any]) -> dict[str, Any]:
+    """A run record that `verify_record` accepts, for invented panels in tests and nothing else."""
+    sha = hashlib.sha256(text).hexdigest()
+    return {
+        "panel_id": panel_tool.panel_id(inputs, sha),
+        "panel_sha256": sha,
+        "inputs": dict(inputs),
+        "checks": dict.fromkeys(REQUIRED_CHECKS, True),
+    }
 
 
 def usd_columns(panel: FrozenPanel) -> dict[str, fa.Floats]:

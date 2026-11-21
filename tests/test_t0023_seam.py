@@ -326,7 +326,7 @@ def workspace(tmp_path: Path, *, break_manifest: bool = False) -> tuple[Path, Pa
     run_dir = root / "runs" / "r1"
     run_dir.mkdir(parents=True)
     (run_dir / "panel.csv").write_bytes(text)
-    record = {"panel_id": "p" * 8, "panel_sha256": hashlib.sha256(text).hexdigest()}
+    record = common.record_for(text, {"invented": "p" * 8})
     (run_dir / "run.json").write_text(json.dumps(record))
     del first
     (root / "reference" / "raw").mkdir(parents=True, mode=0o700)
