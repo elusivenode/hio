@@ -182,3 +182,8 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - `[shell] zsh expands "$VAR:r" as a modifier; write ${VAR}:path in git show arguments. Source: handoffs/s1b1/2026-11-22-restart-delegation-t0023-review.md.`
 - `[build] Run ruff check and ruff format --check before pushing; CI's lint step fails a PR the tests pass. Source: handoffs/s1b1/2026-11-22-restart-delegation-t0023-review.md.`
 - `[research] E-0004's state uses unrounded CPI-U ratios from first-release index levels, carried forward, so October 2025's missing release needs no special case. Source: docs/evidence/e0004/preregistration-1.md.`
+- `[data] EODHD revises its own history between pulls without notice (ex-dates, re-rounded closes, filled payment dates); every series built from it must pin the snapshot hash. Source: docs/evidence/e0002/stability-1.md.`
+- `[rights] Aggregate statistics computed from licensed returns (counts, interval widths) are derived values: keep them out of the public repository; record readings only. Source: reviews/records/REVIEW-2026-11-22-e0004-1.md.`
+- `[sources] BLS API v1 refused this client with 503 twice; the flat file download.bls.gov/pub/time.series/cu/cu.data.1.AllItems served at once. Source: docs/decisions/owner/OD-0189-bls-cpi-download.md.`
+- `[hiomux] Codex tasks can't be resumed; a blocked Codex task needs a fresh task. Closing the last workers pane removes the workers window. Source: handoffs/s1b1/2026-11-22-e0004-eodhd-account-switch.md.`
+- `[research] E-0004: the duration-benefit difference across CPI-acceleration states was not distinguished; the line is parked. Source: docs/evidence/e0004/result-1.md.`
