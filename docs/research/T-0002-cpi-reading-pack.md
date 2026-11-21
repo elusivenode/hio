@@ -1,7 +1,7 @@
 ---
 id: HIO-RESEARCH-T0002-CPI-PACK
 title: "Reading pack: the owner's rights decision on BLS CPI-U (bls_cpi), for E-0004's inflation state"
-status: draft              # for the owner's reading. Verifies nothing, and decides nothing
+status: decided            # the owner verified bls_cpi as proposed (OD-0188, 2026-11-22)
 owner: owner (decides); drafted by claude/implementation-agent
 created_at: 2026-11-22
 task: T-0002
