@@ -89,7 +89,7 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 | B-2 | done; see `docs/evidence/b2/`. `rg-hio-probe` destroyed (OD-0155 correction 2) |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | **2027 RITS/NSW calendars** before 2027-01-01 (RBA page unpublished at 2026-10-29; recheck by 2026-12-01) |
-| Next permissible actions | **Owner:** the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. the merge of PR #104 (OD-0181 item 1); approving the T-0023 review draft OD-0182; the CPI rights reading (`docs/research/cpi-source-1.md`); designing the adopted experiment (recommendation 1, OD-0181); the soak follow-ons. **Claude:** T-0023 steps 1 to 7 done, unreviewed, unaccepted; nothing further authorised |
+| Next permissible actions | **Owner:** **approving the standing delegation OD-0184 and harness-0.10 at this PR's head**; the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. the merge of PR #104 (OD-0181 item 1); approving the T-0023 review draft OD-0182; the CPI rights reading (`docs/research/cpi-source-1.md`); designing the adopted experiment (recommendation 1, OD-0181); the soak follow-ons. **Claude:** T-0023 steps 1 to 7 done, unreviewed, unaccepted; nothing further authorised |
 
 ## Branches holding work not on `main`
 

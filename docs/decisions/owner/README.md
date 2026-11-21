@@ -197,6 +197,8 @@ are in operating model §1.1; the template is
 | [OD-0180](OD-0180-t0023-steps-6-7.md) | authorise_work | **T-0023 steps 6 and 7** authorised: stress-episode comparison and a recommendation; no experiment, Codex assignment, merge or acceptance | `feat/t0023-consolidation` at `50fb32b` | recorded |
 | [OD-0181](OD-0181-five-yeses-2026-11-22.md) | authorise_work | Five yeses: merge #104 (owner runs it); a T-0023 Codex review drafted as OD-0182; **recommendation 1 adopted**; a CPI source looked for (no download); **soak result recorded: bar met** | `feat/t0023-consolidation` at `4b6472e` | recorded |
 | [OD-0182](OD-0182-assign-t0023-review.md) | authorise_work | Codex review of T-0023 at `4b6472e`: **draft awaiting the owner's approval** | `feat/t0023-consolidation` at `4b6472e` | proposed |
+| [OD-0183](OD-0183-draft-standing-delegation.md) | authorise_work | Drafting the standing delegation (OD-0184) and harness-0.10, in one PR | `records/2026-11-22-five-yeses` at `05f2dcd` | recorded |
+| [OD-0184](OD-0184-standing-delegation.md) | approve | **Standing delegation to Claude** (harness-0.10): self-merge within authorised scope, assign Codex, receive, delegate, read-only checks; high-risk merges excluded. **Proposed until the owner approves the PR head** | `proposal/standing-delegation` | proposed |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

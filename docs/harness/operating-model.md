@@ -4,10 +4,11 @@ title: Agentic operating model and harness specification
 status: approved      # harness-0.9b approved by OD-0104 (docs/decisions/h6-option-b-amendment.md at d26c2fa); harness-0.9a approved by OD-0091 (Appendix A at 2df83b4); harness-0.7.1 approved by OD-0056 at 552d4fb (blob a74a41453d10). Adoption is conditional on a supervised first receipt recorded in an OD; routine delegated receipt is NOT authorised until then
 approved_by: OD-0104   # harness-0.9b, docs/decisions/h6-option-b-amendment.md at d26c2faca78fc40dc409ff53c872cb172e918d7e, blob 202f8d9219fcf1ab352d7809d51db81d1a63476a (earlier: OD-0091, harness-0.9a, Appendix A of docs/decisions/harness-0.9-proposal.md at 2df83b427896cf5ce413e8cee76f809a267687f6 (earlier: OD-0056, harness-0.7.1 at 552d4fbde6f4256bf969b908d721a765aae84e17, blob a74a41453d10b54161136ff08ac36e6ca86f33bc; OD-0021, harness-0.7 rev 3 at 9b58811, blob 90e2565fe814; before that OD-0012, harness-0.6 at f2275e2, blob e3114bd188ad; OD-0008, harness-0.5 at a82aa0d, blob 7172659cf4ba))
 owner: HIO architecture lead (owner)
-version: harness-0.9b
+version: harness-0.9b   # harness-0.10 is PROPOSED in this revision (OD-0184) and governs only once the owner approves this file's exact head
 last_reviewed: 2026-10-18
 decision: HIO-ADR-0008
 changelog:
+  - "harness-0.10 (2026-11-22, PROPOSED; OD-0183 drafting, OD-0184 approval pending): a standing delegation OD may let the owner's orchestrator merge its own PRs within authorised scope and assign Codex reviews of its own completed work (§1.1 'Standing delegation', §2.2 step 1, §6.2 steps 0 and 1). Excluded merges still need the owner at the exact head. No tool, CI or hook changed"
   - "harness-0.9b (2026-10-29, APPROVED by OD-0104 at d26c2fa; docs/decisions/h6-option-b-amendment.md): §6.2 step 5.6 takes Class N index changes only; a refused index diff may be received without the index on the owner's go-ahead; new step 5.12, owner-authorised finding reconciliation. Codex's bootstrap and review protocol otherwise unchanged. No CI or hook changed"
   - "harness-0.9a (2026-10-28, APPROVED by OD-0091 at 2df83b4; docs/decisions/harness-0.9-proposal.md revision 4, Appendix A): knowledge layer for non-reviewer agents. Adds MAP.md and knowledge/findings.md (navigation, precedence ranks 5 and 6), per-stream handoffs with Didn't work and For the index, current-state-only STATUS rules, §4.1 maintenance rules. Codex's bootstrap (§2.2) and the review protocol (§6.2) are unchanged. No tool, CI or hook changed"
   - "harness-0.7.1 correction 1 (2026-10-25, APPROVED by OD-0059; docs/decisions/harness-0.7.1-trailer-correction-proposal.md revision 1, blob b8d2fac0dc18): section 6.2 steps 5.7, 5.8 and 5.10 only. Requires the HIO-Actor trailer on each receipt import commit, runs tools/check_repo.py trailers on the import commit before the 5.9 recheck, and makes CI status a mandatory reported result kept separate from the evidence-integrity checks. Tested by a bounded scratch-clone regression (OD-0059). No tool, workflow or hook changed"
@@ -101,6 +102,14 @@ Everything below was observed in the `macsmsf` repository on 2026-10-18 [OBS].
 - An agent records what the owner **actually said**, quoting or citing the source. It never
   upgrades a request, a forwarded draft or its own reading into an approval.
 
+**Standing delegation (harness-0.10).** The owner may approve, by an OD at an exact revision, a
+standing delegation that names an agent, the powers delegated and the actions excluded. Within it,
+that agent may merge its own PRs and assign reviews of its own completed work without a per-item
+statement. The delegation OD is the owner's statement for each such merge or assignment, and every
+use is recorded citing it. Accepting, approving content, waiving and closing findings are never
+delegated. A merge under delegation approves nothing the merged content contains. The current
+delegation is OD-0184.
+
 **Advice and adoption.**
 - Material written by ChatGPT or another strategic collaborator is **advice or a draft** by
   default.
@@ -182,7 +191,9 @@ If the card is not authorised, you may only read and draft.
 1. **Find your assignment.** It comes from exactly one owner-authored source (§6.2 step 1): a
    row in the *Assigned reviews* table of `reviews/README.md`, an owner-authored comment on the
    author's pull request, or an assignment the owner gave you directly. Your review record
-   cites which source it used.
+   cites which source it used. An *Assigned reviews* row that Claude wrote under a standing
+   delegation (§1.1) counts as owner-authored when it cites that delegation OD, and the OD is on
+   `main` and covers the target (harness-0.10).
    - **If there is none, your answer is "No review target has been assigned."** Stop there.
      Never infer a target from a candidate row, a branch tip or an author's self-assessment.
    - If there is one, take the repository, review id, base SHA, head SHA, task, scope and
@@ -433,9 +444,11 @@ a fixed head, its CI result and its diff visible to every agent; receipt (step 5
 
 0. **Submission** (author). The author pushes a branch and opens a PR to `main` whose
    description states `Submission-Head: <full sha>`. That head is never rebased or
-   force-pushed while it is under review. An author PR merges only on the owner's instruction.
-1. **Assignment** (owner). The owner assigns one review in **one** owner-authored source: an
-   *Assigned reviews* row (an owner commit), an owner comment on the author's PR, or a direct
+   force-pushed while it is under review. An author PR merges only on the owner's instruction,
+   or under a standing delegation that covers it (§1.1; harness-0.10).
+1. **Assignment** (owner, or Claude under a standing delegation). The owner assigns one review in
+   **one** owner-authored source: an *Assigned reviews* row (an owner commit, or a Claude commit
+   citing a standing delegation OD that covers the target, harness-0.10), an owner comment on the author's PR, or a direct
    instruction to the reviewer. A direct instruction is valid but hard to discover, so the owner
    or Claude adds the matching index row at receipt.
 
