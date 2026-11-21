@@ -24,7 +24,7 @@ In otherwise identical USD portfolios, rebalanced monthly, does holding US Treas
 | Currency | USD throughout. Translation can't change the sign of a USD difference (T-0023, `tools/t0023_episodes.py`) |
 | Returns | market-price total return under RA 3.1 and 5, from close to close with distributions reinvested on the ex-date, built by `tools/e0002_*` from E-0002 snapshot s2. Fund expenses are in the fund returns; **no additional trading costs or tax** |
 | Rebalancing | to target at each month's last trading close; fractional holdings |
-| Pinned at adoption | the snapshot's manifest hashes for SPY, BIL and IEF and the code revision, written into this file in the adopting commit. A later snapshot is a new preregistration |
+| Pinned | fund returns: E-0002 snapshot s2, `manifest.json` sha256 `bb40a84650a8b7104e3d116a5d0773619dd4870ee20190a80bab370135fee38d` (the one E-0003 V1's frozen panel `1aa29918…` used). CPI: the OD-0189 download, `manifest.json` sha256 `bbc64011760adae3deec14dabeae850b0e8b40be94cfe6b769bda03518fdd501`. Each run records its code revision. A later snapshot or download is a new preregistration |
 
 ## Primary outcome
 
@@ -116,6 +116,6 @@ It estimates how wide the primary interval would be with no true state differenc
 
 ## What it needs before step 1
 
-1. The owner's rights reading of the BLS CPI source, then a separate yes for one bounded download (`docs/research/cpi-source-1.md`).
-2. The owner's adoption of this preregistration at an exact revision, with the pinned hashes filled in and the 0.20-point threshold confirmed.
+1. ~~The CPI rights and download~~: done (OD-0188, OD-0189). First-release values: a sample check found 20 of 20 equal (`cpi-first-release-check-1.md`).
+2. The owner's adoption of this preregistration at an exact revision, confirming the 0.20-point threshold.
 3. A task card and a register entry for E-0004.
