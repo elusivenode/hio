@@ -1,13 +1,14 @@
 ---
 id: HIO-EVIDENCE-E0004-PREREG-1
 title: "E-0004: does duration reduce downside losses differently when inflation is accelerating? Preregistration, proposed"
-status: proposed
+status: adopted
+adopted_by: OD-0190   # at 067bd7b; later changes are amendments
 owner: HIO architecture lead (owner); drafted by claude/implementation-agent
 created_at: 2026-11-22
 instruction: OD-0187
 ---
 
-# E-0004 preregistration 1 (proposed)
+# E-0004 preregistration 1 (adopted, OD-0190)
 
 > **A proposed design, written before any of its data exists in HIO.** Nothing here is authorised to run, and the CPI source is unverified. **It isn't blind:** the author and owner know how 2008, Q1 2020 and 2022 went, and the state was chosen knowing that (T-0023 recommendation 1). It can support a forward research record, not validate a policy. Revised once after the architect's review (`sa` `20261122T083318-ask-b4ca`); every change follows its advice.
 
