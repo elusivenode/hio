@@ -1,7 +1,7 @@
 ---
 id: T-0023
 title: "Make the AUD defensive-sleeve comparison independently challengeable"
-status: in_review   # steps 1 to 7 done, unreviewed and unaccepted (OD-0177, OD-0178, OD-0179, OD-0180); IEF's NAV not obtained; recommendation proposed
+status: in_review   # steps 1 to 7 done, unaccepted (OD-0177 to OD-0180); Codex review REVIEW-2026-11-22-t0023-1 assigned (OD-0182 under OD-0184); IEF's NAV not obtained; recommendation adopted as the plan (OD-0181)
 owner: owner
 assignee_role: "implementation engineer (Claude orchestrator)"
 created_at: 2026-11-04
