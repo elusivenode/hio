@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-22
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0187"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0188"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -89,7 +89,7 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 | B-2 | done; see `docs/evidence/b2/`. `rg-hio-probe` destroyed (OD-0155 correction 2) |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | none open. **2027 RITS/NSW calendars added** (OD-0185); the 2028 ones are owed before 2028-01-01 |
-| Next permissible actions | **Owner:** the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. the merge of PR #104 (OD-0181 item 1); the CPI rights reading (`docs/research/cpi-source-1.md`); designing the adopted experiment (recommendation 1, OD-0181); the soak follow-ons. **the `bls_cpi` rights decision** (`docs/research/T-0002-cpi-reading-pack.md`); adopting E-0004's preregistration (`docs/evidence/e0004/preregistration-1.md`, proposed, OD-0187); reconciling the two T-0023 findings (verified closed by VERIFY-2026-11-22-t0023-1-1, OD-0186) and accepting T-0023. **Claude:** under the **standing delegation (OD-0184, harness-0.10)**; nothing in progress |
+| Next permissible actions | **Owner:** the independent return reference; the cash dispositions; the C5 decision; distil 3 (proposed); the architect's performance review (`docs/agents/solution-architect/performance-review-1.md`, proposed); held-out cases. the merge of PR #104 (OD-0181 item 1); the CPI rights reading (`docs/research/cpi-source-1.md`); designing the adopted experiment (recommendation 1, OD-0181); the soak follow-ons. one bounded CPI download (`bls_cpi` verified, OD-0188); adopting E-0004's preregistration (`docs/evidence/e0004/preregistration-1.md`, proposed, OD-0187); reconciling the two T-0023 findings (verified closed by VERIFY-2026-11-22-t0023-1-1, OD-0186) and accepting T-0023. **Claude:** under the **standing delegation (OD-0184, harness-0.10)**; nothing in progress |
 
 ## Branches holding work not on `main`
 
@@ -104,7 +104,7 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 | Work | Card | Status |
 |---|---|---|
 | A01 decisions review | [T-0001](registers/tasks/T-0001-owner-review-a01-decisions.md) | proposed (criteria met by OD-0008, OD-0011; acceptance not recorded) |
-| S1 source rights | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: the five S1b-1 datasets owner_verified (OD-0116 c1, OD-0118); the Treasury par curve (OD-0156); H.10 AUD/USD (OD-0166); RBA historical cash (OD-0172); the rest unverified |
+| S1 source rights | [T-0002](registers/tasks/T-0002-verify-s1-source-rights.md) | **in_progress**: the five S1b-1 datasets owner_verified (OD-0116 c1, OD-0118); the Treasury par curve (OD-0156); H.10 AUD/USD (OD-0166); RBA historical cash (OD-0172); BLS CPI-U (OD-0188); the rest unverified |
 | Equity total-return source | [T-0003](registers/tasks/T-0003-equity-total-return-source.md) | **in_progress**: EODHD evaluation run, T-0022 accepted, no data accepted (OD-0162, OD-0171); retained for research (OD-0176); no letters (OD-0161) |
 | HIO-001 boundary (SMSF side) | [T-0004](registers/tasks/T-0004-hio-001-boundary-amendment.md) | submitted_for_review; review READY, received (OD-0040); **not accepted, not merged** |
 | HIO-S1 walking skeleton | [T-0005](registers/tasks/T-0005-hio-s1-walking-skeleton.md) | S1a stage **accepted** (OD-0042); S1b staged under HIO-ADR-0012 |
