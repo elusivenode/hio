@@ -1,16 +1,16 @@
 ---
 id: OD-0182
-title: "Proposed: owner assigns one Codex review of T-0023's evidence at 4b6472e"
+title: "Assignment of one Codex review of T-0023's evidence at 4b6472e, under the standing delegation (OD-0184 A2)"
 decision: authorise_work
-record_status: proposed     # drafted under OD-0181 item 2; becomes recorded only on the owner's one-line approval
+record_status: recorded     # drafted under OD-0181 item 2; assigned by Claude under OD-0184 A2 (2026-11-22)
 created_at: 2026-11-22
 updated_at: 2026-11-22
 recorded_by: claude/implementation-agent
 owner_statement:
-  source: pending (the owner's approval of this draft)
-  sha256: pending
-  date: pending
-  quote: pending
+  source: docs/decisions/owner/OD-0184-standing-delegation.md (the standing delegation, A2; approved by the owner, OD-0184 correction 1)
+  sha256: 01cbc499e435698e24e7ac59996c680a81aaa2aef1508c674b7a6c4969e8d52e   # the owner's approval of OD-0184: docs/history/2026-11-22-owner-approve-od-0184.md
+  date: 2026-11-22
+  quote: "y"
 applies_to:
   - path: feat/t0023-consolidation
     revision: 4b6472e54aa7a1d989ee78ee49f83d6967a27536
@@ -18,7 +18,7 @@ base_revision: db9d7aedb457931a0f264f65c82ad4fdc6b00f4b
 related: {adrs: [], tasks: [T-0023], findings: [], ods: [OD-0177, OD-0178, OD-0179, OD-0180, OD-0181]}
 ---
 
-# OD-0182: review of T-0023 (proposed)
+# OD-0182: review of T-0023
 
 | Field | Value |
 |---|---|
@@ -31,10 +31,12 @@ related: {adrs: [], tasks: [T-0023], findings: [], ods: [OD-0177, OD-0178, OD-01
 | Limit stated up front | the reviewer can't trace EODHD-derived values to bytes, so T-0023's acceptance evidence ("a permitted verifier can trace the decisive reference facts") stays partly open whatever the verdict. The review says which facts it traced and which it couldn't |
 | Review branch | `review/t0023-1-codex`, cut at the head |
 | The record's `assignment` field | exactly `docs/decisions/owner/OD-0182-assign-t0023-review.md` |
-| Delivery | hiomux Codex task, `gpt-6-sol` `high`, with network (public reads only). Launched only once this record is `recorded` and on `main` |
+| Delivery | hiomux Codex task, `gpt-6-sol` `high`, with network (public reads only). Launched once this record is on `main` |
 
 ## Not authorised
 
 Accepting or merging T-0023; adopting any result; any licensed data in the reviewer's context.
 
 ## Corrections (append-only)
+
+1. **2026-11-22: assigned under OD-0184 A2.** The owner's earlier yes (OD-0181 item 2) asked for a one-line approval of this draft. The standing delegation, approved the same day, now covers it, so Claude assigns it unchanged, with the *Assigned reviews* row citing OD-0184.

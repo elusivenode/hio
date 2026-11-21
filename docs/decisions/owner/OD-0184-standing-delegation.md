@@ -2,20 +2,27 @@
 id: OD-0184
 title: "Standing delegation to Claude as orchestrator (harness-0.10): act within authorised scope and report after"
 decision: approve
-record_status: proposed     # takes effect only when the owner approves the exact head of the PR that adds it; that statement is recorded below as correction 1
+record_status: recorded     # approved by the owner at 5ddbb7a (PR #106), correction 1
 created_at: 2026-11-22
 updated_at: 2026-11-22
 recorded_by: claude/implementation-agent
 owner_statement:
-  source: pending (the owner's approval of the PR head)
-  sha256: pending
-  date: pending
-  quote: pending
+  source: docs/history/2026-11-22-owner-approve-od-0184.md (owner's message, verbatim, with Claude's question)
+  sha256: 01cbc499e435698e24e7ac59996c680a81aaa2aef1508c674b7a6c4969e8d52e
+  date: 2026-11-22
+  quote: "y"
+applies_to:
+  - path: proposal/standing-delegation (PR #106)
+    revision: 5ddbb7a3bdede0529e82ccdc0cc139ff3446ddc7
+  - path: ~/.hio-runs/PROTOCOL.md (outside the repository)
+    revision: "sha256 25dfb7794f3933a351ba8789b5a2acb9297746336fbe85227e585bdf54119045"
+  - path: ~/.hio-runs/orch-prompt.md (outside the repository)
+    revision: "sha256 9fbfce080b7ecbf4d7083fa29d1f446612e70c104165e970eb8ecd53522d00b7"
 base_revision: 05f2dcd4782874d60f9f4bda4eb9eb07e0397bb9
 related: {adrs: [HIO-ADR-0008], tasks: [], findings: [], ods: [OD-0061, OD-0076, OD-0139, OD-0183]}
 ---
 
-# OD-0184: standing delegation (proposed)
+# OD-0184: standing delegation
 
 **The aim:** Claude, as orchestrator, acts without a per-item yes on work that is already within an authorised scope, and reports what it did afterwards. The owner keeps every decision that AGENTS.md rule 3 reserves, plus the high-risk actions listed below. This approves harness-0.10 (operating model §1.1, §2.2, §6.2 steps 0 and 1; AGENTS.md) at the approved head.
 
@@ -49,3 +56,5 @@ Changes to `.github/workflows/`, `infra/`, the live capture path (`src/hio/jobs/
 - **On approval, Claude updates `~/.hio-runs/PROTOCOL.md`'s Codex paragraph** to cite this OD, and records the new hash here. Nothing else outside the repository changes.
 
 ## Corrections (append-only)
+
+1. **2026-11-22: approved.** The owner approved PR #106 at `5ddbb7a3bdede0529e82ccdc0cc139ff3446ddc7` ("y"), which approves this delegation and harness-0.10. First use, A1: Claude merged #106 as `30b275b` (the approval was at the exact head, so that merge needed no delegation). **Outside the repository:** `~/.hio-runs/PROTOCOL.md`'s Codex paragraph now cites OD-0184 A2 (new sha256 `25dfb779…9045`, superseding OD-0089's `13a45eb7…71c9` as the hash record), and `~/.hio-runs/orch-prompt.md` names OD-0184 as the PROTOCOL hash record (sha256 `9fbfce08…b7`). hiomux is unchanged (`54fe4e86…`, OD-0111).
