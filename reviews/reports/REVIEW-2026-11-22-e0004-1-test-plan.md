@@ -1,3 +1,9 @@
+---
+id: REVIEW-2026-11-22-e0004-1-TEST-PLAN
+status: in_review
+owner: codex/reviewer
+---
+
 # E-0004 independent review test plan
 
 Fixed before reading any author handoff or response. Assignment: public `main` OD-0192 and its Assigned reviews row, base `c6886d9e50d034f3a21cb57fa5d736e2a078592c`, head `6720c5c34a130db8ae0a6196fa530e10f3888e91`. Governing design: OD-0190 adoption of `docs/evidence/e0004/preregistration-1.md` at `067bd7b`, with OD-0191 and correction 1's pre-run readings. Reviewer role: independent Codex; work status: assigned for review, not accepted.
