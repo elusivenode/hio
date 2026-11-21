@@ -32,3 +32,7 @@ related: {adrs: [], tasks: [T-0023], findings: [], ods: [OD-0181, OD-0187, OD-01
 Step 2 (the estimate), which needs its own yes and IEF's NAV corroboration; any further download.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-22): step 1 ran
+
+The screen passes in both states (`docs/evidence/e0004/step1-1.md`). Counts reported to the owner; step 1b may now run under item 3.
