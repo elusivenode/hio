@@ -200,6 +200,7 @@ are in operating model §1.1; the template is
 | [OD-0183](OD-0183-draft-standing-delegation.md) | authorise_work | Drafting the standing delegation (OD-0184) and harness-0.10, in one PR | `records/2026-11-22-five-yeses` at `05f2dcd` | recorded |
 | [OD-0184](OD-0184-standing-delegation.md) | approve | **Standing delegation to Claude** (harness-0.10): self-merge within authorised scope, assign Codex, receive, delegate, read-only checks; high-risk merges excluded. **Approved** (harness-0.10) | `proposal/standing-delegation` at `5ddbb7a` | recorded |
 | [OD-0185](OD-0185-delegation-uses-2026-11-22.md) | authorise_work | Delegation uses: #107 merged (A1); T-0023 review launched (A2); **2027 RITS and NSW calendars** (A7) | `main` at `9632758` | recorded |
+| [OD-0186](OD-0186-receive-t0023-review-remediate.md) | authorise_work | T-0023 review received (**NOT READY**, two medium); remediation and one verification, under OD-0184 | `main` at `68c32d5` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
