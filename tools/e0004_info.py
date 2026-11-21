@@ -33,7 +33,7 @@ EODHD_MANIFEST_SHA = "bb40a84650a8b7104e3d116a5d0773619dd4870ee20190a80bab370135
 CPI_MANIFEST_SHA = "bbc64011760adae3deec14dabeae850b0e8b40be94cfe6b769bda03518fdd501"
 
 
-def clusters_of(states: Sequence[str], spy: Sequence[float]) -> list[list[int]]:
+def clusters(states: Sequence[str], spy: Sequence[float]) -> list[list[int]]:
     """Indices of stress periods (available only), grouped in time order into clusters."""
     out: list[list[int]] = []
     last_stress: int | None = None
@@ -54,6 +54,9 @@ def clusters_of(states: Sequence[str], spy: Sequence[float]) -> list[list[int]]:
     return out
 
 
+clusters_of = clusters  # the earlier name
+
+
 def runs_of(states: Sequence[str], state: str) -> int:
     """Maximal spells of consecutive periods in `state`."""
     count = 0
@@ -72,11 +75,11 @@ def count(states: Sequence[str], spy: Sequence[float]) -> dict[str, Any]:
     unknown = sorted({s for s in states if s not in (*STATES, UNAVAILABLE)})
     if unknown:
         raise ValueError(f"unknown state: {unknown[0]}")
-    clusters = clusters_of(states, spy)
+    groups = clusters(states, spy)
     per_state: dict[str, dict[str, Any]] = {}
     for state in STATES:
         stress = sum(1 for s, r in zip(states, spy, strict=True) if s == state and r <= STRESS)
-        held = [sum(1 for i in c if states[i] == state) for c in clusters]
+        held = [sum(1 for i in c if states[i] == state) for c in groups]
         per_state[state] = {
             "months": sum(1 for s in states if s == state),
             "runs": runs_of(states, state),
