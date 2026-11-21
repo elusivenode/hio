@@ -36,6 +36,10 @@ Over the **common history**: every date present in `s2`, compared with the same 
 | Changes exist, each with a stated cause, and the compounded-return difference is under 0.01 points | **stable with explained revisions** |
 | Any unexplained change, or a compounded-return difference of 0.01 points or more | **revisions not explained**; T-0003 can't rest on these series until they are |
 
+## What this record may state (added before s3, after F-REVIEW-2026-11-22-e0004-1-2)
+
+Only the reading, and for each fund and category whether anything changed (yes or no) and whether each change has a stated cause. **No counts, dates, values or return impacts**: those are derived from EODHD data and stay in the local report (OD-0176).
+
 ## Result
 
 _Not yet run._
