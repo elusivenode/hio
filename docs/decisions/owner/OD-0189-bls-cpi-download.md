@@ -31,3 +31,7 @@ related: {adrs: [], tasks: [T-0002], findings: [], ods: [OD-0179, OD-0187, OD-01
 A second download; adopting E-0004 or running any part of it; ALFRED.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-22): the API refused; one flat file instead
+
+Two runs at `2be6b4f` stopped on BLS's API v1 answering HTTP 503 to the first request (22:48Z and about 22:51Z); nothing was written; **2 of the 20 requests used.** The owner then authorised ("Y", `docs/history/2026-11-22-owner-yes-bls-flat-file.md`, sha256 `7eaa6f7905e05a7f8cbee7236d8930dc844e6b13d7a2d271e32d75c5c078902e`) one GET of `https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems` in place of the API calls, with the same User-Agent, storage and limit (**18 remaining**), then the archive page and up to 12 archived releases as before. If BLS refuses again, Claude stops and reports.
