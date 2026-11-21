@@ -1,6 +1,6 @@
 ---
 id: HIO-EVIDENCE-T0023-CORROBORATION-2
-title: "T-0023 corroboration with IEF's NAV: C1 and C2 pass for IEF; C5's NAV row fails by about 1.5 cents"
+title: "T-0023 corroboration with IEF's NAV: C1 and C2 pass for IEF; C5's NAV row fails"
 status: current
 owner: HIO architecture lead (owner); recorded by claude/implementation-agent
 created_at: 2026-11-22
@@ -21,6 +21,6 @@ instruction: OD-0178 (step 3); E-0004's data condition, OD-0190
 
 Every other check is unchanged (C1 BIL fail, C4 IEF fail, C5 SPY fail; S1 to S5 pass).
 
-**C5's NAV row.** The issuer's daily NAV is within the 0.01 bar at the first fiscal start but differs by about 0.015 at the 2008-02-29 boundary and at the 2009 fiscal end. Two untested explanations: audited year-end NAVs can include financial-statement adjustments that the published daily NAV doesn't, and 2009-02-28 was a Saturday, so the end anchor moves to the next trading day. **The fail stands.** It doesn't touch E-0004, whose data condition is C1 and C2 for IEF.
+**C5's NAV row.** The issuer's daily NAV is within the 0.01 bar at the first fiscal start but exceeds it at the 2008-02-29 boundary and at the 2009 fiscal end (gaps local only). Two untested explanations: audited year-end NAVs can include financial-statement adjustments that the published daily NAV doesn't, and 2009-02-28 was a Saturday, so the end anchor moves to the next trading day. **The fail stands.** It doesn't touch E-0004, whose data condition is C1 and C2 for IEF.
 
 **What this closes.** The sleeve carrying the duration result now has a close-against-NAV check, which `recommendation-1.md` asked for before any inference.

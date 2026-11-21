@@ -9,6 +9,8 @@ instruction: OD-0191
 
 # E-0004 result 1
 
+> **Redacted 2026-11-22 (F-REVIEW-2026-11-22-e0004-1-2, OD-0195):** measurements derived from EODHD returns were removed from this file; they stay in the local run outputs. Earlier revisions in git history still hold them; whether to rewrite that history is the owner's decision.
+
 > **Exploratory, retrospective and unaccepted.** One run, `20261121T232243Z-23424eae`, at code `23424ea` (`tools/e0004_estimate.py` by worker W14), on the pinned inputs, under the preregistration adopted at `067bd7b` (OD-0190) and the two readings recorded before the run (OD-0191 and its correction 1). **No EODHD-derived value is recorded here:** the numbers are in the local result.json (sha256 `e03a3e0f38892ac1543e4280bbc54d79537998e1a8dd4c5308b743ac56de0193`) and were reported to the owner. CPI is from the U.S. Bureau of Labor Statistics (CPI-U, CUUR0000SA0), retrieved 2026-11-21. BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov.
 
 ## The reading
@@ -20,7 +22,7 @@ instruction: OD-0191
 | Primary, 12-month blocks | not distinguished | positive |
 | 6- and 24-month blocks | not distinguished, both | positive |
 | Block disagreement | none | — |
-| Fragility (each of 11 stress clusters left out) | no cluster changes the sign | all positive |
+| Fragility (each stress cluster left out) | no cluster changes the sign | all positive |
 | S1 equality counted as accelerating | not distinguished | positive (no month changes state) |
 | S2 IEF replaced by E-0001's 10-year construction (overlap: the full panel) | not distinguished | positive |
 | S3 three-month persistence filter | not distinguished | positive, much smaller |
@@ -29,8 +31,8 @@ instruction: OD-0191
 ## What it means, and what it doesn't
 
 - **The sample doesn't show that Treasuries' downside protection depends on accelerating inflation**, at the 95% level, under any block length or sensitivity.
-- **The point estimate's sign runs against the usual story.** Treasuries reduced downside losses slightly *more* in accelerating months, not less. The interval includes zero, so this is not evidence either way. Stress months cluster in the accelerating state (step 1: 18 against 6), which includes late 2008.
-- **Not "no effect".** Step 1b showed the design resolves about ±0.17 points; a smaller real difference wouldn't be seen.
+- **The point estimate's sign runs against the usual story.** Treasuries reduced downside losses slightly *more* in accelerating months, not less. The interval includes zero, so this is not evidence either way. Stress months cluster in the accelerating state, which includes late 2008.
+- **Not "no effect".** Step 1b showed the design can resolve differences near the 0.20-point threshold, not much smaller; a smaller real difference wouldn't be seen.
 - **The 2022 cluster moves the estimate the most** when left out, and in the positive direction.
 - **Retrospective.** The state was chosen knowing 2008, 2020 and 2022 (T-0023 recommendation 1). This can't be validated on the same history.
 
