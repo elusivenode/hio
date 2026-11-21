@@ -160,8 +160,8 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
-| F-REVIEW-2026-11-22-t0023-1-1 | REVIEW-2026-11-22-t0023-1 | medium | open: C5 can pass after a fiscal year is omitted | — | — | — |
-| F-REVIEW-2026-11-22-t0023-1-2 | REVIEW-2026-11-22-t0023-1 | medium | open: downstream tools do not validate the frozen panel identity | — | — | — |
+| F-REVIEW-2026-11-22-t0023-1-1 | REVIEW-2026-11-22-t0023-1 | medium | remediation_claimed: C5 can pass after a fiscal year is omitted | [response](responses/RESPONSE-REVIEW-2026-11-22-t0023-1.md) at `fix/t0023-review-1` | — | — |
+| F-REVIEW-2026-11-22-t0023-1-2 | REVIEW-2026-11-22-t0023-1 | medium | remediation_claimed: downstream tools do not validate the frozen panel identity | [response](responses/RESPONSE-REVIEW-2026-11-22-t0023-1.md) at `fix/t0023-review-1` | — | — |
 | F-REVIEW-2026-11-04-t0022-1-1 | REVIEW-2026-11-04-t0022-1 | high | **verified_closed** (OD-0171): Q1 omits quote-currency check | see T-0022 | VERIFY-2026-11-04-t0022-1-1 | — |
 | F-REVIEW-2026-11-04-t0022-1-2 | REVIEW-2026-11-04-t0022-1 | high | **verified_closed** (OD-0171): Q3 excludes missing adjusted-close periods | see T-0022 | VERIFY-2026-11-04-t0022-1-1 | — |
 | F-REVIEW-2026-11-04-t0022-1-3 | REVIEW-2026-11-04-t0022-1 | high | **verified_closed** (OD-0171): snapshot path can escape the workspace | see T-0022 | VERIFY-2026-11-04-t0022-1-2 | — |
