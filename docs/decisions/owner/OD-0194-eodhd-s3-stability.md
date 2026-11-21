@@ -26,3 +26,7 @@ Rights: `eodhd.personal_evaluation` (OD-0163, OD-0176). No value goes in the rep
 Any other fund or endpoint; a second snapshot; the T-0003 decision; any factor build.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-22): s3 taken and compared
+
+`s3` taken (10 requests); the comparison reads **revisions not explained** (`docs/evidence/e0002/stability-1.md`). No further snapshot is authorised.

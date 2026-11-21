@@ -42,4 +42,16 @@ Only the reading, and for each fund and category whether anything changed (yes o
 
 ## Result
 
-_Not yet run._
+Snapshot `s3` taken 2026-11-22 at code `27553ba` (10 requests, no stop; manifest sha256 `ce6b17c9f2590c26adabf37856d79e607597027a1701e7833bf386a9fe4757cc`). Comparison run `stability-20261121T234318Z` (`tools/eodhd_stability.py` by worker W1); stability.json sha256 `7612ce1ec819f96b27c1fe2aa56b2ae8508ec6b54ac90730b76e75de75f4567f`, local with the change list.
+
+**Reading: revisions not explained.** EODHD revised its own history between 2026-11-03 and 2026-11-22.
+
+| Fund | Closes changed | Distributions changed | Splits changed | Stated cause (Claude's reading of the local change list) |
+|---|---|---|---|---|
+| SPY | no | **yes**: one historical distribution's ex-date moved; amount unchanged | no | apparently a correction: the new date is the fund's usual quarterly ex-date weekday. Its return impact over the common span is at or above the 0.01-point bar, so the declared rule reads it as not explained |
+| IEF | **yes**, many | no | no | mostly re-rounding of stored closes to two decimals; a few changes are larger than rounding and have no stated cause. Return impact over the span is below the bar |
+| BIL | no | **yes**: payment dates filled in where `s2` had none; amounts and ex-dates unchanged | no | metadata completion; no return impact |
+
+**What it means.** EODHD's history is not frozen: closes and distribution records can change between pulls, without notice. So every HIO series built from EODHD must pin the snapshot it was built from (as E-0003 and T-0023 already do by hash), and a rebuild from a later pull is a new version, not the same series. It says nothing about accuracy.
+
+**For T-0003.** Under the declared rule, the source can't rest on these series as "stable". A narrow T-0003 decision can still name EODHD as a provisional, snapshot-pinned source for exploratory research, with this revision behaviour stated as a property.
