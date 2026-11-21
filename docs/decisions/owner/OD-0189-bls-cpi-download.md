@@ -35,3 +35,7 @@ A second download; adopting E-0004 or running any part of it; ALFRED.
 ### Correction 1 (2026-11-22): the API refused; one flat file instead
 
 Two runs at `2be6b4f` stopped on BLS's API v1 answering HTTP 503 to the first request (22:48Z and about 22:51Z); nothing was written; **2 of the 20 requests used.** The owner then authorised ("Y", `docs/history/2026-11-22-owner-yes-bls-flat-file.md`, sha256 `7eaa6f7905e05a7f8cbee7236d8930dc844e6b13d7a2d271e32d75c5c078902e`) one GET of `https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems` in place of the API calls, with the same User-Agent, storage and limit (**18 remaining**), then the archive page and up to 12 archived releases as before. If BLS refuses again, Claude stops and reports.
+
+### Correction 2 (2026-11-22): the download ran
+
+Run at `568b2e1` (tool from worker W9, checked_sha `f2eeaea`), 2026-11-21T22:53:41Z: **14 requests** (16 in total with the two refused), 15 files in `~/.hio-research/E-0004/raw/` under `manifest.json` with each file's sha256 and the OD-0188 notice; the contact appears in no file. The flat file holds 1,479 `CUUR0000SA0` rows, 1913-M01 to 2026-M10. The archive gives **293 release dates, 2002-06-18 to 2026-11-10**: twelve a year, except 2002 (from June), 2025 (no release for October's data; September's on 2025-10-24) and 2026 (to November). Twelve archived releases were retained, 2002 to 2026, for the first-release check. No further download is authorised.
