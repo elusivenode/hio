@@ -203,6 +203,7 @@ are in operating model §1.1; the template is
 | [OD-0186](OD-0186-receive-t0023-review-remediate.md) | authorise_work | T-0023 review received (**NOT READY**, two medium); remediation and one verification, under OD-0184 | `main` at `68c32d5` | recorded |
 | [OD-0187](OD-0187-draft-e0004-preregistration.md) | authorise_work | Drafting **E-0004's preregistration** (inflation acceleration, downside loss) as proposed; no data, no run | `main` | recorded |
 | [OD-0188](OD-0188-verify-bls-cpi.md) | authorise_work | **`bls_cpi` owner_verified** (public domain; BLS notice on every use); no download yet | `main` | recorded |
+| [OD-0189](OD-0189-bls-cpi-download.md) | authorise_work | **One bounded BLS CPI download** (≤20 requests; the owner's email as contact, at run time only); tool by worker W8 | `main` at `bba7c97` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
