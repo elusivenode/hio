@@ -177,3 +177,8 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - [hiomux] sa ask --rev <sha> reads a pushed branch, so push first; the answer lands in <run>/sa/<id>/out/answer.md, and stored copies need links repointed to pass check_repo. Source: docs/history/2026-11-04-architect-t0023-step7.md.
 - [shell] In this harness set -e didn't stop a failed step, and cmd | tail hides the exit code; gate each step with || exit 1, with no pipe on the gated command. Source: handoffs/s1b1/2026-11-04-t0023-consolidation.md.
 - [build] Reloading a tool module under its own name in a test makes two copies of its exception across a full run; import it once. Source: tests/test_t0022_eodhd_eval.py.
+- `[harness] Since OD-0184 (harness-0.10) Claude merges its own PRs within authorised scope and assigns reviews of its own work; workflows, infra, the live capture path, credentials and governance files still need the owner's exact-head approval. Source: docs/decisions/owner/OD-0184-standing-delegation.md.`
+- `[hiomux] hiomux task add validates --assignment against the LOCAL main; run git fetch origin main:main first. Source: handoffs/s1b1/2026-11-22-restart-delegation-t0023-review.md.`
+- `[shell] zsh expands "$VAR:r" as a modifier; write ${VAR}:path in git show arguments. Source: handoffs/s1b1/2026-11-22-restart-delegation-t0023-review.md.`
+- `[build] Run ruff check and ruff format --check before pushing; CI's lint step fails a PR the tests pass. Source: handoffs/s1b1/2026-11-22-restart-delegation-t0023-review.md.`
+- `[research] E-0004's state uses unrounded CPI-U ratios from first-release index levels, carried forward, so October 2025's missing release needs no special case. Source: docs/evidence/e0004/preregistration-1.md.`
