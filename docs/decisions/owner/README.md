@@ -209,6 +209,7 @@ are in operating model §1.1; the template is
 | [OD-0192](OD-0192-assign-e0004-review.md) | authorise_work | Codex review of E-0004, `REVIEW-2026-11-22-e0004-1`; assigned by Claude under OD-0184 A2 | `main` at `6720c5c` | recorded |
 | [OD-0193](OD-0193-reconcile-t0023-findings.md) | authorise_work | T-0023's two findings **reconciled to verified_closed**; T-0023 not accepted | `main` | recorded |
 | [OD-0195](OD-0195-receive-e0004-review.md) | authorise_work | E-0004 review received (**NOT READY**, two high); F-2 values removed from current files; history and F-1's path for the owner | `main` | recorded |
+| [OD-0196](OD-0196-keep-public-history.md) | authorise_work | Public git history kept as it stands for F-REVIEW-2026-11-22-e0004-1-2 (owner's reading of EODHD's terms); current files remediated | `fix/e0004-f2-derived-values` | recorded |
 | [OD-0194](OD-0194-eodhd-s3-stability.md) | authorise_work | **One EODHD snapshot s3** (SPY, IEF, BIL; ≤12 requests) and its stability comparison, rules first | `main` | recorded |
 | [OD-0197](OD-0197-cpi-first-release-download.md) | authorise_work | **Archived CPI releases download** (245 pages, cap 250) and first-release comparison for E-0004 F-1; no rerun | `main` | recorded |
 
