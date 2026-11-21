@@ -12,6 +12,7 @@ import hashlib
 import io
 import json
 import sys
+import re
 import xml.etree.ElementTree as ET
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
@@ -50,11 +51,16 @@ def nav_rows(rows: list[tuple[object, ...]]) -> list[tuple[str, str]]:
     return [(d.isoformat(), out[d]) for d in sorted(out)]
 
 
+BARE_AMPERSAND = re.compile(rb"&(?!(?:[A-Za-z][A-Za-z0-9]*|#[0-9]+|#x[0-9A-Fa-f]+);)")
+
+
 def ishares_rows(data: bytes) -> list[tuple[str, str]]:
     """Date and NAV text, oldest first, from an iShares SpreadsheetML fund workbook's Historical sheet.
     NAV strings are kept exactly as given. Anything unexpected stops; nothing is guessed."""
     if b"<!DOCTYPE" in data.upper() or b"<!ENTITY" in data.upper():
         raise ev.Stop("a workbook with a DTD")
+    # iShares' file puts bare "&" in its hyperlink URLs, which isn't well-formed XML. Escape only those.
+    data = BARE_AMPERSAND.sub(b"&amp;", data)
     try:
         root = ET.fromstring(data)
     except ET.ParseError as exc:

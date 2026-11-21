@@ -229,3 +229,12 @@ def test_extract_writes_nav_ief_privately_without_openpyxl(tmp_path, monkeypatch
     assert target.read_text() == "date,nav\n2026-11-02,90.10\n2026-11-10,90.5\n2026-11-20,91.585712\n"
     assert stat.S_IMODE(target.stat().st_mode) == 0o600
     assert not (reference / "nav-spy.csv").exists()
+
+
+def test_ishares_rows_reads_a_workbook_with_bare_ampersands_in_its_links():
+    """iShares' real file has bare '&' in hyperlink URLs (found on the owner's download, 2026-11-22)."""
+    link = (
+        '<ss:Worksheet ss:Name="Disclaimers"><ss:Table><ss:Row><ss:Cell ss:HRef="https://x/?a=1&b=2&c=3">'
+        '<ss:Data ss:Type="String">A &amp; B</ss:Data></ss:Cell></ss:Row></ss:Table></ss:Worksheet>'
+    )
+    assert ref.ishares_rows(workbook(GOOD, extra_sheet=link))[0] == ("2026-11-02", "90.10")
