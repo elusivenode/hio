@@ -9,7 +9,7 @@ instruction: OD-0178 (step 3); E-0004's data condition, OD-0190
 
 # T-0023 corroboration 2: IEF's NAV obtained
 
-> **Exploratory and unaccepted.** No EODHD-derived value is recorded here; gaps are in the local report (`~/.hio-research/T-0023/corroboration/20261121T231045Z-60cd1edf/`). The issuer's file was downloaded once by the owner's browser on 2026-11-22: `iShares-7-10-Year-Treasury-Bond-ETF_fund.xls`, sha256 `a195241c…`, iShares (BlackRock) fund data, no endorsement implied, not redistributed. Extracted to `nav-ief.csv` by `tools/t0023_reference.py` (the iShares reader by worker W13; the bare-ampersand fix by Claude, found on the real file): 6,127 days, 2002-07-22 to 2026-11-20. Tools run at `ff4ec22`.
+> **Exploratory and unaccepted.** No EODHD-derived value is recorded here; gaps are in the local report (`~/.hio-research/T-0023/corroboration/20261121T231045Z-60cd1edf/`). The issuer's file was downloaded once by the owner's browser on 2026-11-22: `iShares-7-10-Year-Treasury-Bond-ETF_fund.xls`, sha256 `a195241c…`, iShares (BlackRock) fund data, no endorsement implied, not redistributed. Extracted to `nav-ief.csv` by `tools/t0023_reference.py` (the iShares reader by worker W13; the bare-ampersand fix by Claude, found on the real file): 6,127 days, 2002-07-22 to 2026-11-20. Tools run at `60cd1ed`.
 
 | Check, IEF | Corroboration 1 | Now |
 |---|---|---|
