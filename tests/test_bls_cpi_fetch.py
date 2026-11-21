@@ -17,7 +17,14 @@ _spec.loader.exec_module(tool)
 
 CONTACT = "zz-invented-contact@example.invalid"
 NOW = datetime(2026, 11, 22, 3, 0, tzinfo=UTC)
-OK = json.dumps({"status": "REQUEST_SUCCEEDED", "Results": {"series": []}}).encode()
+FLAT = (
+    b"series_id        \tyear\tperiod\t       value\tfootnote_codes\n"
+    b"CUSR0000SA0      \t1999\tM01\t       100.0\t\n"
+    b"CUUR0000SA0      \t2005\tM02\t       190.7\t\n"
+    b"CUUR0000SA0      \t2005\tM01\t       190.7\t\n"
+    b"CUUR0000SA0      \t2026\tM09\t       330.0\t\n"
+    b"CUUR0000SA0      \t2025\tM13\t       320.0\t\n"
+)
 # 14 distinct dates; the first also has a pdf link.
 ARCHIVE_DATES = [date(2024, m, 10) for m in range(1, 13)] + [date(2025, 1, 15), date(2025, 2, 12)]
 
@@ -40,22 +47,19 @@ class FakeGate:
 
 
 class Net:
-    def __init__(self, page=None, post_answer=(200, OK), get_status=200):
+    def __init__(self, page=None, flat=FLAT, get_status=200, flat_status=200):
         self.page = archive_page() if page is None else page
-        self.post_answer = post_answer
+        self.flat = flat
         self.get_status = get_status
-        self.posts = []
+        self.flat_status = flat_status
         self.gets = []
         self.agents = []
-
-    def post(self, url, payload, agent):
-        self.posts.append((url, json.loads(payload)))
-        self.agents.append(agent)
-        return self.post_answer
 
     def get(self, url, agent):
         self.gets.append(url)
         self.agents.append(agent)
+        if url == tool.FLAT_URL:
+            return self.flat_status, (self.flat if self.flat_status == 200 else b"")
         if self.get_status != 200:
             return self.get_status, b""
         if url == tool.ARCHIVE_URL:
@@ -72,32 +76,57 @@ def run(tmp_path, net=None, gate=None, **kwargs):
         commit="c",
         contact=CONTACT,
         get=net.get,
-        post=net.post,
         **kwargs,
     )
     return manifest, net
 
 
-def test_the_ten_year_split():
-    assert tool.year_spans(2026) == [(2005, 2014), (2015, 2024), (2025, 2026)]
-    assert tool.year_spans(2024) == [(2005, 2014), (2015, 2024)]
-    assert tool.year_spans(2025) == [(2005, 2014), (2015, 2024), (2025, 2025)]
-    assert tool.year_spans(2005) == [(2005, 2005)]
-    with pytest.raises(ValueError):
-        tool.year_spans(2004)
-
-
-def test_requests_are_the_split_then_the_archive_then_the_releases(tmp_path):
+def test_requests_are_the_flat_file_then_the_archive_then_the_releases(tmp_path):
     manifest, net = run(tmp_path, releases=4)
-    assert [p[0] for p in net.posts] == [tool.API_URL] * 3
-    assert net.posts[0][1] == {"seriesid": ["CUUR0000SA0"], "startyear": "2005", "endyear": "2014"}
-    assert net.posts[2][1] == {"seriesid": ["CUUR0000SA0"], "startyear": "2025", "endyear": "2026"}
-    assert net.gets[0] == tool.ARCHIVE_URL
-    assert len(net.gets) == 1 + 4
-    assert manifest["requests"] == 3 + 1 + 4
+    assert net.gets[0] == "https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems"
+    assert net.gets[1] == tool.ARCHIVE_URL
+    assert len(net.gets) == 1 + 1 + 4
+    assert manifest["requests"] == 1 + 1 + 4
     out = tmp_path / "out"
-    assert (out / "cpi_series_2005_2014.json").read_bytes() == OK
+    assert (out / "cu.data.1.AllItems.txt").read_bytes() == FLAT
     assert (out / "cpi_release_archive.htm").read_bytes() == archive_page()
+
+
+def test_the_manifest_records_the_series_rows_and_span(tmp_path):
+    manifest, _net = run(tmp_path, releases=1)
+    assert manifest["series_rows"] == 4
+    assert manifest["series_first"] == "2005-M01"
+    assert manifest["series_last"] == "2026-M09"
+
+
+def test_the_flat_file_validation():
+    assert tool.validate_flat_file(FLAT)["series_rows"] == 4
+    plain = b"series_id\tyear\tperiod\tvalue\tfootnote_codes\r\nCUUR0000SA0\t2020\tM01\t1.0\t\r\n"
+    assert tool.validate_flat_file(plain) == {
+        "series_rows": 1,
+        "series_first": "2020-M01",
+        "series_last": "2020-M01",
+    }
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"",
+        b"<html>not the file</html>",
+        b"series_id,year,period,value,footnote_codes\nCUUR0000SA0,2020,M01,1.0,\n",  # not tab-separated
+        b"series_id\tyear\tperiod\tvalue\nCUUR0000SA0\t2020\tM01\t1.0\n",  # header short a column
+        b"series_id\tyear\tperiod\tvalue\tfootnote_codes\nCUSR0000SA0\t2020\tM01\t1.0\t\n",  # no such series
+        b"series_id\tyear\tperiod\tvalue\tfootnote_codes\n",  # header only
+        b"series_id\tyear\tperiod\tvalue\tfootnote_codes\nCUUR0000SA0\tabcd\tM01\t1.0\t\n",  # bad year
+    ],
+)
+def test_a_bad_flat_file_refuses_and_writes_nothing(tmp_path, body):
+    net = Net(flat=body)
+    with pytest.raises(ValueError, match=r"flat file|CUUR0000SA0"):
+        run(tmp_path, net)
+    assert net.gets == [tool.FLAT_URL]
+    assert not (tmp_path / "out").exists()
 
 
 def test_every_request_carries_the_user_agent_with_the_contact(tmp_path):
@@ -106,53 +135,35 @@ def test_every_request_carries_the_user_agent_with_the_contact(tmp_path):
     assert net.agents and set(net.agents) == {expected}
 
 
-def test_the_default_is_twelve_releases_and_sixteen_requests(tmp_path):
+def test_the_default_is_twelve_releases_and_fourteen_requests(tmp_path):
     manifest, net = run(tmp_path)
-    assert manifest["requests"] == 16
-    assert len(net.gets) == 13
+    assert manifest["requests"] == 14
+    assert len(net.gets) == 14
 
 
-def test_refusal_past_the_request_limit(tmp_path):
-    net = Net()
-    with pytest.raises(ValueError, match="more than 20 requests"):
-        run(tmp_path, net, now=datetime(2100, 1, 1, tzinfo=UTC))
-    assert len(net.posts) + len(net.gets) == 20
-    assert not (tmp_path / "out").exists()
+def test_the_default_limit_is_eighteen():
+    assert tool.MAX_REQUESTS == 18
 
 
 def test_a_smaller_limit_refuses_on_the_request_past_it(tmp_path):
     net = Net()
     with pytest.raises(ValueError, match="more than 4 requests"):
         run(tmp_path, net, max_requests=4)
-    assert len(net.posts) + len(net.gets) == 4
+    assert len(net.gets) == 4
+    assert not (tmp_path / "out").exists()
 
 
 def test_releases_outside_one_to_twelve_refuse_before_any_request(tmp_path):
     for n in (0, 13, -1):
         with pytest.raises(ValueError, match="between 1 and 12"):
-            run(tmp_path, Net(post_answer=pytest.fail), releases=n)
+            run(tmp_path, Net(flat=pytest.fail), releases=n)
 
 
-@pytest.mark.parametrize(
-    "answer",
-    [
-        (200, json.dumps({"status": "REQUEST_NOT_PROCESSED"}).encode()),
-        (200, json.dumps({"message": ["no status"]}).encode()),
-        (200, b"<html>not json</html>"),
-        (200, b"[1, 2]"),
-    ],
-)
-def test_a_non_success_api_status_refuses_and_writes_nothing(tmp_path, answer):
-    net = Net(post_answer=answer)
-    with pytest.raises(ValueError, match="API answer"):
+def test_a_flat_file_http_error_refuses(tmp_path):
+    net = Net(flat_status=503)
+    with pytest.raises(ValueError, match="HTTP 503"):
         run(tmp_path, net)
-    assert net.gets == []
-    assert not (tmp_path / "out").exists()
-
-
-def test_an_api_http_error_refuses(tmp_path):
-    with pytest.raises(ValueError, match="HTTP 500"):
-        run(tmp_path, Net(post_answer=(500, b"")))
+    assert net.gets == [tool.FLAT_URL]
     assert not (tmp_path / "out").exists()
 
 
@@ -212,7 +223,7 @@ def test_even_spacing_includes_first_and_last():
 def test_the_fetched_releases_are_the_evenly_spaced_ones(tmp_path):
     _manifest, net = run(tmp_path, releases=3)
     urls = [f"{tool.SITE}/news.release/archives/cpi_{ARCHIVE_DATES[i]:%m%d%Y}.htm" for i in (0, 6, 13)]
-    assert net.gets[1:] == urls
+    assert net.gets[2:] == urls
     for url in urls:
         assert (tmp_path / "out" / Path(url).name).read_bytes() == b"invented release " + url.encode()
 
@@ -220,13 +231,13 @@ def test_the_fetched_releases_are_the_evenly_spaced_ones(tmp_path):
 def test_a_used_output_refuses_so_a_rerun_cannot_download_again(tmp_path):
     run(tmp_path, releases=1)
     with pytest.raises(ValueError, match="absent or empty"):
-        run(tmp_path, Net(post_answer=pytest.fail))
+        run(tmp_path, Net(flat=pytest.fail))
 
 
 def test_an_empty_existing_output_is_accepted(tmp_path):
     (tmp_path / "out").mkdir()
     manifest, _net = run(tmp_path, releases=1)
-    assert manifest["requests"] == 5
+    assert manifest["requests"] == 3
 
 
 def test_inside_the_repository_refuses():
@@ -237,25 +248,20 @@ def test_inside_the_repository_refuses():
             commit="c",
             contact=CONTACT,
             get=pytest.fail,
-            post=pytest.fail,
         )
 
 
 @pytest.mark.parametrize("contact", ["", "   ", "a\nb", "a\r\nX-Evil: 1"])
 def test_a_bad_contact_refuses_before_any_request(tmp_path, contact):
     with pytest.raises(ValueError, match="--contact"):
-        tool.fetch(
-            tmp_path / "out", gate=FakeGate(), commit="c", contact=contact, get=pytest.fail, post=pytest.fail
-        )
+        tool.fetch(tmp_path / "out", gate=FakeGate(), commit="c", contact=contact, get=pytest.fail)
 
 
 @pytest.mark.parametrize("operation", [Operation.FETCH, Operation.STORE_RAW])
 def test_a_gate_refusal_stops_before_any_request(tmp_path, operation):
     gate = FakeGate(refuse=operation)
     with pytest.raises(RightsRefused):
-        tool.fetch(
-            tmp_path / "out", gate=gate, commit="c", contact=CONTACT, get=pytest.fail, post=pytest.fail
-        )
+        tool.fetch(tmp_path / "out", gate=gate, commit="c", contact=CONTACT, get=pytest.fail)
     assert not (tmp_path / "out").exists()
     assert gate.calls[0] == (Operation.FETCH, ["bls_cpi"])
 
@@ -281,21 +287,19 @@ def test_the_contact_is_in_no_file_and_not_in_stdout(tmp_path, capsys, monkeypat
     monkeypatch.setattr(tool, "code_commit", lambda: "c")
     monkeypatch.setattr(tool, "load_genuine", lambda _p: {})
     monkeypatch.setattr(tool, "RightsGate", lambda _r: FakeGate())
-    monkeypatch.setattr(
-        tool, "fetch", lambda output, **kw: real_fetch(output, get=net.get, post=net.post, now=NOW, **kw)
-    )
+    monkeypatch.setattr(tool, "fetch", lambda output, **kw: real_fetch(output, get=net.get, now=NOW, **kw))
     code = tool.main(["--output", str(tmp_path / "second"), "--contact", CONTACT, "--releases", "2"])
     captured = capsys.readouterr()
     assert code == 0
     assert CONTACT not in captured.out and CONTACT not in captured.err
-    assert "requests 6" in captured.out
+    assert "requests 4" in captured.out
     assert all(needle not in f.read_bytes() for f in (tmp_path / "second").iterdir())
 
 
 def test_a_response_that_echoes_the_contact_is_refused_and_nothing_is_written(tmp_path):
-    echo = json.dumps({"status": "REQUEST_SUCCEEDED", "echo": CONTACT}).encode()
+    echo = FLAT + f"CUUR0000SA0\t2026\tM10\t1.0\t{CONTACT}\n".encode()
     with pytest.raises(ValueError, match="contact string") as info:
-        run(tmp_path, Net(post_answer=(200, echo)))
+        run(tmp_path, Net(flat=echo))
     assert CONTACT not in str(info.value)
     assert not (tmp_path / "out").exists()
 
@@ -321,7 +325,7 @@ def test_the_manifest_hashes_match_the_files(tmp_path):
     )
     names = {entry["name"] for entry in on_disk["files"]}
     assert names == {p.name for p in out.iterdir()} - {"manifest.json"}
-    assert len(on_disk["files"]) == 3 + 1 + 5 + 1
+    assert len(on_disk["files"]) == 1 + 1 + 5 + 1
     for entry in on_disk["files"]:
         body = (out / entry["name"]).read_bytes()
         assert entry["bytes"] == len(body)

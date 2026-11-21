@@ -1,8 +1,9 @@
 """The one bounded BLS CPI download (OD-0189, under the bls_cpi rights record, OD-0188).
 
-One run makes at most 20 HTTP requests: the CPI-U all-items series (CUUR0000SA0) from the BLS public API v1
-in spans of at most ten years, the CPI release archive page, and up to 12 archived releases chosen evenly
-across the dates parsed from that page. Every response is saved verbatim. --output must be absent or empty
+One run makes at most 18 HTTP requests (OD-0189 correction 1; two of the original 20 went on refused API
+calls): one GET of the BLS flat file cu.data.1.AllItems (holding the CPI-U all-items series CUUR0000SA0),
+the CPI release archive page, and up to 12 archived releases chosen evenly across the dates parsed from
+that page. Every response is saved verbatim. --output must be absent or empty
 and outside the repository, so a re-run can't download again, and a dirty tree refuses so the manifest names
 what ran. The contact given in --contact goes into the request User-Agent only: it is never written to a
 file, the manifest, a message or stdout.
@@ -31,12 +32,12 @@ from hio.rights.register import load_genuine
 REPO = Path(__file__).resolve().parent.parent
 SOURCE_ID = "bls_cpi"
 SERIES_ID = "CUUR0000SA0"
-API_URL = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
+FLAT_URL = "https://download.bls.gov/pub/time.series/cu/cu.data.1.AllItems"
+FLAT_NAME = "cu.data.1.AllItems.txt"
+FLAT_HEADER = ["series_id", "year", "period", "value", "footnote_codes"]
 ARCHIVE_URL = "https://www.bls.gov/bls/news-release/cpi.htm"
 SITE = "https://www.bls.gov"
-FIRST_YEAR = 2005
-SPAN_YEARS = 10
-MAX_REQUESTS = 20
+MAX_REQUESTS = 18
 MAX_RELEASES = 12
 REDACTED_CONTACT = "<owner contact>"
 USER_AGENT_TEMPLATE = (
@@ -49,7 +50,6 @@ NOTICE = (
 LINK = re.compile(r"/news\.release/archives/cpi_(\d{2})(\d{2})(\d{4})\.(htm|pdf)", re.IGNORECASE)
 
 Getter = Callable[[str, str], tuple[int, bytes]]
-Poster = Callable[[str, bytes, str], tuple[int, bytes]]
 
 
 def http_get(url: str, user_agent: str) -> tuple[int, bytes]:
@@ -61,21 +61,33 @@ def http_get(url: str, user_agent: str) -> tuple[int, bytes]:
         return exc.code, b""
 
 
-def http_post(url: str, payload: bytes, user_agent: str) -> tuple[int, bytes]:
-    request = urllib.request.Request(
-        url, data=payload, headers={"User-Agent": user_agent, "Content-Type": "application/json"}
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=120) as response:
-            return response.status, response.read()
-    except urllib.error.HTTPError as exc:
-        return exc.code, b""
+def validate_flat_file(body: bytes) -> dict:
+    """Check the flat file and summarise its CUUR0000SA0 rows; refuse if it is not as specified.
 
-
-def year_spans(last_year: int, first_year: int = FIRST_YEAR) -> list[tuple[int, int]]:
-    if last_year < first_year:
-        raise ValueError("the last year precedes the first")
-    return [(y, min(y + SPAN_YEARS - 1, last_year)) for y in range(first_year, last_year + 1, SPAN_YEARS)]
+    Tab-separated, columns possibly padded with spaces; the header (trimmed) is
+    `series_id year period value footnote_codes`; at least one row has the trimmed series_id CUUR0000SA0.
+    """
+    lines = body.decode("utf-8", errors="replace").splitlines()
+    if not lines:
+        raise ValueError("the flat file is empty")
+    if [c.strip() for c in lines[0].split("\t")] != FLAT_HEADER:
+        raise ValueError("the flat file header is not the expected tab-separated columns")
+    periods: list[tuple[int, str]] = []
+    for line in lines[1:]:
+        cells = [c.strip() for c in line.split("\t")]
+        if cells[0] != SERIES_ID:
+            continue
+        if len(cells) < 4 or not cells[1].isdigit() or not cells[2]:
+            raise ValueError(f"a {SERIES_ID} row in the flat file is malformed")
+        periods.append((int(cells[1]), cells[2]))
+    if not periods:
+        raise ValueError(f"the flat file has no {SERIES_ID} rows")
+    first, last = min(periods), max(periods)
+    return {
+        "series_rows": len(periods),
+        "series_first": f"{first[0]}-{first[1]}",
+        "series_last": f"{last[0]}-{last[1]}",
+    }
 
 
 def parse_release_links(html: str) -> list[tuple[date, str]]:
@@ -111,11 +123,10 @@ def choose_evenly(items: list, count: int) -> list:
 class Budget:
     """Counts HTTP requests and refuses the one past the limit."""
 
-    def __init__(self, limit: int, get: Getter, post: Poster, user_agent: str) -> None:
+    def __init__(self, limit: int, get: Getter, user_agent: str) -> None:
         self.limit = limit
         self.count = 0
         self._get = get
-        self._post = post
         self._user_agent = user_agent
 
     def _spend(self) -> None:
@@ -126,13 +137,6 @@ class Budget:
     def get(self, url: str) -> bytes:
         self._spend()
         status, body = self._get(url, self._user_agent)
-        if status != 200:
-            raise ValueError(f"HTTP {status} for {url}")
-        return body
-
-    def post(self, url: str, payload: dict) -> bytes:
-        self._spend()
-        status, body = self._post(url, json.dumps(payload).encode(), self._user_agent)
         if status != 200:
             raise ValueError(f"HTTP {status} for {url}")
         return body
@@ -152,7 +156,6 @@ def fetch(
     commit: str,
     contact: str,
     get: Getter = http_get,
-    post: Poster = http_post,
     releases: int = MAX_RELEASES,
     now: datetime | None = None,
     max_requests: int = MAX_REQUESTS,
@@ -169,18 +172,12 @@ def fetch(
     gate.authorise(Operation.STORE_RAW, [SOURCE_ID])
     moment = now or datetime.now(UTC)
     agent = USER_AGENT_TEMPLATE.format(contact=contact)
-    budget = Budget(max_requests, get, post, agent)
+    budget = Budget(max_requests, get, agent)
     files: list[tuple[str, str, bytes]] = []  # name, url, body
 
-    for first, last in year_spans(moment.year):
-        body = budget.post(API_URL, {"seriesid": [SERIES_ID], "startyear": str(first), "endyear": str(last)})
-        try:
-            status = json.loads(body).get("status")
-        except (ValueError, AttributeError):
-            raise ValueError(f"the API answer for {first}-{last} is not a JSON object") from None
-        if status != "REQUEST_SUCCEEDED":
-            raise ValueError(f"the API answer for {first}-{last} has status {status!r}")
-        files.append((f"cpi_series_{first}_{last}.json", API_URL, body))
+    flat = budget.get(FLAT_URL)
+    series = validate_flat_file(flat)
+    files.append((FLAT_NAME, FLAT_URL, flat))
 
     archive = budget.get(ARCHIVE_URL)
     files.append(("cpi_release_archive.htm", ARCHIVE_URL, archive))
@@ -213,6 +210,7 @@ def fetch(
         "code_commit": commit,
         "requests": budget.count,
         "release_dates_parsed": len(dated),
+        **series,
         "knowledge": "reconstructed(T): one one-off download",
         "files": [
             {
