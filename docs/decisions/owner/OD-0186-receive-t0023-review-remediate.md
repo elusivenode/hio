@@ -34,3 +34,20 @@ related: {adrs: [], tasks: [T-0023], findings: [F-REVIEW-2026-11-22-t0023-1-1, F
 Accepting T-0023; closing either finding before verification; any waiver.
 
 ## Corrections (append-only)
+
+### Correction 1 (2026-11-22): receipt merged; the verification's head
+
+**Receipt complete.** PR #109 merged as `054f58a` (OD-0184 A1). The three blobs equal `T`'s, and the tag peels to `T`. Both findings stay `open` until verification; the author's claim is in the response.
+
+**Remediation submitted:** `fix/t0023-review-1`, fixes at `0288120`, response at `602be49d296316313ea479fb6b7b364555e253e5` (PR #110). Assigned under OD-0184 A2:
+
+| Field | Value |
+|---|---|
+| Review id | `VERIFY-2026-11-22-t0023-1-1` |
+| Target | F-REVIEW-2026-11-22-t0023-1-1 and -2, per `reviews/responses/RESPONSE-REVIEW-2026-11-22-t0023-1.md` at the head; no regression in the T-0023 tools and tests |
+| Base SHA | `4b6472e54aa7a1d989ee78ee49f83d6967a27536` |
+| Head SHA | `602be49d296316313ea479fb6b7b364555e253e5` (`fix/t0023-review-1`, PR #110) |
+| Scope | whether each claim is true at the head, on the code and tests; the merges of `main` brought only records. No licensed data (no EODHD bytes or values, nothing under `~/.hio-research/`), no Azure, no vendor URL; public reads only. The author's real-input reruns are author-reported |
+| Review branch | `review/t0023-1-verify-1-codex`, cut at the head |
+| The record's `assignment` field | exactly `docs/decisions/owner/OD-0186-receive-t0023-review-remediate.md` |
+| Delivery | hiomux Codex task, `gpt-6-sol` `high`, with network (public reads only) |
