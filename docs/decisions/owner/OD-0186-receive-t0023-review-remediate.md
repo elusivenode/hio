@@ -56,5 +56,5 @@ Accepting T-0023; closing either finding before verification; any waiver.
 
 **Receipt of `VERIFY-2026-11-22-t0023-1-1`** (READY; reviewer tip `837d21b`, hiomux C12 report), by §6.2 step 5 under OD-0061's conditions. 3 record files reported and imported, 0 missing, 0 extra, sha256 equal to the report; `check_review_branch.sh` and `check_review_assignment.py` PASS; tag `reviews/VERIFY-2026-11-22-t0023-1-1` peels to the tip. Class N rows added by Claude: one verification row; the Assigned reviews row set to received.
 
-**Both findings are technically verified_closed at `602be49`.** Their index state stays `open` with that note: changing a finding's state is owner-authorised reconciliation (§6.2 step 5.12), which OD-0184 B keeps with the owner. Codex also noted that the branch's merges of `main` brought calendar and governance files, not only records; they don't touch the verified paths.
+**Both findings are technically verified_closed at `602be49`.** Their index state stays `remediation_claimed` with that note: changing a finding's state is owner-authorised reconciliation (§6.2 step 5.12), which OD-0184 B keeps with the owner. Codex also noted that the branch's merges of `main` brought calendar and governance files, not only records; they don't touch the verified paths.
 
