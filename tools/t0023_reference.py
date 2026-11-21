@@ -11,8 +11,8 @@ import csv
 import hashlib
 import io
 import json
-import sys
 import re
+import sys
 import xml.etree.ElementTree as ET
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
