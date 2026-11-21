@@ -1,7 +1,8 @@
 ---
 id: HIO-EVIDENCE-T0023-RECOMMENDATION-1
 title: "T-0023 step 7: design one conditional-diversification experiment; don't run it yet"
-status: proposed
+status: adopted
+adopted_by: OD-0181
 owner: HIO architecture lead (owner); recorded by claude/implementation-agent
 created_at: 2026-11-04
 instruction: OD-0180
@@ -9,6 +10,8 @@ instruction: OD-0180
 
 # T-0023 recommendation 1
 
+> **Adopted as the plan by the owner (OD-0181, 2026-11-22).** Adoption runs nothing and settles no further question: designing the experiment, the CPI source and any run each still need their own yes.
+>
 > **A recommendation, not a decision or a result.** It holds no value, accepts nothing and authorises nothing. Evidence: `corroboration-1.md`, `episodes-1.md`. The architect's answer is `docs/history/2026-11-04-architect-t0023-step7.md`.
 
 ## Recommendation

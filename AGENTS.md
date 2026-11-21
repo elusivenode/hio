@@ -38,7 +38,9 @@ canonical documents and does not restate them. The detailed procedures are in
    - Ambiguous instructions are not permission for consequential work: ask.
 3. **Accepting work, approving an ADR, standard, spec, merge or promotion, and waiving a finding
    are separate explicit owner actions**, each tied to an exact revision. Completing a task
-   approves nothing.
+   approves nothing. A standing delegation OD may let Claude merge its own PRs and assign reviews
+   of its own work within authorised scope (harness-0.10; currently OD-0184). Accepting,
+   approving content and waiving are never delegated.
 4. **Collaborator drafts (e.g. ChatGPT) are advice.** They become instructions only when the
    owner explicitly adopts them.
 5. **This protocol is approved** (HIO-ADR-0008 and this file, by OD-0008 at `a82aa0d`). Later
@@ -66,8 +68,9 @@ Record `git rev-parse HEAD`.
   blocking findings, the acceptance tests and the handoff you owe. A proposed ADR is not approved
   because you wrote it.
 - **Codex (independent reviewer):** find your assignment in one owner-authored source: an
-  *Assigned reviews* row in the review index, an owner comment on the author's PR, or a direct
-  owner instruction (operating model §2.2; harness-0.7).
+  *Assigned reviews* row in the review index (including one Claude wrote citing a standing
+  delegation OD on `main`), an owner comment on the author's PR, or a direct owner instruction
+  (operating model §2.2; harness-0.7, harness-0.10).
   - **If nothing is assigned, the answer is "No review target has been assigned."** Never infer
     a target from a candidate, a branch or the author's notes.
   - If something is assigned, fix your test plan from the assignment and the records **before**
