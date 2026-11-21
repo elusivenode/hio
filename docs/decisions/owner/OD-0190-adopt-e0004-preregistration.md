@@ -36,3 +36,7 @@ Step 2 (the estimate), which needs its own yes and IEF's NAV corroboration; any 
 ### Correction 1 (2026-11-22): step 1 ran
 
 The screen passes in both states (`docs/evidence/e0004/step1-1.md`). Counts reported to the owner; step 1b may now run under item 3.
+
+### Correction 2 (2026-11-22): step 1b ran
+
+The precision check passes: median half-width 0.167 points against 0.20 (`docs/evidence/e0004/step1b-1.md`). Step 2 still needs its own yes and IEF's NAV corroboration.
