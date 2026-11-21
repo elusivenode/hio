@@ -7,7 +7,7 @@ that day is greater than the latest one published as of the same day a year earl
 from __future__ import annotations
 
 import csv
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation, localcontext
 from pathlib import Path
 
@@ -89,17 +89,19 @@ def latest_rate(
     return None
 
 
+def year_earlier(asof: date) -> date:
+    """The last calendar day of the same month a year before. CPI is released mid-month, so this sees the
+    same releases as that month's last trading close; it needn't be a month end of the panel."""
+    first_next = date(asof.year - 1 + asof.month // 12, asof.month % 12 + 1, 1)
+    return first_next - timedelta(days=1)
+
+
 def states(month_ends: list[date], releases: list[date], cpi: dict[tuple[int, int], Decimal]) -> list[str]:
     """State labelling each period month_ends[i] to month_ends[i+1]: accelerating, not or unavailable."""
     out: list[str] = []
     for i in range(len(month_ends) - 1):
-        if i < 12:
-            out.append("unavailable")
-            continue
-        now, prior = month_ends[i], month_ends[i - 12]
-        if (prior.year, prior.month) != (now.year - 1, now.month):
-            out.append("unavailable")
-            continue
+        now = month_ends[i]
+        prior = year_earlier(now)
         a = latest_rate(now, releases, cpi)
         b = latest_rate(prior, releases, cpi)
         if a is None or b is None:

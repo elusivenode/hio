@@ -140,7 +140,7 @@ def test_states_accelerating_equal_and_early_unavailable():
     ends = monthly_ends(25)  # 2024-01 .. 2025-12 month ends (25 -> through 2026-01)
     out = st.states(ends, rels, cpi)
     assert len(out) == 24
-    assert out[:12] == ["unavailable"] * 12
+    assert out[:12] == ["unavailable"] * 12  # no 2023 base for a 2023-based rate a year earlier
     # i=12 is 2025-01-31: the rate a year earlier needs 2022 levels, so it is None -> unavailable
     assert out[12] == "unavailable"
     # i=13 is 2025-02-28: latest rate 0.03 (2025-01) vs 0.02 a year earlier
@@ -149,11 +149,21 @@ def test_states_accelerating_equal_and_early_unavailable():
     assert out[19] == "not"
 
 
-def test_states_gap_in_month_ends_unavailable():
+def test_states_compare_with_the_calendar_month_a_year_earlier_not_a_panel_month_end():
+    """The year-earlier instant comes from the calendar, so a missing panel month end changes nothing and
+    the first panel months are available when CPI history allows (OD-0190; preregistration "The state")."""
     cpi, rels = series(["0.02"] * 12 + ["0.03"] * 12)
     ends = monthly_ends(26)
     whole = st.states(ends, rels, cpi)
     assert whole[14] == "accelerating"
-    del ends[14]  # 2025-03 is missing: period 14 now starts 2025-04 against 2024-03
-    out = st.states(ends, rels, cpi)
-    assert out[14] == "unavailable"
+    del ends[14]  # a missing month end: period 14 now starts in the next month, still a year after its prior
+    assert st.states(ends, rels, cpi)[14] == "accelerating"
+    later = ends[13:]  # a panel starting late keeps its first periods, CPI history allowing
+    assert st.states(later, rels, cpi)[0] == "accelerating"
+
+
+def test_year_earlier_is_the_last_day_of_the_same_month_a_year_before():
+    assert st.year_earlier(date(2025, 3, 31)) == date(2024, 3, 31)
+    assert st.year_earlier(date(2025, 2, 28)) == date(2024, 2, 29)  # leap year
+    assert st.year_earlier(date(2025, 12, 31)) == date(2024, 12, 31)
+    assert st.year_earlier(date(2026, 1, 30)) == date(2025, 1, 31)  # a trading-day month end
