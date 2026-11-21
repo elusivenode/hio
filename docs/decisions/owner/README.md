@@ -205,6 +205,7 @@ are in operating model §1.1; the template is
 | [OD-0188](OD-0188-verify-bls-cpi.md) | authorise_work | **`bls_cpi` owner_verified** (public domain; BLS notice on every use); no download yet | `main` | recorded |
 | [OD-0189](OD-0189-bls-cpi-download.md) | authorise_work | **One bounded BLS CPI download** (≤20 requests; the owner's email as contact, at run time only); tool by worker W8 | `main` at `bba7c97` | recorded |
 | [OD-0190](OD-0190-adopt-e0004-preregistration.md) | approve | **E-0004 preregistration adopted** at `067bd7b` (0.20-point threshold); step 1 tooling and run; step 2 not authorised | `feat/bls-cpi-fetch` at `067bd7b` | recorded |
+| [OD-0191](OD-0191-e0004-step2.md) | authorise_work | **E-0004 step 2**: estimate tool by a worker; one run on the pinned inputs | `main` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
