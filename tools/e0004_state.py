@@ -96,8 +96,16 @@ def year_earlier(asof: date) -> date:
     return first_next - timedelta(days=1)
 
 
-def states(month_ends: list[date], releases: list[date], cpi: dict[tuple[int, int], Decimal]) -> list[str]:
-    """State labelling each period month_ends[i] to month_ends[i+1]: accelerating, not or unavailable."""
+def states(
+    month_ends: list[date],
+    releases: list[date],
+    cpi: dict[tuple[int, int], Decimal],
+    *,
+    equal_is_accelerating: bool = False,
+) -> list[str]:
+    """State labelling each period month_ends[i] to month_ends[i+1]: accelerating, not or unavailable.
+
+    Equality is "not" unless `equal_is_accelerating` (a step 2 sensitivity)."""
     out: list[str] = []
     for i in range(len(month_ends) - 1):
         now = month_ends[i]
@@ -107,5 +115,6 @@ def states(month_ends: list[date], releases: list[date], cpi: dict[tuple[int, in
         if a is None or b is None:
             out.append("unavailable")
         else:
-            out.append("accelerating" if a[2] > b[2] else "not")
+            up = a[2] >= b[2] if equal_is_accelerating else a[2] > b[2]
+            out.append("accelerating" if up else "not")
     return out
