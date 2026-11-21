@@ -220,6 +220,27 @@ sources:
     intended_use: [publisher vintages for US macro; reference series]
     hypotheses: "API key required; some third-party series restricted [EXT]"
     <<: *unverified
+  - id: bls_cpi
+    name: "US Bureau of Labor Statistics, CPI-U US city average all items, not seasonally adjusted (CUUR0000SA0), with release dates"
+    home: https://www.bls.gov/cpi/
+    intended_use: [the inflation-acceleration state in T-0023 recommendation 1 (OD-0181 item 4); original values and publication dates only]
+    task: T-0002
+    research_note: docs/research/cpi-source-1.md
+    evidence: [https://www.bls.gov/opub/copyright-information.htm, https://www.bls.gov/developers/termsOfService.htm, https://www.bls.gov/bls/news-release/cpi.htm, https://www.bls.gov/bls/histreleasedates.pdf, https://www.bls.gov/bls/archived_sched.htm]
+    rights_proposed: "public domain with credit to BLS (17 U.S.C. §105; BLS copyright page); the API asks for the retrieval date and no modified content cited as BLS.gov. Read by search on 2026-11-22, not by the owner"
+    hypotheses: "NSA CPI-U is not revised except by flagged correction [EXT, unconfirmed]; release dates from BLS's 1953-2000 PDF, archived schedules and archived news releases (2007 on); October 2025 CPI was not published (2025 lapse in appropriations)"
+    timing: "monthly news release, 08:30 ET; dates from BLS's own schedule records"
+    <<: *unverified
+  - id: alfred_fred.cpi_release_dates
+    name: "ALFRED release dates for the Consumer Price Index (release 10) and CPIAUCNS vintages: a cross-check of BLS's dates only"
+    parent: alfred_fred
+    home: https://alfred.stlouisfed.org/release/downloaddates?rid=10
+    intended_use: [independent check of the CPI release dates in bls_cpi]
+    task: T-0002
+    research_note: docs/research/cpi-source-1.md
+    evidence: [https://fred.stlouisfed.org/legal/, https://fred.stlouisfed.org/docs/api/terms_of_use.html]
+    rights_proposed: "FRED tags each series public domain, citation-requested or copyrighted; some CPI graphs are tagged copyrighted, so the series' own tag decides. Cite BLS via FRED"
+    <<: *unverified
   - id: abs
     name: Australian Bureau of Statistics (CPI, national accounts)
     home: https://www.abs.gov.au/
