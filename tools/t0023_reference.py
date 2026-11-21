@@ -11,13 +11,19 @@ import csv
 import hashlib
 import io
 import json
+import re
 import sys
-from datetime import UTC, datetime
+import xml.etree.ElementTree as ET
+from datetime import UTC, date, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import eodhd_eval as ev
 
 NAV_FILES = {"navhist-spy.xlsx": "nav-spy.csv", "navhist-bil.xlsx": "nav-bil.csv"}
+ISHARES_FILES = {"iShares-7-10-Year-Treasury-Bond-ETF_fund.xls": "nav-ief.csv"}  # SpreadsheetML XML, not xls
+SS = "urn:schemas-microsoft-com:office:spreadsheet"
+ISHARES_HEADER = ("As Of", "NAV per Share", "Ex-Dividends", "Shares Outstanding")
 
 
 def nav_rows(rows: list[tuple[object, ...]]) -> list[tuple[str, str]]:
@@ -40,6 +46,59 @@ def nav_rows(rows: list[tuple[object, ...]]) -> list[tuple[str, str]]:
         if day in out:
             raise ev.Stop(f"{day}: a repeated NAV row")
         out[day] = repr(row[1])
+    if not out:
+        raise ev.Stop("no NAV rows")
+    return [(d.isoformat(), out[d]) for d in sorted(out)]
+
+
+BARE_AMPERSAND = re.compile(rb"&(?!(?:[A-Za-z][A-Za-z0-9]*|#[0-9]+|#x[0-9A-Fa-f]+);)")
+
+
+def ishares_rows(data: bytes) -> list[tuple[str, str]]:
+    """Date and NAV text, oldest first, from an iShares SpreadsheetML fund workbook's Historical sheet.
+    NAV strings are kept exactly as given. Anything unexpected stops; nothing is guessed."""
+    if b"<!DOCTYPE" in data.upper() or b"<!ENTITY" in data.upper():
+        raise ev.Stop("a workbook with a DTD")
+    # iShares' file puts bare "&" in its hyperlink URLs, which isn't well-formed XML. Escape only those.
+    data = BARE_AMPERSAND.sub(b"&amp;", data)
+    try:
+        root = ET.fromstring(data)
+    except ET.ParseError as exc:
+        raise ev.Stop(f"an unreadable workbook: {exc}") from None
+    sheets = [s for s in root.iter(f"{{{SS}}}Worksheet") if s.get(f"{{{SS}}}Name") == "Historical"]
+    if len(sheets) != 1:
+        raise ev.Stop("no single Historical sheet")
+    table_rows = list(sheets[0].iter(f"{{{SS}}}Row"))
+    parsed: list[list[str | None]] = []
+    for row in table_rows:
+        cells: list[str | None] = []
+        for cell in row.findall(f"{{{SS}}}Cell"):
+            if cell.get(f"{{{SS}}}Index") is not None:
+                raise ev.Stop("a cell with an Index (skipped cells)")
+            node = cell.find(f"{{{SS}}}Data")
+            text = None if node is None else "".join(node.itertext()).strip()
+            cells.append(text or None)
+        parsed.append(cells)
+    if not parsed or parsed[0][: len(ISHARES_HEADER)] != list(ISHARES_HEADER):
+        raise ev.Stop("no As Of and NAV per Share header")
+    out: dict[date, str] = {}
+    for cells in parsed[1:]:
+        if not cells or cells[0] is None:
+            continue
+        try:
+            day = datetime.strptime(cells[0], "%b %d, %Y").replace(tzinfo=UTC).date()
+        except ValueError:
+            raise ev.Stop("a NAV row with no readable date") from None
+        nav = cells[1] if len(cells) > 1 else None
+        try:
+            value = Decimal(nav) if nav is not None else None
+        except InvalidOperation:
+            value = None
+        if value is None or not value.is_finite() or value <= 0:
+            raise ev.Stop(f"{day}: an impossible NAV")
+        if day in out:
+            raise ev.Stop(f"{day}: a repeated NAV row")
+        out[day] = nav  # type: ignore[assignment]
     if not out:
         raise ev.Stop("no NAV rows")
     return [(d.isoformat(), out[d]) for d in sorted(out)]
@@ -72,13 +131,20 @@ def record(
 
 
 def extract(reference: Path) -> dict[str, int]:
-    import openpyxl
-
     out = {}
+    for source, target in ISHARES_FILES.items():
+        path = reference / "raw" / source
+        if not path.is_file():
+            continue
+        rows = ishares_rows(path.read_bytes())
+        ev.private_write(reference / target, nav_text(rows).encode())
+        out[target] = len(rows)
     for source, target in NAV_FILES.items():
         path = reference / "raw" / source
         if not path.is_file():
             continue
+        import openpyxl
+
         sheet = openpyxl.load_workbook(path, read_only=True, data_only=True).worksheets[0]
         rows = nav_rows([tuple(r) for r in sheet.iter_rows(values_only=True)])
         ev.private_write(reference / target, nav_text(rows).encode())

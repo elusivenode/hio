@@ -133,7 +133,108 @@ def test_main_returns_2_on_a_stop(tmp_path, capsys):
 
 def test_main_extract_returns_2_when_openpyxl_is_missing(tmp_path, monkeypatch, capsys):
     monkeypatch.setitem(sys.modules, "openpyxl", None)  # makes `import openpyxl` raise ImportError
-    reference = make_reference(tmp_path, {})
+    reference = make_reference(tmp_path, {"navhist-spy.xlsx": b"x"})
     assert ref.main(["extract", "--reference", str(reference)]) == 2
     err = capsys.readouterr().err
     assert err.startswith("stopped: ") and "openpyxl" in err
+
+
+# --- ishares_rows
+
+NS = 'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"'
+IHEAD = ["As Of", "NAV per Share", "Ex-Dividends", "Shares Outstanding"]
+
+
+def cell(text, extra=""):
+    return f'<ss:Cell{extra}><ss:Data ss:Type="String">{text}</ss:Data></ss:Cell>'
+
+
+def row(*texts):
+    return "<ss:Row>" + "".join(cell(t) if t is not None else "<ss:Cell/>" for t in texts) + "</ss:Row>"
+
+
+def workbook(rows, name="Historical", extra_sheet=""):
+    return (
+        f'<?xml version="1.0"?><ss:Workbook {NS}>{extra_sheet}'
+        f'<ss:Worksheet ss:Name="{name}"><ss:Table>{"".join(rows)}</ss:Table></ss:Worksheet></ss:Workbook>'
+    ).encode()
+
+
+GOOD = [
+    row(*IHEAD),
+    row("Nov 20, 2026", "91.585712", "0.00", "1,000"),
+    row(None, None),
+    row("Nov 02, 2026", "90.10", "0.12", "1,000"),
+    row("Nov 10, 2026", "90.5", "0.00", "1,000"),
+]
+
+
+def test_ishares_rows_sorts_oldest_first_and_keeps_nav_strings():
+    assert ref.ishares_rows(workbook(GOOD)) == [
+        ("2026-11-02", "90.10"),
+        ("2026-11-10", "90.5"),
+        ("2026-11-20", "91.585712"),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("rows", "match"),
+    [
+        ([row("Date", "NAV")], "header"),
+        ([], "header"),
+        ([row(*IHEAD)], "no NAV rows"),
+        ([row(*IHEAD), row("2026-11-20", "91.5")], "no readable date"),
+        ([row(*IHEAD), row("Nov 20, 2026", "0")], "impossible NAV"),
+        ([row(*IHEAD), row("Nov 20, 2026", "-1.5")], "impossible NAV"),
+        ([row(*IHEAD), row("Nov 20, 2026", "n/a")], "impossible NAV"),
+        ([row(*IHEAD), row("Nov 20, 2026", "NaN")], "impossible NAV"),
+        ([row(*IHEAD), row("Nov 20, 2026", "Infinity")], "impossible NAV"),
+        ([row(*IHEAD), row("Nov 20, 2026", None)], "impossible NAV"),
+        ([row(*IHEAD), row("Nov 20, 2026", "91.5"), row("Nov 20, 2026", "91.6")], "a repeated NAV row"),
+        (
+            [row(*IHEAD), "<ss:Row>" + cell("Nov 20, 2026") + cell("91.5", ' ss:Index="3"') + "</ss:Row>"],
+            "Index",
+        ),
+    ],
+)
+def test_ishares_rows_refusals(rows, match):
+    with pytest.raises(ev.Stop, match=match):
+        ref.ishares_rows(workbook(rows))
+
+
+def test_ishares_rows_stops_without_a_historical_sheet():
+    with pytest.raises(ev.Stop, match="Historical"):
+        ref.ishares_rows(workbook(GOOD, name="Holdings"))
+
+
+def test_ishares_rows_stops_on_a_repeated_historical_sheet():
+    sheet = f'<ss:Worksheet ss:Name="Historical"><ss:Table>{"".join(GOOD)}</ss:Table></ss:Worksheet>'
+    with pytest.raises(ev.Stop, match="Historical"):
+        ref.ishares_rows(workbook(GOOD, extra_sheet=sheet))
+
+
+def test_ishares_rows_stops_on_malformed_xml_and_a_dtd():
+    with pytest.raises(ev.Stop, match="unreadable"):
+        ref.ishares_rows(b"<ss:Workbook")
+    with pytest.raises(ev.Stop, match="DTD"):
+        ref.ishares_rows(b'<!DOCTYPE x [<!ENTITY a "b">]>' + workbook(GOOD))
+
+
+def test_extract_writes_nav_ief_privately_without_openpyxl(tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, "openpyxl", None)
+    name = "iShares-7-10-Year-Treasury-Bond-ETF_fund.xls"
+    reference = make_reference(tmp_path, {name: workbook(GOOD)})
+    assert ref.extract(reference) == {"nav-ief.csv": 3}
+    target = reference / "nav-ief.csv"
+    assert target.read_text() == "date,nav\n2026-11-02,90.10\n2026-11-10,90.5\n2026-11-20,91.585712\n"
+    assert stat.S_IMODE(target.stat().st_mode) == 0o600
+    assert not (reference / "nav-spy.csv").exists()
+
+
+def test_ishares_rows_reads_a_workbook_with_bare_ampersands_in_its_links():
+    """iShares' real file has bare '&' in hyperlink URLs (found on the owner's download, 2026-11-22)."""
+    link = (
+        '<ss:Worksheet ss:Name="Disclaimers"><ss:Table><ss:Row><ss:Cell ss:HRef="https://x/?a=1&b=2&c=3">'
+        '<ss:Data ss:Type="String">A &amp; B</ss:Data></ss:Cell></ss:Row></ss:Table></ss:Worksheet>'
+    )
+    assert ref.ishares_rows(workbook(GOOD, extra_sheet=link))[0] == ("2026-11-02", "90.10")
