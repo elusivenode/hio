@@ -383,7 +383,8 @@ def run(
         "S7": sensitivity(frozen_classes, s7_panel(panel, history, aonia), rebuilt, why),
     }
     summary = {
-        "panel_id": run_dir.name,
+        "panel_id": json.loads((run_dir / "run.json").read_text())["panel_id"],
+        "panel_run": run_dir.name,
         "f1_receipt": manifest["receipt_id"],
         "page_sha256": hashlib.sha256((reference / PAGE).read_bytes()).hexdigest(),
         "page": {"steps": len(steps), "unreadable": len(unreadable)},

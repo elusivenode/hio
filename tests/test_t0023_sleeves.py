@@ -25,10 +25,19 @@ M = "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
 PLACE = date(2000, 1, 1)
 
 
+REAL_C5_REQUIRED = dict(tool.C5_REQUIRED)  # the pins as shipped, before any test patches them
+FIXTURE_YEARS = ((date(2007, 7, 1), date(2008, 6, 30)), (date(2008, 7, 1), date(2009, 6, 30)))
+
+
 @pytest.fixture(autouse=True)
 def fast_and_private(tmp_path, monkeypatch):
     tmp_path.chmod(0o700)
     monkeypatch.setattr(tool.ev, "REPLICATIONS", 100)  # the bootstrap's size is not what these tests probe
+    # the invented workspace's audited years, so the end-to-end tests exercise C5 on their own data
+    pins = {name: tuple((s, e, "N-CSR") for s, e in FIXTURE_YEARS) for name in tool.FUNDS}
+    monkeypatch.setattr(tool, "C5_REQUIRED", pins)
+    # registers a restore, so build_workspace may point the frozen id at its invented run for this test only
+    monkeypatch.setattr(tool.panel_tool, "FROZEN_PANEL_ID", tool.panel_tool.FROZEN_PANEL_ID)
 
 
 # --- by-hand bars, each at the bar and just outside it
@@ -315,9 +324,47 @@ def test_c5_takes_the_fiscal_years_that_cover_2008_for_the_named_fund_only():
     other = fact(symbol="BIL")
     with pytest.raises(tool.NotPerformed, match="no audited fiscal year"):
         tool.check_c5([other], held, None)
-    result = tool.check_c5([other, fact()], held, {DAYS[0]: D("100"), DAYS[2]: D("110")})
+    only = [(FY[0], FY[1], "N-CSR")]
+    result = tool.check_c5([other, fact()], held, {DAYS[0]: D("100"), DAYS[2]: D("110")}, required=only)
     assert result["status"] == "pass" and result["counts"]["fiscal_years"] == 1
     assert result["counts"]["sub_checks"] == result["counts"]["sub_checks_passed"] == 3
+
+
+FY2 = (date(2008, 10, 1), date(2009, 9, 30))
+TWO = [(FY[0], FY[1], "N-CSR"), (FY2[0], FY2[1], "N-CSR")]
+
+
+@pytest.mark.parametrize("keep", [0, 1], ids=["only-first-year", "only-second-year"])
+def test_c5_is_not_performed_when_a_pinned_year_is_omitted(keep):
+    """F-REVIEW-2026-11-22-t0023-1-1: a passing year can't stand in for an absent one."""
+    held = fund({date(2008, 1, 2): D("1.50")}, PERIODS, DAYS)
+    rows = [fact(), fact(start=FY2[0], end=FY2[1])]
+    with pytest.raises(tool.NotPerformed, match="missing"):
+        tool.check_c5([rows[keep]], held, None, required=TWO)
+
+
+def test_c5_is_not_performed_for_an_unpinned_filing_or_a_repeated_year():
+    held = fund({date(2008, 1, 2): D("1.50")}, PERIODS, DAYS)
+    with pytest.raises(tool.NotPerformed, match="unpinned"):
+        tool.check_c5([fact(filing="other")], held, None, required=[(FY[0], FY[1], "N-CSR")])
+    with pytest.raises(tool.NotPerformed, match="twice"):
+        tool.check_c5([fact(), fact()], held, None, required=[(FY[0], FY[1], "N-CSR")])
+
+
+def test_c5_default_pins_are_used_when_none_are_passed():
+    held = fund({date(2008, 1, 2): D("1.50")}, PERIODS, DAYS)
+    with pytest.raises(tool.NotPerformed, match="missing"):
+        tool.check_c5([fact(start=FIXTURE_YEARS[0][0], end=FIXTURE_YEARS[0][1])], held, None)
+
+
+def test_c5_pins_two_fiscal_years_covering_2008_for_each_fund_with_the_corroboration_filings():
+    assert set(REAL_C5_REQUIRED) == set(tool.FUNDS)
+    text = (Path(__file__).resolve().parents[1] / "docs/evidence/t0023/corroboration-1.md").read_text()
+    for name, years in REAL_C5_REQUIRED.items():
+        assert len(years) == 2
+        for start, end, filing in years:
+            assert tool.covers_2008(fact(symbol=name, start=start, end=end))
+            assert f"`{filing}`" in text
 
 
 # --- NAV returns and their split basis
@@ -705,8 +752,9 @@ def build_workspace(base: Path) -> Workspace:
     text = ("\n".join(lines) + "\n").encode()
     run = private_dir(root / "runs" / "20261104T000000Z-aaaaaaaa")
     (run / "panel.csv").write_bytes(text)
-    record = {"panel_id": tool.panel_tool.FROZEN_PANEL_ID, "panel_sha256": sha(text)}
+    record = tool.common.record_for(text, {"invented": "1"})
     (run / "run.json").write_text(json.dumps(record))
+    tool.panel_tool.FROZEN_PANEL_ID = record["panel_id"]  # restored after the test by fast_and_private
 
     facts = [",".join(tool.FACT_COLUMNS)]
     nav = {n: tool.load_nav(reference / f"nav-{n.lower()}.csv") for n in funds}

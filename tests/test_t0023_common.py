@@ -46,14 +46,26 @@ def invented_text() -> str:
     return panel_tool.panel_text(built)
 
 
-def make_run(root: Path, name: str, panel_id: str, text: str, recorded_sha: str | None = None) -> Path:
+def make_run(root: Path, name: str, label: str, text: str, recorded_sha: str | None = None) -> Path:
+    """A run whose record recomputes (common.record_for); `label` stands in for its inputs."""
     run = root / "runs" / name
     run.mkdir(parents=True)
     data = text.encode()
     (run / "panel.csv").write_bytes(data)
-    record = {"panel_id": panel_id, "panel_sha256": recorded_sha or hashlib.sha256(data).hexdigest()}
+    record = common.record_for(data, {"label": label})
+    if recorded_sha is not None:
+        record["panel_sha256"] = recorded_sha
     (run / "run.json").write_text(json.dumps(record))
     return run
+
+
+def id_of(label: str, text: str) -> str:
+    return common.record_for(text.encode(), {"label": label})["panel_id"]
+
+
+def edit_record(run: Path, **changes) -> None:
+    record = json.loads((run / "run.json").read_text()) | changes
+    (run / "run.json").write_text(json.dumps(record))
 
 
 # --- parse_panel
@@ -78,47 +90,88 @@ def test_parse_panel_stops_on_an_empty_panel(text):
 
 
 def test_load_frozen_picks_the_newest_matching_run(tmp_path):
-    older = invented_text()
-    newer_built = ext.Assembled(MONTHS[:3], RETURNS[:2].copy(), BILLS[:2].copy(), S[:2].copy(), 0, {}, {})
-    make_run(tmp_path, "20261101T000000Z", "id-a", older)
-    newest = make_run(tmp_path, "20261103T000000Z", "id-a", panel_tool.panel_text(newer_built))
-    make_run(tmp_path, "20261104T000000Z", "id-other", older)
-    panel, run_dir = common.load_frozen(tmp_path, "id-a")
+    text = invented_text()
+    make_run(tmp_path, "20261101T000000Z", "a", text)
+    newest = make_run(tmp_path, "20261103T000000Z", "a", text)
+    make_run(tmp_path, "20261104T000000Z", "other", text)
+    panel, run_dir = common.load_frozen(tmp_path, id_of("a", text))
     assert run_dir == newest
-    assert panel.months == MONTHS[:3]
+    assert panel.months == MONTHS
 
 
 def test_load_frozen_skips_other_ids_and_directories_without_a_record(tmp_path):
-    wanted = make_run(tmp_path, "20261101T000000Z", "id-a", invented_text())
-    make_run(tmp_path, "20261102T000000Z", "id-other", invented_text())
+    wanted = make_run(tmp_path, "20261101T000000Z", "a", invented_text())
+    make_run(tmp_path, "20261102T000000Z", "other", invented_text())
     (tmp_path / "runs" / "20261103T000000Z").mkdir()
-    _, run_dir = common.load_frozen(tmp_path, "id-a")
+    _, run_dir = common.load_frozen(tmp_path, id_of("a", invented_text()))
     assert run_dir == wanted
 
 
+def test_load_frozen_reads_the_pinned_id_at_call_time(tmp_path, monkeypatch):
+    wanted = make_run(tmp_path, "20261101T000000Z", "a", invented_text())
+    monkeypatch.setattr(panel_tool, "FROZEN_PANEL_ID", id_of("a", invented_text()))
+    assert common.load_frozen(tmp_path)[1] == wanted
+
+
 def test_load_frozen_stops_when_no_run_holds_the_id(tmp_path):
-    make_run(tmp_path, "20261101T000000Z", "id-other", invented_text())
+    make_run(tmp_path, "20261101T000000Z", "other", invented_text())
     with pytest.raises(ev.Stop, match="no rebuild"):
-        common.load_frozen(tmp_path, "id-a")
+        common.load_frozen(tmp_path, id_of("a", invented_text()))
 
 
 def test_load_frozen_stops_without_any_runs(tmp_path):
     with pytest.raises(ev.Stop, match="no rebuild"):
-        common.load_frozen(tmp_path, "id-a")
+        common.load_frozen(tmp_path, "any")
 
 
 def test_load_frozen_stops_on_a_tampered_panel(tmp_path):
-    run = make_run(tmp_path, "20261101T000000Z", "id-a", invented_text())
+    run = make_run(tmp_path, "20261101T000000Z", "a", invented_text())
     (run / "panel.csv").write_bytes((run / "panel.csv").read_bytes().replace(b"0.0123", b"0.0124"))
     with pytest.raises(ev.Stop, match="doesn't match its record"):
-        common.load_frozen(tmp_path, "id-a")
+        common.load_frozen(tmp_path, id_of("a", invented_text()))
+
+
+def test_load_frozen_stops_on_a_changed_panel_whose_record_hash_was_changed_to_match(tmp_path):
+    """F-REVIEW-2026-11-22-t0023-1-2: the paired change keeps the claimed id but can't recompute it."""
+    run = make_run(tmp_path, "20261101T000000Z", "a", invented_text())
+    changed = (run / "panel.csv").read_bytes().replace(b"0.0123", b"0.0124")
+    (run / "panel.csv").write_bytes(changed)
+    edit_record(run, panel_sha256=hashlib.sha256(changed).hexdigest())
+    with pytest.raises(ev.Stop, match="doesn't recompute"):
+        common.load_frozen(tmp_path, id_of("a", invented_text()))
+
+
+def test_load_frozen_stops_when_the_recorded_inputs_are_changed_or_missing(tmp_path):
+    run = make_run(tmp_path, "20261101T000000Z", "a", invented_text())
+    wanted = id_of("a", invented_text())
+    edit_record(run, inputs={"label": "b"})
+    with pytest.raises(ev.Stop, match="doesn't recompute"):
+        common.load_frozen(tmp_path, wanted)
+    record = json.loads((run / "run.json").read_text())
+    del record["inputs"]
+    (run / "run.json").write_text(json.dumps(record))
+    with pytest.raises(ev.Stop, match="no inputs"):
+        common.load_frozen(tmp_path, wanted)
+
+
+@pytest.mark.parametrize("check", common.REQUIRED_CHECKS)
+def test_load_frozen_stops_unless_every_rebuild_check_passed(tmp_path, check):
+    run = make_run(tmp_path, "20261101T000000Z", "a", invented_text())
+    checks = dict.fromkeys(common.REQUIRED_CHECKS, True)
+    for value in (False, None):
+        edit_record(run, checks=checks | {check: value})
+        with pytest.raises(ev.Stop, match=check):
+            common.load_frozen(tmp_path, id_of("a", invented_text()))
+    edit_record(run, checks={k: v for k, v in checks.items() if k != check})
+    with pytest.raises(ev.Stop, match=check):
+        common.load_frozen(tmp_path, id_of("a", invented_text()))
 
 
 def test_load_frozen_does_not_fall_back_when_the_newest_match_is_tampered(tmp_path):
-    make_run(tmp_path, "20261101T000000Z", "id-a", invented_text())
-    make_run(tmp_path, "20261102T000000Z", "id-a", invented_text(), recorded_sha="0" * 64)
+    make_run(tmp_path, "20261101T000000Z", "a", invented_text())
+    make_run(tmp_path, "20261102T000000Z", "a", invented_text(), recorded_sha="0" * 64)
     with pytest.raises(ev.Stop, match="20261102T000000Z"):
-        common.load_frozen(tmp_path, "id-a")
+        common.load_frozen(tmp_path, id_of("a", invented_text()))
 
 
 # --- usd_columns, with_changes

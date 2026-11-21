@@ -54,6 +54,23 @@ C4_2008_BAR = D("0.04")
 C5_PER_SHARE_BAR = D("0.01")
 C5_TOTAL_POINTS_BAR = D("0.25")  # the audited figure is a percentage
 C5_NAV_BAR = D("0.01")
+# C5's fund-years, pinned (F-REVIEW-2026-11-22-t0023-1-1): each fund's fiscal years covering 2008 and
+# the filing each is read from, as named in corroboration-1.md. C5 is performed only when exactly these
+# rows are present.
+C5_REQUIRED: dict[str, tuple[tuple[date, date, str], ...]] = {
+    "SPY": (
+        (date(2007, 10, 1), date(2008, 9, 30), "0000950135-08-007648"),
+        (date(2008, 10, 1), date(2009, 9, 30), "0000950123-09-066888"),
+    ),
+    "BIL": (
+        (date(2007, 7, 1), date(2008, 6, 30), "0000950123-09-040926"),
+        (date(2008, 7, 1), date(2009, 6, 30), "0000950123-09-040926"),
+    ),
+    "IEF": (
+        (date(2007, 3, 1), date(2008, 2, 29), "0001193125-09-101817"),
+        (date(2008, 3, 1), date(2009, 2, 28), "0001193125-09-101817"),
+    ),
+}
 WINDOW_2008 = ext.WINDOWS["2008"]
 WINDOW_2008_2009 = (date(2007, 12, 31), date(2009, 12, 31))
 MONTHS_IN_2008 = 12
@@ -369,10 +386,28 @@ def combine(statuses: Sequence[str]) -> str:
     return unperformed[0] if unperformed else "pass"
 
 
-def check_c5(facts: Sequence[Fact], fund: Fund, nav: Mapping[date, Decimal] | None) -> dict[str, Any]:
+def check_c5(
+    facts: Sequence[Fact],
+    fund: Fund,
+    nav: Mapping[date, Decimal] | None,
+    required: Sequence[tuple[date, date, str]] | None = None,
+) -> dict[str, Any]:
+    """C5 over exactly the pinned fund-years: a missing, extra or differently filed year leaves it
+    unperformed, so a passing year can never stand in for an absent one."""
     chosen = [f for f in facts if f.symbol == fund.name and covers_2008(f)]
     if not chosen:
         raise NotPerformed("no audited fiscal year covering 2008 for this fund")
+    wanted = set(C5_REQUIRED[fund.name] if required is None else required)
+    present = [(f.start, f.end, f.filing) for f in chosen]
+    if len(present) != len(set(present)):
+        raise NotPerformed("a pinned fiscal year appears twice")
+    missing, extra = sorted(wanted - set(present)), sorted(set(present) - wanted)
+    if missing or extra:
+        detail = "; ".join(
+            [f"missing {s} to {e} ({filing})" for s, e, filing in missing]
+            + [f"unpinned {s} to {e} ({filing})" for s, e, filing in extra]
+        )
+        raise NotPerformed(f"the fiscal years aren't the pinned set: {detail}")
     rows, statuses = [], []
     for fact in chosen:
         parts = check_c5_fact(fact, fund, nav)

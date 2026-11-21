@@ -260,6 +260,11 @@ def write(path, data: bytes):
     return hashlib.sha256(data).hexdigest()
 
 
+def frozen_id(root):
+    """The id the invented run's record carries, which recomputes from its inputs and panel."""
+    return json.loads(next((root / "runs").glob("*/run.json")).read_text())["panel_id"]
+
+
 def private(path):
     path.mkdir(mode=0o700, parents=True, exist_ok=True)
     path.chmod(0o700)
@@ -278,7 +283,7 @@ def build_workspace(tmp_path):
     run_dir = private(root / "runs" / "20201231T000000Z-abcdef12")
     panel = (header + body).encode()
     write(run_dir / "panel.csv", panel)
-    record = {"panel_id": "invented", "panel_sha256": hashlib.sha256(panel).hexdigest()}
+    record = tool.tc.record_for(panel, {"invented": "1"})
     write(run_dir / "run.json", json.dumps(record).encode())
 
     obs = "".join(
@@ -334,7 +339,7 @@ def test_a_run_reports_counts_and_classes_and_writes_values_only_to_the_report(t
     root, e0002, h10 = build_workspace(tmp_path)
     gate = Gate()
     out = tool.run(
-        root, e0002, h10, root, gate=gate, commit="abcdef12" * 5, panel_id="invented", classify=classify
+        root, e0002, h10, root, gate=gate, commit="abcdef12" * 5, panel_id=frozen_id(root), classify=classify
     )
     assert {s for _, (s,) in gate.asked} == {tool.aud_tool.H10_SOURCE, ev.SOURCE_ID}
     assert out["months"] == 3 and out["panel_months_with_s_unlike_h10"] == 0
@@ -362,7 +367,7 @@ def test_a_sensitivity_that_changes_no_class_passes(tmp_path):
         root,
         gate=Gate(),
         commit="a" * 40,
-        panel_id="invented",
+        panel_id=frozen_id(root),
         classify=lambda _: {"e": {"m": {"class": "same"}}},
     )
     assert out["S8"]["passes"] is True and out["S9"]["class_changes"] == []
@@ -372,7 +377,9 @@ def test_a_tampered_h10_archive_stops(tmp_path):
     root, e0002, h10 = build_workspace(tmp_path)
     (h10 / "manifest.json").write_text(json.dumps({"sha256": "0" * 64}))
     with pytest.raises(ev.Stop, match="doesn't match its manifest"):
-        tool.run(root, e0002, h10, root, gate=Gate(), commit="a" * 40, panel_id="invented", classify=classify)
+        tool.run(
+            root, e0002, h10, root, gate=Gate(), commit="a" * 40, panel_id=frozen_id(root), classify=classify
+        )
 
 
 def test_main_exits_2_on_a_stop_and_prints_nothing_to_stdout(tmp_path, capsys, monkeypatch):
