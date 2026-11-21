@@ -1,0 +1,37 @@
+# REFERENCE calendar (real data; not synthetic): RITS settlement days, 2027. Dated, cited extract (T-0009 §2.7; owner decision D7, OD-0076; refreshed under OD-0184 A7).
+# Source: Reserve Bank of Australia 2026. Facts only, extracted by hand; RBA copyright §5 Financial Data conditions apply; no endorsement by the RBA is implied.
+calendar_id: rits
+kind: reference
+as_of: 2026-11-21
+source:
+  citation: >-
+    Source: Reserve Bank of Australia 2026. "RITS Business Hours" (rule) and "RBA Office Closures – Public and Bank
+    Holidays 2027" (dates), read once by hand on 2026-11-21 22:03 UTC under OD-0184 A7. Rule, verbatim and unchanged
+    from the 2026 read: RITS "is closed for the settlement of such transactions on weekends and on the following public
+    holidays where they are observed in NSW and Victoria: New Year's Day, Australia Day, Good Friday, Easter Monday,
+    Anzac Day, King's Birthday, Christmas Day and Boxing Day." (The RITS Fast Settlement Service runs every day and is
+    not this calendar.)
+  url: https://www.rba.gov.au/payments-and-infrastructure/rits/business-hours.html
+  dates_url: https://www.rba.gov.au/schedules-events/bank-holidays-2027.html
+  page_sha256:
+    rule: a5a14ac889077d3ebcff759873e2e89c1adde7820768e4f363aea8e9518a60e7
+    dates: 45a07aba6ba3a392ea4b95501f7cc5683d44c04aa50da450d7d4c3ca5e4e23b2
+  rights_source_id: rba_calendar_pages
+  interpretation: >-
+    A named holiday closes RITS when the dates page lists it for both New South Wales and Victoria, as in 2026.
+    Anzac Day (Sunday 25 April) falls on a weekend; the "Additional Day (Anzac Day)" on Monday 26 April is listed for
+    NSW but not Victoria, so RITS is read as open. Christmas Day and Boxing Day fall on Saturday and Sunday; the page's
+    "Additional Day (Christmas Day)" (Monday 27 December) and "Additional Day (Boxing Day)" (Tuesday 28 December) are
+    listed for all states, and its note (f) makes them the substitute holidays, so they are read as Christmas Day and
+    Boxing Day observed (as 2026's "Boxing Day Observed"). These readings are Claude's, from the two pages only; no RITS
+    Advice was read.
+coverage: {start: 2027-01-01, end: 2027-12-31}
+weekend: [5, 6]
+closed:
+  - {date: 2027-01-01, reason: "New Year's Day (all states)"}
+  - {date: 2027-01-26, reason: "Australia Day (all states)"}
+  - {date: 2027-03-26, reason: "Good Friday (all states)"}
+  - {date: 2027-03-29, reason: "Easter Monday (all states)"}
+  - {date: 2027-06-14, reason: "King's Birthday (NSW and Victoria)"}
+  - {date: 2027-12-27, reason: "Christmas Day observed (all states; Additional Day, Christmas Day 25 December is a Saturday)"}
+  - {date: 2027-12-28, reason: "Boxing Day observed (all states; Additional Day, Boxing Day 26 December is a Sunday)"}

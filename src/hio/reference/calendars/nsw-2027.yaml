@@ -1,0 +1,30 @@
+# REFERENCE calendar (real data; not synthetic): New South Wales business days, 2027 (public and bank holidays observed in NSW). Dated, cited extract (T-0009 §2.7; owner decision D7, OD-0076; refreshed under OD-0184 A7).
+# Source: Reserve Bank of Australia 2026. Facts only, extracted by hand; RBA copyright §5 Financial Data conditions apply; no endorsement by the RBA is implied.
+calendar_id: nsw
+kind: reference
+as_of: 2026-11-21
+source:
+  citation: >-
+    Source: Reserve Bank of Australia 2026. "RBA Office Closures – Public and Bank Holidays 2027", read once by hand on
+    2026-11-21 22:03 UTC under OD-0184 A7: every weekday the page lists as observed in New South Wales (including "All
+    States and Territories"). Weekend holidays (Easter Saturday and Sunday, Anzac Day on Sunday 25 April, Christmas Day
+    on Saturday 25 December, Boxing Day on Sunday 26 December) are covered by the weekend.
+  url: https://www.rba.gov.au/schedules-events/bank-holidays-2027.html
+  page_sha256: 45a07aba6ba3a392ea4b95501f7cc5683d44c04aa50da450d7d4c3ca5e4e23b2
+  rights_source_id: rba_calendar_pages
+  interpretation: >-
+    The Bank Holiday on 2 August is marked "(a) Not a state-wide public holiday"; it is a bank holiday observed in NSW,
+    so it is closed here (this calendar is NSW public and bank holidays, the F11 publication rule), as in 2026.
+coverage: {start: 2027-01-01, end: 2027-12-31}
+weekend: [5, 6]
+closed:
+  - {date: 2027-01-01, reason: "New Year's Day"}
+  - {date: 2027-01-26, reason: "Australia Day"}
+  - {date: 2027-03-26, reason: "Good Friday"}
+  - {date: 2027-03-29, reason: "Easter Monday"}
+  - {date: 2027-04-26, reason: "Additional Day (ACT, NSW, NT, Qld, WA; Anzac Day 25 April is a Sunday)"}
+  - {date: 2027-06-14, reason: "King's Birthday"}
+  - {date: 2027-08-02, reason: "Bank Holiday (ACT, NSW; not a state-wide public holiday)"}
+  - {date: 2027-10-04, reason: "Labour Day (ACT, NSW, SA)"}
+  - {date: 2027-12-27, reason: "Additional Day (Christmas Day 25 December is a Saturday)"}
+  - {date: 2027-12-28, reason: "Additional Day (Boxing Day 26 December is a Sunday)"}
