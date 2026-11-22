@@ -214,6 +214,7 @@ are in operating model §1.1; the template is
 | [OD-0197](OD-0197-cpi-first-release-download.md) | authorise_work | **Archived CPI releases download** (245 pages, cap 250) and first-release comparison for E-0004 F-1; no rerun | `main` | recorded |
 | [OD-0198](OD-0198-cpi-parser-fix-act-autonomously.md) | authorise_work | Merge PR #124; **CPI release parser fixed** on the real layouts; act autonomously within authorised work, architect when required | `feat/cpi-first-release` | recorded |
 | [OD-0199](OD-0199-orchestrator-concurrency-rules.md) | authorise_work | **Orchestrator rules** in the start-up prompt and PROTOCOL: workers first, maximise concurrency (up to five), never block; new PROTOCOL hash | `feat/cpi-first-release` | recorded |
+| [OD-0200](OD-0200-cpi-state-equivalence-check.md) | authorise_work | **CPI-only state check** for E-0004 F-1: 12 earlier releases (cap 15), first-release series, state comparison; no re-estimation | `feat/e0004-first-release-states` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
