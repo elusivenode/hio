@@ -1,0 +1,5 @@
+# PROPOSED under OD-0231; approves nothing. The contract is docs/decisions/local-data-layers-proposal.md.
+identity: {instrument: IEF.US, version: 0.1.0, status: proposed}
+source: {source_id: eodhd.personal_evaluation, quote_currency: USD}
+corrections: []
+changelog: ["0.1.0 (2026-11-22): first proposed version (OD-0231). Not validated."]

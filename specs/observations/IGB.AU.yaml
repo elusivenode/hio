@@ -1,0 +1,9 @@
+# PROPOSED under OD-0231; approves nothing. The contract is docs/decisions/local-data-layers-proposal.md.
+identity: {instrument: IGB.AU, version: 0.1.0, status: proposed}
+source: {source_id: eodhd.personal_evaluation, quote_currency: AUD}
+corrections:
+  - action: exclude_distribution
+    ex_date: "2020-10-01"
+    reason: "The vendor lists one October 2020 distribution twice. This record, dated on the fund's distribution-dates notice, is the duplicate; the record on the true ex-date is kept."
+    evidence: docs/evidence/factors/distribution-screen-1.md
+changelog: ["0.1.0 (2026-11-22): first proposed version (OD-0231). Not validated."]

@@ -66,18 +66,21 @@ def dividend_record(day=DAYS[2], amount=1.0):
     }
 
 
-def make_snapshot(tmp_path, closes=CLOSES, drop=None, dividends=None):
-    """The real layout: raw/<snapshot>/<SYMBOL>.<kind>.json and manifest.json. Returns (root, pin)."""
+def make_snapshot(tmp_path, closes=CLOSES, drop=None, dividends=None, eod=None, splits=None):
+    """The real layout: raw/<snapshot>/<SYMBOL>.<kind>.json and manifest.json. Returns (root, pin).
+    `eod` and `splits` replace the default close rows and the one split."""
     root = tmp_path / "root"
     raw = root / "raw" / SNAPSHOT
     raw.mkdir(parents=True)
     dividends = [dividend_record()] if dividends is None else dividends
+    if eod is None:
+        eod = [{"date": d, "close": c, "adjusted_close": c} for d, c in zip(DAYS, closes, strict=True)]
+    if splits is None:
+        splits = [{"date": DAYS[3], "split": "2.000000/1.000000"}]
     contents = {
-        ("ZZZ.US", "eod"): [
-            {"date": d, "close": c, "adjusted_close": c} for d, c in zip(DAYS, closes, strict=True)
-        ],
+        ("ZZZ.US", "eod"): eod,
         ("ZZZ.US", "div"): dividends,
-        ("ZZZ.US", "splits"): [{"date": DAYS[3], "split": "2.000000/1.000000"}],
+        ("ZZZ.US", "splits"): splits,
         ("EXCHANGE.US", "symbols"): [{"Code": "ZZZ", "Currency": "USD"}],
     }
     files = []
@@ -145,6 +148,7 @@ def test_a_build_with_a_distribution_and_a_split_writes_both_files_in_the_format
             "snapshot",
             "snapshot_manifest_sha256",
             "inputs",
+            "input_layer",
             "code_commit",
             "periods",
             "first",
@@ -157,6 +161,7 @@ def test_a_build_with_a_distribution_and_a_split_writes_both_files_in_the_format
             "build_id",
         ]
     )
+    assert record["input_layer"] == "bronze"
     assert record["factor_id"] == FACTOR and record["spec_version"] == "0.1.0"
     assert record["series_class"] == "total_return" and record["numeraire"] == "USD"
     assert record["source_id"] == "invented.source" and record["symbol"] == "ZZZ.US"
@@ -935,6 +940,16 @@ def test_a_refused_correction_prints_no_date_or_amount(tmp_path, monkeypatch, ca
     assert not re.search(r"\d{4}-\d{2}-\d{2}", captured.err) and not re.search(r"\d\.\d", captured.err)
 
 
+def test_bronze_build_ids_are_pinned_to_their_values_from_before_silver_mode(tmp_path):
+    """Pinned from the code before silver mode existed: a bronze `build_id` must never move."""
+    root, pin = make_snapshot(tmp_path / "plain")
+    plain = build_in(tmp_path, root, pin, out=tmp_path / "plain_store")
+    dup_root, dup_pin = duplicate_snapshot(tmp_path / "dup")
+    fixed = build_in(tmp_path, dup_root, dup_pin, spec=corrected_spec(tmp_path), out=tmp_path / "fixed_store")
+    assert plain["build_id"] == "5dc25acfce8c16d4"
+    assert fixed["build_id"] == "30b32749716b7473"
+
+
 def test_two_specs_differing_only_in_corrections_give_different_build_ids(tmp_path):
     root, pin = duplicate_snapshot(tmp_path)
     one = build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path, [correction()], name="one.yaml"))
@@ -942,3 +957,535 @@ def test_two_specs_differing_only_in_corrections_give_different_build_ids(tmp_pa
     two = build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path, other, name="two.yaml"))
     assert one["spec_sha256"] != two["spec_sha256"] and one["build_id"] != two["build_id"]
     assert one["series_sha256"] == two["series_sha256"]
+
+
+# --- silver input mode (OD-0231): a silver set written by hand, to the contract, on invented data
+
+SILVER_ID = "0123456789abcdef"
+SILVER_HEADERS = {
+    "closes.csv": "date,close,adjusted_close",
+    "distributions.csv": (
+        "ex_date,amount,split_adjusted_amount,currency,payment_date,record_date,declaration_date,period"
+    ),
+    "splits.csv": "date,ratio",
+}
+OBSERVATION_SPEC_SHA = "a" * 64
+SNAPSHOT_MANIFEST_SHA = "b" * 64
+
+
+def default_eod():
+    return [{"date": d, "close": c, "adjusted_close": c} for d, c in zip(DAYS, CLOSES, strict=True)]
+
+
+def default_splits():
+    return [{"date": DAYS[3], "split": "2.000000/1.000000"}]
+
+
+def cell(value):
+    return "" if value is None else format(value, "f") if isinstance(value, D) else str(value)
+
+
+def csv_file(name, rows, fields):
+    """One silver CSV as the contract writes it: its header, then one line per vendor record, LF line ends."""
+    lines = [SILVER_HEADERS[name], *(",".join(cell(row.get(f)) for f in fields) for row in rows)]
+    return ("\n".join(lines) + "\n").encode()
+
+
+def vendor(rows):
+    """Vendor records as the builder reads them: numbers parsed to `Decimal`, keeping their literal."""
+    return json.loads(json.dumps(rows), parse_float=D, parse_int=D)
+
+
+def silver_files(eod, dividends, splits, headers=None):
+    fields = {
+        "closes.csv": ("date", "close", "adjusted_close"),
+        "distributions.csv": (
+            "date",
+            "unadjustedValue",
+            "value",
+            "currency",
+            "paymentDate",
+            "recordDate",
+            "declarationDate",
+            "period",
+        ),
+        "splits.csv": ("date", "split"),
+    }
+    rows = {"closes.csv": vendor(eod), "distributions.csv": vendor(dividends), "splits.csv": vendor(splits)}
+    files = {name: csv_file(name, rows[name], fields[name]) for name in fields}
+    for name, header in (headers or {}).items():
+        files[name] = header.encode() + files[name][len(SILVER_HEADERS[name]) :]
+    return files
+
+
+def write_manifest(set_dir, manifest):
+    (set_dir / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
+
+
+def make_silver(
+    tmp_path,
+    eod=None,
+    dividends=None,
+    splits=None,
+    *,
+    corrections=(),
+    headers=None,
+    silver_id=SILVER_ID,
+    **changes,
+):
+    """A silver set at `<tmp>/silver/ZZZ.US/<silver_id>/`. Returns (silver_root, silver_id)."""
+    eod = default_eod() if eod is None else eod
+    dividends = [dividend_record()] if dividends is None else dividends
+    splits = default_splits() if splits is None else splits
+    root = tmp_path / "silver"
+    set_dir = root / "ZZZ.US" / silver_id
+    set_dir.mkdir(parents=True)
+    files = silver_files(eod, dividends, splits, headers)
+    for name, data in files.items():
+        (set_dir / name).write_bytes(data)
+    manifest = {
+        "schema": "hio.silver/1",
+        "instrument": "ZZZ.US",
+        "quote_currency": "USD",
+        "source_id": "invented.source",
+        "observation_spec": {"version": "0.1.0", "sha256": OBSERVATION_SPEC_SHA},
+        "snapshot": SNAPSHOT,
+        "snapshot_manifest_sha256": SNAPSHOT_MANIFEST_SHA,
+        "inputs": [],
+        "corrections": list(corrections),
+        "code_commit": COMMIT,
+        "files": {
+            name: {"sha256": hashlib.sha256(data).hexdigest(), "rows": data.count(b"\n") - 1}
+            for name, data in files.items()
+        },
+        "first": eod[0]["date"],
+        "last": eod[-1]["date"],
+        "silver_id": silver_id,
+        **changes,
+    }
+    write_manifest(set_dir, manifest)
+    return root, silver_id
+
+
+def set_dir_of(silver_root, silver_id=SILVER_ID):
+    return silver_root / "ZZZ.US" / silver_id
+
+
+def edit_manifest(silver_root, changes=None, drop=()):
+    """Replace or drop top-level fields of the set's manifest."""
+    manifest = json.loads((set_dir_of(silver_root) / "manifest.json").read_text())
+    manifest = {k: v for k, v in manifest.items() if k not in drop}
+    write_manifest(set_dir_of(silver_root), {**manifest, **(changes or {})})
+
+
+def rewrite_file(silver_root, name, data, silver_id=SILVER_ID):
+    """Replace one CSV and bring the manifest's sha256 for it into line, so only the content can refuse."""
+    path = set_dir_of(silver_root, silver_id) / name
+    path.write_bytes(data)
+    manifest = json.loads((set_dir_of(silver_root, silver_id) / "manifest.json").read_text())
+    manifest["files"][name]["sha256"] = hashlib.sha256(data).hexdigest()
+    write_manifest(set_dir_of(silver_root, silver_id), manifest)
+
+
+def silver_build(tmp_path, silver_root, silver_id=SILVER_ID, spec=None, out=None):
+    return tool.build_silver(
+        spec or write_spec(tmp_path), silver_root, silver_id, out or tmp_path / "store", commit=COMMIT
+    )
+
+
+def run_silver(tmp_path, **kwargs):
+    silver_root, silver_id = make_silver(tmp_path, **kwargs)
+    return silver_build(tmp_path, silver_root, silver_id)
+
+
+EQ_DAYS = ["2030-01-07", "2030-01-08", "2030-01-09", "2030-01-10", "2030-01-14"]
+
+
+def equivalence_data():
+    """A split on 01-10, a distribution dated Saturday 01-12 (it lands on 01-14), a missing adjusted close,
+    and a distribution with a null payment date."""
+    closes = ["100.0", "102.5", "103.0", "52.0", "53.0"]
+    eod = [{"date": d, "close": D(c), "adjusted_close": D(c)} for d, c in zip(EQ_DAYS, closes, strict=True)]
+    eod[1]["adjusted_close"] = None
+    dividends = [{**dividend_record("2030-01-12", 0.5), "paymentDate": None}]
+    return vendor_json(eod), dividends, [{"date": EQ_DAYS[3], "split": "2.000000/1.000000"}]
+
+
+def vendor_json(rows):
+    """Plain JSON-able rows: `Decimal` literals back to floats, so `make_snapshot` can write them."""
+    return json.loads(json.dumps(rows, default=float))
+
+
+def test_a_silver_build_gives_the_same_series_bytes_as_the_bronze_build_on_the_same_data(tmp_path):
+    eod, dividends, splits = equivalence_data()
+    root, pin = make_snapshot(tmp_path / "b", eod=eod, dividends=dividends, splits=splits)
+    bronze = build_in(tmp_path, root, pin, out=tmp_path / "bronze_store")
+    silver_root, silver_id = make_silver(tmp_path / "s", eod, dividends, splits)
+    silver = silver_build(tmp_path, silver_root, silver_id, out=tmp_path / "silver_store")
+    bytes_of_bronze = series_of(tmp_path / "bronze_store", bronze)
+    assert series_of(tmp_path / "silver_store", silver) == bytes_of_bronze
+    assert silver["series_sha256"] == bronze["series_sha256"]
+    for key in ("periods", "first", "last", "qualified", "invariants", "distribution_screen"):
+        assert silver[key] == bronze[key]
+    rows = [line.split(",") for line in bytes_of_bronze.decode().splitlines()[1:]]
+    assert len(rows) == 4 and rows[2][1] == EQ_DAYS[3] and D(rows[2][3]) == 0  # the split day
+    assert rows[3][1] == EQ_DAYS[4] and D(rows[3][3]) > 0  # the distribution, moved to the next observed day
+    assert bronze["invariants"]["RA-INV-020"] == {"checked": 1, "passed": True}
+
+
+def test_a_silver_set_without_a_duplicate_equals_the_bronze_build_with_the_exclusion_declared(tmp_path):
+    root, pin = duplicate_snapshot(tmp_path / "b")
+    bronze = build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path), out=tmp_path / "bronze_store")
+    applied = tool.apply_corrections(as_read(duplicated_dividends()), [correction()])[1]
+    silver_root, silver_id = make_silver(
+        tmp_path / "s", dividends=[dividend_record(DAYS[2], 1.0)], corrections=applied
+    )
+    plain = write_spec(tmp_path, name="plain.yaml")
+    silver = silver_build(tmp_path, silver_root, silver_id, spec=plain, out=tmp_path / "silver_store")
+    assert series_of(tmp_path / "silver_store", silver) == series_of(tmp_path / "bronze_store", bronze)
+    assert silver["series_sha256"] == bronze["series_sha256"]
+    assert silver["distribution_screen"] == bronze["distribution_screen"]
+    assert silver["source_corrections"] == bronze["source_corrections"] == applied
+    assert silver["distribution_screen"]["D3"] == {"checked": 1, "flagged": 0}
+
+
+def test_the_silver_record_names_the_silver_set_and_its_lineage(tmp_path):
+    corrections = [{"action": "exclude_distribution", "ex_date": DAYS[1], "record_sha256": "d" * 64}]
+    silver_root, silver_id = make_silver(tmp_path, corrections=corrections)
+    record = silver_build(tmp_path, silver_root, silver_id)
+    manifest_sha = hashlib.sha256((set_dir_of(silver_root) / "manifest.json").read_bytes()).hexdigest()
+    assert sorted(record) == sorted(
+        [
+            "factor_id",
+            "spec_version",
+            "spec_sha256",
+            "series_class",
+            "numeraire",
+            "source_id",
+            "symbol",
+            "snapshot",
+            "snapshot_manifest_sha256",
+            "inputs",
+            "input_layer",
+            "silver",
+            "code_commit",
+            "periods",
+            "first",
+            "last",
+            "qualified",
+            "invariants",
+            "source_corrections",
+            "distribution_screen",
+            "series_sha256",
+            "build_id",
+        ]
+    )
+    assert record["input_layer"] == "silver"
+    assert record["silver"] == {
+        "silver_id": silver_id,
+        "manifest_sha256": manifest_sha,
+        "observation_spec_sha256": OBSERVATION_SPEC_SHA,
+    }
+    assert record["snapshot"] == SNAPSHOT and record["snapshot_manifest_sha256"] == SNAPSHOT_MANIFEST_SHA
+    manifest = json.loads((set_dir_of(silver_root) / "manifest.json").read_text())
+    assert record["inputs"] == [
+        {"path": f"ZZZ.US/{silver_id}/{name}", "sha256": manifest["files"][name]["sha256"]}
+        for name in ("closes.csv", "distributions.csv", "splits.csv")
+    ]
+    assert record["source_corrections"] == corrections
+    assert record["code_commit"] == COMMIT and record["symbol"] == "ZZZ.US"
+    assert (
+        record["build_id"]
+        == hashlib.sha256((record["spec_sha256"] + "silver:" + silver_id + COMMIT).encode()).hexdigest()[:16]
+    )
+    stored = (build_dir(tmp_path, record) / "build.json").read_bytes()
+    assert stored == (json.dumps(record, indent=1, sort_keys=True) + "\n").encode()
+    assert all(result["passed"] for result in record["invariants"].values())
+
+
+def test_a_silver_build_id_depends_on_the_silver_id_and_not_on_the_data_alone(tmp_path):
+    one_root, one_id = make_silver(tmp_path / "one", silver_id="1" * 16)
+    two_root, two_id = make_silver(tmp_path / "two", silver_id="2" * 16)
+    one = silver_build(tmp_path, one_root, one_id, out=tmp_path / "one_store")
+    two = silver_build(tmp_path, two_root, two_id, out=tmp_path / "two_store")
+    assert one["series_sha256"] == two["series_sha256"] and one["build_id"] != two["build_id"]
+
+
+def test_a_second_silver_build_is_already_built_and_the_set_is_untouched(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    silver_root, silver_id = make_silver(tmp_path)
+    before = snapshot_bytes(silver_root)
+    args = silver_args(tmp_path, silver_root, silver_id, "--out", str(tmp_path / "store"))
+    assert tool.main(args) == 0
+    assert "already built" not in capsys.readouterr().out
+    assert tool.main(args) == 0
+    assert "already built" in capsys.readouterr().out
+    assert snapshot_bytes(silver_root) == before
+
+
+def test_silver_build_files_have_private_modes(tmp_path):
+    record = run_silver(tmp_path)
+    directory = build_dir(tmp_path, record)
+    for name in ("series.csv", "build.json"):
+        assert stat.S_IMODE((directory / name).stat().st_mode) == 0o600
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+
+
+def test_a_silver_build_with_an_out_inside_the_repository_refuses(tmp_path):
+    silver_root, silver_id = make_silver(tmp_path)
+    target = REPO / "factor-build-silver-refused-out"
+    with pytest.raises(ValueError, match="outside the repository"):
+        silver_build(tmp_path, silver_root, silver_id, out=target)
+    assert not target.exists()
+
+
+# --- silver refusals
+
+
+def refused_silver(tmp_path, silver_root, silver_id=SILVER_ID, match=None, spec=None):
+    with pytest.raises(ValueError, match=match):
+        silver_build(tmp_path, silver_root, silver_id, spec=spec)
+    assert not (tmp_path / "store").exists()
+
+
+@pytest.mark.parametrize(
+    ("changes", "match"),
+    [
+        ({"schema": "hio.silver/2"}, "schema"),
+        ({"instrument": "YYY.US"}, "instrument"),
+        ({"source_id": "another.source"}, "source_id"),
+        ({"silver_id": "fedcba9876543210"}, "directory name"),
+    ],
+)
+def test_a_silver_manifest_that_is_not_this_instruments_or_ids_refuses(tmp_path, changes, match):
+    silver_root, _ = make_silver(tmp_path)
+    edit_manifest(silver_root, changes)
+    refused_silver(tmp_path, silver_root, match=match)
+
+
+@pytest.mark.parametrize("missing", ["schema", "files", "observation_spec", "corrections", "quote_currency"])
+def test_a_silver_manifest_lacking_a_field_refuses(tmp_path, missing):
+    silver_root, _ = make_silver(tmp_path)
+    edit_manifest(silver_root, drop=(missing,))
+    refused_silver(tmp_path, silver_root, match="lacks a required field")
+
+
+def test_an_unreadable_silver_manifest_refuses(tmp_path):
+    silver_root, _ = make_silver(tmp_path)
+    (set_dir_of(silver_root) / "manifest.json").write_text("{not json")
+    refused_silver(tmp_path, silver_root)
+
+
+def test_a_missing_silver_set_or_a_wrong_argument_refuses(tmp_path):
+    silver_root, _ = make_silver(tmp_path)
+    refused_silver(tmp_path, silver_root, silver_id="f" * 16, match="no silver set")
+    refused_silver(tmp_path, tmp_path / "nowhere", match="no silver set")
+
+
+@pytest.mark.parametrize("bad", ["../escape", "ABCDEF0123456789", "0123", "", "0123456789abcdef/.."])
+def test_a_silver_id_that_is_not_sixteen_hex_characters_refuses(tmp_path, bad):
+    silver_root, _ = make_silver(tmp_path)
+    refused_silver(tmp_path, silver_root, silver_id=bad, match="16 lowercase hex")
+
+
+@pytest.mark.parametrize("name", list(SILVER_HEADERS))
+def test_a_tampered_silver_file_refuses(tmp_path, name):
+    silver_root, _ = make_silver(tmp_path)
+    path = set_dir_of(silver_root) / name
+    path.write_bytes(path.read_bytes() + b"\n")
+    refused_silver(tmp_path, silver_root, match=f"{name} does not match")
+
+
+@pytest.mark.parametrize("name", list(SILVER_HEADERS))
+def test_a_silver_file_with_the_wrong_header_refuses_even_when_its_hash_matches(tmp_path, name):
+    silver_root, _ = make_silver(tmp_path, headers={name: "wrong,header"})
+    refused_silver(tmp_path, silver_root, match=f"{name} does not have the contract's header")
+
+
+def test_a_silver_file_with_its_columns_reordered_refuses(tmp_path):
+    silver_root, _ = make_silver(tmp_path, headers={"splits.csv": "ratio,date"})
+    refused_silver(tmp_path, silver_root, match="header")
+
+
+@pytest.mark.parametrize("name", list(SILVER_HEADERS))
+def test_a_missing_silver_file_refuses(tmp_path, name):
+    silver_root, _ = make_silver(tmp_path)
+    (set_dir_of(silver_root) / name).unlink()
+    refused_silver(tmp_path, silver_root, match=f"no {name}")
+
+
+def test_a_factor_spec_that_declares_corrections_refuses_in_silver_mode(tmp_path):
+    silver_root, silver_id = make_silver(tmp_path)
+    with pytest.raises(ValueError, match="corrections belong to the observation spec"):
+        silver_build(tmp_path, silver_root, silver_id, spec=corrected_spec(tmp_path))
+    with pytest.raises(ValueError, match="corrections belong to the observation spec"):
+        tool.screen_only_silver(corrected_spec(tmp_path), silver_root, silver_id)
+    assert not (tmp_path / "store").exists()
+
+
+def test_an_empty_corrections_block_in_the_factor_spec_is_allowed_in_silver_mode(tmp_path):
+    silver_root, silver_id = make_silver(tmp_path)
+    spec = write_spec(tmp_path, extra="construction:\n  source_corrections: []\n")
+    assert silver_build(tmp_path, silver_root, silver_id, spec=spec)["source_corrections"] == []
+
+
+def test_a_silver_row_with_the_wrong_number_of_cells_refuses(tmp_path):
+    silver_root, _ = make_silver(tmp_path)
+    rewrite_file(silver_root, "splits.csv", b"date,ratio\n2030-01-10,2.000000/1.000000,extra\n")
+    refused_silver(tmp_path, silver_root, match="wrong number of cells")
+
+
+def test_a_silver_close_that_is_not_a_number_refuses(tmp_path):
+    silver_root, _ = make_silver(tmp_path)
+    rewrite_file(silver_root, "closes.csv", b"date,close,adjusted_close\n2030-01-07,abc,1\n")
+    refused_silver(tmp_path, silver_root, match="not a number")
+
+
+def test_a_silver_quote_currency_other_than_the_numeraire_refuses(tmp_path):
+    silver_root, _ = make_silver(tmp_path, quote_currency="AUD")
+    refused_silver(tmp_path, silver_root, match="did not qualify")
+
+
+def test_a_silver_set_with_a_non_positive_close_refuses(tmp_path):
+    eod = default_eod()
+    eod[1]["close"] = 0.0
+    silver_root, _ = make_silver(tmp_path, eod=eod)
+    refused_silver(tmp_path, silver_root, match="Q1")
+
+
+def test_silver_text_is_read_back_exactly_and_an_empty_cell_is_none():
+    data = b"date,close,adjusted_close\n2030-01-07,102.5000,\n"
+    assert tool._silver_records("closes.csv", data) == [
+        {"date": "2030-01-07", "close": D("102.5000"), "adjusted_close": None}
+    ]
+    assert str(tool._silver_records("closes.csv", data)[0]["close"]) == "102.5000"
+    dividends = (
+        SILVER_HEADERS["distributions.csv"].encode() + b"\n2030-01-09,1.0,1.0,USD,,2030-01-09,,Quarterly\n"
+    )
+    assert tool._silver_records("distributions.csv", dividends) == [
+        {
+            "date": "2030-01-09",
+            "unadjustedValue": D("1.0"),
+            "value": D("1.0"),
+            "currency": "USD",
+            "paymentDate": None,
+            "recordDate": "2030-01-09",
+            "declarationDate": None,
+            "period": "Quarterly",
+        }
+    ]
+    split = b"date,ratio\n2030-01-10,2.000000/1.000000\n"
+    assert tool._silver_records("splits.csv", split) == [{"date": "2030-01-10", "split": "2.000000/1.000000"}]
+
+
+# --- silver mode on the command line
+
+
+def silver_args(tmp_path, silver_root, silver_id, *extra):
+    return [
+        "--spec",
+        str(write_spec(tmp_path)),
+        "--silver-root",
+        str(silver_root),
+        "--silver-id",
+        silver_id,
+        *extra,
+    ]
+
+
+def test_the_command_builds_from_silver_and_prints_the_layer_after_the_factor(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    silver_root, silver_id = make_silver(tmp_path)
+    assert tool.main(silver_args(tmp_path, silver_root, silver_id, "--out", str(tmp_path / "store"))) == 0
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert lines[0] == f"factor_id: {FACTOR}" and lines[1] == "input_layer: silver"
+    assert "periods: 4" in lines and "source_corrections: 0 applied" in lines
+    assert any(line.startswith("series_sha256: ") for line in lines)
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", out) and not re.search(r"\d\.\d", out)
+
+
+def test_the_bronze_command_prints_the_layer_after_the_factor(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    assert tool.main(cli_args(tmp_path)) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0] == f"factor_id: {FACTOR}" and lines[1] == "input_layer: bronze"
+
+
+def test_silver_mode_refusals_exit_2_and_print_no_date_or_amount(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    silver_root, silver_id = make_silver(tmp_path)
+    path = set_dir_of(silver_root) / "closes.csv"
+    path.write_bytes(path.read_bytes() + b"x")
+    assert tool.main(silver_args(tmp_path, silver_root, silver_id, "--out", str(tmp_path / "store"))) == 2
+    captured = capsys.readouterr()
+    assert captured.err.startswith("refused: ValueError") and captured.out == ""
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", captured.err) and not re.search(r"\d\.\d", captured.err)
+    assert not (tmp_path / "store").exists()
+
+
+def test_screen_only_works_on_a_silver_set_writes_nothing_and_never_asks_git(tmp_path, monkeypatch, capsys):
+    forbid_git(monkeypatch)
+    silver_root, silver_id = make_silver(tmp_path, dividends=flagged_dividends())
+    args = silver_args(tmp_path, silver_root, silver_id, "--screen-only")
+    before = tree(tmp_path)
+    assert tool.main(args) == 0
+    assert tree(tmp_path) == before and not (tmp_path / "store").exists()
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert lines[:2] == [f"factor_id: {FACTOR}", "input_layer: silver"] and "periods: 4" in lines
+    assert "D3: 2 flagged (2 checked)" in lines
+    assert "build_id" not in out and "series_sha256" not in out
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", out) and not re.search(r"\d\.\d", out)
+
+
+def test_screen_only_on_silver_applies_the_manifests_corrections_and_writes_a_report(tmp_path, monkeypatch):
+    forbid_git(monkeypatch)
+    applied = tool.apply_corrections(as_read(duplicated_dividends()), [correction()])[1]
+    silver_root, silver_id = make_silver(
+        tmp_path, dividends=[dividend_record(DAYS[2], 1.0)], corrections=applied
+    )
+    report = tmp_path / "report.json"
+    args = silver_args(tmp_path, silver_root, silver_id, "--screen-only", "--screen-report", str(report))
+    assert tool.main(args) == 0
+    assert stat.S_IMODE(report.stat().st_mode) == 0o600
+    body = json.loads(report.read_bytes())
+    assert body["input_layer"] == "silver" and body["source_corrections"] == applied
+    assert body["silver"]["silver_id"] == silver_id and body["snapshot"] == SNAPSHOT
+    assert body["snapshot_manifest_sha256"] == SNAPSHOT_MANIFEST_SHA
+    assert body["D3"] == {"checked": 1, "flagged": 0} and body["flagged"] == []
+    result = tool.screen_only_silver(write_spec(tmp_path), silver_root, silver_id)
+    assert result["input_layer"] == "silver" and result["periods"] == 4
+
+
+def test_screen_only_on_silver_verifies_the_set(tmp_path, monkeypatch, capsys):
+    forbid_git(monkeypatch)
+    silver_root, silver_id = make_silver(tmp_path)
+    (set_dir_of(silver_root) / "splits.csv").write_bytes(b"changed\n")
+    assert tool.main(silver_args(tmp_path, silver_root, silver_id, "--screen-only")) == 2
+    captured = capsys.readouterr()
+    assert captured.err.startswith("refused:") and captured.out == ""
+
+
+BRONZE_ARGS = ["--root", "r", "--snapshot", SNAPSHOT, "--manifest-sha256", "0" * 64]
+MIXES = {
+    "both sets": [*BRONZE_ARGS, "--silver-root", "s", "--silver-id", SILVER_ID],
+    "bronze with a silver id": [*BRONZE_ARGS, "--silver-id", SILVER_ID],
+    "bronze with a silver root": [*BRONZE_ARGS, "--silver-root", "s"],
+    "a silver root alone": ["--silver-root", "s"],
+    "a silver id alone": ["--silver-id", SILVER_ID],
+    "half a bronze set": ["--root", "r", "--snapshot", SNAPSHOT],
+    "a bronze pin alone": ["--manifest-sha256", "0" * 64],
+    "neither set": [],
+    "silver root with half a bronze set": ["--silver-root", "s", "--silver-id", SILVER_ID, "--root", "r"],
+}
+
+
+@pytest.mark.parametrize("mode", [[], ["--screen-only"]])
+@pytest.mark.parametrize("case", list(MIXES))
+def test_mixing_or_halving_the_two_argument_sets_is_refused_with_exit_2(tmp_path, capsys, case, mode):
+    extra = mode or ["--out", str(tmp_path / "store")]
+    assert tool.main(["--spec", str(write_spec(tmp_path)), *MIXES[case], *extra]) == 2
+    captured = capsys.readouterr()
+    assert captured.err.startswith("refused:") and captured.out == ""
+    assert not (tmp_path / "store").exists()
