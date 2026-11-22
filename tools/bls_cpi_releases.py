@@ -108,8 +108,14 @@ def _table_1_html(html: str) -> str:
     raise ValueError("no HTML table captioned 'Table 1.' was found")
 
 
+FOOTNOTE_REFS = re.compile(
+    r"<span\b[^>]*\bclass\s*=\s*[\"']footnoteRefs[\"'][^>]*>.*?</span>", re.DOTALL | re.IGNORECASE
+)
+
+
 def _parse_html(html: str) -> Parsed:
-    html = _table_1_html(html)
+    # BLS marks revisions and footnotes with <span class="footnoteRefs">(<a>r</a>)</span>; they are not data.
+    html = FOOTNOTE_REFS.sub("", _table_1_html(html))
     row = re.search(
         r"<tr\b[^>]*>\s*<th\b[^>]*>\s*(?:<p\b[^>]*>)?\s*All items\s*(?:</p>)?\s*</th>(.*?)</tr>",
         html,

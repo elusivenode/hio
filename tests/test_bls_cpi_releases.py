@@ -51,6 +51,21 @@ def test_snippets_parse_to_the_printed_months_and_levels(name, expected):
     assert tool.parse_release(name, snippet(name)) == expected
 
 
+def test_footnote_markers_in_the_all_items_row_are_ignored():
+    name = "cpi_10182016.htm.snippet"
+    got = tool.parse_release(name, snippet(name))
+    assert got == (date(2016, 9, 1), D("241.428"), date(2015, 9, 1), D("237.945"))
+    assert D("240.849") not in (got[1], got[3])  # the "(r)240.849" previous-month cell
+
+
+def test_a_footnote_marker_not_followed_by_a_level_refuses():
+    name = "cpi_10182016.htm.snippet"
+    marker = '<span class="footnoteRefs">(<a href="#cpipress1.f.r" title="Revised">r</a>)</span>'
+    data = snippet(name).decode().replace("241.428", marker, 1).encode()
+    with pytest.raises(ValueError, match="not an index level"):
+        tool.parse_release(name, data)
+
+
 def test_a_dash_is_none_for_that_level():
     got = tool.parse_release("cpi_11102026.htm.snippet", snippet("cpi_11102026.htm.snippet"))
     assert got == (date(2026, 10, 1), D("337.511"), date(2025, 10, 1), None)
