@@ -101,7 +101,7 @@ Each table is `tables/<name>.csv`. Columns are in the order shown. Rows are sort
 
 | Table | Columns | Notes | Sort |
 |---|---|---|---|
-| `snapshot` | `snapshot_id,name,source_id,capture_order,first_retrieved_at,last_retrieved_at` | `snapshot_id` is the manifest's sha256; `capture_order` counts from 1 | `capture_order` |
+| `snapshot` | `snapshot_id,name,source_id,capture_order,first_retrieved_at,last_retrieved_at` | `snapshot_id` is the manifest's sha256; `capture_order` counts from 1 | `capture_order` as a number |
 | `snapshot_member` | `snapshot_id,path,file_sha256,kind,source_symbol,retrieved_at` | only the files of the release's instruments and their exchange lists | `snapshot_id,path` |
 | `source_record` | `source_record_id,file_sha256,row_index,record_sha256` | every row of every `eod`, `div` and `splits` file in `snapshot_member`; one file held by two snapshots appears once | `file_sha256`, then `row_index` as a number |
 | `source_identity_mapping` | `source_id,source_symbol,instrument_code,listing_sk` | from the register | `source_symbol` |
