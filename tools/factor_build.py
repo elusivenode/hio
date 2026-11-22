@@ -5,6 +5,13 @@ pin and its manifest) supplies raw closes, distributions and splits, and `eodhd_
 periods. This tool recomputes the invariants from those periods, then writes `series.csv` and `build.json`
 under `<out>/<factor_id>/<spec version>/<build_id>/`. The command prints counts, ids, hashes and pass or fail
 only: never a return, a level or a date from the data.
+
+It also runs a distribution plausibility screen (OD-0228) over the periods and the raw distribution
+records: D1 against neighbouring distributions, D2 against the price move, D3 for duplicate amounts. The
+rules and thresholds are the OD-0228 table, declared before any run. A flag refuses nothing: the build record
+carries the thresholds, the counts and the flagged days, and the command prints counts only. `--screen-only`
+verifies the pin and the snapshot as a build does, runs the screen and writes no build; `--screen-report`
+(with `--screen-only`) writes the screen result to a new private file outside the repository.
 """
 
 from __future__ import annotations
@@ -34,6 +41,16 @@ HEADER = "period_start,period_end,price_return,income_return,total_return,index\
 TOLERANCE = Decimal("1e-12")
 ONE = Decimal(1)
 INVARIANTS = ("RA-INV-001", "index_chain", "RA-INV-020")
+
+# The OD-0228 screen thresholds. Changing one changes the declared rule: it needs a new owner decision.
+D1_MIN_YIELD = Decimal("0.005")
+D1_MULTIPLE = Decimal(3)
+D1_NEIGHBOURS_EACH_SIDE = 4
+D1_MIN_NEIGHBOURS = 4
+D2_MIN_YIELD = Decimal("0.02")
+D2_PRICE_FALL_FRACTION = Decimal("0.5")
+D3_MIN_DAYS_APART = 1
+D3_MAX_DAYS_APART = 10
 
 
 def _sha(data: bytes) -> str:
@@ -79,10 +96,10 @@ def read_spec(path: Path) -> dict:
     }
 
 
-def check_out(out: Path) -> Path:
+def check_out(out: Path, option: str = "--out") -> Path:
     resolved = out.resolve()
     if resolved == REPO or REPO in resolved.parents:
-        raise ValueError("--out must lie outside the repository")
+        raise ValueError(f"{option} must lie outside the repository")
     return resolved
 
 
@@ -129,6 +146,83 @@ def check_invariants(
     }
 
 
+def _median(values: list[Decimal]) -> Decimal:
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[mid]
+    return CTX.divide(CTX.add(ordered[mid - 1], ordered[mid]), Decimal(2))
+
+
+def _positive_amount(record: dict) -> Decimal | None:
+    raw = record.get("unadjustedValue")
+    if raw is None:
+        return None
+    amount = Decimal(str(raw))
+    return amount if amount > 0 else None
+
+
+def screen_distributions(periods, dividends) -> dict:
+    """The OD-0228 distribution plausibility screen: pure, exact `Decimal` arithmetic, never refuses.
+
+    A distribution day is a period with income_return > 0; its yield is that income return. D1 compares a
+    yield with its nearest distribution days, D2 with the price move, D3 looks for duplicate records."""
+    thresholds = {
+        "D1_min_yield": str(D1_MIN_YIELD),
+        "D1_multiple_of_neighbour_median": str(D1_MULTIPLE),
+        "D1_neighbours_each_side": str(D1_NEIGHBOURS_EACH_SIDE),
+        "D1_min_neighbours": str(D1_MIN_NEIGHBOURS),
+        "D2_min_yield": str(D2_MIN_YIELD),
+        "D2_price_fall_fraction_of_yield": str(D2_PRICE_FALL_FRACTION),
+        "D3_min_days_apart": str(D3_MIN_DAYS_APART),
+        "D3_max_days_apart": str(D3_MAX_DAYS_APART),
+    }
+    distribution = [p for p in periods if p.income_return > 0]
+    yields = [p.income_return for p in distribution]
+    rules: dict[date, set[str]] = {}
+    d1_checked = 0
+    for i, p in enumerate(distribution):
+        side = D1_NEIGHBOURS_EACH_SIDE
+        neighbours = yields[max(0, i - side) : i] + yields[i + 1 : i + 1 + side]
+        if len(neighbours) < D1_MIN_NEIGHBOURS:
+            continue
+        d1_checked += 1
+        median = _median(neighbours)
+        if yields[i] >= D1_MIN_YIELD and yields[i] > CTX.multiply(D1_MULTIPLE, median):
+            rules.setdefault(p.end, set()).add("D1")
+    for p in distribution:
+        floor = -CTX.multiply(p.income_return, D2_PRICE_FALL_FRACTION)
+        if p.income_return >= D2_MIN_YIELD and p.price_return > floor:
+            rules.setdefault(p.end, set()).add("D2")
+    days = [periods[0].start, *(p.end for p in periods)] if periods else []
+    records = [(r, _positive_amount(r)) for r in dividends]
+    positive = [(date.fromisoformat(str(r["date"])), a, r) for r, a in records if a is not None]
+    flagged_ids: set[int] = set()
+    for i, (day_i, amount_i, _record_i) in enumerate(positive):
+        for j in range(i + 1, len(positive)):
+            day_j, amount_j, _record_j = positive[j]
+            if amount_i == amount_j and D3_MIN_DAYS_APART <= abs((day_i - day_j).days) <= D3_MAX_DAYS_APART:
+                flagged_ids.update((i, j))
+    d3_flagged = 0
+    for i in sorted(flagged_ids):
+        landed = _action_days(days, [positive[i][2]], keep=lambda _r: True)
+        if not landed:
+            continue  # after the last close: ignored
+        d3_flagged += 1
+        rules.setdefault(next(iter(landed)), set()).add("D3")
+    flagged = [{"day": d.isoformat(), "rules": sorted(r)} for d, r in sorted(rules.items())]
+    return {
+        "thresholds": thresholds,
+        "distribution_days": len(distribution),
+        "D1": {"checked": d1_checked, "flagged": sum("D1" in r for r in rules.values())},
+        "D2": {"checked": len(distribution), "flagged": sum("D2" in r for r in rules.values())},
+        "D3": {"checked": len(positive), "flagged": d3_flagged},
+        "flagged": flagged,
+        "flagged_days": len(flagged),
+        "flagged_d1_and_d2": sum({"D1", "D2"} <= r for r in rules.values()),
+    }
+
+
 def index_levels(periods) -> list[Decimal]:
     levels, level = [], ONE
     for p in periods:
@@ -164,8 +258,9 @@ def _make_dirs(target: Path) -> None:
         directory.chmod(0o700)
 
 
-def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dict, bool]:
-    out = check_out(Path(out))
+def _load_pinned(spec_path, root, snapshot, manifest_sha256) -> dict:
+    """Verify the pin and the snapshot, then analyse and qualify the series: the part a build and a
+    screen-only run share. Refuses with ValueError."""
     root = Path(root)
     spec = read_spec(Path(spec_path))
     manifest_path = _base.snapshot_dir(root, snapshot) / "manifest.json"
@@ -193,6 +288,23 @@ def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dic
         raise ValueError("the series did not qualify (Q1 or Q2 failed)")
     if not series.periods:
         raise ValueError("the series has no periods")
+    return {
+        "spec": spec,
+        "manifest_hash": manifest_hash,
+        "entries": entries,
+        "listing": listing,
+        "series": series,
+        "dividends": dividends,
+        "splits": splits,
+    }
+
+
+def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dict, bool]:
+    out = check_out(Path(out))
+    loaded = _load_pinned(spec_path, root, snapshot, manifest_sha256)
+    spec, manifest_hash, series = loaded["spec"], loaded["manifest_hash"], loaded["series"]
+    entries, listing, dividends, splits = (loaded[k] for k in ("entries", "listing", "dividends", "splits"))
+    symbol = spec["symbol"]
     days = series.days
     split_days = _action_days(days, splits, keep=lambda _r: True)
     distribution_days = _action_days(
@@ -204,6 +316,7 @@ def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dic
     failed = [name for name, result in invariants.items() if not result["passed"]]
     if failed:
         raise ValueError(f"invariants failed: {', '.join(failed)}")
+    screen = screen_distributions(series.periods, dividends)  # a flag never refuses a build
     series_bytes = render_series(series.periods)
     code = commit if commit is not None else _base.code_commit()["commit"]
     build_id = _sha((spec["sha256"] + manifest_hash + code).encode())[:16]
@@ -228,6 +341,7 @@ def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dic
         "last": series.periods[-1].end.isoformat(),
         "qualified": {q: bool(series.qualified[q]) for q in ("Q1", "Q2", "Q3")},
         "invariants": invariants,
+        "distribution_screen": screen,
         "series_sha256": _sha(series_bytes),
         "build_id": build_id,
     }
@@ -254,15 +368,66 @@ def build(spec_path, root, snapshot, manifest_sha256, out, *, commit=None) -> di
     return _build(spec_path, root, snapshot, manifest_sha256, out, commit)[0]
 
 
+def screen_only(spec_path, root, snapshot, manifest_sha256, report=None) -> dict:
+    """Verify the pin and the snapshot as a build does and run the screen; writes no build and runs no git.
+    With `report`, writes the screen result as JSON to that new file (mode 0o600). Refuses with ValueError."""
+    if report is not None:
+        report = check_out(Path(report).parent, "--screen-report") / Path(report).name
+        if report.exists() or report.is_symlink():
+            raise ValueError("--screen-report must not exist")
+    loaded = _load_pinned(spec_path, root, snapshot, manifest_sha256)
+    spec, series = loaded["spec"], loaded["series"]
+    result = {
+        "factor_id": spec["factor_id"],
+        "symbol": spec["symbol"],
+        "snapshot": snapshot,
+        "snapshot_manifest_sha256": loaded["manifest_hash"],
+        "periods": len(series.periods),
+        "distribution_screen": screen_distributions(series.periods, loaded["dividends"]),
+    }
+    if report is not None:
+        identity = {k: result[k] for k in ("factor_id", "symbol", "snapshot", "snapshot_manifest_sha256")}
+        body = {**result["distribution_screen"], **identity}
+        _write_new(report, (json.dumps(body, indent=1, sort_keys=True) + "\n").encode())
+    return result
+
+
+def _print_screen(screen: dict) -> None:
+    """The screen's counts only: never a day, a yield or an amount."""
+    for rule in ("D1", "D2", "D3"):
+        print(f"{rule}: {screen[rule]['flagged']} flagged ({screen[rule]['checked']} checked)")
+    days, both = screen["flagged_days"], screen["flagged_d1_and_d2"]
+    print(f"distribution_screen: {days} day(s) flagged, {both} by D1 and D2")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--spec", type=Path, required=True)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--snapshot", required=True)
     parser.add_argument("--manifest-sha256", required=True)
-    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--out", type=Path)
+    parser.add_argument("--screen-only", action="store_true")
+    parser.add_argument("--screen-report", type=Path)
     args = parser.parse_args(argv)
+    problem = None
+    if args.screen_only and args.out is not None:
+        problem = "--out is not valid with --screen-only"
+    elif not args.screen_only and args.out is None:
+        problem = "--out is required without --screen-only"
+    elif args.screen_report is not None and not args.screen_only:
+        problem = "--screen-report is valid only with --screen-only"
+    if problem:
+        print(f"refused: {problem}", file=sys.stderr)
+        return 2
     try:
+        if args.screen_only:
+            pin = (args.spec, args.root, args.snapshot, args.manifest_sha256)
+            result = screen_only(*pin, args.screen_report)
+            print(f"factor_id: {result['factor_id']}")
+            print(f"periods: {result['periods']}")
+            _print_screen(result["distribution_screen"])
+            return 0
         record, existed = _build(args.spec, args.root, args.snapshot, args.manifest_sha256, args.out, None)
     except (ValueError, OSError) as exc:
         print(f"refused: {type(exc).__name__}: {exc if isinstance(exc, ValueError) else ''}", file=sys.stderr)
@@ -272,6 +437,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"periods: {record['periods']}")
     for name, result in record["invariants"].items():
         print(f"{name}: {'pass' if result['passed'] else 'fail'} ({result['checked']} checked)")
+    _print_screen(record["distribution_screen"])
     print(f"series_sha256: {record['series_sha256']}")
     if existed:
         print("already built")
