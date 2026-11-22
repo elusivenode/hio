@@ -1,0 +1,69 @@
+# PROPOSED under OD-0215; approves nothing. External facts are [EXT] and unverified.
+identity:
+  factor_id: rates.us.ief_vs_bil.excess
+  version: 0.1.0
+  status: proposed
+  owner: quantitative researcher
+  family: rates
+economics:
+  exposure: >-
+    USD return of holding IEF, a US-listed fund of seven-to-ten-year Treasuries, in excess of holding BIL, a US-listed fund of one-to-three-month Treasury bills. A proxy for the US duration (term) premium, built from two observed vehicles.
+  rationale: "A first excess-return factor from built series; the duration leg of a two-premium risk view."
+  is_not: >-
+    Not a constant-maturity Treasury excess return and not rates.us.cmt_10y.total_return in excess form. Not a validated factor, an after-cost or after-tax return, or a forecast of the term premium.
+classification:
+  series_class: excess_return
+  investability: investable_with_costs
+return_convention:
+  return_type: simple
+  period: "consecutive dates observed for both legs"
+  compounding: "none declared: the excess is arithmetic per period (RA 3.3); a cumulative figure compounds each leg and differences the results (RA-INV-016)"
+  numeraire: USD
+  hedging: n/a
+  cash_leg: cash.us.bil.market_total_return
+  excess_definition: "X_t = R_t - r_t, arithmetic, both legs in USD over the same period (RA 3.3, RA-INV-004)"
+observations:
+  - series_id: rates.us.ief.market_total_return
+    source_id: eodhd.personal_evaluation
+    unit: simple total return per period
+    knowledge_mode_required: latest
+  - series_id: cash.us.bil.market_total_return
+    source_id: eodhd.personal_evaluation
+    unit: simple total return per period
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: "As its two legs: reconstructed(T) from one snapshot at T. No publication instant is claimed."
+  earliest_history: "the later of the two legs' first dates; BIL sets it [EXT, unverified]"
+  capture_clock_dependency: "none for this exploratory version"
+construction:
+  calendar: "the dates both legs observe; nothing filled. Each leg is compounded exactly between consecutive common dates before the difference is taken"
+  day_count: "n/a: no accrual"
+  algorithm: |
+    tools/factor_excess.py, from two built series (tools/factor_build.py): the asset leg rates.us.ief.market_total_return and the cash leg
+    cash.us.bil.market_total_return, each pinned by its build id and series hash. X_t = R_t - r_t per common period.
+    The funded return reconstructs exactly as r_t + X_t (RA-INV-005).
+  rebalancing_and_rolls: "n/a: two single vehicles"
+  costs: "fund fees embedded in both legs; no trading, financing or shorting cost, and no tax"
+invariants:
+  standard: [RA-INV-004, RA-INV-005, RA-INV-015, RA-INV-016]
+  spec_specific: []
+triangulation:
+  - reference: "rates.us.cmt_10y.total_return less a bill return, once that construction has a reference"
+    why_comparable: "the same economic premium from an independent construction"
+    expected_differences:
+      - mechanism: "a fund's maturity band against a constant ten-year maturity, fund fees, and market price against model price"
+        predicted_sign: either
+        predicted_magnitude: "to be reported"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - "The cash leg is a fund of one-to-three-month Treasury bills at market price, not an overnight rate: it carries a little duration, a price-to-NAV gap and its own fee. A proper cash leg is cash.usd.overnight, which has no captured series yet."
+  - "Both legs rest on one vendor's unvalidated closes and distributions (OD-0160); every build pins its snapshot."
+  - "Short history: it starts when BIL does."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.0 (2026-11-22): first proposed version (OD-0215). Not validated."
