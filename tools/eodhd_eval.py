@@ -163,14 +163,23 @@ def http_getter(key: str) -> Getter:
     return get
 
 
-def requests_for() -> list[tuple[str, str, str]]:
+def requests_for(symbols: Sequence[str] | None = None) -> list[tuple[str, str, str]]:
+    """Every fund, FOREX and both listings; or, given `symbols`, only those funds and their exchanges."""
+    if symbols is not None:
+        unknown = [s for s in symbols if s not in ETFS]
+        if unknown or not symbols:
+            raise Stop("--symbols must name funds this evaluation covers")
     out = []
-    for symbol in ETFS:
+    for symbol in ETFS if symbols is None else dict.fromkeys(symbols):
         out.append((symbol, "eod", f"/eod/{symbol}?fmt=json&period=d"))
         out.append((symbol, "div", f"/div/{symbol}?fmt=json"))
         out.append((symbol, "splits", f"/splits/{symbol}?fmt=json"))
-    out.append((FOREX, "eod", f"/eod/{FOREX}?fmt=json&period=d"))
-    for exchange in EXCHANGES:  # the listing's quote currency (F-REVIEW-2026-11-04-t0022-1-1)
+    if symbols is None:
+        out.append((FOREX, "eod", f"/eod/{FOREX}?fmt=json&period=d"))
+        exchanges: Sequence[str] = EXCHANGES
+    else:
+        exchanges = [e for e in EXCHANGES if any(s.endswith(f".{e}") for s in symbols)]
+    for exchange in exchanges:  # the listing's quote currency (F-REVIEW-2026-11-04-t0022-1-1)
         out.append((f"EXCHANGE.{exchange}", "symbols", f"/exchange-symbol-list/{exchange}?fmt=json"))
     return out
 
@@ -233,16 +242,24 @@ def quote_currency(rows: Sequence[Mapping[str, Any]], symbol: str) -> str | None
 
 
 def fetch(
-    root: Path, snapshot: str, *, gate: RightsGate, commit: str, get: Getter, pause: float = PAUSE_SECONDS
+    root: Path,
+    snapshot: str,
+    *,
+    gate: RightsGate,
+    commit: str,
+    get: Getter,
+    pause: float = PAUSE_SECONDS,
+    symbols: Sequence[str] | None = None,
 ) -> dict:
-    """One snapshot. It stops at the first surprise, keeps what it has, and never overwrites a snapshot."""
+    """One snapshot. It stops at the first surprise, keeps what it has, and never overwrites a snapshot.
+    `symbols` limits it to those funds; the manifest then records them."""
     check_root(root)
     gate.authorise(Operation.FETCH, [SOURCE_ID])
     gate.authorise(Operation.STORE_RAW, [SOURCE_ID])
     target = snapshot_dir(root, snapshot)
     if target.exists():
         raise Stop(f"snapshot {snapshot} already exists")
-    planned = requests_for()
+    planned = requests_for(symbols)
     if len(planned) > MAX_REQUESTS_PER_SNAPSHOT:
         raise Stop("too many requests")
     target.mkdir(parents=True, mode=0o700)
@@ -282,6 +299,8 @@ def fetch(
         "files": files,
         "stopped": stopped,
     }
+    if symbols is not None:  # a default snapshot's manifest is unchanged
+        manifest["symbols"] = list(dict.fromkeys(symbols))
     private_write(target / "manifest.json", (json.dumps(manifest, indent=1, sort_keys=True) + "\n").encode())
     return manifest
 
@@ -803,9 +822,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path.home() / ".hio-research" / "E-0002-eodhd")
     parser.add_argument("--snapshot", default="s1")
     parser.add_argument("--compare-to")
+    parser.add_argument("--symbols", nargs="+", default=None, help="fetch only: these funds (default all)")
     args = parser.parse_args(argv)
     try:
         gate = make_gate()
+        if args.symbols is not None and args.command != "fetch":
+            raise Stop("--symbols applies to fetch only")
         gate.authorise(Operation.FETCH if args.command != "run" else Operation.BUILD, [SOURCE_ID])
         if args.command == "whoami":
             status, body = http_getter(vault_key(args.root))("/user?fmt=json")
@@ -819,6 +841,7 @@ def main(argv: list[str] | None = None) -> int:
                 gate=gate,
                 commit=code_commit()["commit"],
                 get=http_getter(vault_key(args.root)),
+                symbols=args.symbols,
             )
             print(json.dumps({"files": len(manifest["files"]), "stopped": manifest["stopped"]}))
         else:
