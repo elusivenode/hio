@@ -221,6 +221,7 @@ are in operating model §1.1; the template is
 | [OD-0204](OD-0204-assign-e0004-verification-2.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-2 assigned** (narrow: F-2, the dependency finding, the 256-month wording; at `3528e8e537a7505d4de3af469f9de0a4dcba4183`), by Claude under OD-0184 A2 | `records/assign-e0004-verify-2` | recorded |
 | [OD-0205](OD-0205-receive-e0004-verification-2.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-2 received** (NOT READY): F-2 open (EODHD-derived counts in `e0002/assessment-1.md`); the PDF dependency finding technically verified (reconciliation pending); 256-month wording verified | `receipt/VERIFY-2026-11-22-e0004-1-2` | recorded |
 | [OD-0206](OD-0206-f2-repository-redactions.md) | authorise_work | **EODHD-derived numbers removed from current files repository-wide** (E-0002 and T-0023 records included); qualitative readings stay; third verification of F-2 to follow | `fix/f2-eodhd-derived-numbers` | recorded |
+| [OD-0207](OD-0207-f1-open-parked-and-reconcile.md) | authorise_work | **F-1 stays open, E-0004 unaccepted and parked**: resolve F-1 by a separate owner decision before any resumption or reliance. **F-VERIFY-2026-11-22-e0004-1-1 reconciled to verified_closed** | `records/od-0207-f1-parked` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

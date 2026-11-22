@@ -46,3 +46,7 @@ One author, one machine, one run; no Codex review yet. October 2008's return als
 
 The run read CPI levels from BLS's flat file as retrieved on 2026-11-21, not from each month's first release as the preregistration promised. Four first-published levels differ from that file (May to August 2016, corrected by BLS on 2016-10-18). The states recomputed from first-release levels are identical to the run's in all 233 periods, under the primary rule and the equality sensitivity, so the estimation's inputs are the same and the run was not repeated. Evidence: `cpi-first-release-check-2.md`, `cpi-first-release-states-1.md`; the deviation is recorded in `preregistration-1.md`, Addendum 1. This shows the deviation had no effect on this run; it does not make the run's inputs first-release values.
 
+## Standing (2026-11-22; OD-0207)
+
+**Parked and unaccepted, with F-REVIEW-2026-11-22-e0004-1-1 open.** Before anyone resumes this experiment or relies on this result, a separate owner decision must resolve that finding (a waiver, or a run on first-release inputs).
+
