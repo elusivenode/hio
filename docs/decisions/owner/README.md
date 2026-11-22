@@ -217,6 +217,7 @@ are in operating model §1.1; the template is
 | [OD-0200](OD-0200-cpi-state-equivalence-check.md) | authorise_work | **CPI-only state check** for E-0004 F-1: 12 earlier releases (cap 15), first-release series, state comparison; no re-estimation | `feat/e0004-first-release-states` | recorded |
 | [OD-0201](OD-0201-e0004-first-release-deviation.md) | authorise_work | **E-0004 CPI vintage recorded as a deviation**: dated addenda to the preregistration and result, no rerun; remediation claim on F-1; Codex verification to be assigned (A2). No finding closed | `records/e0004-f1-deviation` | recorded |
 | [OD-0202](OD-0202-assign-e0004-verification.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-1 assigned** (F-1 and F-2 of the E-0004 review, at `f349efeaaf1cd3540e8b206d5f79e511ee1f2410`), by Claude under OD-0184 A2 and OD-0201 | `records/assign-e0004-verify-1` | recorded |
+| [OD-0203](OD-0203-receive-e0004-verification.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-1 received** (NOT READY): F-1 narrowed and open, F-2 open (OD-0190 c2 not redacted), one new medium finding; remediation under A8 | `receipt/VERIFY-2026-11-22-e0004-1-1` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
