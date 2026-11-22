@@ -1,52 +1,24 @@
 ---
 id: HIO-EVIDENCE-E0004-RESULT-1
-title: "E-0004 step 2: not distinguished. No state-dependent difference in duration's downside benefit is shown"
+title: "E-0004 step 2: the result (content held locally)"
 status: current
 owner: HIO architecture lead (owner); recorded by claude/implementation-agent
 created_at: 2026-11-22
 instruction: OD-0191
+relocated_by: OD-0210
 ---
 
-# E-0004 result 1
+# E-0004 step 2: the result (content held locally)
 
-> **Redacted 2026-11-22 (F-REVIEW-2026-11-22-e0004-1-2, OD-0195):** measurements derived from EODHD returns were removed from this file; they stay in the local run outputs. Earlier revisions in git history still hold them; whether to rewrite that history is the owner's decision.
+> **Relocated 2026-11-22 (OD-0210).** This record rests on data licensed for local research only, so its content is kept in the owner's local results store and not in this public repository. This file is a stub: it says what the record is, its standing, and where the content is. Earlier revisions of this file remain in git history (OD-0196).
 
-> **Exploratory, retrospective and unaccepted.** One run, `20261121T232243Z-23424eae`, at code `23424ea` (`tools/e0004_estimate.py` by worker W14), on the pinned inputs, under the preregistration adopted at `067bd7b` (OD-0190) and the two readings recorded before the run (OD-0191 and its correction 1). **No EODHD-derived value is recorded here:** the numbers are in the local result.json (sha256 `e03a3e0f38892ac1543e4280bbc54d79537998e1a8dd4c5308b743ac56de0193`) and were reported to the owner. CPI is from the U.S. Bureau of Labor Statistics (CPI-U, CUUR0000SA0), retrieved 2026-11-21. BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov.
+| Field | Value |
+|---|---|
+| Record | `HIO-EVIDENCE-E0004-RESULT-1` |
+| What it is | The one step 2 run's reading under the preregistered decision rule, its sensitivities and limits, with the CPI-vintage addendum (OD-0201). |
+| Standing | **Parked and unaccepted, with F-REVIEW-2026-11-22-e0004-1-1 open.** Before anyone resumes this experiment or relies on its result, a separate owner decision must resolve that finding: a waiver, or a run on first-release inputs (OD-0207). The CPI vintage the run used is recorded as a deviation in `preregistration-1.md`, Addendum 1; the states are unchanged by it (`cpi-first-release-states-1.md`). |
+| Local copy | `~/.hio-research/results-store/records/HIO-EVIDENCE-E0004-RESULT-1/`, one folder per archived revision of this file; the store's `manifest.json` lists each with its sha256 |
+| Last revision with content | `d2dc747500b7963ea3a9b612f016ce587b2bea5c` |
+| Check the store | `uv run python tools/results_store.py verify --store ~/.hio-research/results-store` |
 
-## The reading
-
-**Not distinguished.** The primary 95% interval for Δ (accelerating minus not, in Treasuries' monthly downside benefit over bills) includes zero.
-
-| Check | Reading | Sign of the point estimate |
-|---|---|---|
-| Primary, 12-month blocks | not distinguished | positive |
-| 6- and 24-month blocks | not distinguished, both | positive |
-| Block disagreement | none | — |
-| Fragility (each stress cluster left out) | no cluster changes the sign | all positive |
-| S1 equality counted as accelerating | not distinguished | positive (no month changes state) |
-| S2 IEF replaced by E-0001's 10-year construction (overlap: the full panel) | not distinguished | positive |
-| S3 three-month persistence filter | not distinguished | positive, much smaller |
-| S4 the period ending 2008-09-30 excluded | not distinguished | positive |
-
-## What it means, and what it doesn't
-
-- **The sample doesn't show that Treasuries' downside protection depends on accelerating inflation**, at the 95% level, under any block length or sensitivity.
-- **The point estimate's sign runs against the usual story.** Treasuries reduced downside losses slightly *more* in accelerating months, not less. The interval includes zero, so this is not evidence either way. Stress months cluster in the accelerating state, which includes late 2008.
-- **Not "no effect".** Step 1b showed the design can resolve differences near the 0.20-point threshold, not much smaller; a smaller real difference wouldn't be seen.
-- **The 2022 cluster moves the estimate the most** when left out, and in the positive direction.
-- **Retrospective.** The state was chosen knowing 2008, 2020 and 2022 (T-0023 recommendation 1). This can't be validated on the same history.
-
-## Limits
-
-One author, one machine, one run; no Codex review yet. October 2008's return also starts from BIL's disputed 2008-09-30 close, which S4 doesn't remove (OD-0191). The fund returns rest on EODHD's records, corroborated in T-0023 with failures C1 BIL, C4 IEF and C5 SPY (and IEF's audited NAV row) still standing.
-
-## Addendum 1 (2026-11-22; OD-0201): the CPI vintage
-
-> Appended after the review. The reading above is unchanged and still unaccepted.
-
-The run read CPI levels from BLS's flat file as retrieved on 2026-11-21, not from each month's first release as the preregistration promised. Four first-published levels differ from that file (May to August 2016, corrected by BLS on 2016-10-18). The states recomputed from first-release levels are identical to the run's in all 233 periods, under the primary rule and the equality sensitivity, so the estimation's inputs are the same and the run was not repeated. Evidence: `cpi-first-release-check-2.md`, `cpi-first-release-states-1.md`; the deviation is recorded in `preregistration-1.md`, Addendum 1. This shows the deviation had no effect on this run; it does not make the run's inputs first-release values.
-
-## Standing (2026-11-22; OD-0207)
-
-**Parked and unaccepted, with F-REVIEW-2026-11-22-e0004-1-1 open.** Before anyone resumes this experiment or relies on this result, a separate owner decision must resolve that finding (a waiver, or a run on first-release inputs).
-
+Nothing here states a result. A reader with access to the local store reads the record there; anyone else can rely only on the standing above.

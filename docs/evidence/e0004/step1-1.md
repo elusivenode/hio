@@ -1,30 +1,24 @@
 ---
 id: HIO-EVIDENCE-E0004-STEP1-1
-title: "E-0004 step 1: the information count passes the screen in both states"
+title: "E-0004 step 1: the information count (content held locally)"
 status: current
 owner: HIO architecture lead (owner); recorded by claude/implementation-agent
 created_at: 2026-11-22
 instruction: OD-0190
+relocated_by: OD-0210
 ---
 
-# E-0004 step 1, run 1
+# E-0004 step 1: the information count (content held locally)
 
-> **Redacted 2026-11-22 (F-REVIEW-2026-11-22-e0004-1-2, OD-0195):** measurements derived from EODHD returns were removed from this file; they stay in the local run outputs. Earlier revisions in git history still hold them; whether to rewrite that history is the owner's decision.
+> **Relocated 2026-11-22 (OD-0210).** This record rests on data licensed for local research only, so its content is kept in the owner's local results store and not in this public repository. This file is a stub: it says what the record is, its standing, and where the content is. Earlier revisions of this file remain in git history (OD-0196).
 
-> **Counts only: no portfolio outcome was computed.** Run `20261121T230030Z-6745c1fd` at code `6745c1f` (tools `e0004_state.py` by worker W10 with Claude's year-earlier fix, `e0004_info.py` by W11), on the pinned inputs: snapshot s2 via frozen panel `1aa29918…` and the OD-0189 CPI download. counts.json sha256 `65a909f3f176e8bd588a9a6285411db1ac63c2cb8769d609b5953cd9e9dec879`; states.csv `2fc568ef88ee36026a73d46fe9f4a809c46df5f0d58655d9d28bba34c3c87c3b` (local, `~/.hio-research/E-0004/runs/`). CPI is from the U.S. Bureau of Labor Statistics (CPI-U, CUUR0000SA0), retrieved 2026-11-21. BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov.
+| Field | Value |
+|---|---|
+| Record | `HIO-EVIDENCE-E0004-STEP1-1` |
+| What it is | The step 1 information count against the preregistered screen. |
+| Standing | E-0004 is parked and unaccepted, with F-REVIEW-2026-11-22-e0004-1-1 open (OD-0207). |
+| Local copy | `~/.hio-research/results-store/records/HIO-EVIDENCE-E0004-STEP1-1/`, one folder per archived revision of this file; the store's `manifest.json` lists each with its sha256 |
+| Last revision with content | `d2dc747500b7963ea3a9b612f016ce587b2bea5c` |
+| Check the store | `uv run python tools/results_store.py verify --store ~/.hio-research/results-store` |
 
-| Per state | Accelerating | Not accelerating | Bar |
-|---|---|---|---|
-| Months | 114 | 119 | ≥ 48 |
-| Runs | 12 | 12 | ≥ 4 |
-| Stress months (SPY ≤ −5%) | local only | local only | — |
-| Stress clusters | meets the bar | meets the bar | ≥ 3 |
-| Concentration (largest cluster's share) | meets the bar | meets the bar | ≤ 0.5 |
-
-233 periods, 2007-05-31 to 2026-10-30, none unavailable. **The screen passes in both states.**
-
-**Spot checks against known history** (Claude's, from states.csv): accelerating through 2008 until its last month, then not; accelerating into early 2020, not from May 2020; accelerating through 2021 and 2022; not through 2023.
-
-**Worth noting before step 1b.** Stress months are unevenly split between the states, and late 2008 is classified accelerating alongside 2022. The architect warned of this, and the rule stands.
-
-**One deviation, fixed before the run:** Claude's brief had the year-earlier comparison use a panel month end, which would have made the first twelve months unavailable. The adopted rule compares with the rate published as of the same instant a year earlier; the fix uses that month's last calendar day (CPI is released mid-month). Recorded in commit `6745c1f`.
+Nothing here states a result. A reader with access to the local store reads the record there; anyone else can rely only on the standing above.
