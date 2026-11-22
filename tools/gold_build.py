@@ -30,10 +30,10 @@ if str(REPO / "src") not in sys.path:
     sys.path.insert(0, str(REPO / "src"))
 
 import numpy  # noqa: E402
-from hio.models.risk import build_covariance, build_risk_contribution  # noqa: E402
 
 from hio.jobs import gold  # noqa: E402
 from hio.models.panels import build_panel  # noqa: E402
+from hio.models.risk import build_covariance, build_risk_contribution  # noqa: E402
 from hio.portfolio.paths import build_portfolio_path  # noqa: E402
 
 # `hio.jobs` may not import the calculations (tools/check_repo.py), so this tool passes them in.
