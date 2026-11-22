@@ -28,7 +28,7 @@ evidence corrected. No architectural substance changed. This roadmap remains a r
 
 ## 1. The next 90 days (G1 → G1 + 13 weeks, i.e. 2026-10-18 → about 2027-01-17)
 
-> **Working order (OD-0139).** Where this section's order differs from `docs/decisions/factor-first-sequencing-proposal.md`, that document wins. Capture went live on 2026-11-04 (OD-0143). A bounded US duration experiment may run before G2, on its own yes. **Promotion** of S2 and S3 stays behind G2. The week numbers below are the original estimates; treat them as conditional on rights and vendor answers, not as dates.
+> **Working order (OD-0139).** Where this section's order differs from `docs/decisions/factor-first-sequencing-proposal.md`, that document wins. Capture went live on 2026-11-04 (OD-0143). A bounded US duration experiment may run before G2, on its own yes. **Promotion** of S2 and S3 stays behind G2. The week numbers below are the original estimates; treat them as conditional on rights and vendor answers, not as dates. **Proposed, not adopted (OD-0218):** `docs/decisions/factor-programme-sequence-proposal.md` would reorder the factor work into three milestones.
 
 | Weeks | Deliverable | Research outcome | Task / slice |
 |---|---|---|---|

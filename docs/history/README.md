@@ -93,6 +93,8 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-10-28-owner-documentation-merge-and-handoff.md` | the owner's "yes, do the documentation merge and handoff", with the proposal it answers | authority for OD-0071 | — |
 | `2026-10-18-directive-a01-baseline.md` | owner directive commissioning this baseline and the harness | historical (in force as the commissioning brief for A01) | — |
 | `2026-11-04-architect-strategic-assessment.md` | the solution architect's strategic assessment for the owner, byte-identical to consultation `20261104T124411-ask-c902` (OD-0158) | historical; advice only, nothing adopted | — |
+| `2026-11-22-chatgpt-factor-programme-guidance.md` | ChatGPT's architecture guidance on the factor programme, supplied by the owner as a file path, verbatim (sha256 `f43eddc7…d99b615d`) | historical; advice only; adopted solely as the basis for the T-0024 drafts (OD-0218) | — |
+| `2026-11-22-owner-yes-factor-programme-draft.md` | the owner's three messages, verbatim, with Claude's question | authority for OD-0218 | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
 committed here, and the decisions it makes become ADRs. Directives no longer live only in

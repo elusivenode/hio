@@ -232,6 +232,7 @@ are in operating model §1.1; the template is
 | [OD-0215](OD-0215-excess-risk-f2-open-ci-approved.md) | authorise_work | **Excess-return series over BIL and a simple risk model** authorised; **F-2 stays open**, work parked; **PR #139 (CI trigger change) approved** at `c2ca8fd`, merged `f460d23` | `feat/excess-and-risk` | recorded |
 | [OD-0216](OD-0216-aud-view.md) | authorise_work | **The AUD investor's view**: unhedged and CIP-hedged AUD series, an AUD cash series, AUD excess returns, and the analytics and risk model rerun in AUD; local data only | `feat/aud-view` | recorded |
 | [OD-0217](OD-0217-handoff-and-hedge-sweep.md) | authorise_work | **Session roll:** handoff, Inbox lines and STATUS update; **hedge-ratio sweep** on the local AUD series, descriptive only | `feat/hedge-sweep-and-handoff` | recorded |
+| [OD-0218](OD-0218-factor-programme-card-draft.md) | authorise_work | **Draft only:** factor-programme card T-0024 and a one-page sequence, both `proposed`, from ChatGPT's guidance with Claude's changes; one architect consultation | `docs/factor-programme-card` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
