@@ -80,6 +80,24 @@ def test_fetch_writes_ten_files_and_a_manifest_naming_the_three(tmp_path):
     assert on_disk["stopped"] is None
 
 
+def test_ihvv_alone_gives_three_fund_requests_and_the_au_listing_only():
+    planned = ev.requests_for(["IHVV.AU"])
+    assert planned == [*fund_requests(["IHVV.AU"]), exchange_request("AU")]
+    assert len(planned) == 4
+    assert [s for s, k, _ in planned if k == "symbols"] == ["EXCHANGE.AU"]
+    assert not any("EXCHANGE.US" in s for s, _, _ in planned)
+    assert not any("FOREX" in s or "FOREX" in r for s, _, r in planned)
+
+
+def test_the_default_list_names_no_extra_fund_symbol():
+    names = {s for s, _, _ in ev.requests_for(None)}
+    assert not names & set(ev.EXTRA_FUNDS)
+
+
+def test_extra_funds_has_exactly_the_four_keys():
+    assert list(ev.EXTRA_FUNDS) == ["VGB.AU", "IGB.AU", "AGVT.AU", "IHVV.AU"]
+
+
 def test_etfs_keeps_exactly_its_seven_keys():
     assert list(ev.ETFS) == ["SPY.US", "VTI.US", "IEF.US", "BIL.US", "VAS.AU", "IVV.AU", "BGBL.AU"]
     assert not set(EXTRA) & set(ev.ETFS)
