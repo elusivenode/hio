@@ -223,6 +223,7 @@ are in operating model §1.1; the template is
 | [OD-0206](OD-0206-f2-repository-redactions.md) | authorise_work | **EODHD-derived numbers removed from current files repository-wide** (E-0002 and T-0023 records included); qualitative readings stay; third verification of F-2 to follow | `fix/f2-eodhd-derived-numbers` | recorded |
 | [OD-0207](OD-0207-f1-open-parked-and-reconcile.md) | authorise_work | **F-1 stays open, E-0004 unaccepted and parked**: resolve F-1 by a separate owner decision before any resumption or reliance. **F-VERIFY-2026-11-22-e0004-1-1 reconciled to verified_closed** | `records/od-0207-f1-parked` | recorded |
 | [OD-0208](OD-0208-assign-e0004-verification-3.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-3 assigned** (F-2 only, at `2f1251b3252955aa609a4618e159b254a7083a1e`), by Claude under OD-0184 A2 and OD-0206 | `records/assign-e0004-verify-3` | recorded |
+| [OD-0209](OD-0209-receive-e0004-verification-3.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-3 received** (NOT READY): F-2 open, counts written as words remain in two E-0002 files; an observation for the owner on qualitative readings | `receipt/VERIFY-2026-11-22-e0004-1-3` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
