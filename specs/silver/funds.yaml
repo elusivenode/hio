@@ -1,0 +1,13 @@
+# PROPOSED under OD-0233; approves nothing. The contract is docs/decisions/silver-v2-contract.md.
+identity: {release_name: funds, version: 0.1.0, status: proposed}
+schema: hio.silver/2
+source_id: eodhd.personal_evaluation
+snapshots:
+  - {name: s2, manifest_sha256: "bb40a84650a8b7104e3d116a5d0773619dd4870ee20190a80bab370135fee38d"}
+  - {name: s3, manifest_sha256: "ce6b17c9f2590c26adabf37856d79e607597027a1701e7833bf386a9fe4757cc"}
+  - {name: s4, manifest_sha256: "02b24e78d77aba7ef2bb65c7fdf0e0c740611169acf327b09871eee2138de1a5"}
+  - {name: s5, manifest_sha256: "c22fe84078fc113000479665dc98abccd76a690b6d16eee1c8686504e7f3bd23"}
+instruments: [AGVT.AU, BIL.US, IEF.US, IGB.AU, IHVV.AU, IVV.AU, SPY.US, VAS.AU, VGB.AU]
+selections:
+  - name: compat-v1
+    members: {AGVT.AU: s4, BIL.US: s3, IEF.US: s3, IGB.AU: s4, IHVV.AU: s5, IVV.AU: s2, SPY.US: s3, VAS.AU: s2, VGB.AU: s4}

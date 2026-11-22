@@ -15,6 +15,9 @@ from pathlib import Path
 import pytest
 import yaml
 
+from hio.marketdata.silver_build import build_release
+from hio.marketdata.silver_reader import open_release
+
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
 tool = importlib.import_module("factor_build")
@@ -1489,3 +1492,520 @@ def test_mixing_or_halving_the_two_argument_sets_is_refused_with_exit_2(tmp_path
     captured = capsys.readouterr()
     assert captured.err.startswith("refused:") and captured.out == ""
     assert not (tmp_path / "store").exists()
+
+
+# --- silver version 2 input mode (OD-0233): a release built from an invented bronze tree
+
+RELEASE = "0" * 64
+V2_SOURCE = "invented.source"
+V2_EXCLUDED_DAY = EQ_DAYS[1]
+
+
+def v2_eod(close_on_third_day):
+    """Five bars: the second has no adjusted close (a null), and the split is on the fourth."""
+    closes = ["100.0", "102.5", close_on_third_day, "52.0", "53.0"]
+    rows = [
+        {
+            "date": day,
+            "open": 99.5,
+            "high": 104.0,
+            "low": 50.0,
+            "close": float(close),
+            "volume": 1000,
+            "adjusted_close": float(close),
+        }
+        for day, close in zip(EQ_DAYS, closes, strict=True)
+    ]
+    rows[1]["adjusted_close"] = None
+    return rows
+
+
+def v2_distribution(day, amount, **changes):
+    record = {
+        "date": day,
+        "unadjustedValue": amount,
+        "value": amount,
+        "currency": "USD",
+        "declarationDate": "2030-01-02",
+        "recordDate": "2030-01-13",
+        "paymentDate": None,
+        "period": None,
+        "franking": None,
+    }
+    return {**record, **changes}
+
+
+def v2_dividends():
+    """The declared exclusion (01-08) and a distribution dated Saturday 01-12, which lands on 01-14."""
+    return [v2_distribution(V2_EXCLUDED_DAY, 0.4, period="Quarterly"), v2_distribution("2030-01-12", 0.5)]
+
+
+def v2_splits():
+    return [{"date": EQ_DAYS[3], "split": "2.000000/1.000000"}]
+
+
+def v2_listing():
+    return [
+        {
+            "Code": "ZZZ",
+            "Name": "Zed Fund",
+            "Country": "USA",
+            "Exchange": "NYSE ARCA",
+            "Currency": "USD",
+            "Isin": "US0000000001",
+            "Type": "ETF",
+        }
+    ]
+
+
+def v2_bronze(tmp_path):
+    """Two invented snapshots, s1 then s2, differing only in the third day's close. Returns (root, pins)."""
+    root, pins = tmp_path / "bronze", {}
+    for number, name in enumerate(("s1", "s2"), start=1):
+        directory = root / "raw" / name
+        directory.mkdir(parents=True)
+        contents = {
+            ("ZZZ.US", "eod"): v2_eod("103.0" if name == "s2" else "103.5"),
+            ("ZZZ.US", "div"): v2_dividends(),
+            ("ZZZ.US", "splits"): v2_splits(),
+            ("EXCHANGE.US", "symbols"): v2_listing(),
+        }
+        entries = []
+        for i, ((symbol, kind), rows) in enumerate(contents.items()):
+            data = json.dumps(rows).encode()
+            filename = f"{symbol}.{kind}.json"
+            (directory / filename).write_bytes(data)
+            entries.append(
+                {
+                    "path": f"raw/{name}/{filename}",
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                    "kind": kind,
+                    "symbol": symbol,
+                    "retrieved_at": f"2030-0{number + 1}-10T01:00:{i:02d}+00:00",
+                    "bytes": len(data),
+                }
+            )
+        manifest = {"source_id": V2_SOURCE, "snapshot": name, "stopped": None, "files": entries}
+        data = (json.dumps(manifest, indent=1) + "\n").encode()
+        (directory / "manifest.json").write_bytes(data)
+        pins[name] = hashlib.sha256(data).hexdigest()
+    return root, pins
+
+
+@dataclass
+class V2:
+    bronze: Path
+    pins: dict
+    silver_root: Path
+    release_id: str
+    newer: str  # the selection ids
+    older: str
+
+    @property
+    def manifest_sha256(self):
+        return hashlib.sha256(
+            (self.silver_root / "v2" / self.release_id / "manifest.json").read_bytes()
+        ).hexdigest()
+
+    def args(self, selection="newer", *extra, spec=None):
+        spec = spec or write_spec(self.silver_root.parent)
+        return [
+            "--spec",
+            str(spec),
+            "--silver-root",
+            str(self.silver_root),
+            "--silver-release",
+            self.release_id,
+            "--selection",
+            selection,
+            *extra,
+        ]
+
+
+def make_v2(tmp_path, *, edit=None):
+    """A release of one instrument with two selections, `newer` (s2) and `older` (s1), built by the real
+    builder from invented specs, a one-instrument register and `v2_bronze`."""
+    bronze, pins = v2_bronze(tmp_path)
+    docs = tmp_path / "docs"
+    (docs / "observations").mkdir(parents=True)
+    release = {
+        "identity": {"release_name": "testfunds", "version": "0.1.0", "status": "proposed"},
+        "schema": "hio.silver/2",
+        "source_id": V2_SOURCE,
+        "snapshots": [{"name": n, "manifest_sha256": pins[n]} for n in ("s1", "s2")],
+        "instruments": ["ZZZ.US"],
+        "selections": [
+            {"name": "newer", "members": {"ZZZ.US": "s2"}},
+            {"name": "older", "members": {"ZZZ.US": "s1"}},
+        ],
+    }
+    register = {
+        "status": "proposed",
+        "instruments": [
+            {
+                "instrument_code": "zed-fund",
+                "name": "Zed Fund",
+                "issuer_code": "zed-issuer",
+                "vehicle_type": "etf",
+                "domicile": "US",
+                "listings": [{"mic": "XXXX", "ticker": "ZZZ", "quote_currency": "USD", "valid_from": None}],
+                "source_mappings": [
+                    {"source_id": V2_SOURCE, "source_symbol": "ZZZ.US", "mic": "XXXX", "ticker": "ZZZ"}
+                ],
+            }
+        ],
+    }
+    observation = {
+        "identity": {"instrument": "ZZZ.US", "version": "0.1.0", "status": "proposed"},
+        "source": {"source_id": V2_SOURCE, "quote_currency": "USD"},
+        "corrections": [
+            {
+                "action": "exclude_distribution",
+                "ex_date": V2_EXCLUDED_DAY,
+                "reason": "invented duplicate",
+                "evidence": "invented.md",
+            }
+        ],
+        "changelog": ["0.1.0: invented"],
+    }
+    if edit is not None:
+        edit(release, register, observation)
+    (docs / "release.yaml").write_text(yaml.safe_dump(release, sort_keys=False))
+    (docs / "register.yaml").write_text(yaml.safe_dump(register, sort_keys=False))
+    (docs / "observations" / "ZZZ.US.yaml").write_text(yaml.safe_dump(observation, sort_keys=False))
+    silver_root = tmp_path / "silver2"
+    release_dir, _core, _existed = build_release(
+        docs / "release.yaml",
+        docs / "register.yaml",
+        docs / "observations",
+        bronze,
+        silver_root,
+        commit=COMMIT,
+    )
+    opened = open_release(silver_root, release_dir.name)
+    return V2(
+        bronze,
+        pins,
+        silver_root,
+        release_dir.name,
+        opened.selection_id("newer"),
+        opened.selection_id("older"),
+    )
+
+
+def v2_build(tmp_path, v2, selection="newer", spec=None, out=None):
+    return tool.build_silver2(
+        spec or write_spec(tmp_path),
+        v2.silver_root,
+        v2.release_id,
+        selection,
+        out or tmp_path / "store",
+        commit=COMMIT,
+    )
+
+
+def v2_bronze_build(tmp_path, v2, snapshot, out):
+    spec = corrected_spec(tmp_path, [correction(ex_date=V2_EXCLUDED_DAY)], name="declared.yaml")
+    return tool.build(spec, v2.bronze, snapshot, v2.pins[snapshot], out, commit=COMMIT)
+
+
+def test_the_same_data_built_in_bronze_silver_1_and_silver_2_gives_byte_identical_series(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    bronze = v2_bronze_build(tmp_path, v2, "s2", tmp_path / "bronze_store")
+    included = [d for d in v2_dividends() if d["date"] != V2_EXCLUDED_DAY]
+    silver_root, silver_id = make_silver(tmp_path / "v1", v2_eod("103.0"), included, v2_splits())
+    silver1 = silver_build(tmp_path, silver_root, silver_id, out=tmp_path / "silver_store")
+    silver2 = v2_build(tmp_path, v2, out=tmp_path / "v2_store")
+    expected = series_of(tmp_path / "bronze_store", bronze)
+    assert series_of(tmp_path / "silver_store", silver1) == expected
+    assert series_of(tmp_path / "v2_store", silver2) == expected
+    assert silver2["series_sha256"] == silver1["series_sha256"] == bronze["series_sha256"]
+    for key in ("periods", "first", "last", "qualified", "invariants", "distribution_screen"):
+        assert silver2[key] == bronze[key]
+    rows = [line.split(",") for line in expected.decode().splitlines()[1:]]
+    assert len(rows) == 4 and rows[2][1] == EQ_DAYS[3] and D(rows[2][3]) == 0  # the split day
+    assert (
+        rows[3][1] == EQ_DAYS[4] and D(rows[3][3]) > 0
+    )  # the Saturday distribution, on the next observed day
+    assert bronze["invariants"]["RA-INV-020"] == {"checked": 1, "passed": True}
+    assert [c["ex_date"] for c in silver2["source_corrections"]] == [V2_EXCLUDED_DAY]
+    assert silver2["source_corrections"][0]["action"] == "exclude_distribution"
+
+
+def test_a_selection_of_the_older_snapshot_builds_from_the_older_values(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    older = v2_build(tmp_path, v2, "older", out=tmp_path / "store")
+    newer = v2_build(tmp_path, v2, "newer", out=tmp_path / "store")
+    assert older["series_sha256"] != newer["series_sha256"]
+    assert older["snapshot"] == "s1" and older["snapshot_manifest_sha256"] == v2.pins["s1"]
+    assert newer["snapshot"] == "s2" and newer["snapshot_manifest_sha256"] == v2.pins["s2"]
+    bronze = v2_bronze_build(tmp_path, v2, "s1", tmp_path / "bronze_store")
+    assert series_of(tmp_path / "store", older) == series_of(tmp_path / "bronze_store", bronze)
+
+
+def test_two_selections_of_one_release_give_different_build_ids(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    older = v2_build(tmp_path, v2, "older")
+    newer = v2_build(tmp_path, v2, "newer")
+    assert older["silver"]["release_id"] == newer["silver"]["release_id"] == v2.release_id
+    assert older["silver"]["selection_id"] == v2.older and newer["silver"]["selection_id"] == v2.newer
+    assert older["build_id"] != newer["build_id"]
+
+
+def test_the_silver_2_record_names_the_release_and_the_selection(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    record = v2_build(tmp_path, v2)
+    assert sorted(record) == sorted(
+        [
+            "factor_id",
+            "spec_version",
+            "spec_sha256",
+            "series_class",
+            "numeraire",
+            "source_id",
+            "symbol",
+            "snapshot",
+            "snapshot_manifest_sha256",
+            "inputs",
+            "input_layer",
+            "silver",
+            "code_commit",
+            "periods",
+            "first",
+            "last",
+            "qualified",
+            "invariants",
+            "source_corrections",
+            "distribution_screen",
+            "series_sha256",
+            "build_id",
+        ]
+    )
+    assert record["input_layer"] == "silver2"
+    assert record["silver"] == {
+        "release_id": v2.release_id,
+        "manifest_sha256": v2.manifest_sha256,
+        "selection_id": v2.newer,
+    }
+    assert record["snapshot"] == "s2" and record["snapshot_manifest_sha256"] == v2.pins["s2"]
+    assert record["inputs"] == [{"path": f"v2/{v2.release_id}/manifest.json", "sha256": v2.manifest_sha256}]
+    assert record["source_corrections"] == [
+        {
+            "action": "exclude_distribution",
+            "ex_date": V2_EXCLUDED_DAY,
+            "record_sha256": record["source_corrections"][0]["record_sha256"],
+        }
+    ]
+    assert re.fullmatch(r"[0-9a-f]{64}", record["source_corrections"][0]["record_sha256"])
+    assert record["code_commit"] == COMMIT and record["symbol"] == "ZZZ.US" and record["periods"] == 4
+    basis = record["spec_sha256"] + "silver2:" + v2.release_id + ":" + v2.newer + COMMIT
+    assert record["build_id"] == hashlib.sha256(basis.encode()).hexdigest()[:16]
+    stored = (build_dir(tmp_path, record) / "build.json").read_bytes()
+    assert stored == (json.dumps(record, indent=1, sort_keys=True) + "\n").encode()
+    assert all(result["passed"] for result in record["invariants"].values())
+
+
+def test_a_selection_is_found_by_name_or_by_id_with_the_same_build(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    by_name = v2_build(tmp_path, v2, "newer")
+    by_id = v2_build(tmp_path, v2, v2.newer)
+    assert by_id == by_name
+
+
+def test_a_build_leaves_the_release_untouched(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    before = {p: p.read_bytes() for p in sorted(v2.silver_root.rglob("*")) if p.is_file()}
+    v2_build(tmp_path, v2)
+    assert {p: p.read_bytes() for p in sorted(v2.silver_root.rglob("*")) if p.is_file()} == before
+
+
+def test_the_command_builds_from_silver_2_and_prints_the_layer_after_the_factor(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    v2 = make_v2(tmp_path / "v2")
+    assert tool.main(v2.args("newer", "--out", str(tmp_path / "store"))) == 0
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert lines[0] == f"factor_id: {FACTOR}" and lines[1] == "input_layer: silver2"
+    assert "periods: 4" in lines and "source_corrections: 1 applied" in lines
+    assert any(line.startswith("series_sha256: ") for line in lines)
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", out) and not re.search(r"\d\.\d", out)
+    assert main_build_id(lines) == v2_build(tmp_path, v2, "newer", out=tmp_path / "other")["build_id"]
+
+
+def main_build_id(lines):
+    return next(line.split(": ")[1] for line in lines if line.startswith("build_id: "))
+
+
+def test_screen_only_works_on_a_silver_2_selection_writes_nothing_and_never_asks_git(
+    tmp_path, monkeypatch, capsys
+):
+    v2 = make_v2(tmp_path / "v2")
+    forbid_git(monkeypatch)
+    args = v2.args("newer", "--screen-only")
+    before = tree(tmp_path)
+    assert tool.main(args) == 0
+    assert tree(tmp_path) == before and not (tmp_path / "store").exists()
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert lines[:2] == [f"factor_id: {FACTOR}", "input_layer: silver2"] and "periods: 4" in lines
+    assert "source_corrections: 1 applied" in lines
+    assert "build_id" not in out and "series_sha256" not in out
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", out) and not re.search(r"\d\.\d", out)
+
+
+def test_screen_only_on_silver_2_writes_a_report_that_names_the_release(tmp_path, monkeypatch):
+    v2 = make_v2(tmp_path / "v2")
+    forbid_git(monkeypatch)
+    report = tmp_path / "report.json"
+    assert tool.main(v2.args("older", "--screen-only", "--screen-report", str(report))) == 0
+    assert stat.S_IMODE(report.stat().st_mode) == 0o600
+    body = json.loads(report.read_bytes())
+    assert body["input_layer"] == "silver2" and body["snapshot"] == "s1"
+    assert body["silver"] == {
+        "release_id": v2.release_id,
+        "manifest_sha256": v2.manifest_sha256,
+        "selection_id": v2.older,
+    }
+    assert body["snapshot_manifest_sha256"] == v2.pins["s1"] and len(body["source_corrections"]) == 1
+    result = tool.screen_only_silver2(write_spec(tmp_path), v2.silver_root, v2.release_id, "newer")
+    assert result["input_layer"] == "silver2" and result["periods"] == 4
+
+
+def refused_v2(tmp_path, v2, selection="newer", spec=None, match=None):
+    with pytest.raises(ValueError, match=match):
+        v2_build(tmp_path, v2, selection, spec=spec)
+    with pytest.raises(ValueError, match=match):
+        tool.screen_only_silver2(spec or write_spec(tmp_path), v2.silver_root, v2.release_id, selection)
+    assert not (tmp_path / "store").exists()
+
+
+def test_an_unknown_selection_refuses(tmp_path):
+    refused_v2(tmp_path, make_v2(tmp_path / "v2"), "absent", match="unknown selection")
+
+
+def test_a_symbol_that_is_not_a_member_of_the_selection_refuses(tmp_path):
+    other = write_spec(tmp_path, name="other.yaml")
+    other.write_text(other.read_text().replace("ZZZ.US", "YYY.US"))
+    refused_v2(tmp_path, make_v2(tmp_path / "v2"), spec=other, match="not a member")
+
+
+def test_a_factor_spec_that_declares_corrections_refuses_in_silver_2_mode(tmp_path):
+    spec = corrected_spec(tmp_path, [correction()])
+    refused_v2(
+        tmp_path, make_v2(tmp_path / "v2"), spec=spec, match="corrections belong to the observation spec"
+    )
+
+
+def test_an_empty_corrections_block_in_the_factor_spec_is_allowed_in_silver_2_mode(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    plain = v2_build(tmp_path, v2, out=tmp_path / "plain_store")
+    empty = v2_build(
+        tmp_path, v2, spec=corrected_spec(tmp_path, [], name="empty.yaml"), out=tmp_path / "empty_store"
+    )
+    assert empty["series_sha256"] == plain["series_sha256"]
+
+
+def test_a_spec_with_another_source_id_refuses(tmp_path):
+    other = write_spec(tmp_path, name="other.yaml")
+    other.write_text(other.read_text().replace(V2_SOURCE, "another.source"))
+    refused_v2(tmp_path, make_v2(tmp_path / "v2"), spec=other, match="source_id")
+
+
+def test_a_spec_whose_numeraire_is_not_the_listed_currency_refuses(tmp_path):
+    spec = write_spec(tmp_path, name="eur.yaml", numeraire="EUR")
+    refused_v2(tmp_path, make_v2(tmp_path / "v2"), spec=spec)
+
+
+@pytest.mark.parametrize("path", ["manifest.json", "tables/fact_listing_bar_day.csv", "selections"])
+def test_a_tampered_release_refuses(tmp_path, path):
+    v2 = make_v2(tmp_path / "v2")
+    directory = v2.silver_root / "v2" / v2.release_id
+    target = directory / path
+    if path == "selections":
+        target = directory / "selections" / f"{v2.newer}.csv"
+    target.write_bytes(target.read_bytes() + b"x")
+    refused_v2(tmp_path, v2)
+
+
+def test_a_missing_release_and_a_release_id_that_is_not_a_sha256_refuse(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    for release_id in (RELEASE, "abc", RELEASE.upper()):
+        with pytest.raises(ValueError):
+            tool.build_silver2(
+                write_spec(tmp_path), v2.silver_root, release_id, "newer", tmp_path / "store", commit=COMMIT
+            )
+    assert not (tmp_path / "store").exists()
+
+
+def test_a_silver_2_build_with_an_out_inside_the_repository_refuses(tmp_path):
+    v2 = make_v2(tmp_path / "v2")
+    with pytest.raises(ValueError, match="outside the repository"):
+        v2_build(tmp_path, v2, out=REPO / "factor_build_test_store")
+    assert not (REPO / "factor_build_test_store").exists()
+
+
+V2_MIXES = {
+    "silver 2 with a bronze set": [
+        *BRONZE_ARGS,
+        "--silver-root",
+        "s",
+        "--silver-release",
+        RELEASE,
+        "--selection",
+        "newer",
+    ],
+    "silver 2 with a root": [
+        "--silver-root",
+        "s",
+        "--silver-release",
+        RELEASE,
+        "--selection",
+        "n",
+        "--root",
+        "r",
+    ],
+    "silver 2 with a silver id": [
+        "--silver-root",
+        "s",
+        "--silver-id",
+        SILVER_ID,
+        "--silver-release",
+        RELEASE,
+        "--selection",
+        "n",
+    ],
+    "silver 1 with a selection": ["--silver-root", "s", "--silver-id", SILVER_ID, "--selection", "n"],
+    "silver 1 with a release": ["--silver-root", "s", "--silver-id", SILVER_ID, "--silver-release", RELEASE],
+    "a release without a selection": ["--silver-root", "s", "--silver-release", RELEASE],
+    "a selection without a release": ["--silver-root", "s", "--selection", "newer"],
+    "a release and a selection without a silver root": ["--silver-release", RELEASE, "--selection", "newer"],
+    "a release alone": ["--silver-release", RELEASE],
+    "a selection alone": ["--selection", "newer"],
+    "bronze with a selection": [*BRONZE_ARGS, "--selection", "newer"],
+}
+
+
+@pytest.mark.parametrize("mode", [[], ["--screen-only"]])
+@pytest.mark.parametrize("case", list(V2_MIXES))
+def test_mixing_or_halving_the_silver_2_argument_set_is_refused_with_exit_2(tmp_path, capsys, case, mode):
+    extra = mode or ["--out", str(tmp_path / "store")]
+    assert tool.main(["--spec", str(write_spec(tmp_path)), *V2_MIXES[case], *extra]) == 2
+    captured = capsys.readouterr()
+    assert captured.err.startswith("refused:") and captured.out == ""
+    assert not (tmp_path / "store").exists()
+
+
+def test_silver_2_refusals_exit_2_and_print_no_date_or_amount(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    v2 = make_v2(tmp_path / "v2")
+    target = v2.silver_root / "v2" / v2.release_id / "tables" / "fact_listing_bar_day.csv"
+    target.write_bytes(target.read_bytes() + b"x")
+    assert tool.main(v2.args("newer", "--out", str(tmp_path / "store"))) == 2
+    captured = capsys.readouterr()
+    assert captured.err.startswith("refused: ValueError") and captured.out == ""
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", captured.err) and not re.search(r"\d\.\d", captured.err)
+    assert not (tmp_path / "store").exists()
+    assert tool.main(v2.args("absent", "--screen-only")) == 2
+    assert capsys.readouterr().out == ""

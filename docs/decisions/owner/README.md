@@ -247,6 +247,7 @@ are in operating model §1.1; the template is
 | [OD-0230](OD-0230-igb-duplicate-correction.md) | authorise_work | **IGB correction:** a proposed spec version excluding one duplicate vendor distribution record, a worker change so the build tool honours it, and a local build; the medallion question is a request for advice only | `feat/igb-duplicate-correction` | recorded |
 | [OD-0231](OD-0231-local-data-layers.md) | authorise_work | **Local data layers:** bronze, silver and gold as immutable, reconstructable local files with a rebuildable DuckDB catalogue and a backup; the owner's direction on the vendor data; no hosted database, no cloud | `feat/data-layers` | recorded |
 | [OD-0232](OD-0232-silver-dimensional-model-proposal.md) | authorise_work | **Silver dimensional model, proposal only:** facts and dimensions over the source data, with the architect consulted as a Kimball expert; no build | `docs/silver-dimensional-model` | recorded |
+| [OD-0233](OD-0233-build-dimensional-silver-and-gold-foundation.md) | authorise_work | **Build dimensional silver, then the gold-mart foundation:** an instrument register, the silver version 2 tables for the fund path with byte-equivalence tests, then a pinned Python API, mart specs, a planner and two marts; a Prefect VM in Azure noted as later direction, not authorised | `feat/silver-dimensional` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

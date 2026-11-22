@@ -7,7 +7,9 @@ the same reading and writes nothing. See docs/decisions/local-data-layers-propos
 Layouts read:
 - bronze: `<root>/raw/<snapshot>/manifest.json`, whose `files` list holds paths relative to the root. A
   snapshot's identity is the sha256 of its manifest file.
-- silver: `<silver_root>/<instrument>/<silver_id>/manifest.json` and its three CSV files.
+- silver: `<silver_root>/<instrument>/<silver_id>/manifest.json` and its three CSV files (version 1), and
+  `<silver_root>/v2/<release_id>/` (version 2; contract: docs/decisions/silver-v2-contract.md §6), each
+  checked with `hio.contracts.silver.verify_release`. The directory `v2` is never an instrument.
 - gold: `<gold_root>/<factor_id>/<spec_version>/<build_id>/` with `build.json` and `series.csv`.
 
 A bundle with a problem (unparseable JSON, a missing or changed file, a directory name that disagrees with
@@ -19,6 +21,11 @@ Choices where the contract is silent: lineage roles for silver and bronze parent
 `first`, `last`, `stopped`, `retrieved_at` and `request` are kept as text (a non-string JSON value as its
 canonical JSON); no `gold_latest_series` view is defined, because "latest" has no meaning here; a snapshot
 whose manifest hash is already loaded from an earlier root is the same snapshot and is loaded once.
+
+Version 2 adds `silver2_release`, `silver2_selection`, `silver2_selection_row`, an `s2_<name>` table (every
+cell text, led by `release_id`) for each silver version 2 table, and the views `s2_bar` and `s2_distribution`.
+A release is `silver2` in `lineage` (its parents are its snapshots, role `bronze`); a gold record whose
+`silver` holds a `release_id` has a `silver2` parent (role `silver2`). An empty cell stays the empty string.
 
 The CLI prints counts per table, the number of problems, and `pass` or `fail`: never a value from the data.
 """
@@ -39,7 +46,14 @@ from pathlib import Path, PurePosixPath
 import duckdb
 
 REPO = Path(__file__).resolve().parent.parent
+if str(REPO / "src") not in sys.path:
+    sys.path.insert(0, str(REPO / "src"))
+
+from hio.contracts import silver as silver2  # noqa: E402
+from hio.contracts.canonical import canonical_json  # noqa: E402
+
 SILVER_SCHEMA = "hio.silver/1"
+SILVER2_DIR = "v2"
 SILVER_FILES = ("closes.csv", "distributions.csv", "splits.csv")
 GOLD_REQUIRED = (
     "factor_id",
@@ -97,7 +111,50 @@ TABLES = {
         "child_kind VARCHAR, child_id VARCHAR, parent_kind VARCHAR, parent_id VARCHAR, role VARCHAR, "
         "parent_present BOOLEAN"
     ),
+    "silver2_release": (
+        "release_id VARCHAR, release_name VARCHAR, release_version VARCHAR, code_commit VARCHAR, "
+        "register_sha256 VARCHAR, directory VARCHAR, core_json VARCHAR"
+    ),
+    "silver2_selection": 'release_id VARCHAR, selection_id VARCHAR, "name" VARCHAR, "rows" BIGINT',
+    "silver2_selection_row": (
+        "release_id VARCHAR, selection_id VARCHAR, "
+        + ", ".join(f'"{c}" {"BIGINT" if c == "row_index" else "VARCHAR"}' for c in silver2.SELECTION_COLUMNS)
+    ),
+    # One s2_<name> table for every silver version 2 table: `release_id` and the table's columns, all text.
+    **{
+        f"s2_{name}": "release_id VARCHAR, " + ", ".join(f'"{c}" VARCHAR' for c in columns)
+        for name, columns in silver2.TABLES.items()
+    },
     "problem": "layer VARCHAR, id VARCHAR, path VARCHAR, problem VARCHAR",
+}
+# Views over the version 2 tables: the fact joined to its dimensions within one release_id, the measures
+# also cast to numbers (NULL when the cell is empty or not a number) beside the exact text. A left join keeps
+# every fact row, so a view has exactly as many rows as its fact table. A distribution has no listing key, so
+# its listing is the one its source symbol maps to.
+VIEWS = {
+    "s2_bar": (
+        'SELECT f.*, TRY_CAST(f."open" AS DOUBLE) AS open_value, TRY_CAST(f.high AS DOUBLE) AS high_value, '
+        "TRY_CAST(f.low AS DOUBLE) AS low_value, TRY_CAST(f.close AS DOUBLE) AS close_value, "
+        "TRY_CAST(f.volume AS DOUBLE) AS volume_value, "
+        "l.instrument_code, l.mic, l.ticker, l.valid_from, l.quote_currency, "
+        'i."name", i.issuer_code, i.vehicle_type, i.domicile '
+        "FROM s2_fact_listing_bar_day f "
+        "LEFT JOIN s2_dim_listing l ON l.release_id = f.release_id AND l.listing_sk = f.listing_sk "
+        "LEFT JOIN s2_dim_instrument i ON i.release_id = f.release_id AND i.instrument_sk = f.instrument_sk"
+    ),
+    "s2_distribution": (
+        "SELECT f.*, TRY_CAST(f.amount_unadjusted AS DOUBLE) AS amount_unadjusted_value, "
+        "TRY_CAST(f.amount_split_adjusted AS DOUBLE) AS amount_split_adjusted_value, "
+        "TRY_CAST(f.franking AS DOUBLE) AS franking_value, "
+        "l.instrument_code, l.mic, l.ticker, l.valid_from, l.quote_currency, "
+        'i."name", i.issuer_code, i.vehicle_type, i.domicile '
+        "FROM s2_fact_distribution_event f "
+        "LEFT JOIN s2_dim_series s ON s.release_id = f.release_id AND s.series_sk = f.series_sk "
+        "LEFT JOIN s2_source_identity_mapping m ON m.release_id = f.release_id "
+        "AND m.source_id = s.source_id AND m.source_symbol = s.source_symbol "
+        "LEFT JOIN s2_dim_listing l ON l.release_id = f.release_id AND l.listing_sk = m.listing_sk "
+        "LEFT JOIN s2_dim_instrument i ON i.release_id = f.release_id AND i.instrument_sk = f.instrument_sk"
+    ),
 }
 
 
@@ -267,6 +324,53 @@ def _load_silver(set_dir: Path, instrument: str) -> dict:
     }
 
 
+def _load_silver2(release_dir: Path) -> dict:
+    """One silver version 2 release: verified by `hio.contracts.silver.verify_release`, then read once more
+    (each file checked against the hash in the manifest core) into the `s2_` rows."""
+    core = silver2.verify_release(release_dir)
+    rid = silver2.release_id(core)
+    tables: dict[str, list[tuple]] = {}
+    for entry in core["tables"]:
+        name = entry["name"]
+        data = (release_dir / "tables" / f"{name}.csv").read_bytes()
+        if _sha_bytes(data) != entry["file_sha256"]:
+            raise ValueError(f"table {name}: file sha256 differs from the manifest")
+        columns = silver2.TABLES[name]
+        tables[f"s2_{name}"] = [(rid, *(row[c] for c in columns)) for row in silver2.parse_table(name, data)]
+    selections, selection_rows = [], []
+    for entry in core["selections"]:
+        sid = entry["selection_id"]
+        data = (release_dir / "selections" / f"{sid}.csv").read_bytes()
+        if _sha_bytes(data) != entry["file_sha256"]:
+            raise ValueError(f"selection {sid}: file sha256 differs from the manifest")
+        selections.append((rid, sid, entry["name"], entry["rows"]))
+        for row in silver2.parse_selection(data):
+            if not row["row_index"].isascii() or not row["row_index"].isdigit():
+                raise ValueError(f"selection {sid}: row_index is not an unsigned integer")
+            selection_rows.append(
+                (rid, sid, *(int(row[c]) if c == "row_index" else row[c] for c in silver2.SELECTION_COLUMNS))
+            )
+    spec = core["release_spec"]
+    release = (
+        rid,
+        _text(spec["name"]),
+        _text(spec["version"]),
+        _text(core["code_commit"]),
+        core["register_sha256"],
+        str(release_dir),
+        canonical_json(core).decode("utf-8"),
+    )
+    parents = list(dict.fromkeys(entry["manifest_sha256"] for entry in core["snapshots"]))
+    return {
+        "id": rid,
+        "release": release,
+        "selections": selections,
+        "selection_rows": selection_rows,
+        "tables": tables,
+        "lineage": [("silver2", rid, "bronze", parent, "bronze") for parent in parents],
+    }
+
+
 def _gold_lineage(record: dict) -> list[tuple[str, str, str]]:
     """The (parent_kind, parent_id, role) triples of one gold record."""
     parents: list[tuple[str, str, str]] = []
@@ -274,7 +378,10 @@ def _gold_lineage(record: dict) -> list[tuple[str, str, str]]:
     if silver is not None:
         if not isinstance(silver, dict):
             raise ValueError("silver is not an object")
-        parents.append(("silver", _need_str(silver.get("silver_id"), "silver.silver_id"), "silver"))
+        if "release_id" in silver:
+            parents.append(("silver2", _need_str(silver["release_id"], "silver.release_id"), "silver2"))
+        if "release_id" not in silver or "silver_id" in silver:
+            parents.append(("silver", _need_str(silver.get("silver_id"), "silver.silver_id"), "silver"))
     elif "snapshot_manifest_sha256" in record:
         parents.append(
             ("bronze", _need_str(record["snapshot_manifest_sha256"], "snapshot_manifest_sha256"), "bronze")
@@ -387,7 +494,7 @@ def _load_gold(build_dir: Path) -> dict:
 def _scan(bronze_roots, silver_root, gold_root) -> dict[str, list[tuple]]:
     tables: dict[str, list[tuple]] = {name: [] for name in TABLES}
     problems = tables["problem"]
-    seen = {"bronze": set(), "silver": set(), "gold": set()}
+    seen = {"bronze": set(), "silver": set(), "silver2": set(), "gold": set()}
     lineage: list[tuple] = []
 
     for root in bronze_roots or []:
@@ -410,7 +517,22 @@ def _scan(bronze_roots, silver_root, gold_root) -> dict[str, list[tuple]]:
         silver_root = Path(silver_root).expanduser()
         if silver_root.exists() and not silver_root.is_dir():
             raise ValueError("the silver root is not a directory")
+        for release_dir in _subdirs(silver_root / SILVER2_DIR):
+            try:
+                bundle = _load_silver2(release_dir)
+            except (ValueError, OSError) as exc:
+                problems.append(("silver2", release_dir.name, str(release_dir), str(exc)))
+                continue
+            seen["silver2"].add(bundle["id"])
+            tables["silver2_release"].append(bundle["release"])
+            tables["silver2_selection"].extend(bundle["selections"])
+            tables["silver2_selection_row"].extend(bundle["selection_rows"])
+            for name, rows in bundle["tables"].items():
+                tables[name].extend(rows)
+            lineage.extend(bundle["lineage"])
         for instrument_dir in _subdirs(silver_root):
+            if instrument_dir.name == SILVER2_DIR:
+                continue
             for set_dir in _subdirs(instrument_dir):
                 try:
                     bundle = _load_silver(set_dir, instrument_dir.name)
@@ -441,7 +563,7 @@ def _scan(bronze_roots, silver_root, gold_root) -> dict[str, list[tuple]]:
                     tables["gold_series"].extend(bundle["series"])
                     lineage.extend(bundle["lineage"])
 
-    present = {"bronze": seen["bronze"], "silver": seen["silver"], "gold": seen["gold"]}
+    present = seen
     for child_kind, child_id, parent_kind, parent_id, role in lineage:
         flag = None if parent_kind == "file" else parent_id in present[parent_kind]
         tables["lineage"].append((child_kind, child_id, parent_kind, parent_id, role, flag))
@@ -507,6 +629,8 @@ def build(bronze_roots, silver_root, gold_root, out) -> dict:
         for name, columns in TABLES.items():
             con.execute(f"CREATE TABLE {name} ({columns})")
             _insert(con, name, tables[name])
+        for name, query in VIEWS.items():
+            con.execute(f"CREATE VIEW {name} AS {query}")
     finally:
         con.close()
     os.chmod(tmp, 0o600)

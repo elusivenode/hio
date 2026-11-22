@@ -193,6 +193,7 @@ def test_counts_and_exact_rows(lake):
     report = tool.build(*roots(lake), out)
     assert report == {
         "counts": {
+            **dict.fromkeys(tool.TABLES, 0),  # the silver version 2 tables: this lake has no release
             "bronze_snapshot": 2,
             "bronze_file": 3,
             "silver_set": 1,
@@ -461,7 +462,7 @@ def test_absent_and_empty_roots(tmp_path):
     )
     assert report["result"] == "pass" and report["problems"] == 0
     assert set(report["counts"].values()) == {0}
-    assert [r[0] for r in table(out, "SHOW TABLES")] == sorted(tool.TABLES)
+    assert [r[0] for r in table(out, "SHOW TABLES")] == sorted([*tool.TABLES, *tool.VIEWS])
     assert tool.verify([], None, None)["result"] == "pass"
 
 
@@ -563,6 +564,7 @@ def test_cli_build_and_verify_print_counts_only(lake, capsys):
         "gold_build: 3",
         "gold_series: 7",
         "lineage: 8",
+        *[f"{name}: 0" for name in tool.TABLES if name.startswith(("silver2_", "s2_"))],
         "problem: 0",
         "problems: 0",
         "pass",
@@ -593,3 +595,482 @@ def test_cli_absent_roots(tmp_path, capsys):
     argv = ["verify", "--silver-root", str(tmp_path / "s"), "--gold-root", str(tmp_path / "g")]
     assert tool.main(argv) == 0
     assert capsys.readouterr().out.splitlines()[-1] == "pass"
+
+
+# ---- silver version 2 -------------------------------------------------------------------------------------
+
+silver2 = tool.silver2
+SERIES_BAR, SERIES_DIST = "ZZZ.US.bar_day", "ZZZ.US.distribution"
+SNAP_ABSENT = "ab" * 32  # a snapshot pin that no loaded bronze root holds
+SOURCE_RECORDS = [silver2.source_record_id("5" * 64, i) for i in range(3)]
+
+
+def fact_row(table, series_id, coordinate, cells, anchor, origin, **extra):
+    """One fact row with real keys; every column not given is the empty cell."""
+    measures = {c: cells.get(c, "") for c in silver2.MEASURES[table]}
+    observation = silver2.observation_id(series_id, coordinate)
+    row = dict.fromkeys(silver2.TABLES[table], "")
+    row.update(cells)
+    row.update(extra)
+    row.update(
+        vintage_id=silver2.vintage_id(observation, silver2.value_fingerprint(measures), anchor),
+        observation_id=observation,
+        series_id=series_id,
+        series_sk=silver2.sk("series", {"series_id": series_id}, {"definition": "1"}),
+        anchor_snapshot_id=anchor,
+        origin_source_record_id=origin,
+        first_captured_at="2030-03-01T00:00:00Z",
+    )
+    return row
+
+
+def make_release(root: Path, snapshot_sha: str, *, close="102.5000", commit="f" * 40, name="Example Fund"):
+    """Write one small silver version 2 release under `root`/v2; its first snapshot is `snapshot_sha`, its
+    second one is not in any bronze root. Returns the facts the tests look at."""
+    snaps = [snapshot_sha, SNAP_ABSENT]
+    capture = dict(zip(snaps, (1, 2), strict=True))
+    instrument = {"instrument_code": "example-fund"}
+    inst_sk = silver2.sk(
+        "instrument", instrument, {"attributes_sha256": silver2.attributes_sha256({"n": "1"})}
+    )
+    listing_sk = silver2.sk("listing", {**instrument, "mic": "XXXX", "ticker": "ZZZ", "valid_from": ""})
+    bars = [
+        fact_row(
+            "fact_listing_bar_day",
+            SERIES_BAR,
+            {"trade_date": "2030-01-01"},
+            {
+                "open": "100",
+                "high": "103.25",
+                "low": "99.5",
+                "close": close,
+                "volume": "",
+                "trade_date": "2030-01-01",
+            },
+            snapshot_sha,
+            SOURCE_RECORDS[0],
+            listing_sk=listing_sk,
+            instrument_sk=inst_sk,
+        ),
+        fact_row(
+            "fact_listing_bar_day",
+            SERIES_BAR,
+            {"trade_date": "2030-01-02"},
+            {
+                "open": "1",
+                "high": "2",
+                "low": "1",
+                "close": "1.5",
+                "volume": "1200",
+                "trade_date": "2030-01-02",
+            },
+            SNAP_ABSENT,
+            SOURCE_RECORDS[1],
+            listing_sk=listing_sk,
+            instrument_sk=inst_sk,
+        ),
+    ]
+    distribution = fact_row(
+        "fact_distribution_event",
+        SERIES_DIST,
+        {"ex_date": "2030-01-02", "occurrence": 0},
+        {
+            "ex_date": "2030-01-02",
+            "occurrence": "0",
+            "amount_unadjusted": "0.2500",
+            "amount_split_adjusted": "0.1250",
+            "currency": "USD",
+            "period_label": "Quarterly",
+            "franking": "",
+        },
+        snapshot_sha,
+        SOURCE_RECORDS[2],
+        instrument_sk=inst_sk,
+    )
+    rows = {name_: [] for name_ in silver2.TABLES}
+    rows["fact_listing_bar_day"] = bars
+    rows["fact_distribution_event"] = [distribution]
+    rows["dim_instrument"] = [
+        {
+            "instrument_sk": inst_sk,
+            "instrument_code": "example-fund",
+            "name": name,
+            "issuer_code": "example-issuer",
+            "vehicle_type": "etf",
+            "domicile": "US",
+        }
+    ]
+    rows["dim_listing"] = [
+        {
+            "listing_sk": listing_sk,
+            "instrument_code": "example-fund",
+            "instrument_sk": inst_sk,
+            "mic": "XXXX",
+            "ticker": "ZZZ",
+            "valid_from": "",
+            "quote_currency": "USD",
+        }
+    ]
+    rows["dim_series"] = [
+        {
+            "series_sk": bar["series_sk"],
+            "series_id": bar["series_id"],
+            "source_id": "some.source",
+            "source_symbol": "ZZZ.US",
+            "quantity": quantity,
+        }
+        for bar, quantity in ((bars[0], "bar_day"), (distribution, "distribution"))
+    ]
+    rows["source_identity_mapping"] = [
+        {
+            "source_id": "some.source",
+            "source_symbol": "ZZZ.US",
+            "instrument_code": "example-fund",
+            "listing_sk": listing_sk,
+        }
+    ]
+    rows["snapshot"] = [
+        {
+            "snapshot_id": snap,
+            "name": f"s{order}",
+            "source_id": "some.source",
+            "capture_order": str(order),
+            "first_retrieved_at": "2030-03-01T00:00:00Z",
+            "last_retrieved_at": "2030-03-01T00:00:00Z",
+        }
+        for snap, order in capture.items()
+    ]
+    rows["source_record"] = [
+        {"source_record_id": rid, "file_sha256": "5" * 64, "row_index": str(i), "record_sha256": "6" * 64}
+        for i, rid in enumerate(SOURCE_RECORDS)
+    ]
+    data = {n: silver2.table_bytes(n, r, capture) for n, r in rows.items()}
+    policy = silver2.selection_policy_bytes("compat-v1", {"ZZZ.US": snapshot_sha}, [])
+    selection_rows = [
+        {
+            "fact_table": "fact_listing_bar_day",
+            "series_id": SERIES_BAR,
+            "observation_id": bar["observation_id"],
+            "vintage_id": bar["vintage_id"],
+            "source_record_id": bar["origin_source_record_id"],
+            "row_index": str(index),
+            "disposition": "selected",
+            "reason": "",
+        }
+        for index, bar in zip((2, 10), bars, strict=True)
+    ]
+    selections = {silver2.selection_id(policy): (policy, silver2.selection_bytes(selection_rows))}
+    core = silver2.manifest_core(
+        release_spec={"name": "funds", "version": "0.1.0", "sha256": "1" * 64},
+        register_sha256="2" * 64,
+        observation_specs=[{"source_symbol": "ZZZ.US", "sha256": "3" * 64}],
+        snapshots=[{"name": f"s{capture[s]}", "manifest_sha256": s} for s in snaps],
+        code_commit=commit,
+        tables=data,
+        selections=selections,
+    )
+    directory, existed = silver2.write_release(root, core, data, selections)
+    assert not existed
+    return {
+        "id": silver2.release_id(core),
+        "dir": directory,
+        "core": core,
+        "selection_id": silver2.selection_id(policy),
+        "bars": bars,
+        "distribution": distribution,
+        "listing_sk": listing_sk,
+        "instrument_sk": inst_sk,
+        "snapshots": snaps,
+    }
+
+
+@pytest.fixture
+def lake2(lake):
+    """The lake plus one release whose first snapshot is loaded (bronze-a) and whose second is not."""
+    lake["release"] = make_release(lake["silver"], lake["snapshot_sha"])
+    return lake
+
+
+def build2(lake, name="catalogue.duckdb"):
+    out = lake["tmp"] / name
+    return tool.build(*roots(lake), out), out
+
+
+def test_a_release_fills_the_new_tables(lake2):
+    release = lake2["release"]
+    rid = release["id"]
+    report, out = build2(lake2)
+    assert report["problems"] == 0 and report["result"] == "pass"
+    for name in silver2.TABLES:
+        assert (
+            report["counts"][f"s2_{name}"] == {e["name"]: e["rows"] for e in release["core"]["tables"]}[name]
+        )
+    assert report["counts"]["silver2_release"] == 1
+    assert report["counts"]["silver2_selection"] == 1
+    assert report["counts"]["silver2_selection_row"] == 2
+    assert report["counts"]["s2_fact_listing_bar_day"] == 2
+    assert report["counts"]["s2_dim_listing"] == 1
+    assert table(
+        out,
+        "SELECT release_id, release_name, release_version, code_commit, register_sha256, directory "
+        "FROM silver2_release",
+    ) == [(rid, "funds", "0.1.0", "f" * 40, "2" * 64, str(release["dir"]))]
+    core_json = table(out, "SELECT core_json FROM silver2_release")[0][0]
+    assert core_json.encode() == tool.canonical_json(release["core"])
+    assert silver2.release_id(json.loads(core_json)) == rid
+    assert table(out, "SELECT release_id, selection_id, name, rows FROM silver2_selection") == [
+        (rid, release["selection_id"], "compat-v1", 2)
+    ]
+    selection = table(
+        out,
+        "SELECT release_id, selection_id, fact_table, series_id, row_index, disposition, reason, "
+        "typeof(row_index) FROM silver2_selection_row ORDER BY row_index",
+    )
+    assert selection == [
+        (rid, release["selection_id"], "fact_listing_bar_day", SERIES_BAR, 2, "selected", "", "BIGINT"),
+        (rid, release["selection_id"], "fact_listing_bar_day", SERIES_BAR, 10, "selected", "", "BIGINT"),
+    ]
+    # an s2_ table: release_id first, every cell text, an empty cell stays the empty string
+    assert table(
+        out, "SELECT release_id, listing_sk, mic, ticker, valid_from, quote_currency FROM s2_dim_listing"
+    ) == [(rid, release["listing_sk"], "XXXX", "ZZZ", "", "USD")]
+    assert table(
+        out,
+        "SELECT close, volume, typeof(close), typeof(volume) "
+        "FROM s2_fact_listing_bar_day ORDER BY trade_date",
+    ) == [("102.5000", "", "VARCHAR", "VARCHAR"), ("1.5", "1200", "VARCHAR", "VARCHAR")]
+    assert table(out, "SELECT snapshot_id, capture_order FROM s2_snapshot ORDER BY capture_order") == [
+        (s, str(i)) for i, s in enumerate(release["snapshots"], 1)
+    ]
+    for name in silver2.TABLES:
+        assert table(out, f"SELECT DISTINCT release_id FROM s2_{name}") in ([(rid,)], [])
+    assert table(out, "SELECT * FROM problem") == []
+
+
+def test_every_s2_table_has_release_id_then_the_columns_all_text(lake2):
+    _, out = build2(lake2)
+    for name, columns in silver2.TABLES.items():
+        described = table(
+            out,
+            f"SELECT column_name, data_type FROM information_schema.columns "
+            f"WHERE table_name = 's2_{name}' ORDER BY ordinal_position",
+        )
+        assert described == [("release_id", "VARCHAR"), *[(c, "VARCHAR") for c in columns]]
+
+
+def test_two_releases_stay_separate_by_release_id(lake2):
+    first = lake2["release"]
+    second = make_release(
+        lake2["silver"], lake2["snapshot_sha"], close="999.0000", commit="e" * 40, name="Other"
+    )
+    assert second["id"] != first["id"]
+    report, out = build2(lake2)
+    assert report["counts"]["silver2_release"] == 2
+    assert report["counts"]["s2_fact_listing_bar_day"] == 4
+    assert report["counts"]["s2_dim_listing"] == 2
+    for release, close, name in ((first, "102.5000", "Example Fund"), (second, "999.0000", "Other")):
+        rid = release["id"]
+        assert table(
+            out, f"SELECT close FROM s2_fact_listing_bar_day WHERE release_id = '{rid}' ORDER BY trade_date"
+        ) == [(close,), ("1.5",)]
+        assert table(out, f"SELECT name FROM s2_dim_instrument WHERE release_id = '{rid}'") == [(name,)]
+    # the same dimension keys occur in both releases: a view joins within one release_id, no cross product
+    assert table(out, "SELECT count(*) FROM s2_bar") == [(4,)]
+    assert sorted(
+        table(out, "SELECT release_id, close, name FROM s2_bar WHERE trade_date = '2030-01-01'")
+    ) == sorted([(first["id"], "102.5000", "Example Fund"), (second["id"], "999.0000", "Other")])
+
+
+def test_views_hold_numbers_beside_the_text(lake2):
+    release = lake2["release"]
+    _, out = build2(lake2)
+    bars = table(
+        out,
+        "SELECT release_id, trade_date, close, close_value, typeof(close_value), open_value, high_value, "
+        "low_value, volume, volume_value, instrument_code, mic, ticker, valid_from, quote_currency, name, "
+        "issuer_code, vehicle_type, domicile FROM s2_bar ORDER BY trade_date",
+    )
+    rid = release["id"]
+    assert bars == [
+        (
+            rid,
+            "2030-01-01",
+            "102.5000",
+            102.5,
+            "DOUBLE",
+            100.0,
+            103.25,
+            99.5,
+            "",
+            None,
+            "example-fund",
+            "XXXX",
+            "ZZZ",
+            "",
+            "USD",
+            "Example Fund",
+            "example-issuer",
+            "etf",
+            "US",
+        ),
+        (
+            rid,
+            "2030-01-02",
+            "1.5",
+            1.5,
+            "DOUBLE",
+            1.0,
+            2.0,
+            1.0,
+            "1200",
+            1200.0,
+            "example-fund",
+            "XXXX",
+            "ZZZ",
+            "",
+            "USD",
+            "Example Fund",
+            "example-issuer",
+            "etf",
+            "US",
+        ),
+    ]
+    assert table(
+        out,
+        "SELECT release_id, ex_date, occurrence, amount_unadjusted, amount_unadjusted_value, "
+        "amount_split_adjusted, amount_split_adjusted_value, franking, franking_value, currency, "
+        "period_label, instrument_code, mic, ticker, quote_currency, name FROM s2_distribution",
+    ) == [
+        (
+            rid,
+            "2030-01-02",
+            "0",
+            "0.2500",
+            0.25,
+            "0.1250",
+            0.125,
+            "",
+            None,
+            "USD",
+            "Quarterly",
+            "example-fund",
+            "XXXX",
+            "ZZZ",
+            "USD",
+            "Example Fund",
+        )
+    ]
+    # every column of the fact is still there, unchanged
+    columns = {r[0] for r in table(out, "DESCRIBE s2_bar")}
+    assert set(silver2.TABLES["fact_listing_bar_day"]) <= columns
+
+
+def test_lineage_both_ways_with_present_and_absent_parents(lake2):
+    release = lake2["release"]
+    rid = release["id"]
+    gold = lake2["gold"]
+    make_gold(gold, "a9" * 8, SERIES_THREE, factor_id="ZZZ_S2", silver={"release_id": rid})
+    make_gold(gold, "b9" * 8, SERIES_THREE, factor_id="ZZZ_S3", silver={"release_id": "7" * 64})
+    _, out = build2(lake2)
+    rows = set(
+        table(
+            out,
+            "SELECT child_kind, child_id, parent_kind, parent_id, role, parent_present FROM lineage "
+            "WHERE child_kind = 'silver2' OR parent_kind = 'silver2'",
+        )
+    )
+    assert rows == {
+        # a release -> each of its snapshots: the first is in a loaded bronze root, the second is not
+        ("silver2", rid, "bronze", lake2["snapshot_sha"], "bronze", True),
+        ("silver2", rid, "bronze", SNAP_ABSENT, "bronze", False),
+        # a gold build -> a release: one loaded, one not
+        ("gold", "a9" * 8, "silver2", rid, "silver2", True),
+        ("gold", "b9" * 8, "silver2", "7" * 64, "silver2", False),
+    }
+    # a gold build that names neither a silver set nor a release is still a problem
+    make_gold(gold, "c9" * 8, SERIES_THREE, factor_id="ZZZ_S4", silver={})
+    _, out = build2(lake2, "again.duckdb")
+    assert problems(out) == [("gold", "c9" * 8, "silver.silver_id is not a non-empty string")]
+
+
+def test_a_tampered_release_is_reported_and_excluded_while_the_rest_loads(lake2):
+    good = lake2["release"]
+    bad = make_release(lake2["silver"], lake2["snapshot_sha"], close="999.0000", commit="e" * 40)
+    gold = lake2["gold"]
+    make_gold(gold, "a9" * 8, SERIES_THREE, factor_id="ZZZ_S2", silver={"release_id": bad["id"]})
+    (bad["dir"] / "tables" / "dim_listing.csv").write_bytes(b"tampered\n")
+    report, out = build2(lake2)
+    assert report["result"] == "fail" and report["problems"] == 1
+    [(layer, ident, message)] = problems(out)
+    assert (layer, ident) == ("silver2", bad["id"])
+    assert "dim_listing" in message
+    assert table(out, "SELECT release_id FROM silver2_release") == [(good["id"],)]
+    assert table(out, "SELECT DISTINCT release_id FROM silver2_selection_row") == [(good["id"],)]
+    for name in silver2.TABLES:
+        assert table(out, f"SELECT count(*) FROM s2_{name} WHERE release_id = '{bad['id']}'") == [(0,)]
+    assert table(out, f"SELECT count(*) FROM lineage WHERE child_id = '{bad['id']}'") == [(0,)]
+    # the version 1 sets and the gold builds are unaffected, and the good release's lineage is intact
+    assert report["counts"]["silver_set"] == 1 and report["counts"]["gold_build"] == 4
+    assert table(out, "SELECT parent_present FROM lineage WHERE parent_id = '" + bad["id"] + "'") == [
+        (False,)
+    ]
+
+
+def test_a_release_in_the_wrong_directory_or_missing_a_file_is_a_problem(lake2):
+    release = lake2["release"]
+    other = make_release(lake2["silver"], lake2["snapshot_sha"], commit="d" * 40)
+    (other["dir"] / "selections" / f"{other['selection_id']}.csv").unlink()
+    moved = release["dir"].with_name("0" * 64)
+    release["dir"].rename(moved)
+    report, out = build2(lake2)
+    assert report["counts"]["silver2_release"] == 0 and report["problems"] == 2
+    assert [(layer, ident) for layer, ident, _ in problems(out)] == sorted(
+        [("silver2", "0" * 64), ("silver2", other["id"])]
+    )
+    assert all(r[0] == 0 for r in table(out, "SELECT count(*) FROM s2_fact_listing_bar_day"))
+
+
+def test_version_1_sets_and_v2_side_by_side_and_v2_is_not_an_instrument(lake2):
+    report, out = build2(lake2)
+    assert report["problems"] == 0
+    assert report["counts"]["silver_set"] == 1 and report["counts"]["silver2_release"] == 1
+    assert table(out, "SELECT DISTINCT instrument FROM silver_set") == [("ZZZ.US",)]
+    assert (lake2["silver"] / "v2").is_dir()
+    # a stray file beside the releases is ignored; a stray directory is a problem, not an instrument
+    (lake2["silver"] / "v2" / "notes.txt").write_text("x")
+    assert tool.verify(*roots(lake2))["problems"] == 0
+    (lake2["silver"] / "v2" / "stray").mkdir()
+    assert tool.verify(*roots(lake2))["problems"] == 1
+
+
+def test_no_v2_directory_at_all(lake):
+    assert not (lake["silver"] / "v2").exists()
+    report, out = build2(lake)
+    assert report["problems"] == 0
+    for name in tool.TABLES:
+        if name.startswith(("silver2_", "s2_")):
+            assert report["counts"][name] == 0
+            assert table(out, f"SELECT count(*) FROM {name}") == [(0,)]
+    assert table(out, "SELECT count(*) FROM s2_bar") == [(0,)]
+    assert table(out, "SELECT count(*) FROM s2_distribution") == [(0,)]
+
+
+def test_a_v2_root_that_is_a_file_has_no_releases(lake):
+    (lake["silver"] / "v2").write_text("not a directory")
+    assert tool.verify(*roots(lake))["problems"] == 0
+
+
+def test_cli_prints_the_release_counts_and_no_data(lake2, capsys):
+    out = lake2["tmp"] / "catalogue.duckdb"
+    assert tool.main(cli_args(lake2, "build", "--out", str(out))) == 0
+    built = capsys.readouterr()
+    assert tool.main(cli_args(lake2, "verify")) == 0
+    verified = capsys.readouterr()
+    assert built.out == verified.out
+    lines = built.out.splitlines()
+    assert "silver2_release: 1" in lines and "silver2_selection_row: 2" in lines
+    assert "s2_fact_listing_bar_day: 2" in lines and "s2_dim_date: 0" in lines
+    assert lines[-3:] == ["problem: 0", "problems: 0", "pass"]
+    for stream in (built.out, built.err, verified.out, verified.err):
+        assert not DATE_OR_DECIMAL.search(stream)
+        assert lake2["release"]["id"] not in stream
