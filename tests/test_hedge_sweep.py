@@ -404,8 +404,10 @@ def test_command_prints_counts_and_hashes_but_no_number_from_the_data(tmp_path, 
     assert lines[5] == "identities hold: yes" and len(lines) == 6
     record = json.loads((tmp_path / "out" / "sweep.json").read_text())
     star = record["h_star"]["value"]
+    # the two hash lines are hex digests: a data-like substring can occur in one by chance, so look elsewhere
+    text = "\n".join(line for line in lines if "sha256" not in line)
     for secret in ("2030", repr(star)[:6], repr(record["by_ratio"][0]["asset"]["annualised_return"])[:6]):
-        assert secret not in captured.out
+        assert secret not in text
 
 
 def test_command_refusal_exits_two(tmp_path, capsys):
