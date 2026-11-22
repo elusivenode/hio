@@ -1,0 +1,86 @@
+# PROPOSED under OD-0233. HIO's own instrument identities (docs/standards/reference-identity.md); minted here only.
+# Every name, issuer, market and domicile below is [EXT]: taken from the vendor's listing and unverified.
+# A valid_from of null means the listing's start date is not established.
+status: proposed
+instruments:
+  - instrument_code: ssga-spdr-sp500-etf-trust
+    name: "SPDR S&P 500 ETF Trust"
+    issuer_code: state-street
+    vehicle_type: etf
+    domicile: US
+    listings:
+      - {mic: ARCX, ticker: SPY, quote_currency: USD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: SPY.US, mic: ARCX, ticker: SPY}
+  - instrument_code: ishares-7-10-year-treasury-bond-etf
+    name: "iShares 7-10 Year Treasury Bond ETF"
+    issuer_code: blackrock-ishares
+    vehicle_type: etf
+    domicile: US
+    listings:
+      - {mic: XNAS, ticker: IEF, quote_currency: USD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: IEF.US, mic: XNAS, ticker: IEF}
+  - instrument_code: ssga-spdr-1-3-month-t-bill-etf
+    name: "SPDR Bloomberg 1-3 Month T-Bill ETF"
+    issuer_code: state-street
+    vehicle_type: etf
+    domicile: US
+    listings:
+      - {mic: ARCX, ticker: BIL, quote_currency: USD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: BIL.US, mic: ARCX, ticker: BIL}
+  - instrument_code: vanguard-australian-shares-index-etf
+    name: "Vanguard Australian Shares Index ETF"
+    issuer_code: vanguard-australia
+    vehicle_type: etf
+    domicile: AU
+    listings:
+      - {mic: XASX, ticker: VAS, quote_currency: AUD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: VAS.AU, mic: XASX, ticker: VAS}
+  - instrument_code: ishares-sp500-etf-au
+    name: "iShares S&P 500 ETF (ASX)"
+    issuer_code: blackrock-ishares-australia
+    vehicle_type: etf
+    domicile: AU
+    listings:
+      - {mic: XASX, ticker: IVV, quote_currency: AUD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: IVV.AU, mic: XASX, ticker: IVV}
+  - instrument_code: ishares-sp500-aud-hedged-etf-au
+    name: "iShares S&P 500 AUD Hedged ETF"
+    issuer_code: blackrock-ishares-australia
+    vehicle_type: etf
+    domicile: AU
+    listings:
+      - {mic: XASX, ticker: IHVV, quote_currency: AUD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: IHVV.AU, mic: XASX, ticker: IHVV}
+  - instrument_code: betashares-australian-government-bond-etf
+    name: "Betashares Australian Government Bond ETF"
+    issuer_code: betashares
+    vehicle_type: etf
+    domicile: AU
+    listings:
+      - {mic: XASX, ticker: AGVT, quote_currency: AUD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: AGVT.AU, mic: XASX, ticker: AGVT}
+  - instrument_code: ishares-treasury-etf-au
+    name: "iShares Treasury ETF"
+    issuer_code: blackrock-ishares-australia
+    vehicle_type: etf
+    domicile: AU
+    listings:
+      - {mic: XASX, ticker: IGB, quote_currency: AUD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: IGB.AU, mic: XASX, ticker: IGB}
+  - instrument_code: vanguard-australian-government-bond-index-etf
+    name: "Vanguard Australian Government Bond Index ETF"
+    issuer_code: vanguard-australia
+    vehicle_type: etf
+    domicile: AU
+    listings:
+      - {mic: XASX, ticker: VGB, quote_currency: AUD, valid_from: null}
+    source_mappings:
+      - {source_id: eodhd.personal_evaluation, source_symbol: VGB.AU, mic: XASX, ticker: VGB}
