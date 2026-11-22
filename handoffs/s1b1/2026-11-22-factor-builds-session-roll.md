@@ -2,7 +2,7 @@
 id: HANDOFF-2026-11-22-factor-builds-session-roll
 date: 2026-11-22
 actor: claude/implementation-agent (Claude Opus 5.5, then Claude Fable 5.2, Claude Code; hiomux orchestrator)
-work_status: "first local factor builds (USD, excess, AUD unhedged and hedged), analytics and a risk model: exploratory, unaccepted; E-0004 parked with F-1 and F-2 open; a hedge-ratio sweep in flight"
+work_status: "first local factor builds (USD, excess, AUD unhedged and hedged), analytics, a risk model and a hedge-ratio sweep: exploratory, unaccepted; E-0004 parked with F-1 and F-2 open"
 base_revision: cf146106b460619ee21f6e8f6eb467893ad6b3de
 head_revision: self       # resolve with: git log -n1 --format=%H -- handoffs/s1b1/2026-11-22-factor-builds-session-roll.md
 work_card: none (owner instructions OD-0198 to OD-0217; no task card exists for the factor builds)
@@ -23,7 +23,7 @@ Midway through, the owner said: *"We are spending a lot of cycles here on things
 
 ## Done: factors and analytics (OD-0213, OD-0215, OD-0216)
 
-Six tools, each written by a hiomux worker on invented data, accepted by `hiomux check`, then run by Claude on the real local data and checked by an independent script that uses none of the library code.
+Seven tools, each written by a hiomux worker on invented data, accepted by `hiomux check`, then run by Claude on the real local data and checked by an independent script that uses none of the library code.
 
 | Tool | Does | Evidence |
 |---|---|---|
@@ -33,6 +33,7 @@ Six tools, each written by a hiomux worker on invented data, accepted by `hiomux
 | `tools/risk_model.py` | covariance, volatility, Euler risk contributions, diversification ratio, rolling risk; funded and excess never mixed | `build-2.md` |
 | `tools/factor_cash_aud.py` | AUD cash: RBA rate accrual joined to the RBA Total Return Index | `build-3.md` |
 | `tools/factor_translate.py` | USD to AUD, unhedged (RA §4.1) or hedged at ratio one with a CIP-implied forward (RA §4.3) | `build-3.md` |
+| `tools/hedge_sweep.py` | a USD asset's AUD return across hedge ratios, alone and in a portfolio; descriptive | `build-4.md` |
 
 **Built locally,** all at spec version 0.1.0, proposed, in `~/.hio-research/factor-store/<factor_id>/0.1.0/<build_id>/`:
 
@@ -42,7 +43,7 @@ Six tools, each written by a hiomux worker on invented data, accepted by `hiomux
 
 **Outputs for the owner:** `~/.hio-research/analytics/` (with `owner-report.md`) and `~/.hio-research/risk/`. The findings were reported to the owner in the session and are not repeated here.
 
-**In flight:** worker W1 in hiomux run `20261122T030739Z-f0c1` is writing `tools/hedge_sweep.py` (OD-0217). If this handoff's PR merged without it, the next session checks the run, runs `hiomux check W1`, integrates the checked commit, runs it on the real builds and reports.
+**Nothing is in flight.** hiomux run `20261122T030739Z-f0c1` is closed and cleaned up.
 
 ## Done: E-0004 and the review loop (OD-0198 to OD-0214)
 
@@ -80,6 +81,7 @@ Six tools, each written by a hiomux worker on invented data, accepted by `hiomux
 - **Claiming a remediation without re-reading the files.** Response 1 said OD-0190's correction 2 was redacted; it was not. Sweep the repository before claiming.
 - **A pre-push hook that inherits git's environment.** A test that creates its own repository ran against this one and set `core.bare = true`. The hook now runs `unset $(git rev-parse --local-env-vars)` first. If git says "this operation must be run in a work tree", check `.git/config`.
 - **`sa ask` with a stale local `main`:** the architect's clone is made from local branches and fails with "unable to read tree". Run `git fetch origin main:main` first.
+- **Integrating before reading `hiomux check`'s result:** a chained command cherry-picked a rejected commit (a flaky test: a year string that a sha256 can contain by chance). Gate integration on `check.json`'s `ok`.
 - **Pinning a merge to the wrong SHA** in a stacked PR: take the head from `gh pr view <n> --json headRefOid`, never from `git rev-parse HEAD`.
 - **Pushing without the full suite:** a stub broke a test that reads SEC filing numbers from a record. The pre-push gate now prevents this.
 - **zsh does not split an unquoted variable into arguments:** `git checkout T -- $FILES` passes one argument. Name each path.
@@ -91,7 +93,7 @@ Six tools, each written by a hiomux worker on invented data, accepted by `hiomux
 - `[factors] A factor build is a spec plus inputs pinned by hash, giving series.csv and build.json under ~/.hio-research/factor-store; tools refuse an unpinned or tampered input, and rebuild byte-identically. Source: tools/factor_build.py, docs/evidence/factors/build-1.md.`
 - `[factors] Excess return is arithmetic per period over a named cash leg, each leg compounded exactly between common dates; never chain the excess. Funded and excess series are never combined in one portfolio or risk run. Source: tools/factor_excess.py, tools/risk_model.py.`
 - `[fx] H.10's Australian series is USD per AUD, so an Australian holder's spot return on USD is q_prev/q_now - 1; check the sign on a known episode. Source: tools/factor_translate.py, docs/evidence/factors/build-3.md.`
-- `[workers] Six of six worker-written factor tools passed real data first time when the brief fixed the file format, named the functions to reuse, and listed the refusals and hand-computed tests. Source: this handoff.`
+- `[workers] Seven of seven worker-written factor tools passed real data first time (one needed a retry for a flaky test, not the tool) when the brief fixed the file format, named the functions to reuse, and listed the refusals and hand-computed tests. Source: this handoff.`
 - `[verification] Check a worker's tool on real data with a separate script that shares no code with it, in exact arithmetic; a disagreement is as likely to be the checker's convention (a partial final month) as the tool. Source: docs/evidence/factors/build-2.md.`
 - `[git] A git hook exports GIT_DIR; tests that create repositories then act on the real one. Unset git's local environment in the hook. Source: this handoff.`
 - `[hiomux] sa ask clones from local branches: run git fetch origin main:main first, or it fails with "unable to read tree". Source: this handoff.`
@@ -121,7 +123,7 @@ No series is accepted and no spec is adopted: fourteen factor specs are `propose
 
 ## Next, in order (one question at a time to the owner)
 
-1. **Finish the hedge-ratio sweep** (OD-0217) if it is not on `main`: check W1, run it on the real builds (the SPY USD build, the AUD cash build, the BIL build, H.10; companion: the hedged IEF build at 0.4 with the asset at 0.6), verify independently, report.
+1. **Nothing is owed from this session.** The hedge-ratio sweep ran (`docs/evidence/factors/build-4.md`).
 2. **Ask the owner for the next factor step.** Candidates, each needing its own yes: Australian equities from the earlier snapshot's ASX funds (rights: the same EODHD row); a proper USD cash leg (`cash.usd.overnight` needs a source); an independent check of the fund prices (T-0003's open question); a risk model with shrinkage; a task card and a short roadmap for the factor programme.
 3. **Lower priority, only if the owner raises them:** the architect performance review; distil 3; T-0023's acceptance; the dead-man exercise; C5.
 
@@ -133,4 +135,4 @@ No series is accepted and no spec is adopted: fourteen factor specs are `propose
 | Pushed? PR | pushed with this commit; PR opened and merged by Claude under OD-0184 A1 |
 | Received into `main`? | yes, once that PR merges |
 | Next actor | Claude (the next orchestrator session), then the owner |
-| Prompt for the next actor | Run the start-of-session sequence (PROTOCOL hash record OD-0199; hiomux OD-0111). Read this handoff. Check hiomux run `20261122T030739Z-f0c1` and whether `tools/hedge_sweep.py` is on `main`. Then lead with the next factor step. Records never carry a value from a licensed series |
+| Prompt for the next actor | Run the start-of-session sequence (PROTOCOL hash record OD-0199; hiomux OD-0111). Read this handoff. Then lead with the next factor step: ask the owner which candidate in "Next" to build. Records never carry a value from a licensed series |
