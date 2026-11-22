@@ -19,16 +19,18 @@ Historian (EOD Historical All-World), personal. `/user` reports `monthly`. About
 
 ## B. Coverage
 
-| Instrument | First | Last | Rows | Distributions | Splits | Q1 to Q3 | Periods within 1 bp, internal | Notes |
-|---|---|---|---:|---:|---:|---|---:|---|
-| SPY.US | 1993-01-29 | 2026-11-03 | 8,499 | 136 | 0 | pass | 8,493 of 8,498 | |
-| VTI.US | 2001-05-31 | 2026-11-03 | 6,395 | 102 | 1 | pass | 6,388 of 6,394 | |
-| IEF.US | 2002-07-26 | 2026-11-03 | 6,108 | 291 | 0 | pass | 6,107 of 6,107 | |
-| BIL.US | 2007-05-30 | 2026-11-03 | 4,890 | 128 | 1 | pass | 4,889 of 4,889 | **No distributions in 2010, 2012 to 2015 or 2021.** Plausible at near-zero yields; unverified. Added as the cash sleeve |
-| VAS.AU | 2009-05-08 | 2026-11-03 | 4,429 | 70 | 0 | pass | 4,412 of 4,428 | One "Special Event" |
-| IVV.AU | 2007-10-10 | 2026-11-03 | 4,823 | 78 | 1 | pass | 4,816 of 4,822 | Four "Special Event" |
-| BGBL.AU | 2023-05-09 | 2026-11-03 | 887 | 7 | 0 | pass | 885 of 886 | **One record differs from the issuer** |
-| AUDUSD.FOREX | 1979-12-24 | 2026-11-03 | 13,387 | n/a | n/a | not assessed | n/a | 1,242 weekend rows; market-maker data. Not a fixing, so not used |
+| Instrument | Q1 to Q3 | Built return against the vendor's adjusted-close return (1 bp bar) | Notes |
+|---|---|---|---|
+| SPY.US | pass | nearly every period within the bar | |
+| VTI.US | pass | nearly every period within the bar | |
+| IEF.US | pass | every period within the bar | |
+| BIL.US | pass | every period within the bar | **Some calendar years carry no distributions.** Plausible at near-zero yields; unverified. Added as the cash sleeve |
+| VAS.AU | pass | nearly every period within the bar | "Special Event" records present |
+| IVV.AU | pass | nearly every period within the bar | "Special Event" records present |
+| BGBL.AU | pass | nearly every period within the bar | **One record differs from the issuer** |
+| AUDUSD.FOREX | not assessed | n/a | weekend rows present; market-maker data. Not a fixing, so not used |
+
+> **Redacted 2026-11-22 (F-REVIEW-2026-11-22-e0004-1-2, OD-0206):** the counts and date spans taken or computed from EODHD data were removed from this file and replaced by readings. They stay in the owner's local report. Earlier revisions in git history still hold them (OD-0196).
 
 Symbols worked as given. Declaration and record dates are absent on all three ASX funds, and declaration dates on many US rows. Weekdays absent are counted, not judged, because no holiday calendar was applied. First dates sit a few days after inception where the issuer date is known (IEF), so history may start at first trade rather than launch.
 
@@ -36,16 +38,16 @@ Symbols worked as given. Declaration and record dates are absent on all three AS
 
 **Method:** market-price total return under RA §3.1 and §5, from raw closes, `unadjustedValue` and split factors, on the ex-date.
 
-**Internal check, EODHD against itself:** 34 periods differ by over 1 bp, all on action dates and none elsewhere. **33 are explained** by a factor-style adjustment (the vendor adjusts by a price factor; HIO reinvests at the ex-date close). The gaps are largest on volatile ex-dates. This isn't an error in either, and it's no independent validation.
+**Internal check, EODHD against itself:** the periods that differ by over 1 bp are all on action dates, none elsewhere. **All but one are explained** by a factor-style adjustment (the vendor adjusts by a price factor; HIO reinvests at the ex-date close). The gaps are largest on volatile ex-dates. This isn't an error in either, and it's no independent validation.
 
-**Independent check: BGBL only, 7 issuer rows read from the page.**
-- All 7 ex-dates match.
-- 6 amounts match once the issuer's figure is rounded to the vendor's decimals.
+**Independent check: BGBL only, the issuer rows read from the page.**
+- Every ex-date matches.
+- Every amount but one matches once the issuer's figure is rounded to the vendor's decimals.
 - **Unresolved finding F-1: the 2026-07-01 record differs from the issuer's.** The detail is in the owner's local report, not here, because agent use and quotation are denied.
 
 **So the dividend endpoint can't be assumed final,** and the evidence can't size this: it's one differing row in the one fund checked. **SPY, IEF and BIL, the comparison's sleeves, have no independent check.** Their record counts fit their stated frequencies, which is weak evidence. ASX non-income components aren't exposed separately by the fields used, and franking appears only in a beta feed not tested.
 
-**Issuer check of the sleeves, added at `5bb696d`:** HIO's compounded return for SPY, IEF and BIL against the market-price returns in their public fact sheets to 2026-09-30, and IEF's calendar years 2021 to 2025. **17 of 17 within the pre-declared 0.10 points a year:** SPY 4 of 4, IEF 9 of 9, BIL 4 of 4. Report sha256 `a3bc4720eb7bb5a75f97674755251dc4984e7eaef5a69bd9fecc722d2654069e`, for the owner. **It reaches back only to September 2016,** so 2008, BIL's zero-distribution years and everything earlier stay unchecked. It tests income in aggregate, and one small missing payment over ten years stays inside the bar. The fact sheets aren't committed: State Street's restrict reproduction.
+**Issuer check of the sleeves, added at `5bb696d`:** HIO's compounded return for SPY, IEF and BIL against the market-price returns in their public fact sheets to 2026-09-30, and IEF's calendar years 2021 to 2025. **Every check is within the pre-declared 0.10 points a year,** for each of SPY, IEF and BIL. Report sha256 `a3bc4720eb7bb5a75f97674755251dc4984e7eaef5a69bd9fecc722d2654069e`, for the owner. **It reaches back only to September 2016,** so 2008, BIL's zero-distribution years and everything earlier stay unchecked. It tests income in aggregate, and one small missing payment over ten years stays inside the bar. The fact sheets aren't committed: State Street's restrict reproduction.
 
 **No series here is economically validated.** The quote currency of all seven funds matches the exchange listing, the listing being EODHD's own. Between `s1` and `s2`, minutes apart, no close or distribution changed, which says little: a later snapshot is the real test.
 
@@ -55,11 +57,11 @@ Symbols worked as given. Declaration and record dates are absent on all three AS
 
 ## E. Portfolio demonstration
 
-The comparison ran: 4,889 common periods, 2007-05-30 to 2026-11-03, BIL setting the start. All three allocations; full, before and from 2020, and 2008, Q1 2020 and 2022. Wealth reconciled in every window. **Results are the owner's to read.** Limits: three named funds and one history, no trading costs or tax, BIL isn't overnight cash, IEF validates no factor, and about six non-overlapping three-year periods. It isn't a recommendation or forecast. F-1 is in a fund outside the comparison, but these three are unchecked.
+The comparison ran on the common daily periods from mid-2007 to the snapshot date, BIL setting the start. All three allocations; full, before and from 2020, and 2008, Q1 2020 and 2022. Wealth reconciled in every window. **Results are the owner's to read.** Limits: three named funds and one history, no trading costs or tax, BIL isn't overnight cash, IEF validates no factor, and about six non-overlapping three-year periods. It isn't a recommendation or forecast. F-1 is in a fund outside the comparison, but these three are unchecked.
 
 ## E2. AUD variant (V2)
 
-Ran at `475173b`: the three allocations, unhedged, monthly, on H.10's noon New York rate, 2007-05-31 to 2026-10-30, 233 months, all windows available. Results are the owner's to read, in `reports/owner-report-aud.md`. H.10 manifest sha256 `07cff3c0929a96bdfe8938c3f1f9242777621f9bbe39deb0515202d816199b21`; summary sha256 `5bb515e36ac3c2c57b8dc42c720d5ddf1a2308c56563b4ad685add216cadf701`. **Archive:** the Australian series is labelled USD per AUD, 13,993 rows from 1971-01-04 to 2026-10-30, with 572 rows holding no value. It has month-end rates from May 2007 on, within the 2006 to 2009 publication gap; earlier in that gap is unchecked. **Rates:** 2 month ends used an earlier rate, the oldest a day old. **EODHD's AUD/USD against H.10:** within 1% on 4,772 of 4,863 common dates, which passes the declared bar and can flag but not validate, at different times of day. 1,139 weekend rows sit in that span. BIL in AUD is USD bills plus currency risk, not AUD cash; it's unhedged, and there's no long AUD cash leg.
+Ran at `475173b`: the three allocations, unhedged, monthly, on H.10's noon New York rate, 2007-05-31 to 2026-10-30, 233 months, all windows available. Results are the owner's to read, in `reports/owner-report-aud.md`. H.10 manifest sha256 `07cff3c0929a96bdfe8938c3f1f9242777621f9bbe39deb0515202d816199b21`; summary sha256 `5bb515e36ac3c2c57b8dc42c720d5ddf1a2308c56563b4ad685add216cadf701`. **Archive:** the Australian series is labelled USD per AUD, 13,993 rows from 1971-01-04 to 2026-10-30, with 572 rows holding no value. It has month-end rates from May 2007 on, within the 2006 to 2009 publication gap; earlier in that gap is unchecked. **Rates:** 2 month ends used an earlier rate, the oldest a day old. **EODHD's AUD/USD against H.10:** within 1% on enough of the common dates to pass the declared bar, which can flag but not validate, at different times of day. EODHD's weekend rows sit in that span too. BIL in AUD is USD bills plus currency risk, not AUD cash; it's unhedged, and there's no long AUD cash leg.
 
 ## F. Recommendation
 

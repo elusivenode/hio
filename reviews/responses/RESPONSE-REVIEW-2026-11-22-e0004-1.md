@@ -29,3 +29,11 @@ Suite at the submission head: see the PR's CI; `check_repo.py` PASS.
 | F-REVIEW-2026-11-22-e0004-1-2 (open) | `docs/decisions/owner/OD-0190-adopt-e0004-preregistration.md`, Correction 2: the step 1b half-width is removed and replaced by the reading. **Response 1 said this correction was already redacted. It was not; that claim was wrong** | `grep` of the current E-0004 records and OD-0188 to OD-0203 for a count, width or interval computed from EODHD returns | git history kept (OD-0196) |
 | F-VERIFY-2026-11-22-e0004-1-1 (medium, open) | `pyproject.toml` and `uv.lock`: `pypdf` added to the `dev` group. `tests/test_bls_cpi_releases.py`: the two PDF tests no longer skip when `pypdf` is missing | a frozen environment runs the PDF tests; the real check runs with `uv run`, no `--with` | the PDF text layout is tested on generated PDFs in the real shape, not on a committed real PDF |
 
+## Response 3 (2026-11-22, after VERIFY-2026-11-22-e0004-1-2, NOT READY; under OD-0206)
+
+> A claim, not a verification.
+
+| Finding | What changed (files) | Evidence | Residual |
+|---|---|---|---|
+| F-REVIEW-2026-11-22-e0004-1-2 (open) | The verification's instance (`docs/evidence/e0002/assessment-1.md`) and every other number a repository-wide sweep found that is taken or computed from EODHD data: also in `docs/evidence/t0023/corroboration-1.md`, `docs/evidence/t0023/recommendation-1.md`, `registers/experiments.yaml`, two 2026-11-04 handoffs and `knowledge/findings.md`. Each is replaced by a reading. The owner set the line in OD-0206: numbers go; qualitative readings (signs, size words, the dates where EODHD disagrees with a reference, the sample length) stay | The sweep read every current tracked file; code, tests, specs and reviewer records held none. After the edits, a search of those records for "N of M" and counted periods finds only RBA-derived figures | **The line between a derived measurement and a reading is the owner's (OD-0206).** A verifier who reads EODHD's terms more strictly could still object to the qualitative wording; that would be a question for the owner, not a missed instance. One AUD/USD rate in `docs/research/T-0003-vendor-assessment-2026-11-04.md` stays, as probably public. Git history kept (OD-0196) |
+

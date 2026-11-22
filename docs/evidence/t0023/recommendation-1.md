@@ -26,7 +26,7 @@ instruction: OD-0180
 
 | Item | Status | Effect on the claim |
 |---|---|---|
-| Income, all three funds | passes, in six audited fund-years | the strongest new support |
+| Income, all three funds | passes, in every audited fund-year checked | the strongest new support |
 | C1, BIL | **fails** at 2008-09-30 | unresolved; inside the 2008 episode |
 | C4, IEF | **fails** | against a different, unreferenced construction, so it doesn't show IEF is wrong, and the maturity explanation is untested |
 | C5, SPY's return | **fails** | the post-hoc NAV diagnostic is plausible, and doesn't erase the failure |
