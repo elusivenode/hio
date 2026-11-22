@@ -1,0 +1,68 @@
+# PROPOSED under OD-0226 for the hedge anchor only; approves nothing. External facts are [EXT] and unverified.
+identity:
+  factor_id: equity.us.ivv_au.market_total_return
+  version: 0.1.0
+  status: proposed
+  owner: quantitative researcher
+  family: equity
+economics:
+  exposure: >-
+    AUD market-price total return of holding IVV, an ASX-listed fund of S&P 500 shares, unhedged [EXT], distributions reinvested at the ex-date close. An observed vehicle, with its fees in its price.
+  rationale: "The unhedged twin of the hedged anchor fund, so that their difference isolates the fund's hedge (OD-0226)."
+  is_not: >-
+    Not an index return, a NAV return, an after-cost or after-tax return, or a validated factor. Not the US-listed fund of the same name: this is the ASX line, priced in AUD at the Sydney close.
+classification:
+  series_class: total_return
+  investability: investable_with_costs
+return_convention:
+  return_type: simple
+  period: "consecutive observed trading dates"
+  compounding: chain simple period returns
+  numeraire: AUD
+  hedging: n/a
+  cash_leg: "n/a: funded form"
+  excess_definition: "n/a: funded form"
+observations:
+  - series_id: IVV.AU.close_unadjusted
+    source_id: eodhd.personal_evaluation
+    unit: AUD per unit
+    knowledge_mode_required: latest
+  - series_id: IVV.AU.distributions_and_splits
+    source_id: eodhd.personal_evaluation
+    unit: AUD per unit; new units per old
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: "Every value is reconstructed(T): one snapshot at T. No publication instant is claimed."
+  earliest_history: "fund inception [EXT, unverified]; confirmed by the snapshot"
+  capture_clock_dependency: "none for this exploratory version"
+construction:
+  calendar: "the vendor's observed dates; nothing filled"
+  day_count: "n/a: no accrual"
+  algorithm: |
+    src/hio/library/vehicle_return.py. TR_t = f (P_t + D_t) / P_(t-1) - 1, with unadjusted closes, unadjustedValue for D and the split factor f,
+    on the ex-date. An action on an unobserved date moves to the next observed date, and is counted. A vendor adjusted close is never an input.
+  rebalancing_and_rolls: "n/a: a single vehicle"
+  costs: "fund fees embedded; no trading costs or tax"
+invariants:
+  standard: [RA-INV-001, RA-INV-020]
+  spec_specific: []
+triangulation:
+  - reference: "the issuer's published distributions and returns, read by hand where permitted; not read means not independently checked"
+    why_comparable: "the same fund, from its issuer"
+    expected_differences:
+      - mechanism: "market price against NAV, and timing"
+        predicted_sign: either
+        predicted_magnitude: "small; to be reported"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - "Provenance of the close is unresolved: EODHD's published statements conflict (OD-0160)."
+  - "Reconstructed; survivor selection of a named fund."
+  - "The distributions are the vendor's, not checked against the issuer, and may include an estimate the issuer later revised (docs/evidence/factors/issuer-check-1.md)."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.0 (2026-11-22): first proposed version, for the hedge anchor (OD-0226). Not validated."

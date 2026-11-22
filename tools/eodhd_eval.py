@@ -65,8 +65,9 @@ ETFS = {
     "IVV.AU": "AUD",
     "BGBL.AU": "AUD",
 }
-# Funds --symbols may name but the evaluation (run, default fetch, loops over ETFS) never touches (OD-0222).
-EXTRA_FUNDS = {"VGB.AU": "AUD", "IGB.AU": "AUD", "AGVT.AU": "AUD"}
+# Funds --symbols may name but the evaluation (run, default fetch, loops over ETFS) never
+# touches (OD-0222, OD-0226).
+EXTRA_FUNDS = {"VGB.AU": "AUD", "IGB.AU": "AUD", "AGVT.AU": "AUD", "IHVV.AU": "AUD"}
 FOREX = "AUDUSD.FOREX"
 EXCHANGES = ("US", "AU")
 WORKSPACE_PARTS = ("raw", "reports", "store", "reference")
