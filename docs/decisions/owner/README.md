@@ -244,6 +244,7 @@ are in operating model §1.1; the template is
 | [OD-0227](OD-0227-session-close-factor-programme.md) | authorise_work | **Session close:** a handoff, a STATUS update and findings Inbox lines; the open T-0024 packages stay open | `docs/session-close-factor-programme` | recorded |
 | [OD-0228](OD-0228-distribution-plausibility-screen.md) | authorise_work | **Distribution screen:** a plausibility screen in the build tool (one worker task, invented data), run on every fund in snapshots `s2` to `s5`, rules declared first; no fetch, no acceptance | `feat/distribution-screen` | recorded |
 | [OD-0229](OD-0229-web-check-igb-pair.md) | authorise_work | **IGB pair web check:** read-only public web lookups to confirm whether the two flagged IGB records are one payment; no change to any series | `docs/igb-pair-web-check` | recorded |
+| [OD-0230](OD-0230-igb-duplicate-correction.md) | authorise_work | **IGB correction:** a proposed spec version excluding one duplicate vendor distribution record, a worker change so the build tool honours it, and a local build; the medallion question is a request for advice only | `feat/igb-duplicate-correction` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**

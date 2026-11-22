@@ -1,7 +1,7 @@
-# PROPOSED under OD-0222 for T-0024 package B3 only; approves nothing. External facts are [EXT] and unverified.
+# PROPOSED under OD-0222 for T-0024 package B3, corrected under OD-0230; approves nothing. External facts are [EXT] and unverified.
 identity:
   factor_id: rates.au.igb.market_total_return
-  version: 0.1.0
+  version: 0.1.1
   status: proposed
   owner: quantitative researcher
   family: rates
@@ -42,6 +42,12 @@ construction:
     src/hio/library/vehicle_return.py. TR_t = f (P_t + D_t) / P_(t-1) - 1, with unadjusted closes, unadjustedValue for D and the split factor f,
     on the ex-date. An action on an unobserved date moves to the next observed date, and is counted. A vendor adjusted close is never an input.
   rebalancing_and_rolls: "n/a: a single vehicle"
+  source_corrections:
+    - action: exclude_distribution
+      series_id: IGB.AU.distributions_and_splits
+      ex_date: "2020-10-01"
+      reason: "The vendor lists one October 2020 distribution twice. This record, dated on the fund's distribution-dates notice, is the duplicate; the record on the true ex-date is kept."
+      evidence: docs/evidence/factors/distribution-screen-1.md
   costs: "fund fees embedded; no trading costs or tax"
 invariants:
   standard: [RA-INV-001, RA-INV-020]
@@ -57,7 +63,7 @@ triangulation:
 limitations:
   - "Provenance of the close is unresolved: EODHD's published statements conflict (OD-0160)."
   - "Reconstructed; survivor selection of a named fund."
-  - "A bond fund's close can be stale on quiet days and can sit away from its net asset value in stress; the distributions are the vendor's, not checked against the issuer."
+  - "A bond fund's close can be stale on quiet days and can sit away from its net asset value in stress; the distributions are the vendor's, not checked against the issuer, except the one pair corrected in 0.1.1."
 rights_required:
   raw_retention: allow
   internal_compute: allow
@@ -66,3 +72,4 @@ rights_required:
   distribution: {hio_internal: allow}
 changelog:
   - "0.1.0 (2026-11-22): first proposed version, for T-0024 package B3 (OD-0222). Not validated."
+  - "0.1.1 (2026-11-22): excludes one duplicate vendor distribution record (OD-0230; found by the OD-0228 screen, confirmed on public pages under OD-0229). Not validated."
