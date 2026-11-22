@@ -79,6 +79,7 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
+| VERIFY-2026-11-22-e0004-1-1 | E-0004 F-1 and F-2 remediation claims, and regression | `6720c5c34a130db8ae0a6196fa530e10f3888e91..f349efeaaf1cd3540e8b206d5f79e511ee1f2410` | Codex, assigned by OD-0202 under OD-0184 A2 | **NOT READY**; F-1 narrowed/open, F-2 open; one new medium finding; not received | [record](records/VERIFY-2026-11-22-e0004-1-1.md) |
 | REVIEW-2026-11-22-e0004-1 | E-0004 steps 1, 1b, 2 and inputs | `c6886d9e50d034f3a21cb57fa5d736e2a078592c..6720c5c34a130db8ae0a6196fa530e10f3888e91` | Codex, assigned by OD-0192 (under OD-0184 A2) | **NOT READY** | [record](records/REVIEW-2026-11-22-e0004-1.md) |
 | REVIEW-2026-11-22-t0023-1 | T-0023 AUD comparison consolidation, steps 1 to 7 | `db9d7aedb457931a0f264f65c82ad4fdc6b00f4b..4b6472e54aa7a1d989ee78ee49f83d6967a27536` | Codex, assigned by OD-0182 (under OD-0184 A2) | **NOT READY** | [record](records/REVIEW-2026-11-22-t0023-1.md) |
 | REVIEW-2026-11-04-t0022-1 | T-0022 EODHD personal evaluation, focused code and claims review | `9b399221684defd643c4d68fbb42b42e80b80b4d..6f3b1e006913caa269d41cf6db3f9f3bfcf1c8be` (base from task card; assignment omits it) | Codex, assigned by OD-0162 corrections 1–2 | **NOT READY** | [record](records/REVIEW-2026-11-04-t0022-1.md) |
@@ -165,6 +166,7 @@ record. Its READY opinion is not acceptance of T-0007 or approval of HIO-ADR-000
 
 | Finding | From review | Severity | State | Remediation claim (author) | Verification (reviewer) | Waiver (owner OD) |
 |---|---|---|---|---|---|---|
+| F-VERIFY-2026-11-22-e0004-1-1 | VERIFY-2026-11-22-e0004-1-1 | medium | open: frozen environment lacks the PDF parser dependency; PDF tests skip and real check fails | — | [record](records/VERIFY-2026-11-22-e0004-1-1.md) | — |
 | F-REVIEW-2026-11-22-e0004-1-1 | REVIEW-2026-11-22-e0004-1 | high | open: first-release CPI state was not established | remediation_claimed (OD-0201): deviation recorded, states shown identical, no rerun; [response](responses/RESPONSE-REVIEW-2026-11-22-e0004-1.md) | — | — |
 | F-REVIEW-2026-11-22-e0004-1-2 | REVIEW-2026-11-22-e0004-1 | high | open: public evidence contains restricted derived measurements | remediation_claimed: current files, fix `ce57c6d` (#122); history kept (OD-0196); [response](responses/RESPONSE-REVIEW-2026-11-22-e0004-1.md) | — | — |
 | F-REVIEW-2026-11-22-t0023-1-1 | REVIEW-2026-11-22-t0023-1 | medium | **verified_closed** at `602be49` by [VERIFY-2026-11-22-t0023-1-1](records/VERIFY-2026-11-22-t0023-1-1.md) (received OD-0186 c2; reconciled by OD-0193): C5 can pass after a fiscal year is omitted | [response](responses/RESPONSE-REVIEW-2026-11-22-t0023-1.md), merged in #110 | [VERIFY-2026-11-22-t0023-1-1](records/VERIFY-2026-11-22-t0023-1-1.md) | — |
