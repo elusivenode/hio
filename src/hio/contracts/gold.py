@@ -1,9 +1,10 @@
 """Gold marts contract, version 1: bundles, pins, tables, factor-series reader and spec readers.
 
-Built to `docs/decisions/gold-marts-contract.md` (proposed; OD-0233). Section numbers in the
-docstrings are that document's. Everything here is pure and deterministic: no clock, no
-environment, no git, no randomness in any output byte. This module imports no other `hio` package
-except `hio.contracts.canonical` and `hio.contracts.silver`.
+Built to `docs/decisions/gold-marts-contract.md` (proposed; OD-0233, and §6a under OD-0234).
+Section numbers in the docstrings are that document's. Everything here is pure and deterministic:
+no clock, no environment, no git, no randomness in any output byte. This module imports no other
+`hio` package except `hio.contracts.canonical` and `hio.contracts.silver`, and does not import
+NumPy (the float kinds record the NumPy version in their recipe; they do not use it here).
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import math
 import os
 import re
 import shutil
@@ -31,7 +33,11 @@ SCHEMA = "hio.gold/1"
 NUMERIC_POLICY = "decimal-50/1"
 CTX = Context(prec=50)
 
-KINDS: tuple[str, ...] = ("panel", "portfolio_path")
+# §6a: the two kinds computed in IEEE float64 through NumPy. Their recipe carries `environment`.
+FLOAT_POLICY = "float64/1"
+FLOAT_KINDS: tuple[str, ...] = ("covariance", "risk_contribution")
+
+KINDS: tuple[str, ...] = ("panel", "portfolio_path", *FLOAT_KINDS)
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _BUILD16 = re.compile(r"[0-9a-f]{16}")
@@ -94,6 +100,44 @@ TABLES: dict[str, dict[str, tuple[str, ...]]] = {
             "contribution",
         ),
     },
+    "covariance": {
+        "dim_window": (
+            "covariance_build_id",
+            "window_id",
+            "window_kind",
+            "first_period_end",
+            "last_period_end",
+            "n_obs",
+        ),
+        "fact_covariance": (
+            "covariance_build_id",
+            "window_id",
+            "member_i",
+            "member_j",
+            "covariance",
+            "correlation",
+        ),
+        "fact_volatility": ("covariance_build_id", "window_id", "member_code", "volatility"),
+    },
+    "risk_contribution": {
+        "fact_portfolio_risk": (
+            "risk_build_id",
+            "window_id",
+            "portfolio_variance",
+            "portfolio_volatility",
+            "diversification_ratio",
+            "euler_relative_gap",
+        ),
+        "fact_risk_contribution": (
+            "risk_build_id",
+            "window_id",
+            "member_code",
+            "weight",
+            "marginal_contribution",
+            "component_contribution",
+            "percentage_contribution",
+        ),
+    },
 }
 
 # Kind -> table -> the columns it sorts by, compared as text, most significant first. Ties are
@@ -108,6 +152,15 @@ SORTS: dict[str, dict[str, tuple[str, ...]]] = {
         "fact_target_allocation": ("member_code",),
         "fact_portfolio_return": ("period_end",),
         "fact_return_contribution": ("member_code", "period_end"),
+    },
+    "covariance": {
+        "dim_window": ("window_kind", "last_period_end"),
+        "fact_covariance": ("window_id", "member_i", "member_j"),
+        "fact_volatility": ("window_id", "member_code"),
+    },
+    "risk_contribution": {
+        "fact_portfolio_risk": ("window_id",),
+        "fact_risk_contribution": ("window_id", "member_code"),
     },
 }
 
@@ -165,6 +218,18 @@ def decimal_text(value: Decimal) -> str:
     if not value.is_finite():
         raise ValueError(f"non-finite decimal: {value}")
     return format(value, "f")
+
+
+def float_text(value: float) -> str:
+    """§6a: the text of a float result, Python's `repr` of it (the shortest text that reads back
+    to the same float). A non-finite value is refused with `ValueError`; anything that is not a
+    `float` (an `int`, a `Decimal`, text) is a `TypeError`. A `float` subclass such as NumPy's
+    `float64` is written as the plain float it holds."""
+    if not isinstance(value, float):
+        raise TypeError(f"not a float: {type(value).__name__}")
+    if not math.isfinite(value):
+        raise ValueError(f"non-finite float: {value}")
+    return repr(float(value))
 
 
 def _render(label: str, columns: Sequence[str], rows: Iterable[Mapping[str, str]]) -> bytes:
@@ -241,8 +306,16 @@ def parse_table(kind: str, table: str, data: bytes) -> list[dict[str, str]]:
 _PARAMETER_KEYS: dict[str, tuple[str, ...]] = {
     "panel": ("frequency", "alignment", "incomplete_periods", "members"),
     "portfolio_path": ("panel", "rebalance", "weights"),
+    "covariance": ("panel", "estimator", "ddof", "annualisation", "trailing_months"),
+    "risk_contribution": ("portfolio", "covariance"),
 }
 _RECIPE_KEYS = ("schema", "kind", "spec", "parameters", "parents", "numeric_policy", "code_commit")
+_ENVIRONMENT_KEYS = ("numpy", "python")
+# §6a: the (role, kind) of each parent of a float kind, sorted by role.
+_FLOAT_PARENTS: dict[str, list[tuple[str, str]]] = {
+    "covariance": [("panel", "panel")],
+    "risk_contribution": [("covariance", "covariance"), ("portfolio", "portfolio_path")],
+}
 _BUNDLE_PARENT_KEYS = ("role", "kind", "id", "payload_sha256")
 _FACTOR_PARENT_KEYS = (*_BUNDLE_PARENT_KEYS, "factor_id", "spec_version")
 _TABLE_ENTRY_KEYS = ("name", "header_sha256", "file_sha256", "rows")
@@ -263,15 +336,48 @@ def _check_spec(spec: object) -> dict[str, str]:
     return {"name": entry["name"], "version": entry["version"], "sha256": entry["sha256"]}
 
 
+def _check_trailing_months(label: str, value: object) -> int | None:
+    """§6a: `trailing_months` is an integer of at least 2, or null. A boolean is not an integer."""
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int) or value < 2:
+        raise ValueError(f"{label} must be an integer of at least 2, or null: {value!r}")
+    return value
+
+
+def _check_int(label: str, value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{label} must be an integer: {value!r}")
+    return value
+
+
 def _check_parameters(kind: str, parameters: object) -> dict[str, Any]:
     _need_keys(f"{kind} parameters", parameters, _PARAMETER_KEYS[kind])
     assert isinstance(parameters, Mapping)
     copy = _json_copy("parameters", parameters)
-    inner = "members" if kind == "panel" else "weights"
-    mapping = copy[inner]
-    if not isinstance(mapping, dict) or not all(isinstance(v, str) for v in mapping.values()):
-        raise ValueError(f"parameters.{inner} must map text to text")
+    if kind in ("panel", "portfolio_path"):
+        inner = "members" if kind == "panel" else "weights"
+        mapping = copy[inner]
+        if not isinstance(mapping, dict) or not all(isinstance(v, str) for v in mapping.values()):
+            raise ValueError(f"parameters.{inner} must map text to text")
+    elif kind == "covariance":
+        for key in ("panel", "estimator"):
+            _need_text(f"covariance parameters.{key}", copy[key])
+        _check_int("covariance parameters.ddof", copy["ddof"])
+        _check_int("covariance parameters.annualisation", copy["annualisation"])
+        _check_trailing_months("covariance parameters.trailing_months", copy["trailing_months"])
+    else:
+        for key in _PARAMETER_KEYS[kind]:
+            _need_text(f"{kind} parameters.{key}", copy[key])
     return copy
+
+
+def _check_environment(environment: object) -> dict[str, str]:
+    """§6a: exactly `{numpy, python}`, each non-empty text."""
+    entry = _need_keys("recipe environment", environment, _ENVIRONMENT_KEYS)
+    for key in _ENVIRONMENT_KEYS:
+        _need_text(f"recipe environment.{key}", entry[key])
+    return {key: entry[key] for key in _ENVIRONMENT_KEYS}
 
 
 def _check_parent(parent: object) -> dict[str, str]:
@@ -292,13 +398,17 @@ def _check_parent(parent: object) -> dict[str, str]:
 
 def _check_recipe(recipe: object) -> dict[str, Any]:
     """Refuse (`ValueError`) a recipe that is not of the §3 shape; return a copy."""
-    _need_keys("recipe", recipe, _RECIPE_KEYS)
+    # A float kind has one more key, `environment`; a decimal kind must not have it (§6a).
+    hint = recipe.get("kind") if isinstance(recipe, Mapping) else None
+    is_float = isinstance(hint, str) and hint in FLOAT_KINDS
+    _need_keys("recipe", recipe, (*_RECIPE_KEYS, "environment") if is_float else _RECIPE_KEYS)
     assert isinstance(recipe, Mapping)
     if recipe["schema"] != SCHEMA:
         raise ValueError(f"recipe schema is not {SCHEMA}: {recipe['schema']!r}")
     kind = _need_kind(recipe["kind"])
-    if recipe["numeric_policy"] != NUMERIC_POLICY:
-        raise ValueError(f"recipe numeric_policy is not {NUMERIC_POLICY}: {recipe['numeric_policy']!r}")
+    policy = FLOAT_POLICY if is_float else NUMERIC_POLICY
+    if recipe["numeric_policy"] != policy:
+        raise ValueError(f"recipe numeric_policy is not {policy}: {recipe['numeric_policy']!r}")
     if not isinstance(recipe["code_commit"], str):
         raise ValueError("recipe code_commit is not text")
     parents_in = recipe["parents"]
@@ -312,15 +422,22 @@ def _check_recipe(recipe: object) -> dict[str, Any]:
         )
     if roles != sorted(roles):
         raise ValueError("recipe parents are not sorted by role")
-    return {
+    if is_float:
+        shape = [(p["role"], p["kind"]) for p in parents]
+        if shape != _FLOAT_PARENTS[kind]:
+            raise ValueError(f"{kind} parents must be exactly (role, kind) {_FLOAT_PARENTS[kind]}: {shape}")
+    checked: dict[str, Any] = {
         "schema": SCHEMA,
         "kind": kind,
         "spec": _check_spec(recipe["spec"]),
         "parameters": _check_parameters(kind, recipe["parameters"]),
         "parents": parents,
-        "numeric_policy": NUMERIC_POLICY,
+        "numeric_policy": policy,
         "code_commit": recipe["code_commit"],
     }
+    if is_float:
+        checked["environment"] = _check_environment(recipe["environment"])
+    return checked
 
 
 def recipe(
@@ -329,34 +446,48 @@ def recipe(
     parameters: Mapping[str, Any],
     parents: Iterable[Mapping[str, str]],
     code_commit: str,
+    *,
+    environment: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
-    """§3: the recipe of a build, validated.
+    """§3 and §6a: the recipe of a build, validated.
 
-    `kind` is `panel` or `portfolio_path`; `spec` is exactly `{name, version, sha256}`;
-    `parameters` has exactly the spec's calculation keys (`frequency, alignment,
-    incomplete_periods, members` for a panel; `panel, rebalance, weights` for a portfolio path),
-    with `members` or `weights` mapping text to text. Each parent has `role`, `kind`, `id` and
-    `payload_sha256`; a `factor_series` parent also has `factor_id` and `spec_version` and no
-    other key, and a bundle parent's `kind` is a gold kind and its `id` a 64-hex build id.
-    Parents are sorted by `role`; a repeated role is refused. `numeric_policy` is
-    `NUMERIC_POLICY`. Refusals are `ValueError`.
+    `kind` is `panel`, `portfolio_path`, `covariance` or `risk_contribution`; `spec` is exactly
+    `{name, version, sha256}`; `parameters` has exactly the spec's calculation keys (`frequency,
+    alignment, incomplete_periods, members` for a panel; `panel, rebalance, weights` for a
+    portfolio path; `panel, estimator, ddof, annualisation, trailing_months` for a covariance;
+    `portfolio, covariance` for a risk contribution), with `members` or `weights` mapping text to
+    text. Each parent has `role`, `kind`, `id` and `payload_sha256`; a `factor_series` parent also
+    has `factor_id` and `spec_version` and no other key, and a bundle parent's `kind` is a gold
+    kind and its `id` a 64-hex build id. Parents are sorted by `role`; a repeated role is refused.
+
+    A decimal kind (`panel`, `portfolio_path`) takes no `environment`, has no `environment` key
+    and `numeric_policy` `NUMERIC_POLICY`. A float kind (`FLOAT_KINDS`) requires `environment`,
+    exactly `{numpy, python}` of non-empty text, stored under `environment`, with `numeric_policy`
+    `FLOAT_POLICY`; its parents are bundle parents: a `covariance` has exactly one (role `panel`,
+    kind `panel`), a `risk_contribution` exactly two (role `covariance` kind `covariance`, role
+    `portfolio` kind `portfolio_path`). Refusals are `ValueError`.
     """
     kind = _need_kind(kind)
     listed = [dict(p) if isinstance(p, Mapping) else p for p in parents]
     for parent in listed:
         _check_parent(parent)
     ordered = sorted(listed, key=lambda p: p["role"])
-    return _check_recipe(
-        {
-            "schema": SCHEMA,
-            "kind": kind,
-            "spec": spec,
-            "parameters": parameters,
-            "parents": ordered,
-            "numeric_policy": NUMERIC_POLICY,
-            "code_commit": code_commit,
-        }
-    )
+    body: dict[str, Any] = {
+        "schema": SCHEMA,
+        "kind": kind,
+        "spec": spec,
+        "parameters": parameters,
+        "parents": ordered,
+        "numeric_policy": FLOAT_POLICY if kind in FLOAT_KINDS else NUMERIC_POLICY,
+        "code_commit": code_commit,
+    }
+    if kind in FLOAT_KINDS:
+        if environment is None:
+            raise ValueError(f"a {kind} recipe requires an environment {{numpy, python}}")
+        body["environment"] = environment
+    elif environment is not None:
+        raise ValueError(f"a {kind} recipe takes no environment")
+    return _check_recipe(body)
 
 
 def build_id(recipe: Mapping[str, Any]) -> str:
@@ -607,6 +738,26 @@ class Bundle:
             except InvalidOperation:
                 raise ValueError(f"{table} row {number}: {column} is not a decimal: {cell!r}") from None
             if not value.is_finite():
+                raise ValueError(f"{table} row {number}: {column} is not finite: {cell!r}")
+            out.append(value)
+        return out
+
+    def floats(self, table: str, column: str) -> list[float]:
+        """§6a: one column of `table` as `float`, in file order (`float(text)`; a float cell is
+        `repr` text, so the value read back is the value written). An empty cell, text that is
+        not a number, or a non-finite value is refused with `ValueError`; an unknown column too."""
+        if column not in _columns(self.kind, table):
+            raise ValueError(f"table {table} has no column {column!r}")
+        out: list[float] = []
+        for number, row in enumerate(self.table(table)):
+            cell = row[column]
+            if cell == "":
+                raise ValueError(f"{table} row {number}: {column} is empty")
+            try:
+                value = float(cell)
+            except ValueError:
+                raise ValueError(f"{table} row {number}: {column} is not a float: {cell!r}") from None
+            if not math.isfinite(value):
                 raise ValueError(f"{table} row {number}: {column} is not finite: {cell!r}")
             out.append(value)
         return out
@@ -911,5 +1062,63 @@ def read_portfolio_spec(path: Path) -> dict[str, Any]:
         "panel": panel,
         "rebalance": "month_end",
         "weights": dict(weights),
+        "sha256": digest,
+    }
+
+
+def _only_int(label: str, value: object, allowed: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value != allowed:
+        raise ValueError(f"{label} must be {allowed}: {value!r}")
+    return allowed
+
+
+def read_covariance_spec(path: Path) -> dict[str, Any]:
+    """§6a: read a covariance spec (`specs/gold/covariances/<name>.yaml`).
+
+    Exact keys `identity, kind, panel, estimator, ddof, annualisation, trailing_months`; `kind`
+    is `covariance`, `estimator` is `sample`, `ddof` is the integer 1, `annualisation` is the
+    integer 12, `panel` is non-empty text, and `trailing_months` is an integer of at least 2 or
+    null (a boolean is not an integer). Returns `{name, version, status, kind, panel, estimator,
+    ddof, annualisation, trailing_months, sha256}`; `sha256` is the file's. Refusals are
+    `ValueError`.
+    """
+    loaded, digest = _load_yaml(path)
+    _need_keys("covariance spec", loaded, ("identity", "kind", *_PARAMETER_KEYS["covariance"]))
+    identity = _identity("covariance spec", loaded["identity"])
+    _only("covariance spec kind", loaded["kind"], "covariance")
+    panel = _need_text("covariance spec panel", loaded["panel"])
+    _only("covariance spec estimator", loaded["estimator"], "sample")
+    _only_int("covariance spec ddof", loaded["ddof"], 1)
+    _only_int("covariance spec annualisation", loaded["annualisation"], 12)
+    trailing = _check_trailing_months("covariance spec trailing_months", loaded["trailing_months"])
+    return {
+        **identity,
+        "kind": "covariance",
+        "panel": panel,
+        "estimator": "sample",
+        "ddof": 1,
+        "annualisation": 12,
+        "trailing_months": trailing,
+        "sha256": digest,
+    }
+
+
+def read_risk_spec(path: Path) -> dict[str, Any]:
+    """§6a: read a risk-contribution spec (`specs/gold/risk/<name>.yaml`).
+
+    Exact keys `identity, kind, portfolio, covariance`; `kind` is `risk_contribution`;
+    `portfolio` and `covariance` are non-empty text (the names of a portfolio spec and a
+    covariance spec). Returns `{name, version, status, kind, portfolio, covariance, sha256}`;
+    `sha256` is the file's. Refusals are `ValueError`.
+    """
+    loaded, digest = _load_yaml(path)
+    _need_keys("risk spec", loaded, ("identity", "kind", *_PARAMETER_KEYS["risk_contribution"]))
+    identity = _identity("risk spec", loaded["identity"])
+    _only("risk spec kind", loaded["kind"], "risk_contribution")
+    return {
+        **identity,
+        "kind": "risk_contribution",
+        "portfolio": _need_text("risk spec portfolio", loaded["portfolio"]),
+        "covariance": _need_text("risk spec covariance", loaded["covariance"]),
         "sha256": digest,
     }
