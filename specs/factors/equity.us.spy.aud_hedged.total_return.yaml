@@ -1,0 +1,78 @@
+# PROPOSED under OD-0216; approves nothing. External facts are [EXT] and unverified.
+identity:
+  factor_id: equity.us.spy.aud_hedged.total_return
+  version: 0.1.0
+  status: proposed
+  owner: quantitative researcher
+  family: equity
+economics:
+  exposure: >-
+    AUD total return to an Australian investor of holding SPY, a US-listed S&P 500 fund, with the USD exposure hedged at a ratio of one by a forward reset every period, the forward implied from cash rates.
+  rationale: "The hedged counterpart of the unhedged AUD series, to separate asset from currency risk."
+  is_not: >-
+    Not a return achievable at these terms: no market forward points are used, so it carries the covered-interest-parity basis, and its USD rate is a bill fund's return, not a money-market rate. Not a validated factor.
+classification:
+  series_class: total_return
+  investability: replicable_with_basis
+return_convention:
+  return_type: simple
+  period: "consecutive dates common to the USD series, the two cash legs and a fresh H.10 rate"
+  compounding: "chain simple period returns"
+  numeraire: AUD
+  hedging: "hedged, h = 1, reset every period, notional the start-of-period value, forward cip_implied from cash.aud.overnight_reconstructed and cash.us.bil.market_total_return (RA 4.3)"
+  cash_leg: "n/a: funded form"
+  excess_definition: "n/a: funded form"
+observations:
+  - series_id: equity.us.spy.market_total_return
+    source_id: eodhd.personal_evaluation
+    unit: simple total return per period
+    knowledge_mode_required: latest
+  - series_id: frb_h10.aud_usd.noon_new_york
+    source_id: frb_h10.aud_usd
+    unit: USD per AUD
+    knowledge_mode_required: latest
+  - series_id: cash.aud.overnight_reconstructed
+    source_id: rba.f1_historical
+    unit: simple total return per period
+    knowledge_mode_required: latest
+  - series_id: cash.us.bil.market_total_return
+    source_id: eodhd.personal_evaluation
+    unit: simple total return per period
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: "As its legs: reconstructed(T)."
+  earliest_history: "the latest first date among its legs; BIL sets it [EXT, unverified]"
+  capture_clock_dependency: "none for this exploratory version"
+construction:
+  calendar: "the dates all legs share; each leg compounded exactly between them; nothing filled"
+  day_count: "n/a for the translation; the cash legs carry their own"
+  algorithm: |
+    tools/factor_translate.py --mode hedged. Per period: f = (1 + r_h)/(1 + r_f) - 1 (covered interest parity, RA 4.2);
+    R_H = R_f + f + R_f s, exact for h = 1 (RA 4.3, RA-INV-009). R_f is equity.us.spy.market_total_return; r_h the AUD cash return; r_f the BIL return.
+  rebalancing_and_rolls: "the forward is reset every period on the start-of-period value"
+  costs: "fund fees embedded; no forward spread, collateral, trading or tax cost"
+invariants:
+  standard: [RA-INV-006, RA-INV-007, RA-INV-009, RA-INV-018, RA-INV-021]
+  spec_specific: []
+triangulation:
+  - reference: "an AUD-hedged share class of a comparable fund, when one is read"
+    why_comparable: "the same exposure hedged in the market"
+    expected_differences:
+      - mechanism: "the CIP basis, the reset frequency, hedge costs, and the bill-fund proxy for the USD rate"
+        predicted_sign: either
+        predicted_magnitude: "to be reported"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - "cip_implied: the forward comes from a rate differential, not market forward points, so the CIP basis and the fixing and timing basis are missing (RA-INV-021)."
+  - "The USD rate is BIL's own return, a noisy proxy at short horizons: a bill fund's price moves are not a money-market rate."
+  - "A reset every period is a modelling choice; real hedges usually reset monthly or quarterly."
+  - "H.10 is a noon New York buying rate and the funds close at 4 pm New York, so each period mixes two instants; monthly aggregation lessens this and does not remove it."
+  - "The USD legs rest on one vendor's unvalidated closes and distributions (OD-0160); every build pins its snapshot."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.0 (2026-11-22): first proposed version (OD-0216). Not validated."

@@ -1,0 +1,68 @@
+# PROPOSED under OD-0216; approves nothing. External facts are [EXT] and unverified.
+identity:
+  factor_id: equity.us.spy_aud_unhedged_vs_aud_cash.excess
+  version: 0.1.0
+  status: proposed
+  owner: quantitative researcher
+  family: equity
+economics:
+  exposure: >-
+    AUD return of holding the US equity fund unhedged, in excess of AUD overnight cash: what an Australian investor earns over home cash, currency included.
+  rationale: "The AUD investor's premium, as opposed to the USD investor's."
+  is_not: >-
+    Not a currency-hedged premium: it includes the USD exposure. Not a validated factor or a forecast.
+classification:
+  series_class: excess_return
+  investability: investable_with_costs
+return_convention:
+  return_type: simple
+  period: "consecutive dates observed for both legs"
+  compounding: "none declared: the excess is arithmetic per period (RA 3.3); a cumulative figure compounds each leg and differences the results (RA-INV-016)"
+  numeraire: AUD
+  hedging: "unhedged"
+  cash_leg: "cash.aud.overnight_reconstructed"
+  excess_definition: "X_t = R_t - r_t, arithmetic, both legs in AUD over the same period (RA 3.3, RA-INV-004)"
+observations:
+  - series_id: equity.us.spy.aud_unhedged.total_return
+    source_id: eodhd.personal_evaluation
+    unit: simple total return per period
+    knowledge_mode_required: latest
+  - series_id: cash.aud.overnight_reconstructed
+    source_id: rba.f1_historical
+    unit: simple total return per period
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: "As its legs: reconstructed(T)."
+  earliest_history: "the later of the two legs' first dates"
+  capture_clock_dependency: "none for this exploratory version"
+construction:
+  calendar: "the dates both legs observe; nothing filled; each leg compounded exactly between consecutive common dates"
+  day_count: "n/a for the translation; the cash legs carry their own"
+  algorithm: |
+    tools/factor_excess.py, from the built series equity.us.spy.aud_unhedged.total_return and cash.aud.overnight_reconstructed, each pinned by build id and series hash.
+    X_t = R_t - r_t per common period; the funded return reconstructs exactly as r_t + X_t (RA-INV-005).
+  rebalancing_and_rolls: "n/a"
+  costs: "fund fees embedded in the asset leg; no trading, conversion or tax cost"
+invariants:
+  standard: [RA-INV-004, RA-INV-005, RA-INV-015, RA-INV-016]
+  spec_specific: []
+triangulation:
+  - reference: "an index-based AUD excess return from a public source, when one is captured"
+    why_comparable: "the same premium from an independent construction"
+    expected_differences:
+      - mechanism: "fund fees, fixing time, market price against index level"
+        predicted_sign: either
+        predicted_magnitude: "to be reported"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - "H.10 is a noon New York buying rate and the funds close at 4 pm New York, so each period mixes two instants; monthly aggregation lessens this and does not remove it."
+  - "The USD legs rest on one vendor's unvalidated closes and distributions (OD-0160); every build pins its snapshot."
+  - "The cash leg is an overnight rate most investors cannot access directly."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.0 (2026-11-22): first proposed version (OD-0216). Not validated."
