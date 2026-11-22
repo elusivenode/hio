@@ -27,7 +27,7 @@ Historian (EOD Historical All-World), personal. `/user` reports `monthly`. About
 | BIL.US | pass | every period within the bar | **Some calendar years carry no distributions.** Plausible at near-zero yields; unverified. Added as the cash sleeve |
 | VAS.AU | pass | nearly every period within the bar | "Special Event" records present |
 | IVV.AU | pass | nearly every period within the bar | "Special Event" records present |
-| BGBL.AU | pass | nearly every period within the bar | **One record differs from the issuer** |
+| BGBL.AU | pass | nearly every period within the bar | **A record differs from the issuer** |
 | AUDUSD.FOREX | not assessed | n/a | weekend rows present; market-maker data. Not a fixing, so not used |
 
 > **Redacted 2026-11-22 (F-REVIEW-2026-11-22-e0004-1-2, OD-0206):** the counts and date spans taken or computed from EODHD data were removed from this file and replaced by readings. They stay in the owner's local report. Earlier revisions in git history still hold them (OD-0196).
@@ -38,14 +38,14 @@ Symbols worked as given. Declaration and record dates are absent on all three AS
 
 **Method:** market-price total return under RA §3.1 and §5, from raw closes, `unadjustedValue` and split factors, on the ex-date.
 
-**Internal check, EODHD against itself:** the periods that differ by over 1 bp are all on action dates, none elsewhere. **All but one are explained** by a factor-style adjustment (the vendor adjusts by a price factor; HIO reinvests at the ex-date close). The gaps are largest on volatile ex-dates. This isn't an error in either, and it's no independent validation.
+**Internal check, EODHD against itself:** the periods that differ by over 1 bp are all on action dates, none elsewhere. **Nearly all are explained** by a factor-style adjustment (the vendor adjusts by a price factor; HIO reinvests at the ex-date close). The gaps are largest on volatile ex-dates. This isn't an error in either, and it's no independent validation.
 
 **Independent check: BGBL only, the issuer rows read from the page.**
 - Every ex-date matches.
-- Every amount but one matches once the issuer's figure is rounded to the vendor's decimals.
+- The amounts match once the issuer's figure is rounded to the vendor's decimals, with the exception below.
 - **Unresolved finding F-1: the 2026-07-01 record differs from the issuer's.** The detail is in the owner's local report, not here, because agent use and quotation are denied.
 
-**So the dividend endpoint can't be assumed final,** and the evidence can't size this: it's one differing row in the one fund checked. **SPY, IEF and BIL, the comparison's sleeves, have no independent check.** Their record counts fit their stated frequencies, which is weak evidence. ASX non-income components aren't exposed separately by the fields used, and franking appears only in a beta feed not tested.
+**So the dividend endpoint can't be assumed final,** and the evidence can't size this: the difference is in the only fund checked. **SPY, IEF and BIL, the comparison's sleeves, have no independent check.** Their record counts fit their stated frequencies, which is weak evidence. ASX non-income components aren't exposed separately by the fields used, and franking appears only in a beta feed not tested.
 
 **Issuer check of the sleeves, added at `5bb696d`:** HIO's compounded return for SPY, IEF and BIL against the market-price returns in their public fact sheets to 2026-09-30, and IEF's calendar years 2021 to 2025. **Every check is within the pre-declared 0.10 points a year,** for each of SPY, IEF and BIL. Report sha256 `a3bc4720eb7bb5a75f97674755251dc4984e7eaef5a69bd9fecc722d2654069e`, for the owner. **It reaches back only to September 2016,** so 2008, BIL's zero-distribution years and everything earlier stay unchecked. It tests income in aggregate, and one small missing payment over ten years stays inside the bar. The fact sheets aren't committed: State Street's restrict reproduction.
 

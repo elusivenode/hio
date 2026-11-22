@@ -24,7 +24,7 @@ stream: s1b1
   - **F-2 fixed in the current files** (PR #122). **The owner keeps the git history** (OD-0196).
   - Receipt went through two tips; the received tip is tagged `-r2`.
 - **T-0023's two findings are reconciled to verified_closed** (OD-0193). T-0023 is not accepted.
-- **EODHD (owner subscribed: EOD Historical Data, the same plan):** `s3` taken for SPY, IEF and BIL (OD-0194). Stability against `s2` reads **revisions not explained**: one SPY ex-date moved, IEF closes re-rounded or revised, BIL payment dates filled in. Every series must pin its snapshot.
+- **EODHD (owner subscribed: EOD Historical Data, the same plan):** `s3` taken for SPY, IEF and BIL (OD-0194). Stability against `s2` reads **revisions not explained**: a SPY ex-date moved, IEF closes re-rounded or revised, BIL payment dates filled in. Every series must pin its snapshot.
 - **hiomux:** run `20261103T065037Z-3d12` closed and cleaned (2.5 GB freed). Run `20261121T232821Z-7052` is open, with W1, W2 and C2 to C3 done. Usage is visible through `~/.hio-runs/bin/statusline.sh` (writes `~/.hio-runs/statusline.json`), set in the project's local settings.
 
 ## In flight at the switch

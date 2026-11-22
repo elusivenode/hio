@@ -26,7 +26,7 @@ Over the **common history**: every date present in `s2`, compared with the same 
 ## How a revision is explained
 
 - **Return impact:** HIO's market-price total return (RA §3.1 and §5, `tools/eodhd_eval.py`'s construction) over the common span, from each snapshot. The **difference in compounded return** over the span, and the largest single-period difference.
-- **Each changed or added row** is listed locally with both values; the record states only counts and whether the change has a stated cause (for example a distribution later restated by the issuer).
+- **Each changed or added row** is listed locally with both values; the record states only readings and whether the change has a stated cause (for example a distribution later restated by the issuer).
 
 ## Reading (fixed now)
 
@@ -48,7 +48,7 @@ Snapshot `s3` taken 2026-11-22 at code `27553ba` (10 requests, no stop; manifest
 
 | Fund | Closes changed | Distributions changed | Splits changed | Stated cause (Claude's reading of the local change list) |
 |---|---|---|---|---|
-| SPY | no | **yes**: one historical distribution's ex-date moved; amount unchanged | no | apparently a correction: the new date is the fund's usual quarterly ex-date weekday. Its return impact over the common span is at or above the 0.01-point bar, so the declared rule reads it as not explained |
+| SPY | no | **yes**: a historical distribution ex-date moved; amount unchanged | no | apparently a correction: the new date is the fund's usual quarterly ex-date weekday. Its return impact over the common span is at or above the 0.01-point bar, so the declared rule reads it as not explained |
 | IEF | **yes**, many | no | no | mostly re-rounding of stored closes to two decimals; a few changes are larger than rounding and have no stated cause. Return impact over the span is below the bar |
 | BIL | no | **yes**: payment dates filled in where `s2` had none; amounts and ex-dates unchanged | no | metadata completion; no return impact |
 
