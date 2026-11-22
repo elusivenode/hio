@@ -42,13 +42,13 @@ Measured on the held hedged series; sizes not recorded here.
 ## Recommendation
 
 1. **Keep the label.** Both hedged specs are marked diagnostic-only at 0.1.1 (OD-0225). The series are unchanged.
-2. **Anchor with a traded hedged fund before building anything.** The specs already name "an AUD-hedged share class of a comparable fund" as the triangulation reference. An ASX-listed AUD-hedged S&P 500 fund [EXT] is in the vendor's symbol list HIO holds, and its unhedged twin (IVV) is already in snapshot `s2`. One fetch of one symbol under the existing vendor row would give a market-realised hedged return to set the CIP-implied SPY series against, with an expected-difference model (fund and index differences, fees, the fund's own reset). That measures the whole gap, basis and costs included, which a better USD rate alone would not.
+2. **Anchor with a traded hedged fund before building anything.** The specs already name "an AUD-hedged share class of a comparable fund" as the triangulation reference. An ASX-listed AUD-hedged S&P 500 fund [EXT] is in the vendor's symbol list HIO holds, and its unhedged twin (IVV) is already in snapshot `s2`. One fetch of that symbol under the existing vendor row (and, if the owner wants the bond side too, one AUD-hedged US Treasury fund) would give a market-realised hedged return to set the CIP-implied SPY series against, with an expected-difference model (fund and index differences, fees, the fund's own reset). That measures the whole gap, basis and costs included, which a better USD rate alone would not.
 3. **Then decide on B1 and B2** by the size of that gap. If it is small, the diagnostic label can be narrowed to "CIP-implied, anchored against a traded fund over its history" without a new cash leg. If it is large, a SOFR history fetch (from 2018) is the next step, and pre-2018 hedged figures stay diagnostic.
 
 ## Limits
 
 - The traded fund's history is shorter than SPY's [EXT, not checked]; it anchors only its own span.
-- No traded AUD-hedged US Treasury fund has been identified here, so the IEF series would be anchored only by analogy.
+- The same symbol list names AUD-hedged US Treasury funds too [EXT; their maturity ranges and histories are not checked]. One of them could anchor the IEF series if its maturities are close to IEF's; if not, IEF is anchored only by analogy.
 - One vendor, unvalidated, for the anchor too.
 
 ## Not proposed
