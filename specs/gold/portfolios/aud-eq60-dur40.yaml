@@ -1,0 +1,6 @@
+# PROPOSED under OD-0233; approves nothing. A hypothetical allocation for comparison with build-8's blend; not a recommendation.
+identity: {name: aud-eq60-dur40, version: 0.1.0, status: proposed}
+kind: portfolio_path
+panel: aud-four-sleeve
+rebalance: month_end
+weights: {au_equity: "0.30", us_equity_unhedged: "0.30", au_bonds: "0.20", us_bonds_unhedged: "0.20"}

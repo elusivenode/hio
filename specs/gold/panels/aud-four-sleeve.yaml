@@ -1,0 +1,11 @@
+# PROPOSED under OD-0233; approves nothing. The four AUD sleeves of the five-sleeve comparison's blend (build-8).
+identity: {name: aud-four-sleeve, version: 0.1.0, status: proposed}
+kind: panel
+frequency: monthly
+alignment: common_boundaries
+incomplete_periods: exclude
+members:
+  au_equity: equity.au.vas.market_total_return
+  us_equity_unhedged: equity.us.spy.aud_unhedged.total_return
+  au_bonds: rates.au.vgb.market_total_return
+  us_bonds_unhedged: rates.us.ief.aud_unhedged.total_return

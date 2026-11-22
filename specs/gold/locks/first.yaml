@@ -1,0 +1,7 @@
+# PROPOSED under OD-0233; approves nothing. Pins the factor-series builds the first marts read.
+identity: {name: first, version: 0.1.0, status: proposed}
+factor_series:
+  equity.au.vas.market_total_return: {spec_version: 0.1.0, build_id: "3400cc7b06bfff70", series_sha256: "d44937a4760f899fe67c76035535530e3a40e8f7c5a37403efc6c02b7666ed63"}
+  equity.us.spy.aud_unhedged.total_return: {spec_version: 0.1.0, build_id: "9ad40573699716eb", series_sha256: "5df3a562ac388f2022c1f641983e29d3d70f3c0e4963a94da817510865a81f6f"}
+  rates.au.vgb.market_total_return: {spec_version: 0.1.0, build_id: "e3e895a2ce53e464", series_sha256: "ff9cc2f60be1c659a3efe93bcb3be7105b6c1ff84a3d07dd49148aa2c6b1ff20"}
+  rates.us.ief.aud_unhedged.total_return: {spec_version: 0.1.0, build_id: "9c03a1228c882966", series_sha256: "3d99990ed7fdf3e9f0a2b34213d230173f7aaa240e9490993199ad877ab29d22"}
