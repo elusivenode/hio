@@ -65,6 +65,8 @@ ETFS = {
     "IVV.AU": "AUD",
     "BGBL.AU": "AUD",
 }
+# Funds --symbols may name but the evaluation (run, default fetch, loops over ETFS) never touches (OD-0222).
+EXTRA_FUNDS = {"VGB.AU": "AUD", "IGB.AU": "AUD", "AGVT.AU": "AUD"}
 FOREX = "AUDUSD.FOREX"
 EXCHANGES = ("US", "AU")
 WORKSPACE_PARTS = ("raw", "reports", "store", "reference")
@@ -166,7 +168,7 @@ def http_getter(key: str) -> Getter:
 def requests_for(symbols: Sequence[str] | None = None) -> list[tuple[str, str, str]]:
     """Every fund, FOREX and both listings; or, given `symbols`, only those funds and their exchanges."""
     if symbols is not None:
-        unknown = [s for s in symbols if s not in ETFS]
+        unknown = [s for s in symbols if s not in ETFS and s not in EXTRA_FUNDS]
         if unknown or not symbols:
             raise Stop("--symbols must name funds this evaluation covers")
     out = []
