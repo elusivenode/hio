@@ -7,7 +7,7 @@ or picks a release, a build or "the latest". The public surface is exactly four 
     store = ResearchStore(silver_root=..., factor_store=..., gold_root=...)
     view = store.silver(release_id, selection)            # selection by name or id
     series = store.factor_series(factor_id, spec_version, build_id, series_sha256=None)
-    bundle = store.bundle(kind, build_id)                 # `Bundle.table(...)`, `Bundle.decimals(...)`
+    bundle = store.bundle(kind, build_id)                 # `.table(...)`, `.decimals(...)`, `.floats(...)`
     con = store.connect()                                 # an in-memory DuckDB of everything opened
 
 A method whose root was not given refuses (`ValueError`). Every refusal is a `ValueError`.
@@ -15,7 +15,8 @@ A method whose root was not given refuses (`ValueError`). Every refusal is a `Va
 `connect()` registers, in a fresh in-memory database, one table for everything opened so far through
 this store. **Every column is `VARCHAR`**, because every cell in silver and gold is text and nothing is
 rounded: do numeric work with `CAST(col AS DECIMAL(38, 18))` (or `DOUBLE` where a float is acceptable)
-in SQL, or read a column as `Decimal` with `Bundle.decimals`. A column named `return` or `schema`
+in SQL, or read a column as `Decimal` with `Bundle.decimals` (as `float` with `Bundle.floats` for the
+`covariance` and `risk_contribution` kinds, whose cells are float text). A column named `return` or `schema`
 needs double quotes in SQL.
 
 - `silver_<table>`: each table of each opened release, with a leading `release_id` column.

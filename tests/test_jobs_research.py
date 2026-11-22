@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+import statistics
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
@@ -434,6 +436,116 @@ def write_portfolio(root: Path, panel_id: str) -> str:
     return qid
 
 
+ENVIRONMENT = {"numpy": "9.9.9", "python": "3.99"}
+WINDOW = "full"
+RETURNS = (0.010, -0.020)  # the panel's one member, over its two months
+VARIANCE = statistics.variance(RETURNS) * 12  # one member: a 1 x 1 covariance matrix
+VOLATILITY = math.sqrt(VARIANCE)
+
+
+def write_covariance(root: Path, panel_id: str) -> str:
+    """A covariance bundle for the one-member panel, with one `full` window (hand-built rows)."""
+    panel = gold.open_bundle(root, "panel", panel_id)
+    recipe = gold.recipe(
+        "covariance",
+        {"name": "cov", "version": "0.1.0", "sha256": _h("covariance spec")},
+        {"panel": "example", "estimator": "sample", "ddof": 1, "annualisation": 12, "trailing_months": None},
+        [{"role": "panel", "kind": "panel", "id": panel_id, "payload_sha256": panel.payload_sha256}],
+        "0123abc",
+        environment=ENVIRONMENT,
+    )
+    cid = gold.build_id(recipe)
+    tables = {
+        "dim_window": [
+            {
+                "covariance_build_id": cid,
+                "window_id": WINDOW,
+                "window_kind": "full",
+                "first_period_end": "2024-01-03",
+                "last_period_end": "2024-01-04",
+                "n_obs": "2",
+            }
+        ],
+        "fact_covariance": [
+            {
+                "covariance_build_id": cid,
+                "window_id": WINDOW,
+                "member_i": "equity",
+                "member_j": "equity",
+                "covariance": gold.float_text(VARIANCE),
+                "correlation": gold.float_text(1.0),
+            }
+        ],
+        "fact_volatility": [
+            {
+                "covariance_build_id": cid,
+                "window_id": WINDOW,
+                "member_code": "equity",
+                "volatility": gold.float_text(VOLATILITY),
+            }
+        ],
+    }
+    gold.write_bundle(
+        root, recipe, {n: gold.table_bytes("covariance", n, rows) for n, rows in tables.items()}
+    )
+    return cid
+
+
+def write_risk(root: Path, covariance_id: str, portfolio_id: str) -> str:
+    """A risk bundle for the one-member portfolio (weight 1) on the covariance bundle above."""
+    covariance = gold.open_bundle(root, "covariance", covariance_id)
+    portfolio = gold.open_bundle(root, "portfolio_path", portfolio_id)
+    recipe = gold.recipe(
+        "risk_contribution",
+        {"name": "risk", "version": "0.1.0", "sha256": _h("risk spec")},
+        {"portfolio": "mix", "covariance": "cov"},
+        [
+            {
+                "role": "covariance",
+                "kind": "covariance",
+                "id": covariance_id,
+                "payload_sha256": covariance.payload_sha256,
+            },
+            {
+                "role": "portfolio",
+                "kind": "portfolio_path",
+                "id": portfolio_id,
+                "payload_sha256": portfolio.payload_sha256,
+            },
+        ],
+        "0123abc",
+        environment=ENVIRONMENT,
+    )
+    rid = gold.build_id(recipe)
+    tables = {
+        "fact_portfolio_risk": [
+            {
+                "risk_build_id": rid,
+                "window_id": WINDOW,
+                "portfolio_variance": gold.float_text(VARIANCE),
+                "portfolio_volatility": gold.float_text(VOLATILITY),
+                "diversification_ratio": gold.float_text(1.0),
+                "euler_relative_gap": gold.float_text(0.0),
+            }
+        ],
+        "fact_risk_contribution": [
+            {
+                "risk_build_id": rid,
+                "window_id": WINDOW,
+                "member_code": "equity",
+                "weight": gold.float_text(1.0),
+                "marginal_contribution": gold.float_text(VOLATILITY),
+                "component_contribution": gold.float_text(VOLATILITY),
+                "percentage_contribution": gold.float_text(1.0),
+            }
+        ],
+    }
+    gold.write_bundle(
+        root, recipe, {n: gold.table_bytes("risk_contribution", n, rows) for n, rows in tables.items()}
+    )
+    return rid
+
+
 @dataclass
 class World:
     silver_root: Path
@@ -759,7 +871,8 @@ def test_connect_registers_bundles_by_kind_and_table(world):
     assert _tables(con) == {f"panel_{t}" for t in gold.TABLES["panel"]}
     store.bundle("portfolio_path", world.portfolio_id)
     con = store.connect()
-    assert _tables(con) == {f"{k}_{t}" for k in gold.KINDS for t in gold.TABLES[k]}
+    opened = ("panel", "portfolio_path")  # the two kinds this test opens; the float kinds have their own
+    assert _tables(con) == {f"{k}_{t}" for k in opened for t in gold.TABLES[k]}
     assert con.execute('SELECT "return" FROM panel_fact_panel_return ORDER BY period_end').fetchall() == [
         ("0.010",),
         ("-0.020",),
@@ -767,6 +880,56 @@ def test_connect_registers_bundles_by_kind_and_table(world):
     assert con.execute("SELECT wealth_index FROM portfolio_path_fact_portfolio_return").fetchall() == [
         ("1.010",)
     ]
+
+
+def test_covariance_and_risk_bundles_open_read_floats_and_register(world):
+    covariance_id = write_covariance(world.gold_root, world.panel_id)
+    risk_id = write_risk(world.gold_root, covariance_id, world.portfolio_id)
+    store = world.store()
+    covariance = store.bundle("covariance", covariance_id)
+    risk = store.bundle("risk_contribution", risk_id)
+    assert (covariance.kind, risk.kind) == ("covariance", "risk_contribution")
+    assert covariance.recipe["numeric_policy"] == gold.FLOAT_POLICY
+    assert risk.recipe["environment"] == ENVIRONMENT
+    assert [p["id"] for p in risk.recipe["parents"]] == [covariance_id, world.portfolio_id]
+    assert covariance.floats("fact_volatility", "volatility") == [VOLATILITY]  # the written float, exactly
+    assert covariance.floats("fact_covariance", "correlation") == [1.0]
+    assert risk.floats("fact_portfolio_risk", "portfolio_variance") == [VARIANCE]
+    assert risk.floats("fact_risk_contribution", "component_contribution") == [VOLATILITY]
+    with pytest.raises(ValueError, match="no column"):
+        covariance.floats("fact_volatility", "nope")
+    with pytest.raises(ValueError):
+        store.bundle("covariance", risk_id)  # the right id under the wrong kind
+    con = store.connect()
+    wanted = {f"{k}_{t}" for k in ("covariance", "risk_contribution") for t in gold.TABLES[k]}
+    assert _tables(con) == wanted
+    assert _columns(con, "covariance_fact_covariance") == list(gold.TABLES["covariance"]["fact_covariance"])
+    assert con.execute("SELECT window_kind, n_obs FROM covariance_dim_window").fetchall() == [("full", "2")]
+    # every cell is text; a float cell reads back as the float that was written
+    got = con.execute("SELECT volatility FROM covariance_fact_volatility").fetchone()
+    assert got == (repr(VOLATILITY),)
+    assert con.execute(
+        "SELECT CAST(portfolio_volatility AS DOUBLE) FROM risk_contribution_fact_portfolio_risk"
+    ).fetchone() == (VOLATILITY,)
+    joined = con.execute(
+        "SELECT c.member_code FROM risk_contribution_fact_risk_contribution r "
+        "JOIN covariance_fact_volatility c ON c.window_id = r.window_id AND c.member_code = r.member_code"
+    ).fetchall()
+    assert joined == [("equity",)]
+
+
+def test_all_four_kinds_register_together(world):
+    covariance_id = write_covariance(world.gold_root, world.panel_id)
+    risk_id = write_risk(world.gold_root, covariance_id, world.portfolio_id)
+    store = world.store()
+    for kind, build_id in (
+        ("panel", world.panel_id),
+        ("portfolio_path", world.portfolio_id),
+        ("covariance", covariance_id),
+        ("risk_contribution", risk_id),
+    ):
+        store.bundle(kind, build_id)
+    assert _tables(store.connect()) == {f"{k}_{t}" for k in gold.KINDS for t in gold.TABLES[k]}
 
 
 def test_a_join_across_a_series_and_a_bundle(world):
