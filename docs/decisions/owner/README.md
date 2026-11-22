@@ -215,6 +215,7 @@ are in operating model §1.1; the template is
 | [OD-0198](OD-0198-cpi-parser-fix-act-autonomously.md) | authorise_work | Merge PR #124; **CPI release parser fixed** on the real layouts; act autonomously within authorised work, architect when required | `feat/cpi-first-release` | recorded |
 | [OD-0199](OD-0199-orchestrator-concurrency-rules.md) | authorise_work | **Orchestrator rules** in the start-up prompt and PROTOCOL: workers first, maximise concurrency (up to five), never block; new PROTOCOL hash | `feat/cpi-first-release` | recorded |
 | [OD-0200](OD-0200-cpi-state-equivalence-check.md) | authorise_work | **CPI-only state check** for E-0004 F-1: 12 earlier releases (cap 15), first-release series, state comparison; no re-estimation | `feat/e0004-first-release-states` | recorded |
+| [OD-0201](OD-0201-e0004-first-release-deviation.md) | authorise_work | **E-0004 CPI vintage recorded as a deviation**: dated addenda to the preregistration and result, no rerun; remediation claim on F-1; Codex verification to be assigned (A2). No finding closed | `records/e0004-f1-deviation` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
