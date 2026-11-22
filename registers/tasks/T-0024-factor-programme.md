@@ -60,7 +60,7 @@ A1, A2 and A3 have disjoint files and can run at once. A4 follows A1.
 | B1 | A USD overnight cash leg with history: find a source, read its rights, then build `cash.usd.overnight` | a yes for the source and its rights |
 | B2 | A hedge forward from AUD and USD rates lockable at inception, if A3 finds suitable inputs. A compounded overnight leg does not by itself supply one | A3; a yes for any source |
 | B3 | Australian government duration: a feasibility note first (a government-bond fund's total return, stating its sovereign exposure, maturity range, fees and price-versus-NAV convention. E-0001's par-curve approximation failed its bars, so a fund is the smaller route; that does not rule out every curve construction), then a build | **done:** feasibility note (OD-0221), then one fetch and three builds, VGB, IGB and AGVT (OD-0222; `docs/evidence/factors/build-7.md`); exploratory and unaccepted |
-| B4 | A defensive-sleeve report: Australian and US duration against cash, with a 60/40 sensitivity | B1 to B3 |
+| B4 | A defensive-sleeve report: Australian and US duration against cash, with a 60/40 sensitivity | **done under OD-0223 as a five-sleeve comparison,** without B1 and B2 (`docs/evidence/factors/build-8.md`); exploratory and unaccepted |
 
 **Milestone C: later.** Shrinkage against sample covariance on the five sleeves, with fixed estimation windows and judged out of sample only. Credit and gold each need a separate data and exposure case. Not specified here.
 
