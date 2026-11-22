@@ -4,7 +4,7 @@ title: Current status
 status: current
 owner: HIO architecture lead (owner)
 last_reviewed: 2026-11-22
-as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0220"
+as_of_revision: "repository elusivenode/hio, branch main; rewritten under OD-0069 from base eb19ef7; updated under OD-0071 from base 16ea0c6; updated under OD-0072/OD-0073 from base 950cce7; updated under OD-0074 to OD-0221"
 max_length: 150 lines (move history to handoffs; keep this file current-state only)
 ---
 
@@ -89,7 +89,7 @@ One verification is waived: F-REVIEW-2026-11-04-t0022-1-4 (OD-0169). No other fi
 | B-2 | done; see `docs/evidence/b2/`. `rg-hio-probe` destroyed (OD-0155 correction 2) |
 | Plan differences | a full `tofu plan` still shows two, left alone (`docs/evidence/b3/plan-differences.md`) |
 | Deadlines | none open. **2027 RITS/NSW calendars added** (OD-0185); the 2028 ones are owed before 2028-01-01 |
-| Next permissible actions | **Claude:** nothing owed. **Owner:** authorise, or not, the remaining packages of **T-0024** (A1 and A4 done, OD-0219, OD-0220; A2, A3 and Milestone B open) (`proposed`, OD-0218; sequence in `docs/decisions/factor-programme-sequence-proposal.md`, proposed; ChatGPT's guidance in `docs/history/`, advice only). Earlier candidates (in the handoff: Australian equities, a proper USD cash leg, an independent price check, a risk model with shrinkage, a card and roadmap for the factor programme). Lower priority: the architect review (due), distil 3, accept T-0023, the dead-man exercise, C5. See `handoffs/s1b1/2026-11-22-factor-builds-session-roll.md` |
+| Next permissible actions | **Claude:** nothing owed. **Owner:** authorise, or not, the remaining packages of **T-0024** (A1 and A4 done, OD-0219, OD-0220; A2, A3 and Milestone B open; B3's feasibility note written, OD-0221: the fetch is the owner's) (`proposed`, OD-0218; sequence in `docs/decisions/factor-programme-sequence-proposal.md`, proposed; ChatGPT's guidance in `docs/history/`, advice only). Earlier candidates (in the handoff: Australian equities, a proper USD cash leg, an independent price check, a risk model with shrinkage, a card and roadmap for the factor programme). Lower priority: the architect review (due), distil 3, accept T-0023, the dead-man exercise, C5. See `handoffs/s1b1/2026-11-22-factor-builds-session-roll.md` |
 
 ## Branches holding work not on `main`
 
