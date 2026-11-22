@@ -110,7 +110,14 @@ No series is accepted and no spec is adopted. T-0024 is `proposed`. Four design 
 
 ## Next authorised action
 
-**Nothing is authorised.** The next step needs an owner yes. Candidates, in the order Claude would take them:
+**First, an owner instruction for the next session** (given at the close of this one, verbatim): "the remote repo has 241 branches. make a note in the handover that next session I want to delete all branches that have been merged, both locally and remote. we need to keep on top of tidiness".
+
+- **Do this first, and record it in an OD at the time.** Counted at the close with `git fetch --prune`: 240 remote branches, of which 196 are merged into `main`; 39 local branches.
+- **"Merged" means the branch tip is an ancestor of `main`** (`git branch -r --merged origin/main`). Delete those, remote and local, and nothing else.
+- **Do not delete the 44 unmerged remote branches without asking:** 38 `review/*`, 4 `proposal/*`, `phase-b/h6` and one other. `STATUS.md` lists the branches that hold work not on `main`, and reviewer branches are received by tag, not by merge (operating model §6.2). List them for the owner and ask.
+- **Keep it tidy from then on:** merge with `--delete-branch` (as this session did), and delete a local branch once its pull request is merged.
+
+**Beyond that, nothing is authorised.** The next step needs an owner yes. Candidates, in the order Claude would take them:
 
 1. **Milestone C on the marts:** a shrinkage estimator beside the sample covariance, with fixed windows declared first.
 2. **Silver for the other inputs:** the H.10 exchange rate and the RBA cash history, so the translated and cash series build from silver.
@@ -128,4 +135,4 @@ Lower priority, only if the owner raises them: the architect review, accepting T
 | Pushed? PR link | pushed with this commit; PR opened and merged by Claude under OD-0184 |
 | Received into `main`? | yes, once that PR merges |
 | Next actor | Claude (the next orchestrator session), then the owner |
-| Prompt for the next actor | Run the start-of-session sequence (PROTOCOL hash record OD-0199; hiomux OD-0111). Stop if `ab550d8` is not in `main`. Read this handoff, `docs/decisions/silver-v2-contract.md` and `docs/decisions/gold-marts-contract.md`. Then ask the owner one yes/no for the first candidate in "Next authorised action". Records never carry a value from a licensed series |
+| Prompt for the next actor | Run the start-of-session sequence (PROTOCOL hash record OD-0199; hiomux OD-0111). Stop if `ab550d8` is not in `main`. Read this handoff, `docs/decisions/silver-v2-contract.md` and `docs/decisions/gold-marts-contract.md`. Then delete the merged branches, local and remote, as the owner instructed at the close (see "Next authorised action"), and ask the owner one yes/no for the first candidate there. Records never carry a value from a licensed series |
