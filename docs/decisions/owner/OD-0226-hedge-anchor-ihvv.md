@@ -50,3 +50,5 @@ A reading stands as declared. Anything examined after the result is labelled pos
 It authorises no other symbol (the bond side is not anchored), no new source and no acceptance. It does not change the hedged series or lift their diagnostic-only label; that would be a later owner decision.
 
 ## Corrections (append-only)
+
+**1 (2026-11-22, before the IHVV fetch and before any comparison).** Building the unhedged twin from snapshot `s2` showed that the vendor's distribution history for it is wrong before the anchor's span: four records imply a distribution several times a normal one on a day when the price barely moved, and one of them duplicates a normal record a week earlier. A fifth record, in January 2016, is inside the span and is doubtful (larger than normal, with a price move that does not settle it). So the twin's series is **not usable before 2014**, and checks H1 and H2 are reported twice: on all common months, and excluding January 2016. This is declared before any result is seen. The sizes are in the owner's session report, not here.
