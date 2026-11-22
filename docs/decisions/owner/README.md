@@ -225,6 +225,7 @@ are in operating model §1.1; the template is
 | [OD-0208](OD-0208-assign-e0004-verification-3.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-3 assigned** (F-2 only, at `2f1251b3252955aa609a4618e159b254a7083a1e`), by Claude under OD-0184 A2 and OD-0206 | `records/assign-e0004-verify-3` | recorded |
 | [OD-0209](OD-0209-receive-e0004-verification-3.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-3 received** (NOT READY): F-2 open, counts written as words remain in two E-0002 files; an observation for the owner on qualitative readings | `receipt/VERIFY-2026-11-22-e0004-1-3` | recorded |
 | [OD-0210](OD-0210-relocate-eodhd-results.md) | authorise_work | **EODHD-dependent results relocated to a local results store**; public stubs and pointers; one final F-2 verification. Cloud backup is a separate design, not authorised | `fix/f2-word-counts` | recorded |
+| [OD-0211](OD-0211-assign-e0004-verification-4.md) | authorise_work | **VERIFY-2026-11-22-e0004-1-4 assigned** (final, F-2, scoped to the relocation; at `144d39a51ebd17ddf61a0cf329816aae2706ba28`), by Claude under OD-0184 A2 and OD-0210 | `records/assign-e0004-verify-4` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
