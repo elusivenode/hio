@@ -3,14 +3,21 @@
 # non-loopback sockets (tests/conftest.py), and src/ may not import a network client
 # (tools/check_repo.py imports). No step fetches source data.
 name: ci
+# Triggers (OD-0212): once per change. A pull request runs on `pull_request`; `push` runs only where no
+# pull request exists: `main`, a reviewer's branch and a receipt provenance tag. Before this, every push to
+# a pull-request branch ran the workflow twice, and each failure was reported twice.
 on:
   push:
+    branches: [main, "review/**"]
+    tags: ["reviews/**"]
   pull_request:
 permissions:
   contents: read
+# A newer commit on a branch or pull request cancels the older run. Runs on `main` are never cancelled,
+# so every merge commit keeps its own result (OD-0212).
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   harness:
     runs-on: ubuntu-24.04
