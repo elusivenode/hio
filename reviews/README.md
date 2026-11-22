@@ -80,6 +80,7 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
+| VERIFY-2026-11-22-e0004-1-2 | E-0004 Response 2: F-2 current files, PDF dependency, 256-month wording, regression | `f349efeaaf1cd3540e8b206d5f79e511ee1f2410..3528e8e537a7505d4de3af469f9de0a4dcba4183` | Codex, assigned by OD-0204 under OD-0184 A2 | **NOT READY**; F-2 open; PDF remedy and wording verified | [record](records/VERIFY-2026-11-22-e0004-1-2.md) |
 | VERIFY-2026-11-22-e0004-1-1 | E-0004 F-1 and F-2 remediation claims, and regression | `6720c5c34a130db8ae0a6196fa530e10f3888e91..f349efeaaf1cd3540e8b206d5f79e511ee1f2410` | Codex, assigned by OD-0202 under OD-0184 A2 | **NOT READY**; F-1 narrowed/open, F-2 open; one new medium finding; not received | [record](records/VERIFY-2026-11-22-e0004-1-1.md) |
 | REVIEW-2026-11-22-e0004-1 | E-0004 steps 1, 1b, 2 and inputs | `c6886d9e50d034f3a21cb57fa5d736e2a078592c..6720c5c34a130db8ae0a6196fa530e10f3888e91` | Codex, assigned by OD-0192 (under OD-0184 A2) | **NOT READY** | [record](records/REVIEW-2026-11-22-e0004-1.md) |
 | REVIEW-2026-11-22-t0023-1 | T-0023 AUD comparison consolidation, steps 1 to 7 | `db9d7aedb457931a0f264f65c82ad4fdc6b00f4b..4b6472e54aa7a1d989ee78ee49f83d6967a27536` | Codex, assigned by OD-0182 (under OD-0184 A2) | **NOT READY** | [record](records/REVIEW-2026-11-22-t0023-1.md) |
