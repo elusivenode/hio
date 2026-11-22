@@ -65,6 +65,7 @@ A1, A2 and A3 have disjoint files and can run at once. A4 follows A1.
 | — | Local data layers: silver sets, fund builds from silver, a catalogue and a backup | **done under OD-0231** (`docs/evidence/factors/data-layers-1.md`); every fund series rebuilt from silver with identical bytes; a backup beside the repository, on the same disk |
 | — | Dimensional silver, first version (fund path) | **done under OD-0233** (`docs/evidence/factors/silver-dimensional-1.md`); every version 1 file and every fund series reproduced byte for byte |
 | — | Gold-mart foundation: a monthly panel, a portfolio path, a planner and a read API | **done under OD-0233** (`docs/evidence/factors/gold-marts-1.md`); agrees with today's analytics output and with an independent exact recomputation |
+| — | Covariance and risk-contribution marts | **done under OD-0234** (`docs/evidence/factors/gold-marts-2.md`); every figure agrees with today's risk model output within the declared bar |
 
 **Milestone C: later.** Shrinkage against sample covariance on the five sleeves, with fixed estimation windows and judged out of sample only. Credit and gold each need a separate data and exposure case. Not specified here.
 

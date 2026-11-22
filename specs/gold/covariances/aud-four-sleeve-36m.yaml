@@ -1,0 +1,8 @@
+# PROPOSED under OD-0234; approves nothing. Sample covariance of the four AUD sleeves, full sample and trailing 36 months.
+identity: {name: aud-four-sleeve-36m, version: 0.1.0, status: proposed}
+kind: covariance
+panel: aud-four-sleeve
+estimator: sample
+ddof: 1
+annualisation: 12
+trailing_months: 36

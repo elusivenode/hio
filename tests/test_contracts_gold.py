@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
+import math
 import os
 import stat
 from decimal import Decimal
@@ -35,6 +37,21 @@ HEADERS = {
     ),
     ("portfolio_path", "fact_return_contribution"): (
         "portfolio_build_id,member_code,period_start,period_end,start_weight,member_return,contribution"
+    ),
+    ("covariance", "dim_window"): (
+        "covariance_build_id,window_id,window_kind,first_period_end,last_period_end,n_obs"
+    ),
+    ("covariance", "fact_covariance"): (
+        "covariance_build_id,window_id,member_i,member_j,covariance,correlation"
+    ),
+    ("covariance", "fact_volatility"): "covariance_build_id,window_id,member_code,volatility",
+    ("risk_contribution", "fact_portfolio_risk"): (
+        "risk_build_id,window_id,portfolio_variance,portfolio_volatility,diversification_ratio,"
+        "euler_relative_gap"
+    ),
+    ("risk_contribution", "fact_risk_contribution"): (
+        "risk_build_id,window_id,member_code,weight,marginal_contribution,component_contribution,"
+        "percentage_contribution"
     ),
 }
 
@@ -101,6 +118,56 @@ def rewrite_manifest(directory: Path, mutate) -> None:
     path.write_bytes(gold.manifest_bytes(body))
 
 
+def portfolio_recipe() -> dict[str, Any]:
+    return gold.recipe(
+        "portfolio_path",
+        SPEC,
+        {"panel": "example", "rebalance": "month_end", "weights": {"equity": "0.60", "bonds": "0.40"}},
+        [{"role": "panel", "kind": "panel", "id": sha(b"p"), "payload_sha256": sha(b"q")}],
+        "c0ffee",
+    )
+
+
+def portfolio_tables() -> dict[str, bytes]:
+    return {
+        t: gold.table_bytes("portfolio_path", t, invented_rows("portfolio_path", t))
+        for t in gold.TABLES["portfolio_path"]
+    }
+
+
+# Computed from the module before OD-0234 touched it. Adding the float kinds must not move a
+# single byte of a panel or portfolio_path bundle: these literals are the proof.
+PINNED_IDENTITIES = {
+    "panel": (
+        "960f633ed5d55042e4e12d54af8ba8681597c9d73fb2638382571c55ceec2230",  # build_id
+        "9472e767a140ee9d1938497c95c07d1940d09404777af110a8df5413dbbad000",  # payload_sha256
+        "2244c384f3e26cf4d09930cd408a64bdd9d4d6f8b9bbcf65cff1051b24effac3",  # sha256 of manifest.json
+    ),
+    "portfolio_path": (
+        "779a5b386ea46832dd1cfb8be6e8dedd56006ecf44aa34990838b90070ea727c",
+        "47974ff2fe4af1758eb17c0987761679f8511da8f9fbb4be8a8f1cc7e56a7328",
+        "76b7143bcb98cc601f317addaf0e282ceb1fcfa7433b52b8bea93a1991c1df2b",
+    ),
+}
+
+
+@pytest.mark.parametrize("kind", ["panel", "portfolio_path"])
+def test_existing_kinds_keep_their_pinned_identities(kind, tmp_path):
+    r, tables = (
+        (panel_recipe(), panel_tables()) if kind == "panel" else (portfolio_recipe(), portfolio_tables())
+    )
+    assert "environment" not in r
+    assert r["numeric_policy"] == "decimal-50/1"
+    built = gold.manifest(r, tables)
+    pinned_build, pinned_payload, pinned_manifest = PINNED_IDENTITIES[kind]
+    assert built["build_id"] == gold.build_id(r) == pinned_build
+    assert built["payload_sha256"] == pinned_payload
+    assert sha(gold.manifest_bytes(built)) == pinned_manifest
+    directory, _ = gold.write_bundle(tmp_path / "gold", r, tables)
+    assert directory.name == pinned_build
+    assert sha((directory / "manifest.json").read_bytes()) == pinned_manifest
+
+
 # --------------------------------------------------------------------------------------
 # Constants and tables
 # --------------------------------------------------------------------------------------
@@ -110,8 +177,11 @@ def test_constants():
     assert gold.SCHEMA == "hio.gold/1"
     assert gold.NUMERIC_POLICY == "decimal-50/1"
     assert gold.CTX.prec == 50
-    assert gold.KINDS == ("panel", "portfolio_path")
-    assert list(gold.TABLES) == ["panel", "portfolio_path"]
+    # OD-0234 appends the two float kinds; the first two are as they were.
+    assert gold.KINDS == ("panel", "portfolio_path", "covariance", "risk_contribution")
+    assert list(gold.TABLES) == ["panel", "portfolio_path", "covariance", "risk_contribution"]
+    assert gold.FLOAT_POLICY == "float64/1"
+    assert gold.FLOAT_KINDS == ("covariance", "risk_contribution")
 
 
 @pytest.mark.parametrize(("kind", "table"), list(HEADERS))
@@ -139,6 +209,15 @@ def test_sorts_are_the_contract_sorts():
             "fact_target_allocation": ("member_code",),
             "fact_portfolio_return": ("period_end",),
             "fact_return_contribution": ("member_code", "period_end"),
+        },
+        "covariance": {
+            "dim_window": ("window_kind", "last_period_end"),
+            "fact_covariance": ("window_id", "member_i", "member_j"),
+            "fact_volatility": ("window_id", "member_code"),
+        },
+        "risk_contribution": {
+            "fact_portfolio_risk": ("window_id",),
+            "fact_risk_contribution": ("window_id", "member_code"),
         },
     }
 
@@ -238,6 +317,11 @@ def test_sort_text_not_numeric_and_ties_by_whole_row():
         ("portfolio_path", "fact_target_allocation", ("member_code",)),
         ("portfolio_path", "fact_portfolio_return", ("period_end",)),
         ("portfolio_path", "fact_return_contribution", ("member_code", "period_end")),
+        ("covariance", "dim_window", ("window_kind", "last_period_end")),
+        ("covariance", "fact_covariance", ("window_id", "member_i", "member_j")),
+        ("covariance", "fact_volatility", ("window_id", "member_code")),
+        ("risk_contribution", "fact_portfolio_risk", ("window_id",)),
+        ("risk_contribution", "fact_risk_contribution", ("window_id", "member_code")),
     ],
 )
 def test_each_table_sorts_by_its_contract_columns(kind, table, keys):
@@ -1182,3 +1266,731 @@ def test_real_portfolio_spec_loads_and_names_the_panel_members():
         "us_bonds_unhedged": "0.20",
     }
     assert set(portfolio["weights"]) == set(panel["members"])
+
+
+# --------------------------------------------------------------------------------------
+# The float kinds (§6a, OD-0234)
+# --------------------------------------------------------------------------------------
+
+ENV = {"numpy": "2.1.0", "python": "3.13"}
+COV_PARAMETERS = {
+    "panel": "example",
+    "estimator": "sample",
+    "ddof": 1,
+    "annualisation": 12,
+    "trailing_months": 36,
+}
+RISK_PARAMETERS = {"portfolio": "mix", "covariance": "cov"}
+PANEL_PARENT = {"role": "panel", "kind": "panel", "id": sha(b"panel"), "payload_sha256": sha(b"panel!")}
+COV_PARENT = {
+    "role": "covariance",
+    "kind": "covariance",
+    "id": sha(b"cov"),
+    "payload_sha256": sha(b"cov!"),
+}
+PORTFOLIO_PARENT = {
+    "role": "portfolio",
+    "kind": "portfolio_path",
+    "id": sha(b"pf"),
+    "payload_sha256": sha(b"pf!"),
+}
+
+
+def cov_recipe(**over: Any) -> dict[str, Any]:
+    args: dict[str, Any] = {
+        "kind": "covariance",
+        "spec": SPEC,
+        "parameters": COV_PARAMETERS,
+        "parents": [PANEL_PARENT],
+        "code_commit": "c0ffee",
+        "environment": ENV,
+    }
+    args.update(over)
+    return gold.recipe(
+        args["kind"],
+        args["spec"],
+        args["parameters"],
+        args["parents"],
+        args["code_commit"],
+        environment=args["environment"],
+    )
+
+
+def risk_recipe(**over: Any) -> dict[str, Any]:
+    args: dict[str, Any] = {
+        "kind": "risk_contribution",
+        "spec": SPEC,
+        "parameters": RISK_PARAMETERS,
+        "parents": [PORTFOLIO_PARENT, COV_PARENT],
+        "code_commit": "c0ffee",
+        "environment": ENV,
+    }
+    args.update(over)
+    return cov_recipe(**args)
+
+
+def test_new_tables_are_the_contract_tables_in_order():
+    assert list(gold.TABLES["covariance"]) == ["dim_window", "fact_covariance", "fact_volatility"]
+    assert list(gold.TABLES["risk_contribution"]) == ["fact_portfolio_risk", "fact_risk_contribution"]
+
+
+def test_dim_window_sorts_by_window_kind_then_last_period_end_as_text():
+    rows = [
+        row("covariance", "dim_window", window_id="trailing:2024-03-31", window_kind="trailing",
+            last_period_end="2024-03-31"),
+        row("covariance", "dim_window", window_id="trailing:2024-02-29", window_kind="trailing",
+            last_period_end="2024-02-29"),
+        row("covariance", "dim_window", window_id="full", window_kind="full", last_period_end="2024-12-31"),
+    ]  # fmt: skip
+    out = gold.parse_table("covariance", "dim_window", gold.table_bytes("covariance", "dim_window", rows))
+    assert [(r["window_kind"], r["last_period_end"]) for r in out] == [
+        ("full", "2024-12-31"),
+        ("trailing", "2024-02-29"),
+        ("trailing", "2024-03-31"),
+    ]
+
+
+def test_fact_covariance_sorts_every_ordered_pair_by_window_then_members():
+    cells = [("w2", "b", "a"), ("w1", "b", "b"), ("w1", "a", "b"), ("w1", "b", "a"), ("w1", "a", "a")]
+    rows = [row("covariance", "fact_covariance", window_id=w, member_i=i, member_j=j) for w, i, j in cells]
+    out = gold.parse_table(
+        "covariance", "fact_covariance", gold.table_bytes("covariance", "fact_covariance", rows)
+    )
+    assert [(r["window_id"], r["member_i"], r["member_j"]) for r in out] == sorted(cells)
+
+
+def test_risk_tables_sort_by_window_then_member():
+    rows = [
+        row("risk_contribution", "fact_risk_contribution", window_id=w, member_code=m)
+        for w, m in [("w2", "a"), ("w1", "b"), ("w1", "a")]
+    ]
+    out = gold.parse_table(
+        "risk_contribution",
+        "fact_risk_contribution",
+        gold.table_bytes("risk_contribution", "fact_risk_contribution", rows),
+    )
+    assert [(r["window_id"], r["member_code"]) for r in out] == [("w1", "a"), ("w1", "b"), ("w2", "a")]
+    risk_rows = [row("risk_contribution", "fact_portfolio_risk", window_id=w) for w in ("w2", "w10", "w1")]
+    out = gold.parse_table(
+        "risk_contribution",
+        "fact_portfolio_risk",
+        gold.table_bytes("risk_contribution", "fact_portfolio_risk", risk_rows),
+    )
+    assert [r["window_id"] for r in out] == ["w1", "w10", "w2"]  # text order
+
+
+def test_contracts_gold_does_not_import_numpy():
+    tree = ast.parse((ROOT / "src" / "hio" / "contracts" / "gold.py").read_text())
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported.add(node.module.split(".")[0])
+    assert "numpy" not in imported
+    assert imported - {"hio"} <= {
+        "__future__", "csv", "io", "json", "math", "os", "re", "shutil", "tempfile",
+        "collections", "dataclasses", "decimal", "fractions", "pathlib", "typing", "yaml",
+    }  # fmt: skip
+
+
+# float_text ----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        0.1, 1e-17, 1 / 3, 2 / 3, 1e300, 5e-324, 1.7976931348623157e308,
+        -0.0, 0.0, 1.0, -2.5, 123456789.123456789, 0.30000000000000004,
+    ],
+)  # fmt: skip
+def test_float_text_round_trips_exactly(value):
+    text = gold.float_text(value)
+    assert text == repr(value)
+    back = float(text)
+    assert back == value
+    assert math.copysign(1.0, back) == math.copysign(1.0, value)
+
+
+def test_float_text_exact_texts():
+    assert gold.float_text(0.1) == "0.1"
+    assert gold.float_text(1e-17) == "1e-17"
+    assert gold.float_text(1.0) == "1.0"
+    assert gold.float_text(0.1 + 0.2) == "0.30000000000000004"
+
+
+def test_float_text_writes_a_numpy_float_as_a_plain_float():
+    import numpy as np
+
+    assert gold.float_text(np.float64(0.1)) == "0.1"
+    assert gold.float_text(float(np.float64(1) / np.float64(3))) == repr(1 / 3)
+
+
+def test_float_text_refuses_non_finite_and_non_float():
+    for bad in (math.nan, math.inf, -math.inf):
+        with pytest.raises(ValueError, match="non-finite"):
+            gold.float_text(bad)
+    for wrong in (1, True, "0.1", Decimal("0.1"), None, [0.1]):
+        with pytest.raises(TypeError, match="not a float"):
+            gold.float_text(wrong)  # type: ignore[arg-type]
+
+
+# recipe: environment, policy, parameters, parents -------------------------------------------
+
+
+def test_float_recipes_have_environment_and_float_policy():
+    r = cov_recipe()
+    assert r == {
+        "schema": "hio.gold/1",
+        "kind": "covariance",
+        "spec": SPEC,
+        "parameters": COV_PARAMETERS,
+        "parents": [PANEL_PARENT],
+        "numeric_policy": "float64/1",
+        "code_commit": "c0ffee",
+        "environment": ENV,
+    }
+    assert gold.build_id(r) == sha(cj(r))
+    k = risk_recipe()
+    assert k["kind"] == "risk_contribution"
+    assert k["numeric_policy"] == "float64/1"
+    assert k["environment"] == ENV
+    assert k["parents"] == [COV_PARENT, PORTFOLIO_PARENT]  # sorted by role
+    assert k["parameters"] == RISK_PARAMETERS
+
+
+def test_a_different_environment_is_a_different_build():
+    base = gold.build_id(cov_recipe())
+    assert gold.build_id(cov_recipe(environment={**ENV, "numpy": "2.2.0"})) != base
+    assert gold.build_id(cov_recipe(environment={**ENV, "python": "3.12"})) != base
+    assert gold.build_id(cov_recipe(environment=dict(ENV))) == base
+
+
+def test_recipe_does_not_alias_its_environment():
+    env = dict(ENV)
+    r = cov_recipe(environment=env)
+    env["numpy"] = "changed"
+    assert r["environment"] == ENV
+
+
+def test_environment_is_required_for_a_float_kind():
+    with pytest.raises(ValueError, match="requires an environment"):
+        cov_recipe(environment=None)
+    with pytest.raises(ValueError, match="requires an environment"):
+        risk_recipe(environment=None)
+
+
+@pytest.mark.parametrize("kind", ["panel", "portfolio_path"])
+def test_environment_is_refused_for_a_decimal_kind(kind):
+    if kind == "panel":
+        args = (SPEC, PANEL_PARAMETERS, [factor_parent("equity", "some.equity")])
+    else:
+        args = (SPEC, json.loads(json.dumps(portfolio_recipe()["parameters"])), [PANEL_PARENT])
+    with pytest.raises(ValueError, match="takes no environment"):
+        gold.recipe(kind, *args, "x", environment=ENV)
+    with pytest.raises(ValueError, match="takes no environment"):
+        gold.recipe(kind, *args, "x", environment={})
+    assert "environment" not in gold.recipe(kind, *args, "x")
+    assert "environment" not in gold.recipe(kind, *args, "x", environment=None)
+
+
+@pytest.mark.parametrize(
+    "environment",
+    [
+        {},
+        {"numpy": "2.1.0"},
+        {"python": "3.13"},
+        {**ENV, "extra": "x"},
+        {"numpy": "2.1.0", "Python": "3.13"},
+        {"numpy": "", "python": "3.13"},
+        {"numpy": "2.1.0", "python": ""},
+        {"numpy": 2, "python": "3.13"},
+        {"numpy": "2.1.0", "python": 3.13},
+        {"numpy": None, "python": "3.13"},
+        ["numpy", "python"],
+        "numpy",
+    ],
+)
+def test_environment_must_be_exactly_numpy_and_python_text(environment):
+    with pytest.raises(ValueError, match="environment"):
+        cov_recipe(environment=environment)
+
+
+def test_environment_rule_holds_in_verify_bundle_in_both_directions(tmp_path):
+    root = tmp_path / "gold"
+    directory = write_cov_bundle(root)
+    original = (directory / "manifest.json").read_bytes()
+
+    def restore() -> None:
+        (directory / "manifest.json").write_bytes(original)
+
+    rewrite_manifest(directory, lambda m: m["recipe"].pop("environment"))
+    with pytest.raises(ValueError, match="environment"):
+        gold.verify_bundle(directory)
+    restore()
+    rewrite_manifest(directory, lambda m: m["recipe"]["environment"].update(extra="x"))
+    with pytest.raises(ValueError, match="environment"):
+        gold.verify_bundle(directory)
+    restore()
+    rewrite_manifest(directory, lambda m: m["recipe"].update(numeric_policy="decimal-50/1"))
+    with pytest.raises(ValueError, match="numeric_policy is not float64/1"):
+        gold.verify_bundle(directory)
+    restore()
+    rewrite_manifest(directory, lambda m: m["recipe"]["environment"].update(numpy=""))
+    with pytest.raises(ValueError, match="environment"):
+        gold.verify_bundle(directory)
+    restore()
+    assert gold.verify_bundle(directory)["recipe"]["environment"] == ENV
+
+    panel_dir = write_panel(root)
+    rewrite_manifest(panel_dir, lambda m: m["recipe"].update(environment=ENV))
+    with pytest.raises(ValueError, match="exactly the keys"):
+        gold.verify_bundle(panel_dir)
+    rewrite_manifest(panel_dir, lambda m: m["recipe"].pop("environment"))
+    rewrite_manifest(panel_dir, lambda m: m["recipe"].update(numeric_policy="float64/1"))
+    with pytest.raises(ValueError, match="numeric_policy is not decimal-50/1"):
+        gold.verify_bundle(panel_dir)
+
+
+@pytest.mark.parametrize(
+    ("override", "match"),
+    [
+        ({"panel": ""}, "panel"),
+        ({"panel": 5}, "panel"),
+        ({"estimator": ""}, "estimator"),
+        ({"ddof": True}, "ddof must be an integer"),
+        ({"ddof": 1.0}, "ddof must be an integer"),
+        ({"ddof": "1"}, "ddof must be an integer"),
+        ({"annualisation": True}, "annualisation must be an integer"),
+        ({"annualisation": None}, "annualisation must be an integer"),
+        ({"trailing_months": 1}, "at least 2"),
+        ({"trailing_months": 0}, "at least 2"),
+        ({"trailing_months": True}, "at least 2"),
+        ({"trailing_months": 2.0}, "at least 2"),
+        ({"trailing_months": "36"}, "at least 2"),
+    ],
+)
+def test_covariance_parameter_refusals(override, match):
+    with pytest.raises(ValueError, match=match):
+        cov_recipe(parameters={**COV_PARAMETERS, **override})
+
+
+def test_covariance_parameters_have_exactly_the_contract_keys_and_allow_null_window():
+    for bad in (
+        {k: v for k, v in COV_PARAMETERS.items() if k != "ddof"},
+        {**COV_PARAMETERS, "extra": 1},
+        {"panel": "example"},
+    ):
+        with pytest.raises(ValueError, match="covariance parameters"):
+            cov_recipe(parameters=bad)
+    for good in (None, 2, 36):
+        r = cov_recipe(parameters={**COV_PARAMETERS, "trailing_months": good})
+        assert r["parameters"]["trailing_months"] == good
+    assert gold.build_id(cov_recipe(parameters={**COV_PARAMETERS, "trailing_months": None})) != gold.build_id(
+        cov_recipe()
+    )
+
+
+def test_risk_parameters_refusals():
+    for bad in (
+        {"portfolio": "mix"},
+        {**RISK_PARAMETERS, "extra": "x"},
+    ):
+        with pytest.raises(ValueError, match="risk_contribution parameters"):
+            risk_recipe(parameters=bad)
+    for key in RISK_PARAMETERS:
+        with pytest.raises(ValueError, match=key):
+            risk_recipe(parameters={**RISK_PARAMETERS, key: ""})
+        with pytest.raises(ValueError, match=key):
+            risk_recipe(parameters={**RISK_PARAMETERS, key: 1})
+
+
+def test_covariance_parent_rules():
+    assert cov_recipe()["parents"] == [PANEL_PARENT]
+    with pytest.raises(ValueError, match="covariance parents"):
+        cov_recipe(parents=[])
+    with pytest.raises(ValueError, match="covariance parents"):
+        cov_recipe(parents=[PANEL_PARENT, {**PORTFOLIO_PARENT, "role": "portfolio"}])
+    with pytest.raises(ValueError, match="covariance parents"):
+        cov_recipe(parents=[{**PANEL_PARENT, "role": "equity"}])  # wrong role
+    with pytest.raises(ValueError, match="covariance parents"):
+        cov_recipe(parents=[{**PANEL_PARENT, "kind": "portfolio_path"}])  # wrong kind
+    with pytest.raises(ValueError, match="covariance parents"):
+        cov_recipe(parents=[{**PANEL_PARENT, "kind": "covariance"}])
+    with pytest.raises(ValueError, match="parent"):  # a factor series is not a bundle parent
+        cov_recipe(parents=[factor_parent("panel", "some.equity")])
+    with pytest.raises(ValueError, match="repeat"):
+        cov_recipe(parents=[PANEL_PARENT, PANEL_PARENT])
+
+
+def test_risk_parent_rules():
+    assert risk_recipe(parents=[COV_PARENT, PORTFOLIO_PARENT])["parents"] == [COV_PARENT, PORTFOLIO_PARENT]
+    for parents in (
+        [],
+        [COV_PARENT],
+        [PORTFOLIO_PARENT],
+        [COV_PARENT, PORTFOLIO_PARENT, PANEL_PARENT],
+        [COV_PARENT, {**PORTFOLIO_PARENT, "kind": "panel"}],
+        [{**COV_PARENT, "kind": "panel"}, PORTFOLIO_PARENT],
+        [COV_PARENT, {**PORTFOLIO_PARENT, "role": "panel"}],
+        [{**COV_PARENT, "role": "cov"}, PORTFOLIO_PARENT],
+        [{**COV_PARENT, "role": "portfolio"}, {**PORTFOLIO_PARENT, "role": "covariance"}],
+    ):
+        with pytest.raises(ValueError, match=r"(risk_contribution parents|repeat)"):
+            risk_recipe(parents=parents)
+    with pytest.raises(ValueError, match="parent"):
+        risk_recipe(parents=[COV_PARENT, factor_parent("portfolio", "some.equity")])
+
+
+def test_decimal_kinds_keep_their_parent_freedom():
+    # §6a adds parent rules for the float kinds only: a panel may still have any number of members.
+    parents = [factor_parent(c, f"some.{c}") for c in ("a", "b", "c")]
+    assert len(gold.recipe("panel", SPEC, PANEL_PARAMETERS, parents, "x")["parents"]) == 3
+
+
+# bundles -----------------------------------------------------------------------------------
+
+MEMBERS = ("bonds", "equity")
+WINDOWS = (
+    ("full", "full", "2023-01-31", "2024-12-31", "24"),
+    ("trailing:2024-11-30", "trailing", "2023-12-31", "2024-11-30", "12"),
+    ("trailing:2024-12-31", "trailing", "2024-01-31", "2024-12-31", "12"),
+)
+COV_VALUES = {
+    ("bonds", "bonds"): 0.1,
+    ("bonds", "equity"): 1 / 3,
+    ("equity", "bonds"): 1 / 3,
+    ("equity", "equity"): 1e-17,
+}
+
+
+def cov_tables(bid: str) -> dict[str, bytes]:
+    dim = [
+        row("covariance", "dim_window", covariance_build_id=bid, window_id=w, window_kind=k,
+            first_period_end=first, last_period_end=last, n_obs=n)
+        for w, k, first, last, n in reversed(WINDOWS)
+    ]  # fmt: skip
+    fact = [
+        row("covariance", "fact_covariance", covariance_build_id=bid, window_id=w, member_i=i, member_j=j,
+            covariance=gold.float_text(v), correlation=gold.float_text(v * 2))
+        for w, *_ in WINDOWS
+        for (i, j), v in COV_VALUES.items()
+    ]  # fmt: skip
+    vol = [
+        row("covariance", "fact_volatility", covariance_build_id=bid, window_id=w, member_code=m,
+            volatility=gold.float_text(0.1 * (n + 1)))
+        for w, *_ in WINDOWS
+        for n, m in enumerate(MEMBERS)
+    ]  # fmt: skip
+    return {
+        "dim_window": gold.table_bytes("covariance", "dim_window", dim),
+        "fact_covariance": gold.table_bytes("covariance", "fact_covariance", fact),
+        "fact_volatility": gold.table_bytes("covariance", "fact_volatility", vol),
+    }
+
+
+def write_cov_bundle(root: Path) -> Path:
+    r = cov_recipe()
+    directory, existed = gold.write_bundle(root, r, cov_tables(gold.build_id(r)))
+    assert existed is False
+    return directory
+
+
+def test_covariance_bundle_is_written_verified_and_reopened_with_floats(tmp_path):
+    root = tmp_path / "gold"
+    directory = write_cov_bundle(root)
+    r = cov_recipe()
+    bid = sha(cj(r))
+    assert directory == root / "covariance" / bid
+    assert sorted(p.name for p in (directory / "tables").iterdir()) == [
+        "dim_window.csv",
+        "fact_covariance.csv",
+        "fact_volatility.csv",
+    ]
+    m = gold.verify_bundle(directory)
+    assert m["recipe"] == r
+    assert [e["name"] for e in m["tables"]] == ["dim_window", "fact_covariance", "fact_volatility"]
+    assert [e["rows"] for e in m["tables"]] == [3, 12, 6]
+    bundle = gold.open_bundle(root, "covariance", bid)
+    assert bundle.kind == "covariance"
+    assert bundle.recipe["environment"] == ENV
+    assert bundle.recipe["numeric_policy"] == "float64/1"
+    # Window rows come back full first, then the trailing windows by last_period_end.
+    assert [r_["window_id"] for r_ in bundle.table("dim_window")] == [w[0] for w in WINDOWS]
+    covariances = bundle.floats("fact_covariance", "covariance")
+    assert len(covariances) == 12
+    assert all(isinstance(v, float) for v in covariances)
+    first_window = [COV_VALUES[k] for k in sorted(COV_VALUES)]
+    assert covariances[:4] == first_window  # exact: repr text reads back to the same float
+    assert bundle.floats("fact_covariance", "correlation")[:4] == [v * 2 for v in first_window]
+    assert bundle.floats("fact_volatility", "volatility")[:2] == [0.1, 0.2]
+    assert bundle.floats("dim_window", "n_obs") == [24.0, 12.0, 12.0]
+    # An identical rewrite is "already there"; the same recipe gives the same bytes in two roots.
+    again, existed = gold.write_bundle(root, r, cov_tables(bid))
+    assert (again, existed) == (directory, True)
+    other = write_cov_bundle(tmp_path / "other")
+    files = lambda d: {p.relative_to(d).as_posix(): p.read_bytes() for p in d.rglob("*") if p.is_file()}  # noqa: E731
+    assert files(other) == files(directory)
+
+
+def test_covariance_bundle_files_modes_and_tamper_checks(tmp_path):
+    directory = write_cov_bundle(tmp_path / "gold")
+    for path in (directory, directory / "tables", directory.parent):
+        assert stat.S_IMODE(path.stat().st_mode) == 0o700
+    for path in directory.rglob("*.csv"):
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    csv_path = directory / "tables" / "fact_volatility.csv"
+    csv_path.write_bytes(csv_path.read_bytes() + b"x\n")
+    with pytest.raises(ValueError, match="file sha256 differs"):
+        gold.verify_bundle(directory)
+
+
+def test_covariance_bundle_refuses_the_wrong_tables():
+    r = cov_recipe()
+    tables = cov_tables(gold.build_id(r))
+    with pytest.raises(ValueError, match="missing covariance tables"):
+        gold.manifest(r, {k: v for k, v in tables.items() if k != "fact_volatility"})
+    with pytest.raises(ValueError, match="unknown covariance tables"):
+        gold.manifest(r, {**tables, "fact_portfolio_risk": b""})
+    with pytest.raises(ValueError, match="header"):
+        gold.manifest(r, {**tables, "dim_window": b"a,b\n"})
+
+
+def test_risk_bundle_is_written_verified_and_reopened_with_floats(tmp_path):
+    root = tmp_path / "gold"
+    r = risk_recipe()
+    bid = gold.build_id(r)
+    risk = [
+        row("risk_contribution", "fact_portfolio_risk", risk_build_id=bid, window_id=w,
+            portfolio_variance=gold.float_text(0.0123), portfolio_volatility=gold.float_text(0.0123**0.5),
+            diversification_ratio=gold.float_text(1.25), euler_relative_gap=gold.float_text(1e-17))
+        for w in ("w2", "w1")
+    ]  # fmt: skip
+    contributions = [
+        row("risk_contribution", "fact_risk_contribution", risk_build_id=bid, window_id=w, member_code=m,
+            weight=gold.float_text(0.5), marginal_contribution=gold.float_text(1 / 3),
+            component_contribution=gold.float_text(1 / 6), percentage_contribution=gold.float_text(0.5))
+        for w in ("w1", "w2")
+        for m in MEMBERS
+    ]  # fmt: skip
+    tables = {
+        "fact_portfolio_risk": gold.table_bytes("risk_contribution", "fact_portfolio_risk", risk),
+        "fact_risk_contribution": gold.table_bytes(
+            "risk_contribution", "fact_risk_contribution", contributions
+        ),
+    }
+    directory, existed = gold.write_bundle(root, r, tables)
+    assert existed is False
+    assert directory == root / "risk_contribution" / sha(cj(r))
+    assert gold.verify_bundle(directory)["recipe"] == r
+    bundle = gold.open_bundle(root, "risk_contribution", bid)
+    assert [x["window_id"] for x in bundle.table("fact_portfolio_risk")] == ["w1", "w2"]
+    assert bundle.floats("fact_portfolio_risk", "euler_relative_gap") == [1e-17, 1e-17]
+    assert bundle.floats("fact_portfolio_risk", "portfolio_volatility") == [0.0123**0.5] * 2
+    assert bundle.floats("fact_risk_contribution", "marginal_contribution") == [1 / 3] * 4
+    assert bundle.recipe["parents"] == [COV_PARENT, PORTFOLIO_PARENT]
+
+
+def float_cell_bundle(root: Path, cells: list[str]) -> gold.Bundle:
+    r = cov_recipe()
+    bid = gold.build_id(r)
+    tables = cov_tables(bid)
+    rows = [
+        row("covariance", "fact_volatility", covariance_build_id=bid, window_id="full", member_code=f"m{n}",
+            volatility=cell)
+        for n, cell in enumerate(cells)
+    ]  # fmt: skip
+    tables["fact_volatility"] = gold.table_bytes("covariance", "fact_volatility", rows)
+    gold.write_bundle(root, r, tables)
+    return gold.open_bundle(root, "covariance", bid)
+
+
+def test_floats_refuses_empty_non_number_non_finite_and_unknown_column(tmp_path):
+    with pytest.raises(ValueError, match="is empty"):
+        float_cell_bundle(tmp_path / "a", ["0.1", ""]).floats("fact_volatility", "volatility")
+    with pytest.raises(ValueError, match="not a float"):
+        float_cell_bundle(tmp_path / "b", ["abc"]).floats("fact_volatility", "volatility")
+    for cell in ("nan", "inf", "-inf", "Infinity"):
+        with pytest.raises(ValueError, match="not finite"):
+            float_cell_bundle(tmp_path / f"c{cell}", [cell]).floats("fact_volatility", "volatility")
+    bundle = float_cell_bundle(tmp_path / "d", ["0.1", "1e-17"])
+    assert bundle.floats("fact_volatility", "volatility") == [0.1, 1e-17]
+    with pytest.raises(ValueError, match="no column"):
+        bundle.floats("fact_volatility", "nope")
+    with pytest.raises(ValueError, match="unknown covariance table"):
+        bundle.floats("fact_portfolio_risk", "window_id")
+
+
+def test_floats_reads_the_file_checked_against_the_manifest(tmp_path):
+    bundle = float_cell_bundle(tmp_path / "gold", ["0.1"])
+    path = bundle.directory / "tables" / "fact_volatility.csv"
+    path.write_bytes(path.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="file sha256 differs"):
+        bundle.floats("fact_volatility", "volatility")
+
+
+# spec readers ------------------------------------------------------------------------------
+
+COV_TEXT = """\
+identity: {name: cov, version: 0.1.0, status: proposed}
+kind: covariance
+panel: example
+estimator: sample
+ddof: 1
+annualisation: 12
+trailing_months: 36
+"""
+
+RISK_TEXT = """\
+identity: {name: risk, version: 0.1.0, status: proposed}
+kind: risk_contribution
+portfolio: mix
+covariance: cov
+"""
+
+
+def test_read_covariance_spec_valid(tmp_path):
+    spec = gold.read_covariance_spec(write(tmp_path, COV_TEXT))
+    assert spec == {
+        "name": "cov",
+        "version": "0.1.0",
+        "status": "proposed",
+        "kind": "covariance",
+        "panel": "example",
+        "estimator": "sample",
+        "ddof": 1,
+        "annualisation": 12,
+        "trailing_months": 36,
+        "sha256": sha(COV_TEXT.encode()),
+    }
+    # The fields feed a recipe directly.
+    params = {k: spec[k] for k in ("panel", "estimator", "ddof", "annualisation", "trailing_months")}
+    r = gold.recipe(
+        "covariance", {k: spec[k] for k in ("name", "version", "sha256")}, params, [PANEL_PARENT], "c",
+        environment=ENV,
+    )  # fmt: skip
+    assert r["parameters"] == params
+
+
+@pytest.mark.parametrize("value", ["null", "~", "2", "3", "120"])
+def test_read_covariance_spec_trailing_months_null_or_at_least_two(tmp_path, value):
+    spec = gold.read_covariance_spec(
+        write(tmp_path, COV_TEXT.replace("trailing_months: 36", f"trailing_months: {value}"))
+    )
+    assert spec["trailing_months"] == (None if value in ("null", "~") else int(value))
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "match"),
+    [
+        ("kind: covariance", "kind: panel", "kind"),
+        ("kind: covariance\n", "", "exactly the keys"),
+        ("kind: covariance\n", "kind: covariance\nextra: 1\n", "exactly the keys"),
+        ("trailing_months: 36\n", "", "exactly the keys"),
+        ("panel: example", "panel: ''", "panel"),
+        ("panel: example", "panel: 5", "panel"),
+        ("estimator: sample", "estimator: shrunk", "estimator"),
+        ("ddof: 1", "ddof: 0", "ddof"),
+        ("ddof: 1", "ddof: true", "ddof"),
+        ("ddof: 1", "ddof: 1.0", "ddof"),
+        ("ddof: 1", 'ddof: "1"', "ddof"),
+        ("annualisation: 12", "annualisation: 252", "annualisation"),
+        ("annualisation: 12", "annualisation: 12.0", "annualisation"),
+        ("annualisation: 12", "annualisation: true", "annualisation"),
+        ("trailing_months: 36", "trailing_months: 1", "at least 2"),
+        ("trailing_months: 36", "trailing_months: 0", "at least 2"),
+        ("trailing_months: 36", "trailing_months: -6", "at least 2"),
+        ("trailing_months: 36", "trailing_months: true", "at least 2"),
+        ("trailing_months: 36", "trailing_months: false", "at least 2"),
+        ("trailing_months: 36", "trailing_months: 36.0", "at least 2"),
+        ("trailing_months: 36", 'trailing_months: "36"', "at least 2"),
+        ("trailing_months: 36", "trailing_months: ''", "at least 2"),
+        ("status: proposed", "status: ''", "status"),
+        ("{name: cov, version: 0.1.0, status: proposed}", "{name: cov, version: 0.1.0}", "identity"),
+    ],
+)
+def test_read_covariance_spec_refusals(tmp_path, old, new, match):
+    assert old in COV_TEXT
+    with pytest.raises(ValueError, match=match):
+        gold.read_covariance_spec(write(tmp_path, COV_TEXT.replace(old, new, 1)))
+
+
+def test_read_covariance_spec_refuses_non_mapping_and_bad_yaml(tmp_path):
+    with pytest.raises(ValueError, match="must be a mapping"):
+        gold.read_covariance_spec(write(tmp_path, "- a\n"))
+    with pytest.raises(ValueError, match="not YAML"):
+        gold.read_covariance_spec(write(tmp_path, "a: [\n"))
+
+
+def test_read_risk_spec_valid(tmp_path):
+    spec = gold.read_risk_spec(write(tmp_path, RISK_TEXT))
+    assert spec == {
+        "name": "risk",
+        "version": "0.1.0",
+        "status": "proposed",
+        "kind": "risk_contribution",
+        "portfolio": "mix",
+        "covariance": "cov",
+        "sha256": sha(RISK_TEXT.encode()),
+    }
+    params = {k: spec[k] for k in ("portfolio", "covariance")}
+    r = gold.recipe(
+        "risk_contribution", {k: spec[k] for k in ("name", "version", "sha256")}, params,
+        [COV_PARENT, PORTFOLIO_PARENT], "c", environment=ENV,
+    )  # fmt: skip
+    assert r["parameters"] == params
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "match"),
+    [
+        ("kind: risk_contribution", "kind: covariance", "kind"),
+        ("kind: risk_contribution\n", "", "exactly the keys"),
+        ("covariance: cov\n", "covariance: cov\nextra: 1\n", "exactly the keys"),
+        ("portfolio: mix\n", "", "exactly the keys"),
+        ("covariance: cov\n", "", "exactly the keys"),
+        ("portfolio: mix", "portfolio: ''", "portfolio"),
+        ("portfolio: mix", "portfolio: 5", "portfolio"),
+        ("covariance: cov", "covariance: ''", "covariance"),
+        ("covariance: cov", "covariance: [cov]", "covariance"),
+        ("status: proposed", "status: ''", "status"),
+        ("{name: risk, version: 0.1.0, status: proposed}", "{name: risk, status: proposed}", "identity"),
+    ],
+)
+def test_read_risk_spec_refusals(tmp_path, old, new, match):
+    assert old in RISK_TEXT
+    with pytest.raises(ValueError, match=match):
+        gold.read_risk_spec(write(tmp_path, RISK_TEXT.replace(old, new, 1)))
+
+
+def test_read_risk_spec_refuses_non_mapping_and_bad_yaml(tmp_path):
+    with pytest.raises(ValueError, match="must be a mapping"):
+        gold.read_risk_spec(write(tmp_path, "[]\n"))
+    with pytest.raises(ValueError, match="not YAML"):
+        gold.read_risk_spec(write(tmp_path, "a: [\n"))
+
+
+def test_real_covariance_spec_loads_and_names_a_real_panel():
+    panel = gold.read_panel_spec(SPECS / "panels" / "aud-four-sleeve.yaml")
+    path = SPECS / "covariances" / "aud-four-sleeve-36m.yaml"
+    spec = gold.read_covariance_spec(path)
+    assert (spec["name"], spec["version"], spec["status"]) == ("aud-four-sleeve-36m", "0.1.0", "proposed")
+    assert spec["panel"] == panel["name"]
+    assert (spec["estimator"], spec["ddof"], spec["annualisation"], spec["trailing_months"]) == (
+        "sample",
+        1,
+        12,
+        36,
+    )
+    assert spec["sha256"] == sha(path.read_bytes())
+
+
+def test_real_risk_spec_loads_and_names_a_real_portfolio_and_covariance():
+    portfolio = gold.read_portfolio_spec(SPECS / "portfolios" / "aud-eq60-dur40.yaml")
+    covariance = gold.read_covariance_spec(SPECS / "covariances" / "aud-four-sleeve-36m.yaml")
+    path = SPECS / "risk" / "aud-eq60-dur40.yaml"
+    spec = gold.read_risk_spec(path)
+    assert (spec["name"], spec["version"], spec["status"]) == ("aud-eq60-dur40", "0.1.0", "proposed")
+    assert spec["portfolio"] == portfolio["name"]
+    assert spec["covariance"] == covariance["name"]
+    assert spec["sha256"] == sha(path.read_bytes())

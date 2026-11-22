@@ -1,0 +1,5 @@
+# PROPOSED under OD-0234; approves nothing. Risk contributions of a hypothetical allocation; a description of one sample, not a forecast.
+identity: {name: aud-eq60-dur40, version: 0.1.0, status: proposed}
+kind: risk_contribution
+portfolio: aud-eq60-dur40
+covariance: aud-four-sleeve-36m
