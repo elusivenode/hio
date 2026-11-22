@@ -1,7 +1,7 @@
 ---
 id: HIO-DISTIL-3
 title: "Findings distil 3, a draft: a disposition for each of the 97 Inbox lines"
-status: proposed   # drafted under OD-0234; the owner accepts at an exact revision
+status: accepted   # OD-0235 at 9bca57e (drafted under OD-0234)
 owner: owner (accepts); drafted by claude/worker, reviewed by claude/implementation-agent
 last_reviewed: 2026-11-22
 ---

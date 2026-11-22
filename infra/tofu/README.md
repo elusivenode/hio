@@ -83,7 +83,8 @@ directory, and is specified here so it is not left to memory:
   must happen before the soak counts. A `workflow_dispatch` failure may be run as supplementary evidence
   but is never sufficient, because a manual run notifies whoever triggered it, not the schedule's user.
   Until the scheduled-run failure email is received, the soak does not count and this notification is
-  **unverified**. The same test proves the Azure alert fires (see "Not confirmed" below).
+  **unverified**. That test does not prove the Azure alert fires: the alert watches for a missing attempt
+  record, and a failed run still writes one (`docs/evidence/b3/soak-1.md`; OD-0235).
 
 ## Not confirmed (do not rely on until `tofu validate`/`plan` after authorisation)
 
