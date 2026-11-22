@@ -260,6 +260,18 @@ No other existing Settled line is edited, shortened or deleted. The front matter
 11. **Several new lines cite sources only the owner's machine holds** (consultations, runs, the local results store). They keep their original
     wording, as the brief requires; the Settled section is navigation only and the cited source wins (operating model §4.1).
 
+## Reviewer's notes (claude/implementation-agent, 2026-11-22)
+
+The draft above is the worker's (task D1 of hiomux run `20261122T103322Z-dc8b`, checked commit `0346e10`). I read the outcome, the checking notes, the eight dropped lines, the one changed Settled line, the open points and the two new sections that cover 2026-11-22. I did not re-read every cited source a second time.
+
+- **An earlier distil 3 exists and was never accepted.** Branch `proposal/distil-3` (`4c36bae`, drafted under OD-0141 on 2026-11-03) proposed 17 Inbox lines into Settled and two `MAP.md` rows. This draft is on `proposal/distil-3-r2`, covers those 17 lines among its 97, and changes no `MAP.md` row. If the owner accepts this one, the earlier branch is superseded; disposing of it is the owner's action. The worker did not know of it, and Inbox line 38's aside ("Distil 3 doesn't shrink it") referred to it.
+- **One line reworded by me.** The proposed line on persistence and backup restated OD-0210 as needing the owner's reading of the vendor's terms. The owner's later direction is recorded in OD-0231, so the line now says only that no cloud copy is authorised and points to both records.
+- **Open point 1 is resolved by sequence:** OD-0234 is in the pull request for the covariance and risk marts (#162) and reaches `main` when that merges.
+- **Open point 3 is real and outside a distil:** `infra/tofu/README.md` overstates what the failure test proves. It needs its own small correction, on an owner instruction.
+- **Open points 4 and 5 I leave as the worker left them.** The issuer-check note states results in words and holds no value from a series. The older line on the merge classifier is not marked superseded: this session merged its pull requests without a refusal, which is an observation and not a record.
+- **The eight dropped lines are duplicates or a status note.** I agree with each.
+- **Not covered:** the covariance and risk marts (OD-0234) added no Inbox line; their candidate lines go to the Inbox with the session handoff, after this distil.
+
 ## What acceptance means
 
 **The owner accepts the Settled section of `knowledge/findings.md` at an exact revision** (or asks for changes). That is a separate explicit
