@@ -96,6 +96,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-11-22-chatgpt-factor-programme-guidance.md` | ChatGPT's architecture guidance on the factor programme, supplied by the owner as a file path, verbatim (sha256 `f43eddc7…d99b615d`) | historical; advice only; adopted solely as the basis for the T-0024 drafts (OD-0218) | — |
 | `2026-11-22-owner-yes-factor-programme-draft.md` | the owner's three messages, verbatim, with Claude's question | authority for OD-0218 | — |
 | `2026-11-22-owner-yes-a1-australian-equity.md` | the owner's yes to T-0024 package A1, verbatim, with Claude's question | authority for OD-0219 | — |
+| `2026-11-22-owner-yes-a4-equity-comparison.md` | the owner's yes to T-0024 package A4, verbatim, with Claude's question | authority for OD-0220 | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
 committed here, and the decisions it makes become ADRs. Directives no longer live only in
