@@ -1,0 +1,67 @@
+# PROPOSED under OD-0216; approves nothing. External facts are [EXT] and unverified.
+identity:
+  factor_id: equity.us.spy.aud_unhedged.total_return
+  version: 0.1.0
+  status: proposed
+  owner: quantitative researcher
+  family: equity
+economics:
+  exposure: >-
+    AUD total return to an Australian investor of holding SPY, a US-listed S&P 500 fund, unhedged: the USD market-price total return translated at spot.
+  rationale: "The AUD investor's view of a built USD series."
+  is_not: >-
+    Not a hedged return, an index return or a validated factor. The currency return inside it is earned by holding the fund; a spot change alone is never an investable return (RA 4.2).
+classification:
+  series_class: total_return
+  investability: investable_with_costs
+return_convention:
+  return_type: simple
+  period: "consecutive dates the USD series observes with an H.10 rate at most 5 days old"
+  compounding: "chain simple period returns"
+  numeraire: AUD
+  hedging: "unhedged"
+  cash_leg: "n/a: funded form"
+  excess_definition: "n/a: funded form"
+observations:
+  - series_id: equity.us.spy.market_total_return
+    source_id: eodhd.personal_evaluation
+    unit: simple total return per period
+    knowledge_mode_required: latest
+  - series_id: frb_h10.aud_usd.noon_new_york
+    source_id: frb_h10.aud_usd
+    unit: USD per AUD
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: "As its USD leg: reconstructed(T). H.10 is a one-off download, reconstructed(T)."
+  earliest_history: "the USD leg's first date with an H.10 rate"
+  capture_clock_dependency: "none for this exploratory version"
+construction:
+  calendar: "the USD series' own dates; the H.10 rate is the latest on or before each date, at most 5 days old, and counted when not on the day; nothing interpolated"
+  day_count: "n/a for the translation; the cash legs carry their own"
+  algorithm: |
+    tools/factor_translate.py --mode unhedged, from the built series equity.us.spy.market_total_return and the H.10 archive, both pinned by hash.
+    1 + R_h = (1 + R_f)(1 + s), with s = q_(t-1)/q_t - 1 on the USD-per-AUD quote (RA 4.1, RA-INV-006, RA-INV-007). The cross term R_f s is reported.
+  rebalancing_and_rolls: "n/a: a single vehicle"
+  costs: "fund fees embedded; no trading, conversion or tax cost"
+invariants:
+  standard: [RA-INV-006, RA-INV-007, RA-INV-018]
+  spec_specific: []
+triangulation:
+  - reference: "the fund's AUD-listed sibling or an issuer AUD return, when one is read"
+    why_comparable: "the same holdings seen by an Australian investor"
+    expected_differences:
+      - mechanism: "fixing time and source, fees of a different share class, market price against NAV"
+        predicted_sign: either
+        predicted_magnitude: "to be reported"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - "H.10 is a noon New York buying rate and the funds close at 4 pm New York, so each period mixes two instants; monthly aggregation lessens this and does not remove it."
+  - "The USD legs rest on one vendor's unvalidated closes and distributions (OD-0160); every build pins its snapshot."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.0 (2026-11-22): first proposed version (OD-0216). Not validated."

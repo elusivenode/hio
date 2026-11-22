@@ -1,0 +1,67 @@
+# PROPOSED under OD-0216; approves nothing. External facts are [EXT] and unverified.
+identity:
+  factor_id: cash.aud.overnight_reconstructed
+  version: 0.1.0
+  status: proposed
+  owner: quantitative researcher
+  family: cash
+economics:
+  exposure: >-
+    Return on AUD overnight cash, reconstructed from RBA history: the home cash leg for an Australian investor's excess and hedged returns.
+  rationale: "A history for the AUD cash leg, where live capture (cash.aud.overnight) starts only in November 2026."
+  is_not: >-
+    Not the captured, point-in-time series cash.aud.overnight. Not a bank deposit rate, a bank-bill rate or a cash fund return.
+classification:
+  series_class: total_return
+  investability: replicable_with_basis
+return_convention:
+  return_type: simple
+  period: "consecutive dates the assembled level series holds"
+  compounding: "chain simple period returns"
+  numeraire: AUD
+  hedging: "n/a"
+  cash_leg: "n/a: this is the cash leg"
+  excess_definition: "n/a"
+observations:
+  - series_id: rba.cash_rate.aonia_history
+    source_id: rba.f1_historical
+    unit: percent per annum
+    knowledge_mode_required: latest
+  - series_id: rba.cash_rate.total_return_index
+    source_id: rba.cash_rate
+    unit: index level
+    knowledge_mode_required: latest
+availability:
+  knowable_rule: "reconstructed(T): one download of the historical file and one captured F1 receipt. No publication instant is claimed."
+  earliest_history: "the first date of the historical rate file used [EXT]"
+  capture_clock_dependency: "none for this exploratory version"
+construction:
+  calendar: "the dates the RBA publishes; a published rate is never interpolated"
+  day_count: "n/a for the translation; the cash legs carry their own"
+  algorithm: |
+    tools/factor_cash_aud.py, as E-0003 assembled it (tools/e0003_extended.py): before 2011-01-04 each published interbank overnight rate accrues simple ACT/365
+    to the next published date; from 2011-01-04 the RBA's Cash Rate Total Return Index, by level, scaled to continue the accrual. The seam is checked where both exist.
+  rebalancing_and_rolls: "n/a"
+  costs: "none; an overnight rate most investors cannot access directly"
+invariants:
+  standard: [RA-INV-003, RA-INV-016]
+  spec_specific: []
+triangulation:
+  - reference: "the RBA's own Total Return Index from 2011"
+    why_comparable: "the RBA's published compounding of the same rate"
+    expected_differences:
+      - mechanism: "none expected from 2011; before 2011 the accrual is HIO's and has no published index to compare"
+        predicted_sign: either
+        predicted_magnitude: "to be reported"
+    metrics: [annualised_tracking_difference, tracking_error, weekly_diff_correlation, max_cumulative_gap]
+limitations:
+  - "Before 2011 the series is HIO's accrual of a published rate, with weekends and holidays carried at the last published rate; the seam check tests the method, not the historical rates."
+  - "Reconstructed, not point-in-time: every value was read in November 2026."
+rights_required:
+  raw_retention: allow
+  internal_compute: allow
+  derivation: allow
+  derived_storage: allow
+  distribution: {hio_internal: allow}
+changelog:
+  - "0.1.0 (2026-11-22): first proposed version (OD-0216). Not validated."
