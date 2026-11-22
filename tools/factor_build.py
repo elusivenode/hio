@@ -12,6 +12,15 @@ rules and thresholds are the OD-0228 table, declared before any run. A flag refu
 carries the thresholds, the counts and the flagged days, and the command prints counts only. `--screen-only`
 verifies the pin and the snapshot as a build does, runs the screen and writes no build; `--screen-report`
 (with `--screen-only`) writes the screen result to a new private file outside the repository.
+
+A correction lives in the spec, never in the snapshot (OD-0230). A spec may list, at
+`construction.source_corrections`, distribution records to exclude (`action: exclude_distribution`, the
+only action), each naming its `ex_date`, a `reason` and its `evidence`. The tool removes exactly one
+matching record per correction from the distributions it read, before the series is analysed, so the
+periods, the invariants and the screen all use the corrected list. A correction that matches no record, or
+more than one, refuses. The snapshot files are never written; the build record, a screen-only result and a
+screen report carry the applied corrections (the action, the date and the sha256 of the excluded record),
+and the command prints their count only.
 """
 
 from __future__ import annotations
@@ -52,6 +61,9 @@ D2_PRICE_FALL_FRACTION = Decimal("0.5")
 D3_MIN_DAYS_APART = 1
 D3_MAX_DAYS_APART = 10
 
+CORRECTION_ACTION = "exclude_distribution"  # the only action a spec may declare (OD-0230)
+CORRECTION_KEYS = frozenset({"action", "series_id", "ex_date", "reason", "evidence"})
+
 
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -85,15 +97,79 @@ def read_spec(path: Path) -> dict:
     sources = {str(o["source_id"]) for o in observations}
     if len(sources) != 1:
         raise ValueError("observations must all have the same source_id")
+    symbol = prefixes.pop()
     return {
         "factor_id": factor_id,
         "version": version,
         "series_class": series_class,
         "numeraire": numeraire,
-        "symbol": prefixes.pop(),
+        "symbol": symbol,
         "source_id": sources.pop(),
+        "source_corrections": _read_corrections(spec, symbol),
         "sha256": _sha(raw),
     }
+
+
+def _read_corrections(spec: dict, symbol: str) -> list[dict]:
+    """`construction.source_corrections` (OD-0230), validated; `[]` when it or `construction` is absent."""
+    construction = spec.get("construction")
+    if construction is None:
+        return []
+    if not isinstance(construction, dict):
+        raise ValueError("construction must be a mapping")
+    if "source_corrections" not in construction:
+        return []
+    corrections = construction["source_corrections"]
+    if not isinstance(corrections, list) or not all(isinstance(c, dict) for c in corrections):
+        raise ValueError("source_corrections must be a list of mappings")
+    seen: set[str] = set()
+    for correction in corrections:
+        if set(correction) != CORRECTION_KEYS:
+            raise ValueError(
+                f"each correction must have exactly the keys {', '.join(sorted(CORRECTION_KEYS))}"
+            )
+        if correction["action"] != CORRECTION_ACTION:
+            raise ValueError(f"a correction's action must be {CORRECTION_ACTION}")
+        series_id = correction["series_id"]
+        if not isinstance(series_id, str) or not series_id.startswith(f"{symbol}."):
+            raise ValueError(f"a correction's series_id must start with {symbol}.")
+        ex_date = correction["ex_date"]
+        try:
+            valid = isinstance(ex_date, str) and date.fromisoformat(ex_date).isoformat() == ex_date
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValueError("a correction's ex_date must be an ISO date string")
+        for key in ("reason", "evidence"):
+            if not isinstance(correction[key], str) or not correction[key].strip():
+                raise ValueError(f"a correction's {key} must be a non-empty string")
+        if ex_date in seen:
+            raise ValueError("two corrections share an ex_date")
+        seen.add(ex_date)
+    return corrections
+
+
+def apply_corrections(dividends: list[dict], corrections: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Remove, for each correction, the one distribution record on its `ex_date` with a positive
+    `unadjustedValue`. Returns (kept records in their original order and bytes, the applied list).
+    Refuses with ValueError unless exactly one record matches; the message has the count, never an amount."""
+    drop: dict[int, dict] = {}
+    applied = []
+    for correction in corrections:
+        ex_date = correction["ex_date"]
+        matches = [
+            i
+            for i, r in enumerate(dividends)
+            if str(r.get("date")) == ex_date and _positive_amount(r) is not None
+        ]
+        if len(matches) != 1:
+            raise ValueError(f"a correction must match exactly one distribution record, not {len(matches)}")
+        index = matches[0]
+        drop[index] = correction
+        digest = _sha(json.dumps(dividends[index], sort_keys=True, default=str).encode("utf-8"))
+        applied.append({"action": correction["action"], "ex_date": ex_date, "record_sha256": digest})
+    kept = [r for i, r in enumerate(dividends) if i not in drop]
+    return kept, applied
 
 
 def check_out(out: Path, option: str = "--out") -> Path:
@@ -280,7 +356,9 @@ def _load_pinned(spec_path, root, snapshot, manifest_sha256) -> dict:
     if not listing:
         raise ValueError("the snapshot has no exchange symbol list for the symbol")
     eod = _base._read(root, manifest, symbol, "eod")
-    dividends = _base._read(root, manifest, symbol, "div")
+    dividends, applied = apply_corrections(
+        _base._read(root, manifest, symbol, "div"), spec["source_corrections"]
+    )
     splits = _base._read(root, manifest, symbol, "splits")
     listed = _base.quote_currency(_base._read(root, manifest, exchange, "symbols"), symbol)
     series = _base.analyse(symbol, spec["numeraire"], listed, eod, dividends, splits)
@@ -296,6 +374,7 @@ def _load_pinned(spec_path, root, snapshot, manifest_sha256) -> dict:
         "series": series,
         "dividends": dividends,
         "splits": splits,
+        "source_corrections": applied,
     }
 
 
@@ -341,6 +420,7 @@ def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dic
         "last": series.periods[-1].end.isoformat(),
         "qualified": {q: bool(series.qualified[q]) for q in ("Q1", "Q2", "Q3")},
         "invariants": invariants,
+        "source_corrections": loaded["source_corrections"],
         "distribution_screen": screen,
         "series_sha256": _sha(series_bytes),
         "build_id": build_id,
@@ -383,11 +463,16 @@ def screen_only(spec_path, root, snapshot, manifest_sha256, report=None) -> dict
         "snapshot": snapshot,
         "snapshot_manifest_sha256": loaded["manifest_hash"],
         "periods": len(series.periods),
+        "source_corrections": loaded["source_corrections"],
         "distribution_screen": screen_distributions(series.periods, loaded["dividends"]),
     }
     if report is not None:
         identity = {k: result[k] for k in ("factor_id", "symbol", "snapshot", "snapshot_manifest_sha256")}
-        body = {**result["distribution_screen"], **identity}
+        body = {
+            **result["distribution_screen"],
+            **identity,
+            "source_corrections": result["source_corrections"],
+        }
         _write_new(report, (json.dumps(body, indent=1, sort_keys=True) + "\n").encode())
     return result
 
@@ -426,6 +511,7 @@ def main(argv: list[str] | None = None) -> int:
             result = screen_only(*pin, args.screen_report)
             print(f"factor_id: {result['factor_id']}")
             print(f"periods: {result['periods']}")
+            print(f"source_corrections: {len(result['source_corrections'])} applied")
             _print_screen(result["distribution_screen"])
             return 0
         record, existed = _build(args.spec, args.root, args.snapshot, args.manifest_sha256, args.out, None)
@@ -435,6 +521,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"factor_id: {record['factor_id']}")
     print(f"build_id: {record['build_id']}")
     print(f"periods: {record['periods']}")
+    print(f"source_corrections: {len(record['source_corrections'])} applied")
     for name, result in record["invariants"].items():
         print(f"{name}: {'pass' if result['passed'] else 'fail'} ({result['checked']} checked)")
     _print_screen(record["distribution_screen"])

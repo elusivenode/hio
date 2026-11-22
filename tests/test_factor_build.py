@@ -13,6 +13,7 @@ from itertools import pairwise
 from pathlib import Path
 
 import pytest
+import yaml
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "tools"))
@@ -31,7 +32,7 @@ def private_tmp(tmp_path):
     tmp_path.chmod(0o700)
 
 
-def spec_text(series_class="total_return", second_symbol="ZZZ", numeraire="USD"):
+def spec_text(series_class="total_return", second_symbol="ZZZ", numeraire="USD", extra=""):
     return f"""identity:
   factor_id: {FACTOR}
   version: 0.1.0
@@ -44,11 +45,11 @@ observations:
     source_id: invented.source
   - series_id: {second_symbol}.US.distributions_and_splits
     source_id: invented.source
-"""
+{extra}"""
 
 
-def write_spec(tmp_path, **kwargs):
-    path = tmp_path / "spec.yaml"
+def write_spec(tmp_path, name="spec.yaml", **kwargs):
+    path = tmp_path / name
     path.write_text(spec_text(**kwargs))
     return path
 
@@ -150,6 +151,7 @@ def test_a_build_with_a_distribution_and_a_split_writes_both_files_in_the_format
             "last",
             "qualified",
             "invariants",
+            "source_corrections",
             "distribution_screen",
             "series_sha256",
             "build_id",
@@ -659,3 +661,284 @@ def test_screen_report_without_screen_only_is_refused(tmp_path, capsys):
     assert tool.main(cli_args(tmp_path, "--screen-report", str(report))) == 2
     assert capsys.readouterr().err.startswith("refused:")
     assert not report.exists() and not (tmp_path / "store").exists()
+
+
+# --- a distribution exclusion declared in the spec (OD-0230), on invented data
+
+
+def correction(**overrides):
+    base = {
+        "action": "exclude_distribution",
+        "series_id": "ZZZ.US.distributions_and_splits",
+        "ex_date": DAYS[1],
+        "reason": "invented: the vendor lists one distribution twice",
+        "evidence": "invented/evidence.md",
+    }
+    return {**base, **overrides}
+
+
+def corrections_text(corrections):
+    return yaml.safe_dump({"construction": {"source_corrections": corrections}}, sort_keys=False)
+
+
+def corrected_spec(tmp_path, corrections=None, name="spec.yaml"):
+    corrections = [correction()] if corrections is None else corrections
+    return write_spec(tmp_path, name=name, extra=corrections_text(corrections))
+
+
+def duplicated_dividends():
+    """The ordinary distribution on DAYS[2] and an equal duplicate a day earlier, listed first."""
+    return [dividend_record(DAYS[1], 1.0), dividend_record(DAYS[2], 1.0)]
+
+
+def duplicate_snapshot(tmp_path):
+    return make_snapshot(tmp_path, dividends=duplicated_dividends())
+
+
+def snapshot_bytes(root):
+    return {str(p.relative_to(root)): p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def series_of(out, record):
+    return (out / FACTOR / "0.1.0" / record["build_id"] / "series.csv").read_bytes()
+
+
+def record_hash(record):
+    return hashlib.sha256(json.dumps(record, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+
+def as_read(record):
+    """The record as the tool reads it from a file: numbers parsed to `Decimal`, which hash as strings."""
+    return json.loads(json.dumps(record), parse_float=D, parse_int=D)
+
+
+def read_hash(record):
+    return record_hash(as_read(record))
+
+
+def test_a_spec_without_corrections_reads_an_empty_list_and_builds_the_same_series(tmp_path):
+    plain = tool.read_spec(write_spec(tmp_path))
+    assert plain["source_corrections"] == []
+    root, pin = make_snapshot(tmp_path)
+    base = build_in(tmp_path, root, pin, out=tmp_path / "base")
+    assert base["source_corrections"] == []
+    for n, extra in enumerate(
+        ("construction:\n  calendar: invented\n", "construction:\n  source_corrections: []\n")
+    ):
+        spec = write_spec(tmp_path, name=f"other{n}.yaml", extra=extra)
+        assert tool.read_spec(spec)["source_corrections"] == []
+        other = build_in(tmp_path, root, pin, spec=spec, out=tmp_path / f"block{n}")
+        assert other["source_corrections"] == []
+        assert series_of(tmp_path / f"block{n}", other) == series_of(tmp_path / "base", base)
+        assert other["series_sha256"] == base["series_sha256"]
+
+
+def test_an_excluded_duplicate_builds_the_same_series_as_a_snapshot_without_it(tmp_path):
+    clean_root, clean_pin = make_snapshot(tmp_path / "clean")
+    clean = build_in(tmp_path, clean_root, clean_pin, out=tmp_path / "clean_store")
+    root, pin = duplicate_snapshot(tmp_path / "dup")
+    uncorrected = build_in(tmp_path, root, pin, out=tmp_path / "raw_store")
+    assert uncorrected["distribution_screen"]["D3"] == {"checked": 2, "flagged": 2}
+    fixed = build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path), out=tmp_path / "fixed_store")
+    assert series_of(tmp_path / "fixed_store", fixed) == series_of(tmp_path / "clean_store", clean)
+    assert fixed["series_sha256"] == clean["series_sha256"]
+    assert fixed["distribution_screen"]["D3"] == {"checked": 1, "flagged": 0}
+    assert fixed["distribution_screen"]["flagged"] == []
+    assert fixed["distribution_screen"]["distribution_days"] == 1
+    assert fixed["periods"] == clean["periods"]
+    assert all(result["passed"] for result in fixed["invariants"].values())
+
+
+def test_the_build_record_lists_the_applied_correction_with_the_record_hash(tmp_path):
+    root, pin = duplicate_snapshot(tmp_path)
+    record = build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path))
+    expected = [
+        {
+            "action": "exclude_distribution",
+            "ex_date": DAYS[1],
+            "record_sha256": read_hash(dividend_record(DAYS[1], 1.0)),
+        }
+    ]
+    assert record["source_corrections"] == expected
+    assert expected[0]["record_sha256"] != record_hash(dividend_record(DAYS[1], 1.0))  # numbers hash as read
+    stored = json.loads((build_dir(tmp_path, record) / "build.json").read_text())
+    assert stored["source_corrections"] == expected
+
+
+def test_apply_corrections_removes_one_record_and_keeps_the_rest_in_order_and_bytes():
+    records = [dividend_record(DAYS[0], 0.5), dividend_record(DAYS[1], 1.0), dividend_record(DAYS[2], 1.0)]
+    before = json.dumps(records)
+    kept, applied = tool.apply_corrections(records, [correction()])
+    assert kept == [records[0], records[2]] and kept[0] is records[0] and kept[1] is records[2]
+    assert json.dumps(records) == before  # the input is not changed
+    assert applied == [
+        {"action": "exclude_distribution", "ex_date": DAYS[1], "record_sha256": record_hash(records[1])}
+    ]
+    assert tool.apply_corrections(records, []) == (records, [])
+
+
+def test_apply_corrections_hashes_the_record_with_sorted_keys_and_str_for_other_types():
+    odd = {"unadjustedValue": "1.5", "date": DAYS[1], "when": date(2030, 1, 8)}
+    _kept, applied = tool.apply_corrections([odd], [correction()])
+    expected = hashlib.sha256(
+        b'{"date": "2030-01-08", "unadjustedValue": "1.5", "when": "2030-01-08"}'
+    ).hexdigest()
+    assert applied[0]["record_sha256"] == expected
+
+
+def test_apply_corrections_applies_each_correction_to_its_own_date():
+    records = [dividend_record(d, 1.0) for d in DAYS[:3]]
+    kept, applied = tool.apply_corrections(
+        records, [correction(ex_date=DAYS[0]), correction(ex_date=DAYS[2])]
+    )
+    assert kept == [records[1]] and [a["ex_date"] for a in applied] == [DAYS[0], DAYS[2]]
+
+
+def test_a_correction_with_no_matching_record_refuses_and_names_the_count_only():
+    with pytest.raises(ValueError, match="not 0") as raised:
+        tool.apply_corrections([dividend_record(DAYS[2], 1.0)], [correction()])
+    assert DAYS[1] not in str(raised.value) and "1.0" not in str(raised.value)
+
+
+def test_two_matching_records_on_the_date_refuse():
+    records = [dividend_record(DAYS[1], 1.0), dividend_record(DAYS[1], 2.0)]
+    with pytest.raises(ValueError, match="not 2") as raised:
+        tool.apply_corrections(records, [correction()])
+    assert DAYS[1] not in str(raised.value) and "2.0" not in str(raised.value)
+
+
+@pytest.mark.parametrize("empty", [{"unadjustedValue": 0}, {"unadjustedValue": None}, {}])
+def test_a_record_with_a_zero_or_missing_amount_is_not_a_match(empty):
+    unmatched = {"date": DAYS[1], **empty}
+    with pytest.raises(ValueError, match="not 0"):
+        tool.apply_corrections([unmatched], [correction()])
+    kept, applied = tool.apply_corrections([unmatched, dividend_record(DAYS[1], 1.0)], [correction()])
+    assert kept == [unmatched] and len(applied) == 1
+
+
+def test_a_build_refuses_when_a_correction_matches_nothing_or_twice(tmp_path):
+    root, pin = make_snapshot(tmp_path)  # one distribution, on DAYS[2]
+    with pytest.raises(ValueError, match="not 0"):
+        build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path))
+    twice_root, twice_pin = make_snapshot(
+        tmp_path / "twice", dividends=[dividend_record(DAYS[1], 1.0), dividend_record(DAYS[1], 1.0)]
+    )
+    with pytest.raises(ValueError, match="not 2"):
+        build_in(tmp_path, twice_root, twice_pin, spec=corrected_spec(tmp_path))
+    assert not (tmp_path / "store").exists()
+
+
+MALFORMED = {
+    "unknown action": [correction(action="include_distribution")],
+    "extra key": [{**correction(), "note": "x"}],
+    "missing key": [{k: v for k, v in correction().items() if k != "evidence"}],
+    "bad date": [correction(ex_date="2030-13-40")],
+    "compact date": [correction(ex_date="20300108")],
+    "date not a string": [correction(ex_date=date(2030, 1, 8))],
+    "empty reason": [correction(reason="")],
+    "blank reason": [correction(reason="  ")],
+    "empty evidence": [correction(evidence="")],
+    "reason not a string": [correction(reason=5)],
+    "wrong symbol prefix": [correction(series_id="YYY.US.distributions_and_splits")],
+    "symbol prefix without its dot": [correction(series_id="ZZZ.USX.distributions_and_splits")],
+    "duplicate ex_date": [correction(), correction(reason="a second reason")],
+    "not a list": {"ex_date": DAYS[1]},
+    "a string": "exclude the duplicate",
+    "a list of non-mappings": ["exclude_distribution"],
+}
+
+
+@pytest.mark.parametrize("case", list(MALFORMED))
+def test_each_malformed_correction_refuses(tmp_path, case):
+    spec = corrected_spec(tmp_path, MALFORMED[case])
+    with pytest.raises(ValueError):
+        tool.read_spec(spec)
+    root, pin = duplicate_snapshot(tmp_path)
+    with pytest.raises(ValueError):
+        build_in(tmp_path, root, pin, spec=spec)
+    assert not (tmp_path / "store").exists()
+
+
+def test_a_construction_that_is_not_a_mapping_refuses(tmp_path):
+    with pytest.raises(ValueError, match="construction"):
+        tool.read_spec(write_spec(tmp_path, extra="construction: [a]\n"))
+
+
+def test_two_distinct_corrections_are_read_in_order(tmp_path):
+    corrections = [correction(), correction(ex_date=DAYS[2])]
+    assert tool.read_spec(corrected_spec(tmp_path, corrections))["source_corrections"] == corrections
+
+
+def test_the_snapshot_files_are_byte_identical_after_a_corrected_build(tmp_path):
+    root, pin = duplicate_snapshot(tmp_path)
+    before = snapshot_bytes(root)
+    build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path))
+    assert snapshot_bytes(root) == before
+    assert json.loads(before[f"raw/{SNAPSHOT}/ZZZ.US.div.json"]) == duplicated_dividends()
+
+
+def test_screen_only_applies_the_correction(tmp_path, monkeypatch, capsys):
+    forbid_git(monkeypatch)
+    root, pin = duplicate_snapshot(tmp_path)
+    spec = corrected_spec(tmp_path)
+    args = ["--spec", str(spec), "--root", str(root), "--snapshot", SNAPSHOT]
+    args += ["--manifest-sha256", pin, "--screen-only"]
+    result = tool.screen_only(spec, root, SNAPSHOT, pin)
+    assert result["source_corrections"][0]["ex_date"] == DAYS[1]
+    assert result["distribution_screen"]["D3"] == {"checked": 1, "flagged": 0}
+    assert result["distribution_screen"]["distribution_days"] == 1
+    report = tmp_path / "report.json"
+    assert tool.main([*args, "--screen-report", str(report)]) == 0
+    body = json.loads(report.read_bytes())
+    assert body["source_corrections"] == result["source_corrections"]
+    assert body["D3"] == {"checked": 1, "flagged": 0} and body["flagged"] == []
+    out = capsys.readouterr().out
+    assert "D3: 0 flagged (1 checked)" in out
+
+
+def test_a_screen_only_result_without_corrections_carries_an_empty_list(tmp_path):
+    root, pin = make_snapshot(tmp_path)
+    assert tool.screen_only(write_spec(tmp_path), root, SNAPSHOT, pin)["source_corrections"] == []
+
+
+@pytest.mark.parametrize("screen_only", [False, True])
+def test_the_command_prints_the_correction_count_after_periods_and_no_date_or_value(
+    tmp_path, monkeypatch, capsys, screen_only
+):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    root, pin = duplicate_snapshot(tmp_path)
+    args = ["--spec", str(corrected_spec(tmp_path)), "--root", str(root), "--snapshot", SNAPSHOT]
+    args += ["--manifest-sha256", pin]
+    args += ["--screen-only"] if screen_only else ["--out", str(tmp_path / "store")]
+    assert tool.main(args) == 0
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert lines[lines.index("source_corrections: 1 applied") - 1].startswith("periods: ")
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", out) and not re.search(r"\d\.\d", out)
+    assert read_hash(dividend_record(DAYS[1], 1.0)) not in out
+
+
+def test_the_command_counts_zero_corrections_for_a_plain_spec(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    assert tool.main(cli_args(tmp_path)) == 0
+    assert "source_corrections: 0 applied" in capsys.readouterr().out.splitlines()
+
+
+def test_a_refused_correction_prints_no_date_or_amount(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(tool._base, "code_commit", lambda: {"commit": COMMIT})
+    root, pin = make_snapshot(tmp_path)  # no distribution on the correction's date
+    args = ["--spec", str(corrected_spec(tmp_path)), "--root", str(root), "--snapshot", SNAPSHOT]
+    args += ["--manifest-sha256", pin, "--out", str(tmp_path / "store")]
+    assert tool.main(args) == 2
+    captured = capsys.readouterr()
+    assert captured.err.startswith("refused: ValueError")
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", captured.err) and not re.search(r"\d\.\d", captured.err)
+
+
+def test_two_specs_differing_only_in_corrections_give_different_build_ids(tmp_path):
+    root, pin = duplicate_snapshot(tmp_path)
+    one = build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path, [correction()], name="one.yaml"))
+    other = [correction(reason="invented: a different reason")]
+    two = build_in(tmp_path, root, pin, spec=corrected_spec(tmp_path, other, name="two.yaml"))
+    assert one["spec_sha256"] != two["spec_sha256"] and one["build_id"] != two["build_id"]
+    assert one["series_sha256"] == two["series_sha256"]
