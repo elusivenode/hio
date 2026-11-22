@@ -31,8 +31,17 @@ instruction: OD-0228
 ## Readings
 
 - **The expected reading holds.** ASX IVV flags its four known records before 2014 on both D1 and D2, and the doubtful January 2016 record on D1 alone. No other fund has a day flagged by both rules.
-- **New: IGB has a likely duplicate record.** D3 flags one pair: the same amount twice within ten days, where the fund pays quarterly. One record of the pair carries no payment date and no period label. If it is a duplicate, the IGB series (`build-7.md`) counts one distribution twice. **Not checked against the issuer.**
+- **New: IGB has a duplicate record** (confirmed by the web check below). D3 flags one pair: the same amount twice within ten days, where the fund pays quarterly. One record of the pair carries no payment date and no period label. The IGB series (`build-7.md`) counts one distribution twice.
 - **The other D1-only flags look like real large distributions:** on each of those days the price fell by about the size of the distribution. Seven days across IEF, IGB, VGB and IHVV. Not checked against the issuer.
+
+## Web check of the IGB pair (OD-0229)
+
+Two public sources, read on 2026-11-22, both outside the vendor [EXT]:
+
+- **A public finance page's distribution history** lists **one** distribution for the fund in October 2020, of the same amount to four decimal places, dated on the earlier of the vendor's two dates.
+- **A syndicated copy of the fund's distribution announcement** gives one distribution of that amount, with the ex-date on the later of the vendor's two dates and the payment date the vendor's later record carries. An announcements index shows a "distribution dates" notice on the earlier date.
+
+**Reading: one payment, recorded twice by the vendor.** The earlier record is the stub; the later one has the right ex-date. So the IGB series in `build-7.md` counts that distribution twice. The issuer's own page was not reached (two attempts failed), and the announcement was read from a syndicated copy, not from the ASX.
 
 ## Checks on the tool
 
