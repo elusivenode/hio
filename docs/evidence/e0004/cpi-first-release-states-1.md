@@ -13,11 +13,12 @@ instruction: OD-0200
 
 **Inputs.** The 245 releases of check 2, and 12 more dated 2005-05-18 to 2006-04-19 (12 requests, cap 15, OD-0200), which first published April 2005 to March 2006. The run's own `states.csv` from step 1 (233 periods, 2007-05-31 to 2026-10). No return series was read.
 
-**Method** (`tools/e0004_first_release_states.py`, worker W2, checked `4bdf7db`). The first-release series takes each month's level from that month's own release, never from a later release's year-ago column. The states are recomputed with `tools/e0004_state.py`, unchanged, from the flat file and from the first-release series, under the primary rule and under the equality-as-accelerating sensitivity. The tool records every month the rule reads and does not find.
+**Method** (`tools/e0004_first_release_states.py`, worker W2, checked `4bdf7db`; the PDF releases need `pypdf`, declared in the lock since VERIFY-2026-11-22-e0004-1-1). The first-release series takes each month's level from that month's own release, never from a later release's year-ago column. The states are recomputed with `tools/e0004_state.py`, unchanged, from the flat file and from the first-release series, under the primary rule and under the equality-as-accelerating sensitivity. The tool records every month the rule reads and does not find.
 
 | Check | Result |
 |---|---|
-| First-release series | **257 months, 2005-04 to 2026-09**, one release each |
+| First-release series | 257 months retained, 2005-04 to 2026-09, one release each |
+| Months the states actually read | **256, 2005-04 to 2026-08**, all in the series. September 2026 was published on 2026-10-14, after the last state's cutoff (2026-09-30), and is not read (corrected after VERIFY-2026-11-22-e0004-1-1) |
 | Levels that differ from the flat file | **4**: May to August 2016 (check 2) |
 | The 12 added months, April 2005 to March 2006 | all equal to the flat file |
 | Flat-file states reproduce the run's `states.csv` | **yes**, all 233 periods |

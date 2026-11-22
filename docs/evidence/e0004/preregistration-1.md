@@ -129,7 +129,7 @@ It estimates how wide the primary interval would be with no true state differenc
 
 **What the run did.** Steps 1, 1b and 2 read every CPI level from BLS's flat file `cu.data.1.AllItems` as retrieved on 2026-11-21, on the strength of a ten-release sample. The review found that this did not establish first-release values (F-REVIEW-2026-11-22-e0004-1-1).
 
-**What was then checked** (OD-0197, OD-0200). All 257 releases that first published the levels the state reads, April 2005 to September 2026, were retained and read. Four first-published levels differ from the flat file: May, June, July and August 2016, which BLS corrected on 2016-10-18 (`cpi-first-release-check-2.md`). The promise was therefore not kept for those four months.
+**What was then checked** (OD-0197, OD-0200). The states read 256 monthly levels, April 2005 to August 2026; the release that first published each one was retained and read. (A 257th release, for September 2026, was also retained; it was published after the last state's cutoff and no state reads it. Corrected after VERIFY-2026-11-22-e0004-1-1: this sentence first said the states read all 257.) Four first-published levels differ from the flat file: May, June, July and August 2016, which BLS corrected on 2016-10-18 (`cpi-first-release-check-2.md`). The promise was therefore not kept for those four months.
 
 **The effect.** The states recomputed from the first-release levels equal the states the run used in all 233 periods, under the primary rule and under the equality sensitivity (`cpi-first-release-states-1.md`). The run was not repeated.
 
