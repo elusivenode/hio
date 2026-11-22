@@ -139,8 +139,9 @@ A **plan** names a target spec and a lock. The planner resolves the target's par
 | `hio.contracts.gold` | the schema, tables, numeric context, recipe and `build_id`, bundle writing and verification, the factor-series reader, the spec and lock readers | `hio.contracts` only |
 | `hio.models.panels` | the panel calculation, pure | `hio.contracts` |
 | `hio.portfolio.paths` | the portfolio-path calculation, pure | `hio.contracts` |
-| `hio.jobs.gold` | the planner and the runner | any |
-| `hio.jobs.research` | the read API: a store that opens pinned silver and gold | any |
+| `hio.jobs.gold` | the planner and the runner. It is handed the two calculations as functions and imports neither | what the import rules allow `hio.jobs`: not `hio.models`, not `hio.portfolio` |
+| `hio.jobs.research` | the read API: a store that opens pinned silver and gold | `hio.contracts`, `hio.marketdata` |
+| `tools/gold_build.py` | the command: it imports the calculations and passes them to the planner | outside the import rules, like every tool |
 
 ## 9. The read API
 
