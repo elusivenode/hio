@@ -242,7 +242,7 @@ _SORT_ORDER: dict[str, tuple[tuple[str, bool], ...]] = {
     "dim_source_listing": (("source_symbol", False), ("source_listing_sk", False)),
     "dim_series": (("series_id", False),),
     "dim_audit": (("audit_sk", False),),
-    "snapshot": (("capture_order", False),),
+    "snapshot": (("capture_order", True),),
     "snapshot_member": (("snapshot_id", False), ("path", False)),
     "source_record": (("file_sha256", False), ("row_index", True)),
     "source_identity_mapping": (("source_symbol", False),),
@@ -421,10 +421,11 @@ def sort_rows(
 ) -> list[dict[str, str]]:
     """§4: the rows in the table's sort order, as new dicts.
 
-    Columns are compared as text, except `source_record.row_index` and a fact's `occurrence`
-    (a number). Fact rows sort by `series_id`, the coordinate date, `occurrence` (0 for a table
-    without one), then the `capture_order` of the row's `anchor_snapshot_id`; `capture_order`
-    (snapshot id -> position) is required for fact tables and a missing snapshot is refused.
+    Columns are compared as text, except `snapshot.capture_order`, `source_record.row_index` and
+    a fact's `occurrence` (numbers). Fact rows sort by `series_id`, the coordinate date,
+    `occurrence` (0 for a table without one), then the `capture_order` of the row's
+    `anchor_snapshot_id`; `capture_order` (snapshot id -> position) is required for fact tables
+    and a missing snapshot is refused.
     Ties are broken by the whole row in column order, so the result never depends on input order.
     """
     columns = _columns(table)

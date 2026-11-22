@@ -447,14 +447,14 @@ def test_sort_other_provenance_and_correction_tables() -> None:
     ]
 
 
-def test_sort_snapshot_by_capture_order_text() -> None:
-    # The contract says "as text" for snapshot; capture_order is not marked "as a number".
+def test_sort_snapshot_by_capture_order_as_a_number() -> None:
+    # The contract sorts snapshot by capture_order as a number: 2 comes before 10.
     rows = [
-        row("snapshot", snapshot_id="x", capture_order="2"),
-        row("snapshot", snapshot_id="y", capture_order="10"),
+        row("snapshot", snapshot_id="x", capture_order="10"),
+        row("snapshot", snapshot_id="y", capture_order="2"),
         row("snapshot", snapshot_id="z", capture_order="1"),
     ]
-    assert [r["capture_order"] for r in silver.sort_rows("snapshot", rows)] == ["1", "10", "2"]
+    assert [r["capture_order"] for r in silver.sort_rows("snapshot", rows)] == ["1", "2", "10"]
 
 
 def test_sort_fact_rows_series_date_occurrence_then_capture_order() -> None:
