@@ -1074,3 +1074,428 @@ def test_cli_prints_the_release_counts_and_no_data(lake2, capsys):
     for stream in (built.out, built.err, verified.out, verified.err):
         assert not DATE_OR_DECIMAL.search(stream)
         assert lake2["release"]["id"] not in stream
+
+
+# ---- gold marts -------------------------------------------------------------------------------------------
+
+gold_marts = tool.gold_marts
+KIND_TABLES = [(kind, name) for kind, tables in gold_marts.TABLES.items() for name in tables]
+
+
+def factor_parent(role, build_id, factor_id, series_sha=None):
+    return {
+        "role": role,
+        "kind": "factor_series",
+        "id": build_id,
+        "payload_sha256": series_sha or sha(build_id.encode()),
+        "factor_id": factor_id,
+        "spec_version": "0.1.0",
+    }
+
+
+def panel_recipe(name, members, parents):
+    return gold_marts.recipe(
+        "panel",
+        {"name": name, "version": "0.1.0", "sha256": sha(name.encode())},
+        {
+            "frequency": "monthly",
+            "alignment": "common_boundaries",
+            "incomplete_periods": "exclude",
+            "members": members,
+        },
+        parents,
+        "f" * 40,
+    )
+
+
+def write_panel(root: Path, name, members, parents, returns):
+    """members: {code: factor_id}; returns: {code: [(start, end, return, asset, cash)]}. Returns (id, dir)."""
+    recipe = panel_recipe(name, members, parents)
+    bid = gold_marts.build_id(recipe)
+    rows = {
+        "bridge_panel_member": [
+            {
+                "panel_build_id": bid,
+                "member_code": code,
+                "column_order": str(i),
+                "factor_id": factor_id,
+                "spec_version": "0.1.0",
+                "input_build_id": parents[i]["id"],
+                "input_series_sha256": parents[i]["payload_sha256"],
+                "series_class": "total_return",
+                "numeraire": "USD",
+            }
+            for i, (code, factor_id) in enumerate(sorted(members.items()))
+        ],
+        "fact_panel_return": [
+            {
+                "panel_build_id": bid,
+                "member_code": code,
+                "period_start": start,
+                "period_end": end,
+                "return": ret,
+                "asset_return": asset,
+                "cash_return": cash,
+            }
+            for code, entries in returns.items()
+            for start, end, ret, asset, cash in entries
+        ],
+        "fact_panel_coverage": [
+            {
+                "panel_build_id": bid,
+                "member_code": code,
+                "first_boundary": "2030-01-31",
+                "last_boundary": "2030-03-31",
+                "boundaries": "3",
+                "omitted_boundaries": "0",
+                "common_first": "2030-01-31",
+                "common_last": "2030-03-31",
+                "months": str(len(entries)),
+            }
+            for code, entries in returns.items()
+        ],
+    }
+    tables = {n: gold_marts.table_bytes("panel", n, r) for n, r in rows.items()}
+    directory, existed = gold_marts.write_bundle(root, recipe, tables)
+    assert not existed
+    return bid, directory
+
+
+def write_portfolio(root: Path, panel_id, weights, months):
+    """months: [(start, end, return, wealth, {code: (start_weight, member_return, contribution)})]"""
+    recipe = gold_marts.recipe(
+        "portfolio_path",
+        {"name": "pf", "version": "0.1.0", "sha256": sha(b"pf")},
+        {"panel": "twin", "rebalance": "month_end", "weights": weights},
+        [
+            {
+                "role": "panel",
+                "kind": "panel",
+                "id": panel_id,
+                "payload_sha256": sha(b"payload-" + panel_id.encode()),
+            }
+        ],
+        "e" * 40,
+    )
+    bid = gold_marts.build_id(recipe)
+    rows = {
+        "fact_target_allocation": [
+            {"portfolio_build_id": bid, "member_code": c, "target_weight": w} for c, w in weights.items()
+        ],
+        "fact_portfolio_return": [
+            {
+                "portfolio_build_id": bid,
+                "period_start": s,
+                "period_end": e,
+                "portfolio_return": r,
+                "wealth_index": w,
+            }
+            for s, e, r, w, _ in months
+        ],
+        "fact_return_contribution": [
+            {
+                "portfolio_build_id": bid,
+                "member_code": code,
+                "period_start": s,
+                "period_end": e,
+                "start_weight": sw,
+                "member_return": mr,
+                "contribution": ct,
+            }
+            for s, e, _, _, per in months
+            for code, (sw, mr, ct) in per.items()
+        ],
+    }
+    tables = {n: gold_marts.table_bytes("portfolio_path", n, r) for n, r in rows.items()}
+    directory, _ = gold_marts.write_bundle(root, recipe, tables)
+    return bid, directory
+
+
+MONTHS = [("2030-01-01", "2030-01-31"), ("2030-02-01", "2030-02-28")]
+
+
+@pytest.fixture
+def marts(lake):
+    """Two panels side by side (one parent factor build present, one absent) and a portfolio on the first."""
+    root = lake["tmp"] / "marts"
+    members = {"alpha": "ZZZ_TR", "beta": "ZZZ_X"}
+    parents = [
+        factor_parent("m0_alpha", GOLD_ONE, "ZZZ_TR"),
+        factor_parent("m1_beta", GOLD_ABSENT, "ZZZ_X"),
+    ]
+    lake["root"] = root
+    lake["panel_a"], lake["panel_a_dir"] = write_panel(
+        root,
+        "twin",
+        members,
+        parents,
+        {
+            "alpha": [(*MONTHS[0], "0.0100", "", ""), (*MONTHS[1], "-0.0200", "", "")],
+            "beta": [(*MONTHS[0], "0.0300", "0.0310", "0.0010"), (*MONTHS[1], "", "", "")],
+        },
+    )
+    lake["panel_b"], lake["panel_b_dir"] = write_panel(
+        root,
+        "solo",
+        {"gamma": "ZZZ_B"},
+        [factor_parent("m0_gamma", GOLD_THREE, "ZZZ_B")],
+        {"gamma": [(*MONTHS[0], "0.0300", "", ""), (*MONTHS[1], "0.0400", "", "")]},
+    )
+    lake["portfolio"], lake["portfolio_dir"] = write_portfolio(
+        root,
+        lake["panel_a"],
+        {"alpha": "0.6", "beta": "0.4"},
+        [
+            (
+                *MONTHS[0],
+                "0.0180",
+                "1.0180",
+                {"alpha": ("0.6", "0.0100", "0.0060"), "beta": ("0.4", "0.0300", "0.0120")},
+            ),
+        ],
+    )
+    return lake
+
+
+def build_marts(lake, name="catalogue.duckdb"):
+    out = lake["tmp"] / name
+    return tool.build(*roots(lake), out, mart_root=lake["root"]), out
+
+
+def test_gold_bundle_rows_and_the_g_tables(marts):
+    report, out = build_marts(marts)
+    assert report["problems"] == 0 and report["result"] == "pass"
+    counts = report["counts"]
+    assert counts["gold_bundle"] == 3
+    assert counts["g_bridge_panel_member"] == 3  # two panels: two members and one
+    assert counts["g_fact_panel_return"] == 6
+    assert counts["g_fact_panel_coverage"] == 3
+    assert counts["g_fact_target_allocation"] == 2
+    assert counts["g_fact_portfolio_return"] == 1
+    assert counts["g_fact_return_contribution"] == 2
+    assert counts["lineage"] == 8 + 2 + 1 + 1  # the lake's, panel a's two parents, panel b's, the portfolio's
+    recipe = gold_marts.recipe(
+        "panel",
+        {"name": "twin", "version": "0.1.0", "sha256": sha(b"twin")},
+        {
+            "frequency": "monthly",
+            "alignment": "common_boundaries",
+            "incomplete_periods": "exclude",
+            "members": {"alpha": "ZZZ_TR", "beta": "ZZZ_X"},
+        },
+        [factor_parent("m0_alpha", GOLD_ONE, "ZZZ_TR"), factor_parent("m1_beta", GOLD_ABSENT, "ZZZ_X")],
+        "f" * 40,
+    )
+    manifest = json.loads((marts["panel_a_dir"] / "manifest.json").read_text())
+    assert table(
+        out,
+        "SELECT kind, build_id, spec_name, spec_version, spec_sha256, code_commit, numeric_policy, "
+        f"payload_sha256, directory, recipe_json FROM gold_bundle WHERE build_id = '{marts['panel_a']}'",
+    ) == [
+        (
+            "panel",
+            marts["panel_a"],
+            "twin",
+            "0.1.0",
+            sha(b"twin"),
+            "f" * 40,
+            "decimal-50/1",
+            manifest["payload_sha256"],
+            str(marts["panel_a_dir"]),
+            tool.canonical_json(recipe).decode(),
+        )
+    ]
+    assert marts["panel_a"] == gold_marts.build_id(recipe)
+    assert table(out, "SELECT kind, spec_name FROM gold_bundle ORDER BY spec_name") == [
+        ("portfolio_path", "pf"),
+        ("panel", "solo"),
+        ("panel", "twin"),
+    ]
+    # every g_ table: the table's columns, all text, in the contract's order
+    for kind, name in KIND_TABLES:
+        described = table(out, f"DESCRIBE g_{name}")
+        assert [(r[0], r[1]) for r in described] == [(c, "VARCHAR") for c in gold_marts.TABLES[kind][name]]
+    assert table(
+        out,
+        'SELECT member_code, period_end, "return", asset_return, cash_return FROM g_fact_panel_return '
+        f"WHERE panel_build_id = '{marts['panel_a']}' ORDER BY member_code, period_end",
+    ) == [
+        ("alpha", "2030-01-31", "0.0100", "", ""),
+        ("alpha", "2030-02-28", "-0.0200", "", ""),
+        ("beta", "2030-01-31", "0.0300", "0.0310", "0.0010"),
+        ("beta", "2030-02-28", "", "", ""),
+    ]
+    assert table(
+        out,
+        "SELECT member_code, factor_id, input_build_id FROM g_bridge_panel_member "
+        f"WHERE panel_build_id = '{marts['panel_a']}' ORDER BY member_code",
+    ) == [("alpha", "ZZZ_TR", GOLD_ONE), ("beta", "ZZZ_X", GOLD_ABSENT)]
+    assert table(
+        out, "SELECT portfolio_return, wealth_index, typeof(wealth_index) FROM g_fact_portfolio_return"
+    ) == [("0.0180", "1.0180", "VARCHAR")]
+    assert table(out, "SELECT member_code, contribution FROM g_fact_return_contribution ORDER BY 1") == [
+        ("alpha", "0.0060"),
+        ("beta", "0.0120"),
+    ]
+
+
+def test_two_panels_side_by_side_stay_separate_by_build_id(marts):
+    _, out = build_marts(marts)
+    assert table(
+        out, "SELECT panel_build_id, count(*) FROM g_fact_panel_return GROUP BY 1 ORDER BY 2 DESC"
+    ) == [(marts["panel_a"], 4), (marts["panel_b"], 2)]
+    assert table(
+        out,
+        "SELECT p.spec_name, count(*) FROM g_fact_panel_coverage c "
+        "JOIN gold_bundle p ON p.build_id = c.panel_build_id GROUP BY 1 ORDER BY 1",
+    ) == [("solo", 1), ("twin", 2)]
+
+
+def test_the_views_hold_numbers_beside_the_text_and_the_factor_id(marts):
+    _, out = build_marts(marts)
+    rows = table(
+        out,
+        'SELECT panel_build_id, member_code, period_end, "return", return_value, asset_return, '
+        "asset_return_value, cash_return_value, factor_id, typeof(return_value) "
+        "FROM g_panel_return ORDER BY panel_build_id, member_code, period_end",
+    )
+    assert len(rows) == 6 == table(out, "SELECT count(*) FROM g_fact_panel_return")[0][0]
+    by_key = {(r[0], r[1], r[2]): r for r in rows}
+    beta = by_key[(marts["panel_a"], "beta", "2030-01-31")]
+    assert beta[3:] == ("0.0300", 0.03, "0.0310", 0.031, 0.001, "ZZZ_X", "DOUBLE")
+    alpha = by_key[(marts["panel_a"], "alpha", "2030-02-28")]
+    assert alpha[3:9] == ("-0.0200", -0.02, "", None, None, "ZZZ_TR")
+    assert by_key[(marts["panel_a"], "beta", "2030-02-28")][4] is None  # empty text: NULL, not an error
+    assert by_key[(marts["panel_b"], "gamma", "2030-02-28")][8] == "ZZZ_B"
+    # the same member code in two panels takes each panel's own factor id
+    assert table(out, "SELECT sum(return_value) FROM g_panel_return WHERE factor_id = 'ZZZ_TR'") == [
+        (pytest.approx(-0.01),)
+    ]
+    assert table(
+        out,
+        "SELECT portfolio_return, portfolio_return_value, wealth_index, wealth_index_value, "
+        "typeof(wealth_index_value) FROM g_portfolio_return",
+    ) == [("0.0180", 0.018, "1.0180", 1.018, "DOUBLE")]
+
+
+def test_lineage_to_present_and_absent_factor_builds_and_from_a_portfolio_to_its_panel(marts):
+    _, out = build_marts(marts)
+    rows = table(
+        out,
+        "SELECT child_id, parent_kind, parent_id, role, parent_present FROM lineage "
+        "WHERE child_kind = 'mart' ORDER BY child_id, role",
+    )
+    assert sorted(rows) == sorted(
+        [
+            (marts["panel_a"], "gold", GOLD_ONE, "m0_alpha", True),
+            (marts["panel_a"], "gold", GOLD_ABSENT, "m1_beta", False),
+            (marts["panel_b"], "gold", GOLD_THREE, "m0_gamma", True),
+            (marts["portfolio"], "mart", marts["panel_a"], "panel", True),
+        ]
+    )
+
+
+def test_a_portfolio_whose_panel_is_not_loaded_has_an_absent_mart_parent(marts):
+    other = "9" * 64
+    write_portfolio(marts["root"], other, {"alpha": "1"}, [])
+    _, out = build_marts(marts)
+    assert table(
+        out, f"SELECT parent_kind, parent_id, parent_present FROM lineage WHERE parent_id = '{other}'"
+    ) == [("mart", other, False)]
+
+
+def test_a_tampered_bundle_is_reported_and_excluded(marts):
+    path = marts["panel_b_dir"] / "tables" / "fact_panel_return.csv"
+    path.write_text(path.read_text().replace("0.0400", "0.0401"))
+    report, out = build_marts(marts)
+    assert report["problems"] == 1 and report["result"] == "fail"
+    assert table(out, "SELECT layer, id, path, problem FROM problem") == [
+        (
+            "mart",
+            marts["panel_b"],
+            str(marts["panel_b_dir"]),
+            "table fact_panel_return: file sha256 differs from the manifest",
+        )
+    ]
+    assert table(out, "SELECT count(*) FROM gold_bundle") == [(2,)]
+    assert table(out, f"SELECT count(*) FROM lineage WHERE child_id = '{marts['panel_b']}'") == [(0,)]
+    for name in ("bridge_panel_member", "fact_panel_return", "fact_panel_coverage"):
+        assert table(out, f"SELECT count(*) FROM g_{name} WHERE panel_build_id = '{marts['panel_b']}'") == [
+            (0,)
+        ]
+    assert table(out, "SELECT count(*) FROM g_fact_panel_return") == [(4,)]
+    assert tool.main(cli_args(marts, "verify", "--mart-root", str(marts["root"]))) == 1
+
+
+def test_other_bundle_problems_are_reported_once_each(marts):
+    (marts["panel_b_dir"] / "stray.txt").write_text("x")
+    wrong = marts["root"] / "portfolio_path" / marts["panel_a"]
+    wrong.mkdir()
+    (wrong / "manifest.json").write_text("{}")
+    junk = marts["root"] / "junk" / ("1" * 64)
+    junk.mkdir(parents=True)
+    report = tool.verify(*roots(marts), mart_root=marts["root"])
+    assert report["problems"] == 3
+    _, out = build_marts(marts)
+    assert sorted(r[0] for r in table(out, "SELECT layer FROM problem")) == ["mart"] * 3
+    assert table(out, "SELECT count(*) FROM gold_bundle") == [(2,)]
+
+
+def test_no_mart_root_given_leaves_the_mart_tables_empty(lake):
+    out = lake["tmp"] / "catalogue.duckdb"
+    report = tool.build(*roots(lake), out)
+    assert report["problems"] == 0
+    for name in tool.MART_TABLES:
+        assert report["counts"][name] == 0
+        assert table(out, f"SELECT count(*) FROM {name}") == [(0,)]
+    for view in ("g_panel_return", "g_portfolio_return"):
+        assert table(out, f"SELECT count(*) FROM {view}") == [(0,)]
+    assert table(out, "SELECT count(*) FROM lineage WHERE child_kind = 'mart'") == [(0,)]
+
+
+def test_an_absent_or_empty_mart_root_is_fine_and_a_file_is_refused(lake):
+    assert tool.verify(*roots(lake), mart_root=lake["tmp"] / "nowhere")["result"] == "pass"
+    (lake["tmp"] / "empty-marts").mkdir()
+    assert tool.verify(*roots(lake), mart_root=lake["tmp"] / "empty-marts")["result"] == "pass"
+    (lake["tmp"] / "afile").write_text("x")
+    with pytest.raises(ValueError, match="mart root is not a directory"):
+        tool.verify(*roots(lake), mart_root=lake["tmp"] / "afile")
+
+
+def test_the_new_tables_and_views_are_in_every_catalogue(marts):
+    _, out = build_marts(marts)
+    assert [r[0] for r in table(out, "SHOW TABLES")] == sorted([*tool.TABLES, *tool.VIEWS])
+    assert {"gold_bundle", "g_panel_return", "g_portfolio_return"} <= {
+        r[0] for r in table(out, "SHOW TABLES")
+    }
+
+
+def test_rebuilding_with_marts_gives_the_same_contents(marts):
+    _, out = build_marts(marts)
+    first = contents(out)
+    out.unlink()
+    build_marts(marts)
+    assert contents(out) == first
+    assert first["g_fact_panel_return"]
+
+
+def test_cli_prints_the_mart_counts_only_with_a_mart_root_and_no_data(marts, capsys):
+    out = marts["tmp"] / "catalogue.duckdb"
+    extra = ("--mart-root", str(marts["root"]))
+    assert tool.main(cli_args(marts, "build", "--out", str(out), *extra)) == 0
+    built = capsys.readouterr()
+    assert tool.main(cli_args(marts, "verify", *extra)) == 0
+    verified = capsys.readouterr()
+    assert built.out == verified.out
+    lines = built.out.splitlines()
+    assert (
+        "gold_bundle: 3" in lines
+        and "g_fact_panel_return: 6" in lines
+        and "g_fact_portfolio_return: 1" in lines
+    )
+    assert lines[-3:] == ["problem: 0", "problems: 0", "pass"]
+    for stream in (built.out, built.err, verified.out, verified.err):
+        assert not DATE_OR_DECIMAL.search(stream)
+        assert marts["panel_a"] not in stream
+    assert tool.main(cli_args(marts, "verify")) == 0
+    assert "gold_bundle" not in capsys.readouterr().out

@@ -27,6 +27,15 @@ cell text, led by `release_id`) for each silver version 2 table, and the views `
 A release is `silver2` in `lineage` (its parents are its snapshots, role `bronze`); a gold record whose
 `silver` holds a `release_id` has a `silver2` parent (role `silver2`). An empty cell stays the empty string.
 
+Gold marts (OD-0233; contract: docs/decisions/gold-marts-contract.md §3) add the option `--mart-root`: a
+directory of `<kind>/<build_id>/` bundles, each checked with `hio.contracts.gold.verify_bundle` (through
+`open_bundle`). They add `gold_bundle` (one row per bundle, with its recipe as canonical JSON), a `g_<table>`
+for every table of every kind (all text; the rows of every bundle of that kind) and the views
+`g_panel_return` and `g_portfolio_return` (numbers beside the text; the panel view also has the member's
+`factor_id`). A bundle is `mart` in `lineage` (layer `mart` in `problem`): a `factor_series` parent is
+`gold` (the factor build id), a bundle parent is `mart` (its build id), the role is the parent's. The mart
+root may be absent or empty. The CLI prints the mart tables' counts only when `--mart-root` is given.
+
 The CLI prints counts per table, the number of problems, and `pass` or `fail`: never a value from the data.
 """
 
@@ -49,6 +58,7 @@ REPO = Path(__file__).resolve().parent.parent
 if str(REPO / "src") not in sys.path:
     sys.path.insert(0, str(REPO / "src"))
 
+from hio.contracts import gold as gold_marts  # noqa: E402
 from hio.contracts import silver as silver2  # noqa: E402
 from hio.contracts.canonical import canonical_json  # noqa: E402
 
@@ -125,8 +135,22 @@ TABLES = {
         f"s2_{name}": "release_id VARCHAR, " + ", ".join(f'"{c}" VARCHAR' for c in columns)
         for name, columns in silver2.TABLES.items()
     },
+    "gold_bundle": (
+        "kind VARCHAR, build_id VARCHAR, spec_name VARCHAR, spec_version VARCHAR, spec_sha256 VARCHAR, "
+        "code_commit VARCHAR, numeric_policy VARCHAR, payload_sha256 VARCHAR, directory VARCHAR, "
+        "recipe_json VARCHAR"
+    ),
+    # One g_<table> for every gold mart table of every kind: the table's columns, all text.
+    **{
+        f"g_{name}": ", ".join(f'"{c}" VARCHAR' for c in columns)
+        for kind_tables in gold_marts.TABLES.values()
+        for name, columns in kind_tables.items()
+    },
     "problem": "layer VARCHAR, id VARCHAR, path VARCHAR, problem VARCHAR",
 }
+MART_TABLES = tuple(
+    ["gold_bundle", *(f"g_{name}" for kind_tables in gold_marts.TABLES.values() for name in kind_tables)]
+)
 # Views over the version 2 tables: the fact joined to its dimensions within one release_id, the measures
 # also cast to numbers (NULL when the cell is empty or not a number) beside the exact text. A left join keeps
 # every fact row, so a view has exactly as many rows as its fact table. A distribution has no listing key, so
@@ -154,6 +178,21 @@ VIEWS = {
         "AND m.source_id = s.source_id AND m.source_symbol = s.source_symbol "
         "LEFT JOIN s2_dim_listing l ON l.release_id = f.release_id AND l.listing_sk = m.listing_sk "
         "LEFT JOIN s2_dim_instrument i ON i.release_id = f.release_id AND i.instrument_sk = f.instrument_sk"
+    ),
+    # Gold mart views: the numbers beside the exact text (NULL when the cell is empty or not a number). The
+    # panel view adds the member's factor_id; a left join keeps every row of the fact table.
+    "g_panel_return": (
+        'SELECT f.*, TRY_CAST(f."return" AS DOUBLE) AS return_value, '
+        "TRY_CAST(f.asset_return AS DOUBLE) AS asset_return_value, "
+        "TRY_CAST(f.cash_return AS DOUBLE) AS cash_return_value, m.factor_id "
+        "FROM g_fact_panel_return f "
+        "LEFT JOIN g_bridge_panel_member m "
+        "ON m.panel_build_id = f.panel_build_id AND m.member_code = f.member_code"
+    ),
+    "g_portfolio_return": (
+        "SELECT f.*, TRY_CAST(f.portfolio_return AS DOUBLE) AS portfolio_return_value, "
+        "TRY_CAST(f.wealth_index AS DOUBLE) AS wealth_index_value "
+        "FROM g_fact_portfolio_return f"
     ),
 }
 
@@ -491,10 +530,39 @@ def _load_gold(build_dir: Path) -> dict:
     return {"id": build_id, "build": row, "series": series, "lineage": lineage}
 
 
-def _scan(bronze_roots, silver_root, gold_root) -> dict[str, list[tuple]]:
+def _load_mart(mart_root: Path, kind: str, bundle_dir: Path) -> dict:
+    """One gold mart bundle: verified by `hio.contracts.gold.verify_bundle` (inside `open_bundle`), then each
+    table read once more (checked against the manifest) into the `g_` rows."""
+    bundle = gold_marts.open_bundle(mart_root, kind, bundle_dir.name)
+    recipe = bundle.recipe
+    spec = recipe["spec"]
+    tables = {
+        f"g_{name}": [tuple(row[c] for c in columns) for row in bundle.table(name)]
+        for name, columns in gold_marts.TABLES[kind].items()
+    }
+    lineage = []
+    for parent in recipe["parents"]:
+        parent_kind = "gold" if parent["kind"] == "factor_series" else "mart"
+        lineage.append(("mart", bundle.build_id, parent_kind, parent["id"], parent["role"]))
+    row = (
+        kind,
+        bundle.build_id,
+        spec["name"],
+        spec["version"],
+        spec["sha256"],
+        recipe["code_commit"],
+        recipe["numeric_policy"],
+        bundle.payload_sha256,
+        str(bundle_dir),
+        canonical_json(recipe).decode("utf-8"),
+    )
+    return {"id": bundle.build_id, "bundle": row, "tables": tables, "lineage": lineage}
+
+
+def _scan(bronze_roots, silver_root, gold_root, mart_root=None) -> dict[str, list[tuple]]:
     tables: dict[str, list[tuple]] = {name: [] for name in TABLES}
     problems = tables["problem"]
-    seen = {"bronze": set(), "silver": set(), "silver2": set(), "gold": set()}
+    seen = {"bronze": set(), "silver": set(), "silver2": set(), "gold": set(), "mart": set()}
     lineage: list[tuple] = []
 
     for root in bronze_roots or []:
@@ -563,6 +631,23 @@ def _scan(bronze_roots, silver_root, gold_root) -> dict[str, list[tuple]]:
                     tables["gold_series"].extend(bundle["series"])
                     lineage.extend(bundle["lineage"])
 
+    if mart_root is not None:
+        mart_root = Path(mart_root).expanduser()
+        if mart_root.exists() and not mart_root.is_dir():
+            raise ValueError("the mart root is not a directory")
+        for kind_dir in _subdirs(mart_root):
+            for bundle_dir in _subdirs(kind_dir):
+                try:
+                    bundle = _load_mart(mart_root, kind_dir.name, bundle_dir)
+                except (ValueError, OSError) as exc:
+                    problems.append(("mart", bundle_dir.name, str(bundle_dir), str(exc)))
+                    continue
+                seen["mart"].add(bundle["id"])
+                tables["gold_bundle"].append(bundle["bundle"])
+                for name, rows in bundle["tables"].items():
+                    tables[name].extend(rows)
+                lineage.extend(bundle["lineage"])
+
     present = seen
     for child_kind, child_id, parent_kind, parent_id, role in lineage:
         flag = None if parent_kind == "file" else parent_id in present[parent_kind]
@@ -578,9 +663,10 @@ def _report(tables: dict[str, list[tuple]]) -> dict:
     return {"counts": counts, "problems": problems, "result": "fail" if problems else "pass"}
 
 
-def verify(bronze_roots, silver_root, gold_root) -> dict:
-    """Read and verify the three layers; writes nothing. Refuses with ValueError."""
-    return _report(_scan(bronze_roots, silver_root, gold_root))
+def verify(bronze_roots, silver_root, gold_root, mart_root=None) -> dict:
+    """Read and verify the layers (and the gold marts, when `mart_root` is given); writes nothing. Refuses
+    with ValueError."""
+    return _report(_scan(bronze_roots, silver_root, gold_root, mart_root))
 
 
 def _check_out(out: Path) -> Path:
@@ -614,11 +700,11 @@ def _insert(con, table: str, rows: list[tuple]) -> None:
         )
 
 
-def build(bronze_roots, silver_root, gold_root, out) -> dict:
+def build(bronze_roots, silver_root, gold_root, out, mart_root=None) -> dict:
     """Write a fresh catalogue to `out` (atomically; an existing catalogue is replaced) and return the report.
     Bundles with a problem are reported and left out. Refuses with ValueError."""
     out = _check_out(out)
-    tables = _scan(bronze_roots, silver_root, gold_root)
+    tables = _scan(bronze_roots, silver_root, gold_root, mart_root)
     _mkdir_private(out.parent)
     tmp = out.with_name(out.name + ".tmp")
     wal = Path(str(tmp) + ".wal")
@@ -639,8 +725,10 @@ def build(bronze_roots, silver_root, gold_root, out) -> dict:
     return _report(tables)
 
 
-def _print(report: dict) -> None:
+def _print(report: dict, show_marts: bool = False) -> None:
     for name, count in report["counts"].items():
+        if name in MART_TABLES and not show_marts:
+            continue
         print(f"{name}: {count}")
     print(f"problems: {report['problems']}")
     print(report["result"])
@@ -652,6 +740,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--bronze-root", type=Path, action="append", default=[])
     parser.add_argument("--silver-root", type=Path, required=True)
     parser.add_argument("--gold-root", type=Path, required=True)
+    parser.add_argument("--mart-root", type=Path, default=None)
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
@@ -659,15 +748,15 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "build":
             if args.out is None:
                 raise ValueError("--out is required with build")
-            report = build(*roots, args.out)
+            report = build(*roots, args.out, mart_root=args.mart_root)
         else:
             if args.out is not None:
                 raise ValueError("--out is not valid with verify")
-            report = verify(*roots)
+            report = verify(*roots, mart_root=args.mart_root)
     except (ValueError, OSError, duckdb.Error) as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
-    _print(report)
+    _print(report, show_marts=args.mart_root is not None)
     return 1 if report["problems"] else 0
 
 
