@@ -21,15 +21,28 @@ periods, the invariants and the screen all use the corrected list. A correction 
 more than one, refuses. The snapshot files are never written; the build record, a screen-only result and a
 screen report carry the applied corrections (the action, the date and the sha256 of the excluded record),
 and the command prints their count only.
+
+Silver input mode (OD-0231, `docs/decisions/local-data-layers-proposal.md`). `--silver-root` and
+`--silver-id` replace `--root`, `--snapshot` and `--manifest-sha256` (the two sets never mix) for a build
+and for `--screen-only`. The tool loads `<silver_root>/<SYMBOL.EXCHANGE>/<silver_id>/manifest.json`,
+refuses unless the manifest is this instrument's and this source's, its silver_id is the directory name
+and the argument, and each CSV file has its manifest sha256 and the contract's header, then turns the rows
+back into the vendor-shaped records and builds as the bronze mode does: the same bytes for the same data.
+A factor spec that declares `source_corrections` is refused in this mode: corrections belong to the
+observation spec, and the silver manifest records those it applied. The record names the silver set
+(`input_layer: "silver"`) and its `build_id` hashes the spec, `silver:<silver_id>` and the code commit.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import importlib.util
+import io
 import json
 import os
+import re
 import sys
 from datetime import date
 from decimal import Decimal
@@ -361,28 +374,202 @@ def _load_pinned(spec_path, root, snapshot, manifest_sha256) -> dict:
     )
     splits = _base._read(root, manifest, symbol, "splits")
     listed = _base.quote_currency(_base._read(root, manifest, exchange, "symbols"), symbol)
-    series = _base.analyse(symbol, spec["numeraire"], listed, eod, dividends, splits)
-    if not series.qualified["Q1"] or not series.qualified["Q2"]:
-        raise ValueError("the series did not qualify (Q1 or Q2 failed)")
-    if not series.periods:
-        raise ValueError("the series has no periods")
+    series = _qualified_series(spec, listed, eod, dividends, splits)
+    inputs = sorted(
+        ({"path": e["path"], "sha256": e["sha256"]} for e in [*entries.values(), *listing]),
+        key=lambda i: i["path"],
+    )
     return {
         "spec": spec,
-        "manifest_hash": manifest_hash,
-        "entries": entries,
-        "listing": listing,
         "series": series,
         "dividends": dividends,
         "splits": splits,
         "source_corrections": applied,
+        "input_layer": "bronze",
+        "id_basis": manifest_hash,  # the build_id hashes the snapshot manifest's sha256 (unchanged)
+        "lineage": {
+            "snapshot": snapshot,
+            "snapshot_manifest_sha256": manifest_hash,
+            "inputs": inputs,
+        },
+    }
+
+
+def _qualified_series(spec, listed, eod, dividends, splits):
+    """`analyse` the series; refuse unless it qualifies and has periods. Both input layers share this."""
+    series = _base.analyse(spec["symbol"], spec["numeraire"], listed, eod, dividends, splits)
+    if not series.qualified["Q1"] or not series.qualified["Q2"]:
+        raise ValueError("the series did not qualify (Q1 or Q2 failed)")
+    if not series.periods:
+        raise ValueError("the series has no periods")
+    return series
+
+
+# --- silver mode (OD-0231): the same series built from one silver set instead of a bronze snapshot
+
+SILVER_SCHEMA = "hio.silver/1"
+SILVER_ID = re.compile(r"[0-9a-f]{16}")
+SILVER_FILES = {  # the contract's exact headers, and the vendor field each column reads back to
+    "closes.csv": ("date", "close", "adjusted_close"),
+    "distributions.csv": (
+        "ex_date",
+        "amount",
+        "split_adjusted_amount",
+        "currency",
+        "payment_date",
+        "record_date",
+        "declaration_date",
+        "period",
+    ),
+    "splits.csv": ("date", "ratio"),
+}
+SILVER_FIELDS = {
+    "closes.csv": ("date", "close", "adjusted_close"),
+    "distributions.csv": (
+        "date",
+        "unadjustedValue",
+        "value",
+        "currency",
+        "paymentDate",
+        "recordDate",
+        "declarationDate",
+        "period",
+    ),
+    "splits.csv": ("date", "split"),
+}
+SILVER_NUMBERS = frozenset({"close", "adjusted_close", "unadjustedValue", "value"})  # read back as Decimal
+
+
+def _silver_records(name: str, data: bytes) -> list[dict]:
+    """The rows of one verified silver CSV as the vendor-shaped records `analyse` expects."""
+    header = ",".join(SILVER_FILES[name]) + "\n"
+    if not data.startswith(header.encode()):
+        raise ValueError(f"{name} does not have the contract's header")
+    try:
+        rows = list(csv.reader(io.StringIO(data.decode("utf-8"), newline="")))
+    except (UnicodeDecodeError, csv.Error):
+        raise ValueError(f"{name} is not readable CSV") from None
+    fields = SILVER_FIELDS[name]
+    records = []
+    for row in rows[1:]:
+        if len(row) != len(fields):
+            raise ValueError(f"{name} has a row with the wrong number of cells")
+        record = {}
+        for field, cell in zip(fields, row, strict=True):
+            if cell == "":
+                record[field] = None
+            elif field in SILVER_NUMBERS:
+                try:
+                    record[field] = Decimal(cell)
+                except ArithmeticError:
+                    raise ValueError(f"{name} has a number cell that is not a number") from None
+            else:
+                record[field] = cell
+        records.append(record)
+    return records
+
+
+def _silver_manifest(set_dir: Path, symbol: str, source_id: str, silver_id: str) -> tuple[dict, str]:
+    """The silver manifest and its sha256, refusing unless it is this spec's, this id's and well formed."""
+    path = set_dir / "manifest.json"
+    if not path.is_file():
+        raise ValueError("no silver set with that silver_id for the spec's instrument")
+    raw = path.read_bytes()
+    manifest = json.loads(raw)
+    try:
+        facts = (
+            manifest["schema"],
+            manifest["instrument"],
+            manifest["source_id"],
+            manifest["silver_id"],
+            manifest["quote_currency"],
+            manifest["snapshot"],
+            manifest["snapshot_manifest_sha256"],
+            manifest["observation_spec"]["sha256"],
+        )
+        files = {name: manifest["files"][name]["sha256"] for name in SILVER_FILES}
+        corrections = manifest["corrections"]
+    except (KeyError, TypeError):
+        raise ValueError("the silver manifest lacks a required field") from None
+    if not isinstance(corrections, list) or not all(isinstance(c, dict) for c in corrections):
+        raise ValueError("the silver manifest's corrections must be a list of mappings")
+    if not all(isinstance(f, str) for f in (*facts, *files.values())):
+        raise ValueError("the silver manifest has a field of the wrong type")
+    if facts[0] != SILVER_SCHEMA:
+        raise ValueError(f"the silver manifest's schema is not {SILVER_SCHEMA}")
+    if facts[1] != symbol:
+        raise ValueError("the silver manifest is for a different instrument")
+    if facts[2] != source_id:
+        raise ValueError("the silver manifest has a different source_id from the spec")
+    if facts[3] != silver_id:
+        raise ValueError("the silver manifest's silver_id is not its directory name")
+    return manifest, _sha(raw)
+
+
+def _load_silver(spec_path, silver_root, silver_id) -> dict:
+    """Verify one silver set against its manifest, rebuild the vendor-shaped records, then analyse and
+    qualify the series: what a silver build and a silver screen-only run share. Refuses with ValueError."""
+    spec = read_spec(Path(spec_path))
+    if spec["source_corrections"]:
+        raise ValueError("corrections belong to the observation spec, not the factor spec")
+    symbol = spec["symbol"]
+    silver_id = str(silver_id)
+    if not SILVER_ID.fullmatch(silver_id) or Path(symbol).name != symbol:
+        raise ValueError("a silver_id is 16 lowercase hex characters")
+    prefix = f"{symbol}/{silver_id}"
+    set_dir = Path(silver_root) / symbol / silver_id
+    manifest, manifest_hash = _silver_manifest(set_dir, symbol, spec["source_id"], silver_id)
+    records, inputs = {}, []
+    for name in SILVER_FILES:
+        if not (set_dir / name).is_file():
+            raise ValueError(f"the silver set has no {name}")
+        data = (set_dir / name).read_bytes()
+        if _sha(data) != manifest["files"][name]["sha256"]:
+            raise ValueError(f"{name} does not match the silver manifest")
+        records[name] = _silver_records(name, data)
+        inputs.append({"path": f"{prefix}/{name}", "sha256": manifest["files"][name]["sha256"]})
+    series = _qualified_series(
+        spec,
+        manifest["quote_currency"],
+        records["closes.csv"],
+        records["distributions.csv"],
+        records["splits.csv"],
+    )
+    return {
+        "spec": spec,
+        "series": series,
+        "dividends": records["distributions.csv"],
+        "splits": records["splits.csv"],
+        "source_corrections": manifest["corrections"],
+        "input_layer": "silver",
+        "id_basis": f"silver:{silver_id}",
+        "lineage": {
+            "snapshot": manifest["snapshot"],
+            "snapshot_manifest_sha256": manifest["snapshot_manifest_sha256"],
+            "inputs": sorted(inputs, key=lambda i: i["path"]),
+            "silver": {
+                "silver_id": silver_id,
+                "manifest_sha256": manifest_hash,
+                "observation_spec_sha256": manifest["observation_spec"]["sha256"],
+            },
+        },
     }
 
 
 def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dict, bool]:
     out = check_out(Path(out))
-    loaded = _load_pinned(spec_path, root, snapshot, manifest_sha256)
-    spec, manifest_hash, series = loaded["spec"], loaded["manifest_hash"], loaded["series"]
-    entries, listing, dividends, splits = (loaded[k] for k in ("entries", "listing", "dividends", "splits"))
+    return _write_build(_load_pinned(spec_path, root, snapshot, manifest_sha256), out, commit)
+
+
+def _build_silver(spec_path, silver_root, silver_id, out, commit) -> tuple[dict, bool]:
+    out = check_out(Path(out))
+    return _write_build(_load_silver(spec_path, silver_root, silver_id), out, commit)
+
+
+def _write_build(loaded: dict, out: Path, commit) -> tuple[dict, bool]:
+    """The qualification-to-bytes path both input layers share: invariants, screen, record, files."""
+    spec, series = loaded["spec"], loaded["series"]
+    dividends, splits = loaded["dividends"], loaded["splits"]
     symbol = spec["symbol"]
     days = series.days
     split_days = _action_days(days, splits, keep=lambda _r: True)
@@ -398,11 +585,7 @@ def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dic
     screen = screen_distributions(series.periods, dividends)  # a flag never refuses a build
     series_bytes = render_series(series.periods)
     code = commit if commit is not None else _base.code_commit()["commit"]
-    build_id = _sha((spec["sha256"] + manifest_hash + code).encode())[:16]
-    inputs = sorted(
-        ({"path": e["path"], "sha256": e["sha256"]} for e in [*entries.values(), *listing]),
-        key=lambda i: i["path"],
-    )
+    build_id = _sha((spec["sha256"] + loaded["id_basis"] + code).encode())[:16]
     record = {
         "factor_id": spec["factor_id"],
         "spec_version": spec["version"],
@@ -411,9 +594,8 @@ def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dic
         "numeraire": spec["numeraire"],
         "source_id": spec["source_id"],
         "symbol": symbol,
-        "snapshot": snapshot,
-        "snapshot_manifest_sha256": manifest_hash,
-        "inputs": inputs,
+        "input_layer": loaded["input_layer"],
+        **loaded["lineage"],
         "code_commit": code,
         "periods": len(series.periods),
         "first": series.periods[0].start.isoformat(),
@@ -448,33 +630,54 @@ def build(spec_path, root, snapshot, manifest_sha256, out, *, commit=None) -> di
     return _build(spec_path, root, snapshot, manifest_sha256, out, commit)[0]
 
 
-def screen_only(spec_path, root, snapshot, manifest_sha256, report=None) -> dict:
-    """Verify the pin and the snapshot as a build does and run the screen; writes no build and runs no git.
-    With `report`, writes the screen result as JSON to that new file (mode 0o600). Refuses with ValueError."""
-    if report is not None:
-        report = check_out(Path(report).parent, "--screen-report") / Path(report).name
-        if report.exists() or report.is_symlink():
-            raise ValueError("--screen-report must not exist")
-    loaded = _load_pinned(spec_path, root, snapshot, manifest_sha256)
-    spec, series = loaded["spec"], loaded["series"]
+def build_silver(spec_path, silver_root, silver_id, out, *, commit=None) -> dict:
+    """Build one factor's series from one silver set (OD-0231); returns the build record. The series is
+    the bytes the bronze build gives for the same data. Refuses with ValueError."""
+    return _build_silver(spec_path, silver_root, silver_id, out, commit)[0]
+
+
+def _check_report(report):
+    if report is None:
+        return None
+    report = check_out(Path(report).parent, "--screen-report") / Path(report).name
+    if report.exists() or report.is_symlink():
+        raise ValueError("--screen-report must not exist")
+    return report
+
+
+def _screen_result(loaded: dict, report) -> dict:
+    spec, series, lineage = loaded["spec"], loaded["series"], loaded["lineage"]
     result = {
         "factor_id": spec["factor_id"],
+        "input_layer": loaded["input_layer"],
         "symbol": spec["symbol"],
-        "snapshot": snapshot,
-        "snapshot_manifest_sha256": loaded["manifest_hash"],
+        "snapshot": lineage["snapshot"],
+        "snapshot_manifest_sha256": lineage["snapshot_manifest_sha256"],
         "periods": len(series.periods),
         "source_corrections": loaded["source_corrections"],
         "distribution_screen": screen_distributions(series.periods, loaded["dividends"]),
     }
+    if "silver" in lineage:
+        result["silver"] = lineage["silver"]
     if report is not None:
-        identity = {k: result[k] for k in ("factor_id", "symbol", "snapshot", "snapshot_manifest_sha256")}
-        body = {
-            **result["distribution_screen"],
-            **identity,
-            "source_corrections": result["source_corrections"],
-        }
+        identity = {k: v for k, v in result.items() if k not in ("periods", "distribution_screen")}
+        body = {**result["distribution_screen"], **identity}
         _write_new(report, (json.dumps(body, indent=1, sort_keys=True) + "\n").encode())
     return result
+
+
+def screen_only(spec_path, root, snapshot, manifest_sha256, report=None) -> dict:
+    """Verify the pin and the snapshot as a build does and run the screen; writes no build and runs no git.
+    With `report`, writes the screen result as JSON to that new file (mode 0o600). Refuses with ValueError."""
+    report = _check_report(report)
+    return _screen_result(_load_pinned(spec_path, root, snapshot, manifest_sha256), report)
+
+
+def screen_only_silver(spec_path, silver_root, silver_id, report=None) -> dict:
+    """`screen_only` for a silver set: verifies the set against its manifest, runs the screen, writes no
+    build and runs no git. Refuses with ValueError."""
+    report = _check_report(report)
+    return _screen_result(_load_silver(spec_path, silver_root, silver_id), report)
 
 
 def _print_screen(screen: dict) -> None:
@@ -488,15 +691,28 @@ def _print_screen(screen: dict) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--spec", type=Path, required=True)
-    parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--snapshot", required=True)
-    parser.add_argument("--manifest-sha256", required=True)
+    parser.add_argument("--root", type=Path)
+    parser.add_argument("--snapshot")
+    parser.add_argument("--manifest-sha256")
+    parser.add_argument("--silver-root", type=Path)
+    parser.add_argument("--silver-id")
     parser.add_argument("--out", type=Path)
     parser.add_argument("--screen-only", action="store_true")
     parser.add_argument("--screen-report", type=Path)
     args = parser.parse_args(argv)
+    bronze = (args.root, args.snapshot, args.manifest_sha256)
+    silver = (args.silver_root, args.silver_id)
+    silver_mode = all(v is not None for v in silver)
     problem = None
-    if args.screen_only and args.out is not None:
+    if any(v is not None for v in bronze) and any(v is not None for v in silver):
+        problem = (
+            "give either --root, --snapshot and --manifest-sha256, or --silver-root and --silver-id, not both"
+        )
+    elif not silver_mode and any(v is not None for v in silver):
+        problem = "--silver-root and --silver-id are given together"
+    elif not silver_mode and any(v is None for v in bronze):
+        problem = "give --root, --snapshot and --manifest-sha256 together, or --silver-root and --silver-id"
+    elif args.screen_only and args.out is not None:
         problem = "--out is not valid with --screen-only"
     elif not args.screen_only and args.out is None:
         problem = "--out is required without --screen-only"
@@ -507,18 +723,28 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     try:
         if args.screen_only:
-            pin = (args.spec, args.root, args.snapshot, args.manifest_sha256)
-            result = screen_only(*pin, args.screen_report)
+            if silver_mode:
+                result = screen_only_silver(args.spec, args.silver_root, args.silver_id, args.screen_report)
+            else:
+                pin = (args.spec, args.root, args.snapshot, args.manifest_sha256)
+                result = screen_only(*pin, args.screen_report)
             print(f"factor_id: {result['factor_id']}")
+            print(f"input_layer: {result['input_layer']}")
             print(f"periods: {result['periods']}")
             print(f"source_corrections: {len(result['source_corrections'])} applied")
             _print_screen(result["distribution_screen"])
             return 0
-        record, existed = _build(args.spec, args.root, args.snapshot, args.manifest_sha256, args.out, None)
+        if silver_mode:
+            record, existed = _build_silver(args.spec, args.silver_root, args.silver_id, args.out, None)
+        else:
+            record, existed = _build(
+                args.spec, args.root, args.snapshot, args.manifest_sha256, args.out, None
+            )
     except (ValueError, OSError) as exc:
         print(f"refused: {type(exc).__name__}: {exc if isinstance(exc, ValueError) else ''}", file=sys.stderr)
         return 2
     print(f"factor_id: {record['factor_id']}")
+    print(f"input_layer: {record['input_layer']}")
     print(f"build_id: {record['build_id']}")
     print(f"periods: {record['periods']}")
     print(f"source_corrections: {len(record['source_corrections'])} applied")
