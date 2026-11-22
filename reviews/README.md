@@ -82,6 +82,7 @@ head `35c9821`. The completed review is indexed below; this candidate is not a p
 
 | Review | Subject | Base..head | Reviewer | Verdict | Record |
 |---|---|---|---|---|---|
+| VERIFY-2026-11-22-e0004-1-4 | E-0004 Response 4: F-2, the relocation under OD-0210, and a residual inventory; regression | `2f1251b3252955aa609a4618e159b254a7083a1e..144d39a51ebd17ddf61a0cf329816aae2706ba28` | Codex, assigned by OD-0211 under OD-0184 A2 | **NOT READY** | [record](records/VERIFY-2026-11-22-e0004-1-4.md) |
 | VERIFY-2026-11-22-e0004-1-3 | E-0004 Response 3: F-2 only, any current file, under OD-0206's line; regression | `3528e8e537a7505d4de3af469f9de0a4dcba4183..2f1251b3252955aa609a4618e159b254a7083a1e` | Codex, assigned by OD-0208 under OD-0184 A2 | **NOT READY** | [record](records/VERIFY-2026-11-22-e0004-1-3.md) |
 | VERIFY-2026-11-22-e0004-1-2 | E-0004 Response 2: F-2 current files, PDF dependency, 256-month wording, regression | `f349efeaaf1cd3540e8b206d5f79e511ee1f2410..3528e8e537a7505d4de3af469f9de0a4dcba4183` | Codex, assigned by OD-0204 under OD-0184 A2 | **NOT READY**; F-2 open; PDF remedy and wording verified | [record](records/VERIFY-2026-11-22-e0004-1-2.md) |
 | VERIFY-2026-11-22-e0004-1-1 | E-0004 F-1 and F-2 remediation claims, and regression | `6720c5c34a130db8ae0a6196fa530e10f3888e91..f349efeaaf1cd3540e8b206d5f79e511ee1f2410` | Codex, assigned by OD-0202 under OD-0184 A2 | **NOT READY**; F-1 narrowed/open, F-2 open; one new medium finding; not received | [record](records/VERIFY-2026-11-22-e0004-1-1.md) |
