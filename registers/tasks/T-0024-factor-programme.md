@@ -33,7 +33,7 @@ The first factor builds (OD-0213 to OD-0217; `docs/evidence/factors/build-1.md` 
 | AUD cash | RBA rate accrual joined to the RBA total return index | built, exploratory |
 | US equity | SPY | built, exploratory |
 | US Treasury duration | IEF | built, exploratory |
-| Australian equity | an ASX fund in snapshot `s2` | not built |
+| Australian equity | VAS, from snapshot `s2` | built, exploratory (OD-0219) |
 | Australian government duration | none held | not built; needs a source |
 
 Each sleeve is a **declared vehicle proxy**, not a pure factor: SPY is US equity, not global equity, and a bond fund is one maturity basket, not duration itself. Every output says so.
@@ -46,7 +46,7 @@ None yet. The work packages below are proposals. Each needs its own yes.
 
 | Package | Work | Output | Needs |
 |---|---|---|---|
-| A1 | Australian equity total return in AUD from the ASX fund already in snapshot `s2`: a spec, then a build with `tools/factor_build.py` | a proposed spec; a local build; `docs/evidence/factors/build-5.md` (stub) | a yes; no new data |
+| A1 | Australian equity total return in AUD from the ASX fund already in snapshot `s2`: a spec, then a build with `tools/factor_build.py` | a proposed spec; a local build; `docs/evidence/factors/build-5.md` (stub) | **done under OD-0219,** exploratory and unaccepted |
 | A2 | Targeted check of the SPY, IEF and BIL inputs: reuse T-0023's evidence, then name the remaining price and distribution gaps against independently readable reference bytes, with an expected-difference model, on the periods that matter most (2008, 2020, 2022) | a discrepancy table per sleeve, in the local results store; a stub here | a yes that says whether parked T-0023 work may be extended (OD-0215); a rights reading for any source not yet permitted |
 | A3 | Hedge inception: `tools/factor_translate.py` implies the forward from **realised** AUD and USD cash returns over the period, which were not known at inception (RA §3.2). Assess whether rates lockable at inception exist for both currencies at the hedge tenor. Until they do, mark the hedged series diagnostic-only in each spec and output | an input assessment; spec patch versions | a yes; no data |
 | A4 | A research note: Australian and US equity against AUD cash on common complete months, unhedged, with the currency effect separated and uncertainty stated. Hedged figures appear only as labelled diagnostics | the note in the local store; a stub here | A1 |
