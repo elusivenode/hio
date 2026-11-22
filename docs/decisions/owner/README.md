@@ -237,6 +237,7 @@ are in operating model §1.1; the template is
 | [OD-0220](OD-0220-a4-equity-comparison.md) | authorise_work | **T-0024 package A4 only:** a research note comparing Australian and US equity against AUD cash, currency effect separated; a small worker-built tool; no new data | `feat/a4-equity-comparison` | recorded |
 | [OD-0221](OD-0221-b3-au-duration-feasibility.md) | authorise_work | **T-0024 package B3, first step only:** a proposed feasibility note on an Australian government-bond fund as the duration sleeve; no fetch, no build | `docs/b3-au-duration-feasibility` | recorded |
 | [OD-0222](OD-0222-b3-fetch-and-builds.md) | authorise_work | **T-0024 package B3:** one EODHD fetch of VGB, IGB and AGVT into a new pinned local snapshot; three proposed specs and local exploratory builds; no other symbol | `feat/b3-au-duration-builds` | recorded |
+| [OD-0223](OD-0223-b4-five-sleeve-comparison.md) | authorise_work | **T-0024 package B4:** a five-sleeve AUD comparison with a 60/40 sensitivity on the series already built; no new data | `feat/b4-five-sleeve-comparison` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
