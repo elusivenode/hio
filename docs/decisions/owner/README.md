@@ -235,6 +235,7 @@ are in operating model §1.1; the template is
 | [OD-0218](OD-0218-factor-programme-card-draft.md) | authorise_work | **Draft only:** factor-programme card T-0024 and a one-page sequence, both `proposed`, from ChatGPT's guidance with Claude's changes; one architect consultation | `docs/factor-programme-card` | recorded |
 | [OD-0219](OD-0219-a1-australian-equity-build.md) | authorise_work | **T-0024 package A1 only:** a proposed spec and one local, exploratory AUD total-return build for the ASX fund VAS from snapshot `s2`; no new data | `feat/a1-au-equity` | recorded |
 | [OD-0220](OD-0220-a4-equity-comparison.md) | authorise_work | **T-0024 package A4 only:** a research note comparing Australian and US equity against AUD cash, currency effect separated; a small worker-built tool; no new data | `feat/a4-equity-comparison` | recorded |
+| [OD-0221](OD-0221-b3-au-duration-feasibility.md) | authorise_work | **T-0024 package B3, first step only:** a proposed feasibility note on an Australian government-bond fund as the duration sleeve; no fetch, no build | `docs/b3-au-duration-feasibility` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
