@@ -2,7 +2,7 @@
 id: HANDOFF-2026-11-22-e0004-eodhd-account-switch
 date: 2026-11-22
 actor: claude/implementation-agent (Claude Opus 5.5, Claude Code; hiomux orchestrator)
-work_status: "E-0004 ran (not distinguished), reviewed NOT READY (two high findings, one remediated in files); EODHD s3 taken (revisions not explained); CPI first-release check tooling built, failing on real layouts"
+work_status: "E-0004 ran, reviewed NOT READY (two high findings, one remediated in files); EODHD s3 taken; CPI first-release check tooling built, failing on real layouts"
 base_revision: c6886d9e50d034f3a21cb57fa5d736e2a078592c
 head_revision: self       # resolve with: git log -n1 --format=%H -- handoffs/s1b1/2026-11-22-e0004-eodhd-account-switch.md
 work_card: T-0023
@@ -15,7 +15,7 @@ stream: s1b1
 
 ## Done (OD-0188 to OD-0197)
 - **BLS CPI:** `bls_cpi` owner-verified (OD-0188). One download under OD-0189 and its correction 1: the API returned 503 twice, so the flat file was used instead (16 requests in all). It gave 293 release dates, 2002 to 2026, with the October 2025 gap. A 10-release sample check found 20 of 20 levels equal.
-- **E-0004 (inflation acceleration and duration's downside benefit):** preregistration adopted at `067bd7b` (OD-0190). Step 1 and step 1b passed their bars. Step 2 ran once (OD-0191): **not distinguished** in every block length and sensitivity. Readings only are in `docs/evidence/e0004/result-1.md`; the numbers are local.
+- **E-0004 (inflation acceleration and duration's downside benefit):** preregistration adopted at `067bd7b` (OD-0190). Steps 1, 1b and 2 each ran once (step 2 under OD-0191); their outcomes are held in the local results store (OD-0210). Readings only are in `docs/evidence/e0004/result-1.md`; the numbers are local.
 - **IEF NAV:** the owner's browser download, read by a new iShares reader. C1 and C2 pass for IEF; C5's audited-NAV row fails (`docs/evidence/t0023/corroboration-2.md`).
 - **Architect (3 more consultations):** E-0004's draft (adopted with its tightening), what follows E-0004 ("park the line; return to factors"), and the EODHD plan (start with SPY only; no style factors; the risk is circular validation). **Two consultations have passed the review threshold:** `performance-review-1.md` is due.
 - **Codex review of E-0004 (OD-0192, OD-0195):** **NOT READY.**
@@ -24,7 +24,7 @@ stream: s1b1
   - **F-2 fixed in the current files** (PR #122). **The owner keeps the git history** (OD-0196).
   - Receipt went through two tips; the received tip is tagged `-r2`.
 - **T-0023's two findings are reconciled to verified_closed** (OD-0193). T-0023 is not accepted.
-- **EODHD (owner subscribed: EOD Historical Data, the same plan):** `s3` taken for SPY, IEF and BIL (OD-0194). Stability against `s2` reads **revisions not explained**: one SPY ex-date moved, IEF closes re-rounded or revised, BIL payment dates filled in. Every series must pin its snapshot.
+- **EODHD (owner subscribed: EOD Historical Data, the same plan):** `s3` taken for SPY, IEF and BIL (OD-0194). The stability reading against `s2` is held in the local results store (OD-0210). Every series must pin its snapshot.
 - **hiomux:** run `20261103T065037Z-3d12` closed and cleaned (2.5 GB freed). Run `20261121T232821Z-7052` is open, with W1, W2 and C2 to C3 done. Usage is visible through `~/.hio-runs/bin/statusline.sh` (writes `~/.hio-runs/statusline.json`), set in the project's local settings.
 
 ## In flight at the switch
@@ -48,7 +48,7 @@ stream: s1b1
 - `[rights] Aggregate statistics computed from licensed returns (counts, interval widths) are derived values: keep them out of the public repository; record readings only. Source: reviews/records/REVIEW-2026-11-22-e0004-1.md.`
 - `[sources] BLS API v1 refused this client with 503 twice; the flat file download.bls.gov/pub/time.series/cu/cu.data.1.AllItems served at once. Source: OD-0189 correction 1.`
 - `[hiomux] Codex tasks can't be resumed; a blocked Codex task needs a fresh task. Closing the last workers pane removes the workers window. Source: this handoff.`
-- `[research] E-0004: the duration-benefit difference across CPI-acceleration states was not distinguished; the line is parked (architect, OD-0191). Source: docs/evidence/e0004/result-1.md.`
+- `[research] E-0004 ran once and is parked (architect, OD-0191); its result is held in the local results store (OD-0210). Source: docs/evidence/e0004/result-1.md.`
 
 ## NOT approved by this session
 No experiment, result, data series or factor is accepted. E-0004 is unaccepted and its two findings are open. T-0003 is undecided. No factor spec is adopted. No SMSF use.

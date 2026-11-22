@@ -39,7 +39,7 @@ Evidence: **R** read on the vendor's page; **X** search extract only; **?** not 
 | **All-in cost** | USD 19.99 a month personal; **USD 399 commercial, +200 server download** (R) | USD 30 individual; **USD 50 internal commercial** (R) | USD 19.95 to 69.95 personal; commercial feed example USD 750 (R) | Platinum USD 346.50 for 6 months (US); AUD 346.50 ex GST (AU); no monthly term (X) | **quote only** |
 | **Short test** | one-month minimum (R) | monthly (R) | monthly, 30 days' notice (R) | **3-week free trial**, 2 years' history (X) | none found |
 
-**Ceiling:** AUD 400 is about USD 280 at EODHD's own indicative AUD/USD of 0.7054, a rough figure only. EODHD's commercial plan exceeds the whole ceiling. Exchange fees aren't stated for EODHD and may be separate.
+**Ceiling:** AUD 400 is roughly USD 280, a rough figure only (the indicative rate used was removed, OD-0210). EODHD's commercial plan exceeds the whole ceiling. Exchange fees aren't stated for EODHD and may be separate.
 
 ## Permissions
 

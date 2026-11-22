@@ -1,47 +1,24 @@
 ---
 id: HIO-EVIDENCE-T0023-EPISODES-1
-title: "T-0023 step 6: three stress episodes, signs and robustness"
+title: "T-0023 step 6: three stress episodes (content held locally)"
 status: draft
 owner: HIO architecture lead (owner); recorded by claude/implementation-agent
 created_at: 2026-11-04
 instruction: OD-0180
+relocated_by: OD-0210
 ---
 
-# T-0023 episodes 1
+# T-0023 step 6: three stress episodes (content held locally)
 
-> **Retrospective description only: three hand-named episodes confirm nothing.** Not a regime model or a forecast. Declared in `preregistration-2.md` before it ran, and not blind. **Signs only here;** sizes are in the owner's local report. Run at `8315a0e` on panel `1aa29918…`, repeating `42ad0f3`'s classes and decision, now pinning each sensitivity's inputs and values in the local summary; all nine sensitivities performed. Unreviewed and unaccepted.
+> **Relocated 2026-11-22 (OD-0210).** This record rests on data licensed for local research only, so its content is kept in the owner's local results store and not in this public repository. This file is a stub: it says what the record is, its standing, and where the content is. Earlier revisions of this file remain in git history (OD-0196).
 
-## Compounded return
+| Field | Value |
+|---|---|
+| Record | `HIO-EVIDENCE-T0023-EPISODES-1` |
+| What it is | The three named stress episodes and the robustness of each effect. |
+| Standing | Exploratory and unaccepted. |
+| Local copy | `~/.hio-research/results-store/records/HIO-EVIDENCE-T0023-EPISODES-1/`, one folder per archived revision of this file; the store's `manifest.json` lists each with its sha256 |
+| Last revision with content | `d2dc747500b7963ea3a9b612f016ce587b2bea5c` |
+| Check the store | `uv run python tools/results_store.py verify --store ~/.hio-research/results-store` |
 
-`+` means the later allocation did better. "Robust" means at least 2 points, and the same sign under S1 to S9.
-
-| Effect | 2008 | Q1 2020 | 2022 |
-|---|---|---|---|
-| Cash rate and currency (USD bills against AUD cash) | + robust | + robust | + robust |
-| Treasury duration (Treasuries against USD bills) | + robust | + robust | **- robust** |
-| Total | + robust | + robust | - robust |
-
-## Maximum drawdown
-
-**`+` here means a deeper drawdown,** so it reads the other way.
-
-| Effect | 2008 | Q1 2020 | 2022 |
-|---|---|---|---|
-| Cash rate and currency | + robust | - robust | - not robust (under 2 points) |
-| Treasury duration | - not robust (under 2 points) | - robust | + robust |
-| Total | + robust | - robust | + robust |
-
-## Reading it
-
-- **The duration effect reverses in 2022, on both measures.** That's the contrast the decision rule looks for: **row 1**.
-- **Cash rate and currency has one sign on return, in all three.** Within it, the currency move outweighs the rate gap in each episode (descriptive split). Three episodes aren't a reliable hedge, and the sample holds no episode in which the AUD rose in an equity sell-off, by construction of what was named.
-- **Return and drawdown can disagree.** In 2008, USD bills beat AUD cash over the window with a deeper month-end drawdown on the way. A fixed window's return isn't what an investor lived through; month ends hide more.
-- **Q1 2020 is three months:** one path, not a sample.
-
-## How far the signs have to go
-
-**No effect on compounded return comes near zero under any sensitivity;** the margins are in the local report. **That isn't evidence about data error of unknown size.** The sensitivities are small substitutions, and on the duration effect's return S6 to S9 can't change the sign at all: both portfolios are wholly in USD, so `W_T_AUD - W_B_AUD = W_FX (W_T_USD - W_B_USD)` with `W_FX` positive. A test pins this.
-
-## What this rests on
-
-`corroboration-1.md` in full. In particular: C1 for BIL and C5's return bar for SPY fail around 2008-09-30, inside the 2008 episode; C4 fails for IEF; IEF has no NAV check; and the C5 fiscal years don't isolate calendar 2008. The sensitivities test sign, not the accuracy of any size.
+Nothing here states a result. A reader with access to the local store reads the record there; anyone else can rely only on the standing above.
