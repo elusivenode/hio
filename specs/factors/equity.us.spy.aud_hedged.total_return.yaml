@@ -1,7 +1,7 @@
 # PROPOSED under OD-0216; approves nothing. External facts are [EXT] and unverified.
 identity:
   factor_id: equity.us.spy.aud_hedged.total_return
-  version: 0.1.0
+  version: 0.1.1
   status: proposed
   owner: quantitative researcher
   family: equity
@@ -10,7 +10,7 @@ economics:
     AUD total return to an Australian investor of holding SPY, a US-listed S&P 500 fund, with the USD exposure hedged at a ratio of one by a forward reset every period, the forward implied from cash rates.
   rationale: "The hedged counterpart of the unhedged AUD series, to separate asset from currency risk."
   is_not: >-
-    Not a return achievable at these terms: no market forward points are used, so it carries the covered-interest-parity basis, and its USD rate is a bill fund's return, not a money-market rate. Not a validated factor.
+    DIAGNOSTIC ONLY (OD-0225): not a return achievable at these terms, and not to be used as a hedged sleeve in a comparison or portfolio without that label. Reasons: no market forward points are used, so it carries the covered-interest-parity basis, and its USD rate is a bill fund's return, not a money-market rate. Not a validated factor.
 classification:
   series_class: total_return
   investability: replicable_with_basis
@@ -65,6 +65,7 @@ triangulation:
 limitations:
   - "cip_implied: the forward comes from a rate differential, not market forward points, so the CIP basis and the fixing and timing basis are missing (RA-INV-021)."
   - "The USD rate is BIL's own return, a noisy proxy at short horizons: a bill fund's price moves are not a money-market rate."
+  - "Not known at inception: the forward for each period is implied from the two cash legs' realised returns over that same period. The AUD leg is an overnight accrual, close to a rate agreed at the start; the USD leg is a fund's market return, which no one could lock (RA 3.2; docs/research/T-0024-hedge-inception-assessment.md)."
   - "A reset every period is a modelling choice; real hedges usually reset monthly or quarterly."
   - "H.10 is a noon New York buying rate and the funds close at 4 pm New York, so each period mixes two instants; monthly aggregation lessens this and does not remove it."
   - "The USD legs rest on one vendor's unvalidated closes and distributions (OD-0160); every build pins its snapshot."
@@ -76,3 +77,4 @@ rights_required:
   distribution: {hio_internal: allow}
 changelog:
   - "0.1.0 (2026-11-22): first proposed version (OD-0216). Not validated."
+  - "0.1.1 (2026-11-22): wording only; labelled diagnostic-only and the inception limitation added (OD-0225). No number changes; builds made at 0.1.0 stand, their spec kept in specs/factors/archive/."
