@@ -63,6 +63,7 @@ A1, A2 and A3 have disjoint files and can run at once. A4 follows A1.
 | B4 | A defensive-sleeve report: Australian and US duration against cash, with a 60/40 sensitivity | **done under OD-0223 as a five-sleeve comparison,** without B1 and B2 (`docs/evidence/factors/build-8.md`); exploratory and unaccepted |
 | — | A distribution plausibility screen in the build tool, run on every held fund | **done under OD-0228** (`docs/evidence/factors/distribution-screen-1.md`); a duplicate record found in IGB, confirmed on public pages (OD-0229) and corrected at spec 0.1.1 (OD-0230; `docs/evidence/factors/build-9.md`) |
 | — | Local data layers: silver sets, fund builds from silver, a catalogue and a backup | **done under OD-0231** (`docs/evidence/factors/data-layers-1.md`); every fund series rebuilt from silver with identical bytes; a backup beside the repository, on the same disk |
+| — | Dimensional silver, first version (fund path) | **done under OD-0233** (`docs/evidence/factors/silver-dimensional-1.md`); every version 1 file and every fund series reproduced byte for byte; the gold-mart foundation is next |
 
 **Milestone C: later.** Shrinkage against sample covariance on the five sleeves, with fixed estimation windows and judged out of sample only. Credit and gold each need a separate data and exposure case. Not specified here.
 
