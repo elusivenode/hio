@@ -120,3 +120,25 @@ It estimates how wide the primary interval would be with no true state differenc
 1. ~~The CPI rights and download~~: done (OD-0188, OD-0189). First-release values: a sample check found 20 of 20 equal (`cpi-first-release-check-1.md`).
 2. The owner's adoption of this preregistration at an exact revision, confirming the 0.20-point threshold.
 3. A task card and a register entry for E-0004.
+
+## Addendum 1 (2026-11-22, after the result; OD-0201)
+
+> Appended after step 2 ran and after its review. Nothing above this line was changed. This records a deviation; it does not amend the design.
+
+**The promise.** "Values: first-release values only, with each release's bytes retained. A later correction is recorded beside it and never changes a past state."
+
+**What the run did.** Steps 1, 1b and 2 read every CPI level from BLS's flat file `cu.data.1.AllItems` as retrieved on 2026-11-21, on the strength of a ten-release sample. The review found that this did not establish first-release values (F-REVIEW-2026-11-22-e0004-1-1).
+
+**What was then checked** (OD-0197, OD-0200). All 257 releases that first published the levels the state reads, April 2005 to September 2026, were retained and read. Four first-published levels differ from the flat file: May, June, July and August 2016, which BLS corrected on 2016-10-18 (`cpi-first-release-check-2.md`). The promise was therefore not kept for those four months.
+
+**The effect.** The states recomputed from the first-release levels equal the states the run used in all 233 periods, under the primary rule and under the equality sensitivity (`cpi-first-release-states-1.md`). The run was not repeated.
+
+**The correction recorded beside the first-release value, as promised:**
+
+| Month | First release | Corrected (flat file) |
+|---|---|---|
+| 2016-05 | 240.236 | 240.229 |
+| 2016-06 | 241.038 | 241.018 |
+| 2016-07 | 240.647 | 240.628 |
+| 2016-08 | 240.853 | 240.849 |
+

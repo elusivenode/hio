@@ -39,3 +39,10 @@ instruction: OD-0191
 ## Limits
 
 One author, one machine, one run; no Codex review yet. October 2008's return also starts from BIL's disputed 2008-09-30 close, which S4 doesn't remove (OD-0191). The fund returns rest on EODHD's records, corroborated in T-0023 with failures C1 BIL, C4 IEF and C5 SPY (and IEF's audited NAV row) still standing.
+
+## Addendum 1 (2026-11-22; OD-0201): the CPI vintage
+
+> Appended after the review. The reading above is unchanged and still unaccepted.
+
+The run read CPI levels from BLS's flat file as retrieved on 2026-11-21, not from each month's first release as the preregistration promised. Four first-published levels differ from that file (May to August 2016, corrected by BLS on 2016-10-18). The states recomputed from first-release levels are identical to the run's in all 233 periods, under the primary rule and the equality sensitivity, so the estimation's inputs are the same and the run was not repeated. Evidence: `cpi-first-release-check-2.md`, `cpi-first-release-states-1.md`; the deviation is recorded in `preregistration-1.md`, Addendum 1. This shows the deviation had no effect on this run; it does not make the run's inputs first-release values.
+
