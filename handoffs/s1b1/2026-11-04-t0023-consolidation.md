@@ -34,7 +34,7 @@ stream: s1b1
 
 ## Known limitations and not verified
 - **Codex hasn't reviewed anything here.** One author, one machine.
-- **IEF has no NAV check,** and C1 for BIL, C4 for IEF and C5's return bar for SPY failed. See `corroboration-1.md`.
+- **IEF has no NAV check,** and some corroboration checks failed; which ones is held in the local results store (OD-0210). See `corroboration-1.md`.
 - **Audited figures were transcribed by the author;** accession numbers are recorded for tracing.
 - **Two full test runs stalled at 99% CPU,** no stack captured, not reproduced, not explained.
 - **`tools/t0023_spy_diagnostic.py` was declared after the failure it explains.**
@@ -46,11 +46,11 @@ stream: s1b1
 - **Curl to iShares' download link:** returns the product page, and a site-entry workaround was refused as bot-check circumvention. It needs the owner's browser.
 
 ## For the index
-- `[research] Workers' invented-data tests missed three real-data shapes (a links column, H.10's last date, BIL's reverse split); run a tool on real inputs before trusting a pass. Source: docs/evidence/t0023/corroboration-1.md.`
+- `[research] Workers' invented-data tests missed three real-data shapes (a links column, H.10's last date, a corporate-action shape); run a tool on real inputs before trusting a pass. Source: docs/evidence/t0023/corroboration-1.md.`
 - `[research] Two translated USD portfolios' compounded difference keeps its sign in AUD: W_T_AUD - W_B_AUD = W_FX (W_T_USD - W_B_USD). FX or AUD cash sensitivities can't challenge it. Source: tools/t0023_episodes.py.`
 - `[sources] SEC www.sec.gov refuses a client with no declared contact, though data.sec.gov answered; audited fund highlights give NAV, distributions and return per fiscal year, public. Source: OD-0179.`
-- `[data] EODHD's distributions for SPY, BIL and IEF match every audited fund-year checked, covering 2008. Source: docs/evidence/t0023/corroboration-1.md.`
-- `[data] Reinvesting on the payment date doesn't explain HIO's SPY gap to the issuer. Source: tools/t0023_basis.py.`
+- `[data] The sleeves' distributions were checked against audited fund reports covering 2008; the outcome is held in the local results store (OD-0210). Source: docs/evidence/t0023/corroboration-1.md.`
+- `[data] A payment-date reinvestment basis was tested as an explanation for a sleeve's issuer gap; the outcome is held in the local results store (OD-0210). Source: tools/t0023_basis.py.`
 - `[hiomux] sa ask --rev <sha> reads a pushed branch, so push first; the answer lands in <run>/sa/<id>/out/answer.md, and stored copies need links repointed to pass check_repo. Source: docs/history/2026-11-04-architect-t0023-step7.md.`
 - `[shell] In this harness set -e didn't stop a failed step, and cmd | tail hides the exit code; gate each step with || exit 1, with no pipe on the gated command. Source: this handoff.`
 - `[build] Reloading a tool module under its own name in a test makes two copies of its exception across a full run; import it once. Source: tests/test_t0022_eodhd_eval.py.`

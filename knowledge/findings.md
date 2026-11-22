@@ -165,15 +165,15 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - [research] E-0003's report text is adapted by string replacement, which fails silently on a wording change; test each replacement. Source: tools/e0003_extended.py, tests/test_e0003_extended.py.
 - [hiomux] sa ask defaults to local main, so unmerged work is invisible to the architect, and a stale local main fails the checkout; run git fetch origin main:main first. Source: OD-0175.
 - [rights] All HIO agents may review EODHD data, raw and derived, for research in the project; no value goes in the repository. Source: OD-0176, replacing OD-0174.
-- [data] Issuer checks on BIL and IEF match closely, while SPY runs slightly high at every horizon, unexplained. Source: tools/e0002_issuer_check.py.
+- [data] The issuer checks on the three sleeves have an unexplained pattern; the detail is held in the local results store (OD-0210). Source: tools/e0002_issuer_check.py.
 - [method] H.10 is usable for AUD translation only monthly, under RA 4.4. Source: tools/e0002_aud.py, OD-0167.
-- [research] E-0003's intervals_span_zero treats any block length excluding zero as "distinguished at every block length"; no recorded result is mixed, and the code is unfixed. Source: OD-0175 correction 1.
+- [research] E-0003's intervals_span_zero treats any block length excluding zero as "distinguished at every block length"; and the code is unfixed. Source: OD-0175 correction 1.
 - [hiomux] The architect's clone holds local branches as well as the checkout, so it can read an open PR's branch and say so. Source: docs/history/2026-11-04-architect-calibration.md.
-- [research] Workers' invented-data tests missed three real-data shapes (a links column, H.10's last date, BIL's reverse split); run a tool on real inputs before trusting a pass. Source: docs/evidence/t0023/corroboration-1.md.
+- [research] Workers' invented-data tests missed three real-data shapes (a links column, H.10's last date, a corporate-action shape); run a tool on real inputs before trusting a pass. Source: docs/evidence/t0023/corroboration-1.md.
 - [research] Two translated USD portfolios' compounded difference keeps its sign in AUD: W_T_AUD - W_B_AUD = W_FX (W_T_USD - W_B_USD). FX or AUD cash sensitivities can't challenge it. Source: tools/t0023_episodes.py.
 - [sources] SEC www.sec.gov refuses a client with no declared contact, though data.sec.gov answered; audited fund highlights give NAV, distributions and return per fiscal year, public. Source: OD-0179.
-- [data] EODHD's distributions for SPY, BIL and IEF match every audited fund-year checked, covering 2008. Source: docs/evidence/t0023/corroboration-1.md.
-- [data] Reinvesting on the payment date doesn't explain HIO's SPY gap to the issuer. Source: tools/t0023_basis.py.
+- [data] The sleeves' distributions were checked against audited fund reports covering 2008; the outcome is held in the local results store (OD-0210). Source: docs/evidence/t0023/corroboration-1.md.
+- [data] A payment-date reinvestment basis was tested as an explanation for a sleeve's issuer gap; the outcome is held in the local results store (OD-0210). Source: tools/t0023_basis.py.
 - [hiomux] sa ask --rev <sha> reads a pushed branch, so push first; the answer lands in <run>/sa/<id>/out/answer.md, and stored copies need links repointed to pass check_repo. Source: docs/history/2026-11-04-architect-t0023-step7.md.
 - [shell] In this harness set -e didn't stop a failed step, and cmd | tail hides the exit code; gate each step with || exit 1, with no pipe on the gated command. Source: handoffs/s1b1/2026-11-04-t0023-consolidation.md.
 - [build] Reloading a tool module under its own name in a test makes two copies of its exception across a full run; import it once. Source: tests/test_t0022_eodhd_eval.py.
@@ -182,8 +182,8 @@ _(Emptied by distil 2, accepted by OD-0135 at `4f30a9d`. Append new candidate li
 - `[shell] zsh expands "$VAR:r" as a modifier; write ${VAR}:path in git show arguments. Source: handoffs/s1b1/2026-11-22-restart-delegation-t0023-review.md.`
 - `[build] Run ruff check and ruff format --check before pushing; CI's lint step fails a PR the tests pass. Source: handoffs/s1b1/2026-11-22-restart-delegation-t0023-review.md.`
 - `[research] E-0004's state uses unrounded CPI-U ratios from first-release index levels, carried forward, so October 2025's missing release needs no special case. Source: docs/evidence/e0004/preregistration-1.md.`
-- `[data] EODHD revises its own history between pulls without notice (ex-dates, re-rounded closes, filled payment dates); every series built from it must pin the snapshot hash. Source: docs/evidence/e0002/stability-1.md.`
+- `[data] Every series built from EODHD data must pin the snapshot hash it was built from; the reason is held in the local results store (OD-0210). Source: docs/evidence/e0002/stability-1.md.`
 - `[rights] Aggregate statistics computed from licensed returns (counts, interval widths) are derived values: keep them out of the public repository; record readings only. Source: reviews/records/REVIEW-2026-11-22-e0004-1.md.`
 - `[sources] BLS API v1 refused this client with 503 twice; the flat file download.bls.gov/pub/time.series/cu/cu.data.1.AllItems served at once. Source: docs/decisions/owner/OD-0189-bls-cpi-download.md.`
 - `[hiomux] Codex tasks can't be resumed; a blocked Codex task needs a fresh task. Closing the last workers pane removes the workers window. Source: handoffs/s1b1/2026-11-22-e0004-eodhd-account-switch.md.`
-- `[research] E-0004: the duration-benefit difference across CPI-acceleration states was not distinguished; the line is parked. Source: docs/evidence/e0004/result-1.md.`
+- `[research] E-0004 ran once and is parked and unaccepted, with F-REVIEW-2026-11-22-e0004-1-1 open (OD-0207); its result is held in the local results store (OD-0210). Source: docs/evidence/e0004/result-1.md.`
