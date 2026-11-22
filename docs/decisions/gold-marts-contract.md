@@ -19,7 +19,7 @@ sources: ["architect consultation 20261122T193241-ask-cee5 (advice only)", docs/
 | Tier | Holds | State |
 |---|---|---|
 | Factor series | one return series for each factor build, in the factor store | exists, unchanged; a mart pins a build by `build_id` and `series_sha256` |
-| **Marts** | tables built from pinned parents, to query when reasoning about portfolios | new: `panel` and `portfolio_path` |
+| **Marts** | tables built from pinned parents, to query when reasoning about portfolios | new: `panel`, `portfolio_path`, and (§6a) `covariance` and `risk_contribution` |
 
 Today's analytics tools and their outputs are untouched. They use floating point; the marts here use exact decimals and are a **separately versioned calculation**, compared with those outputs and not replacing them.
 
@@ -127,6 +127,62 @@ Recipe `parameters` are `{panel, rebalance, weights}`. The one parent is the pan
 | `fact_return_contribution` | `portfolio_build_id,member_code,period_start,period_end,start_weight,member_return,contribution` | `member_code,period_end` |
 
 **None of these measures adds across time.** Contributions add across members within one month only.
+
+## 6a. The covariance and risk marts (added under OD-0234)
+
+An addition: the two kinds above, their tables and their identities are unchanged.
+
+**Floating point.** These two kinds use IEEE `float64` through NumPy. Their recipe has `numeric_policy` `float64/1` and one more key, `environment`: `{"numpy": "<version>", "python": "<major.minor>"}`, so a different library version is a different build. A float is written as Python's `repr` of it (the shortest text that reads back to the same float). A decimal cell from a parent is converted with `float(text)`.
+
+### Covariance
+
+**Spec** (`specs/gold/covariances/<name>.yaml`):
+
+```yaml
+identity: {name: example, version: 0.1.0, status: proposed}
+kind: covariance
+panel: example                 # a panel spec's name
+estimator: sample              # the only value
+ddof: 1                        # the only value
+annualisation: 12              # the only value
+trailing_months: 36            # an integer of at least 2, or null for the full sample only
+```
+
+Recipe `parameters` are `{panel, estimator, ddof, annualisation, trailing_months}`. The one parent is the panel bundle, `role` `panel`.
+
+**Windows.** `full` covers every month of the panel. With `trailing_months` = n, there is also one window for each month end from the n-th on, covering the n months that end there; its `window_id` is `trailing:<last period_end>`. Fewer than n + 1 months is refused when n is set; fewer than 2 months is refused always.
+
+**Calculation**, for each window, with members in `member_code` order: the months-by-members matrix of `return`; `numpy.cov(matrix, rowvar=False, ddof=1) * 12`; volatility is the square root of the diagonal; correlation is the covariance over the outer product of the volatilities. A window with a volatility that is not positive, or any value not finite, is refused.
+
+| Table | Columns | Sort |
+|---|---|---|
+| `dim_window` | `covariance_build_id,window_id,window_kind,first_period_end,last_period_end,n_obs` | `window_kind`, `last_period_end`; `window_kind` is `full` or `trailing` |
+| `fact_covariance` | `covariance_build_id,window_id,member_i,member_j,covariance,correlation` | `window_id,member_i,member_j`; every ordered pair, including a member with itself |
+| `fact_volatility` | `covariance_build_id,window_id,member_code,volatility` | `window_id,member_code` |
+
+### Risk contribution
+
+**Spec** (`specs/gold/risk/<name>.yaml`):
+
+```yaml
+identity: {name: example, version: 0.1.0, status: proposed}
+kind: risk_contribution
+portfolio: example             # a portfolio spec's name
+covariance: example            # a covariance spec's name
+```
+
+Recipe `parameters` are `{portfolio, covariance}`. Parents: the covariance bundle (`role` `covariance`) and the portfolio-path bundle (`role` `portfolio`). **Refused:** the two parents not built on the same panel bundle.
+
+**Calculation**, for each window of the covariance bundle, with weights `w` from the portfolio's `fact_target_allocation` and covariance matrix `S`: variance `w'Sw` (not positive is refused); volatility `σ` its square root; marginal contribution `Sw / σ`; component contribution `w × Sw / σ`; percentage contribution `component / σ`; the Euler gap `|sum(component) / σ − 1|` (above 1e-9 is refused); the diversification ratio `sum(|w| × volatility) / σ`.
+
+| Table | Columns | Sort |
+|---|---|---|
+| `fact_portfolio_risk` | `risk_build_id,window_id,portfolio_variance,portfolio_volatility,diversification_ratio,euler_relative_gap` | `window_id` |
+| `fact_risk_contribution` | `risk_build_id,window_id,member_code,weight,marginal_contribution,component_contribution,percentage_contribution` | `window_id,member_code` |
+
+These describe one sample. They are not forecasts, and none of the measures adds across windows.
+
+**Modules:** the calculations are `hio.models.risk` (`build_covariance`, `build_risk_contribution`), pure, importing `hio.contracts` and NumPy only. The planner is handed them as it is handed the other two.
 
 ## 7. Planning and building
 
