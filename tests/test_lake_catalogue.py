@@ -1448,7 +1448,7 @@ def test_no_mart_root_given_leaves_the_mart_tables_empty(lake):
     for name in tool.MART_TABLES:
         assert report["counts"][name] == 0
         assert table(out, f"SELECT count(*) FROM {name}") == [(0,)]
-    for view in ("g_panel_return", "g_portfolio_return"):
+    for view in ("g_panel_return", "g_portfolio_return", "g_covariance", "g_risk_contribution"):
         assert table(out, f"SELECT count(*) FROM {view}") == [(0,)]
     assert table(out, "SELECT count(*) FROM lineage WHERE child_kind = 'mart'") == [(0,)]
 
@@ -1465,9 +1465,13 @@ def test_an_absent_or_empty_mart_root_is_fine_and_a_file_is_refused(lake):
 def test_the_new_tables_and_views_are_in_every_catalogue(marts):
     _, out = build_marts(marts)
     assert [r[0] for r in table(out, "SHOW TABLES")] == sorted([*tool.TABLES, *tool.VIEWS])
-    assert {"gold_bundle", "g_panel_return", "g_portfolio_return"} <= {
-        r[0] for r in table(out, "SHOW TABLES")
-    }
+    assert {
+        "gold_bundle",
+        "g_panel_return",
+        "g_portfolio_return",
+        "g_covariance",
+        "g_risk_contribution",
+    } <= {r[0] for r in table(out, "SHOW TABLES")}
 
 
 def test_rebuilding_with_marts_gives_the_same_contents(marts):
@@ -1499,3 +1503,445 @@ def test_cli_prints_the_mart_counts_only_with_a_mart_root_and_no_data(marts, cap
         assert marts["panel_a"] not in stream
     assert tool.main(cli_args(marts, "verify")) == 0
     assert "gold_bundle" not in capsys.readouterr().out
+
+
+# ---- the covariance and risk kinds (OD-0234, contract §6a) -------------------------------------------------
+
+ENV = {"numpy": "2.1.0", "python": "3.12"}
+FT = gold_marts.float_text
+MEMBERS = ("alpha", "beta")
+# (window_id, kind, first period_end, last period_end, n_obs): invented, never recomputed by the catalogue.
+WINDOWS = [
+    ("full", "full", "2029-12-31", "2030-02-28", "3"),
+    ("trailing:2030-02-28", "trailing", "2030-01-31", "2030-02-28", "2"),
+]
+# window_id -> (variance of alpha, variance of beta, covariance): invented floats
+COV_VALUES = {"full": (0.04, 0.0225, 0.012), "trailing:2030-02-28": (0.05, 0.03, 0.006)}
+# window_id -> (portfolio variance, volatility, diversification ratio, euler gap, {member: (mc, cc, pc)})
+RISK_VALUES = {
+    "full": (0.0216, 0.147, 1.2, 0.0, {"alpha": (0.1, 0.06, 0.4), "beta": (0.15, 0.09, 0.6)}),
+    "trailing:2030-02-28": (0.03, 0.17, 1.1, 1e-16, {"alpha": (0.2, 0.12, 0.7), "beta": (0.1, 0.05, 0.3)}),
+}
+
+
+def payload_of(root: Path, kind: str, bid: str) -> str:
+    return gold_marts.open_bundle(root, kind, bid).payload_sha256
+
+
+def write_covariance(root: Path, panel_id, *, name="cov", environment=ENV, trailing=2):
+    recipe = gold_marts.recipe(
+        "covariance",
+        {"name": name, "version": "0.1.0", "sha256": sha(name.encode())},
+        {
+            "panel": "twin",
+            "estimator": "sample",
+            "ddof": 1,
+            "annualisation": 12,
+            "trailing_months": trailing,
+        },
+        [
+            {
+                "role": "panel",
+                "kind": "panel",
+                "id": panel_id,
+                "payload_sha256": payload_of(root, "panel", panel_id),
+            }
+        ],
+        "d" * 40,
+        environment=environment,
+    )
+    bid = gold_marts.build_id(recipe)
+    rows = {
+        "dim_window": [
+            {
+                "covariance_build_id": bid,
+                "window_id": w,
+                "window_kind": k,
+                "first_period_end": first,
+                "last_period_end": last,
+                "n_obs": n,
+            }
+            for w, k, first, last, n in WINDOWS
+        ],
+        "fact_covariance": [],
+        "fact_volatility": [],
+    }
+    for w, _, _, _, _ in WINDOWS:
+        va, vb, c = COV_VALUES[w]
+        matrix = {("alpha", "alpha"): va, ("alpha", "beta"): c, ("beta", "alpha"): c, ("beta", "beta"): vb}
+        for (i, j), value in matrix.items():
+            correlation = 1.0 if i == j else c / (va * vb) ** 0.5
+            rows["fact_covariance"].append(
+                {
+                    "covariance_build_id": bid,
+                    "window_id": w,
+                    "member_i": i,
+                    "member_j": j,
+                    "covariance": FT(value),
+                    "correlation": FT(correlation),
+                }
+            )
+        for code, variance in (("alpha", va), ("beta", vb)):
+            rows["fact_volatility"].append(
+                {
+                    "covariance_build_id": bid,
+                    "window_id": w,
+                    "member_code": code,
+                    "volatility": FT(variance**0.5),
+                }
+            )
+    tables = {n: gold_marts.table_bytes("covariance", n, r) for n, r in rows.items()}
+    directory, _ = gold_marts.write_bundle(root, recipe, tables)
+    return bid, directory
+
+
+def write_risk(root: Path, covariance_id, portfolio_id, *, environment=ENV):
+    recipe = gold_marts.recipe(
+        "risk_contribution",
+        {"name": "risk", "version": "0.1.0", "sha256": sha(b"risk")},
+        {"portfolio": "pf", "covariance": "cov"},
+        [
+            {
+                "role": "covariance",
+                "kind": "covariance",
+                "id": covariance_id,
+                "payload_sha256": payload_of(root, "covariance", covariance_id),
+            },
+            {
+                "role": "portfolio",
+                "kind": "portfolio_path",
+                "id": portfolio_id,
+                "payload_sha256": payload_of(root, "portfolio_path", portfolio_id),
+            },
+        ],
+        "c" * 40,
+        environment=environment,
+    )
+    bid = gold_marts.build_id(recipe)
+    rows = {"fact_portfolio_risk": [], "fact_risk_contribution": []}
+    for w, _, _, _, _ in WINDOWS:
+        variance, volatility, ratio, gap, per = RISK_VALUES[w]
+        rows["fact_portfolio_risk"].append(
+            {
+                "risk_build_id": bid,
+                "window_id": w,
+                "portfolio_variance": FT(variance),
+                "portfolio_volatility": FT(volatility),
+                "diversification_ratio": FT(ratio),
+                "euler_relative_gap": FT(gap),
+            }
+        )
+        for code, (mc, cc, pc) in per.items():
+            rows["fact_risk_contribution"].append(
+                {
+                    "risk_build_id": bid,
+                    "window_id": w,
+                    "member_code": code,
+                    "weight": {"alpha": "0.6", "beta": "0.4"}[code],
+                    "marginal_contribution": FT(mc),
+                    "component_contribution": FT(cc),
+                    "percentage_contribution": FT(pc),
+                }
+            )
+    tables = {n: gold_marts.table_bytes("risk_contribution", n, r) for n, r in rows.items()}
+    directory, _ = gold_marts.write_bundle(root, recipe, tables)
+    return bid, directory
+
+
+@pytest.fixture
+def float_marts(marts):
+    """The panel and portfolio bundles of `marts`, plus a covariance bundle on the panel and a risk bundle."""
+    root = marts["root"]
+    marts["cov"], marts["cov_dir"] = write_covariance(root, marts["panel_a"])
+    marts["risk"], marts["risk_dir"] = write_risk(root, marts["cov"], marts["portfolio"])
+    return marts
+
+
+def test_float_kinds_load_into_gold_bundle_with_the_environment(float_marts):
+    report, out = build_marts(float_marts)
+    assert report["problems"] == 0 and report["result"] == "pass"
+    assert report["counts"]["gold_bundle"] == 5
+    rows = table(
+        out, "SELECT kind, numeric_policy, environment_json FROM gold_bundle ORDER BY kind, spec_name"
+    )
+    env_json = tool.canonical_json(ENV).decode()
+    assert env_json == '{"numpy":"2.1.0","python":"3.12"}'
+    assert rows == [
+        ("covariance", "float64/1", env_json),
+        ("panel", "decimal-50/1", ""),
+        ("panel", "decimal-50/1", ""),
+        ("portfolio_path", "decimal-50/1", ""),
+        ("risk_contribution", "float64/1", env_json),
+    ]
+    # the recipe in full, with its environment, and the verified payload hash
+    for kind, key in (("covariance", "cov"), ("risk_contribution", "risk")):
+        directory = float_marts[f"{key}_dir"]
+        manifest = json.loads((directory / "manifest.json").read_text())
+        recipe = json.loads(
+            table(out, f"SELECT recipe_json FROM gold_bundle WHERE build_id = '{float_marts[key]}'")[0][0]
+        )
+        assert recipe["kind"] == kind and recipe["environment"] == ENV
+        assert gold_marts.build_id(recipe) == float_marts[key]
+        assert table(
+            out,
+            f"SELECT spec_name, spec_version, code_commit, payload_sha256, directory FROM gold_bundle "
+            f"WHERE build_id = '{float_marts[key]}'",
+        ) == [
+            (
+                recipe["spec"]["name"],
+                "0.1.0",
+                recipe["code_commit"],
+                manifest["payload_sha256"],
+                str(directory),
+            )
+        ]
+
+
+def test_float_kinds_fill_a_g_table_for_each_of_their_tables(float_marts):
+    report, out = build_marts(float_marts)
+    counts = report["counts"]
+    assert counts["g_dim_window"] == 2
+    assert counts["g_fact_covariance"] == 8
+    assert counts["g_fact_volatility"] == 4
+    assert counts["g_fact_portfolio_risk"] == 2
+    assert counts["g_fact_risk_contribution"] == 4
+    for kind in ("covariance", "risk_contribution"):
+        for name, columns in gold_marts.TABLES[kind].items():
+            described = table(out, f"DESCRIBE g_{name}")
+            assert [(r[0], r[1]) for r in described] == [(c, "VARCHAR") for c in columns]
+    assert table(
+        out,
+        "SELECT window_id, member_i, member_j, covariance, correlation FROM g_fact_covariance "
+        f"WHERE covariance_build_id = '{float_marts['cov']}' AND window_id = 'full' ORDER BY 2, 3",
+    ) == [
+        ("full", "alpha", "alpha", "0.04", "1.0"),
+        ("full", "alpha", "beta", "0.012", FT(0.012 / (0.04 * 0.0225) ** 0.5)),
+        ("full", "beta", "alpha", "0.012", FT(0.012 / (0.04 * 0.0225) ** 0.5)),
+        ("full", "beta", "beta", "0.0225", "1.0"),
+    ]
+    assert table(
+        out,
+        "SELECT member_code, volatility FROM g_fact_volatility WHERE window_id = 'full' ORDER BY 1",
+    ) == [("alpha", FT(0.04**0.5)), ("beta", FT(0.0225**0.5))]
+    assert table(
+        out,
+        "SELECT member_code, weight, marginal_contribution, component_contribution, percentage_contribution "
+        "FROM g_fact_risk_contribution WHERE window_id = 'full' ORDER BY 1",
+    ) == [("alpha", "0.6", "0.1", "0.06", "0.4"), ("beta", "0.4", "0.15", "0.09", "0.6")]
+
+
+def test_lineage_of_the_float_kinds_a_risk_bundle_has_two_mart_parents(float_marts):
+    _, out = build_marts(float_marts)
+    rows = table(
+        out,
+        "SELECT parent_kind, parent_id, role, parent_present FROM lineage "
+        f"WHERE child_kind = 'mart' AND child_id = '{float_marts['risk']}' ORDER BY role",
+    )
+    assert rows == [
+        ("mart", float_marts["cov"], "covariance", True),
+        ("mart", float_marts["portfolio"], "portfolio", True),
+    ]
+    assert table(
+        out,
+        "SELECT parent_kind, parent_id, role, parent_present FROM lineage "
+        f"WHERE child_kind = 'mart' AND child_id = '{float_marts['cov']}'",
+    ) == [("mart", float_marts["panel_a"], "panel", True)]
+    # 8 from the lake, 4 from the panels and the portfolio, 1 for the covariance, 2 for the risk bundle
+    assert table(out, "SELECT count(*) FROM lineage")[0][0] == 8 + 4 + 1 + 2
+
+
+def test_g_covariance_has_numbers_beside_the_text_and_the_window(float_marts):
+    _, out = build_marts(float_marts)
+    assert table(out, "SELECT count(*) FROM g_covariance") == table(
+        out, "SELECT count(*) FROM g_fact_covariance"
+    )
+    rows = table(
+        out,
+        "SELECT window_id, member_i, member_j, covariance, covariance_value, typeof(covariance_value), "
+        "correlation_value, typeof(correlation_value), window_kind, first_period_end, last_period_end, "
+        "n_obs FROM g_covariance WHERE member_i = 'alpha' AND member_j = 'beta' ORDER BY window_id",
+    )
+    corr_full = 0.012 / (0.04 * 0.0225) ** 0.5
+    corr_trail = 0.006 / (0.05 * 0.03) ** 0.5
+    assert rows == [
+        (
+            "full",
+            "alpha",
+            "beta",
+            "0.012",
+            0.012,
+            "DOUBLE",
+            corr_full,
+            "DOUBLE",
+            "full",
+            "2029-12-31",
+            "2030-02-28",
+            "3",
+        ),
+        (
+            "trailing:2030-02-28",
+            "alpha",
+            "beta",
+            "0.006",
+            0.006,
+            "DOUBLE",
+            corr_trail,
+            "DOUBLE",
+            "trailing",
+            "2030-01-31",
+            "2030-02-28",
+            "2",
+        ),
+    ]
+    # the float text reads back to exactly the float written
+    assert float(FT(corr_full)) == corr_full == rows[0][6]
+    assert table(
+        out, "SELECT count(*) FROM g_covariance WHERE member_i = member_j AND correlation_value = 1.0"
+    ) == [(4,)]
+
+
+def test_g_risk_contribution_has_numbers_the_windows_risk_and_the_window(float_marts):
+    _, out = build_marts(float_marts)
+    assert table(out, "SELECT count(*) FROM g_risk_contribution") == [(4,)]
+    rows = table(
+        out,
+        "SELECT window_id, member_code, weight, weight_value, marginal_contribution_value, "
+        "component_contribution_value, percentage_contribution_value, typeof(percentage_contribution_value), "
+        "portfolio_variance, portfolio_volatility_value, diversification_ratio, euler_relative_gap_value, "
+        "covariance_build_id, window_kind, first_period_end, last_period_end, n_obs "
+        "FROM g_risk_contribution ORDER BY window_id, member_code",
+    )
+    cov = float_marts["cov"]
+    assert rows == [
+        (
+            "full",
+            "alpha",
+            "0.6",
+            0.6,
+            0.1,
+            0.06,
+            0.4,
+            "DOUBLE",
+            "0.0216",
+            0.147,
+            "1.2",
+            0.0,
+            cov,
+            "full",
+            "2029-12-31",
+            "2030-02-28",
+            "3",
+        ),
+        (
+            "full",
+            "beta",
+            "0.4",
+            0.4,
+            0.15,
+            0.09,
+            0.6,
+            "DOUBLE",
+            "0.0216",
+            0.147,
+            "1.2",
+            0.0,
+            cov,
+            "full",
+            "2029-12-31",
+            "2030-02-28",
+            "3",
+        ),
+        (
+            "trailing:2030-02-28",
+            "alpha",
+            "0.6",
+            0.6,
+            0.2,
+            0.12,
+            0.7,
+            "DOUBLE",
+            "0.03",
+            0.17,
+            "1.1",
+            1e-16,
+            cov,
+            "trailing",
+            "2030-01-31",
+            "2030-02-28",
+            "2",
+        ),
+        (
+            "trailing:2030-02-28",
+            "beta",
+            "0.4",
+            0.4,
+            0.1,
+            0.05,
+            0.3,
+            "DOUBLE",
+            "0.03",
+            0.17,
+            "1.1",
+            1e-16,
+            cov,
+            "trailing",
+            "2030-01-31",
+            "2030-02-28",
+            "2",
+        ),
+    ]
+    # the percentage contributions of each window sum to 1 (invented to do so)
+    assert table(
+        out,
+        "SELECT window_id, round(sum(percentage_contribution_value), 12) FROM g_risk_contribution "
+        "GROUP BY 1 ORDER BY 1",
+    ) == [("full", 1.0), ("trailing:2030-02-28", 1.0)]
+
+
+def test_a_risk_bundle_whose_covariance_is_not_loaded_keeps_its_rows_with_null_window(float_marts):
+    path = float_marts["cov_dir"] / "tables" / "fact_covariance.csv"
+    path.write_text(path.read_text().replace("0.012", "0.013"))
+    report, out = build_marts(float_marts)
+    assert report["problems"] == 1 and report["result"] == "fail"
+    assert table(out, "SELECT layer, id FROM problem") == [("mart", float_marts["cov"])]
+    assert table(out, "SELECT count(*) FROM gold_bundle WHERE kind = 'covariance'") == [(0,)]
+    assert table(out, "SELECT count(*) FROM g_covariance") == [(0,)]
+    assert table(
+        out,
+        "SELECT parent_id, parent_present FROM lineage WHERE role = 'covariance' AND child_kind = 'mart'",
+    ) == [(float_marts["cov"], False)]
+    # the risk bundle is itself sound: its fact rows stay, without a window
+    assert table(
+        out,
+        "SELECT count(*), count(window_kind), count(portfolio_variance) FROM g_risk_contribution",
+    ) == [(4, 0, 4)]
+
+
+def test_a_different_environment_is_a_different_bundle_beside_the_first(float_marts):
+    other_env = {"numpy": "2.2.0", "python": "3.12"}
+    other, _ = write_covariance(float_marts["root"], float_marts["panel_a"], environment=other_env)
+    assert other != float_marts["cov"]
+    _, out = build_marts(float_marts)
+    assert table(
+        out, "SELECT build_id, environment_json FROM gold_bundle WHERE kind = 'covariance' ORDER BY 2"
+    ) == [
+        (float_marts["cov"], tool.canonical_json(ENV).decode()),
+        (other, tool.canonical_json(other_env).decode()),
+    ]
+    # each bundle's rows stay apart by covariance_build_id, and the view keeps one row per fact row
+    assert table(
+        out, "SELECT covariance_build_id, count(*) FROM g_covariance GROUP BY 1 ORDER BY 2, 1"
+    ) == sorted([(float_marts["cov"], 8), (other, 8)], key=lambda r: (r[1], r[0]))
+    assert table(out, "SELECT count(*) FROM g_risk_contribution") == [(4,)]
+
+
+def test_cli_counts_include_the_float_kinds_and_show_no_data(float_marts, capsys):
+    extra = ("--mart-root", str(float_marts["root"]))
+    assert tool.main(cli_args(float_marts, "verify", *extra)) == 0
+    out = capsys.readouterr().out
+    lines = out.splitlines()
+    assert "gold_bundle: 5" in lines
+    assert "g_dim_window: 2" in lines and "g_fact_risk_contribution: 4" in lines
+    assert not DATE_OR_DECIMAL.search(out)
+    for key in ("cov", "risk"):
+        assert float_marts[key] not in out

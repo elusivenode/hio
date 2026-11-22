@@ -32,7 +32,13 @@ directory of `<kind>/<build_id>/` bundles, each checked with `hio.contracts.gold
 `open_bundle`). They add `gold_bundle` (one row per bundle, with its recipe as canonical JSON), a `g_<table>`
 for every table of every kind (all text; the rows of every bundle of that kind) and the views
 `g_panel_return` and `g_portfolio_return` (numbers beside the text; the panel view also has the member's
-`factor_id`). A bundle is `mart` in `lineage` (layer `mart` in `problem`): a `factor_series` parent is
+`factor_id`). The kinds `covariance` and `risk_contribution` (contract §6a, OD-0234) load the same way, a
+risk bundle with its two mart parents (roles `covariance` and `portfolio`); `gold_bundle.environment_json` is
+a float kind's `environment` as canonical JSON and the empty string for the decimal kinds. The view
+`g_covariance` is the fact with `covariance_value` and `correlation_value` and its window's kind, span and
+count; the view `g_risk_contribution` is the fact with numeric columns, its window's portfolio risk (text and
+`_value`) and, through the lineage role `covariance`, the window's kind, span and count. A bundle is `mart`
+in `lineage` (layer `mart` in `problem`): a `factor_series` parent is
 `gold` (the factor build id), a bundle parent is `mart` (its build id), the role is the parent's. The mart
 root may be absent or empty. The CLI prints the mart tables' counts only when `--mart-root` is given.
 
@@ -138,7 +144,7 @@ TABLES = {
     "gold_bundle": (
         "kind VARCHAR, build_id VARCHAR, spec_name VARCHAR, spec_version VARCHAR, spec_sha256 VARCHAR, "
         "code_commit VARCHAR, numeric_policy VARCHAR, payload_sha256 VARCHAR, directory VARCHAR, "
-        "recipe_json VARCHAR"
+        "recipe_json VARCHAR, environment_json VARCHAR"
     ),
     # One g_<table> for every gold mart table of every kind: the table's columns, all text.
     **{
@@ -193,6 +199,38 @@ VIEWS = {
         "SELECT f.*, TRY_CAST(f.portfolio_return AS DOUBLE) AS portfolio_return_value, "
         "TRY_CAST(f.wealth_index AS DOUBLE) AS wealth_index_value "
         "FROM g_fact_portfolio_return f"
+    ),
+    # The covariance fact beside its window's kind, span and count (contract §6a). The floats are written as
+    # Python's repr, which DuckDB reads back exactly.
+    "g_covariance": (
+        "SELECT f.*, TRY_CAST(f.covariance AS DOUBLE) AS covariance_value, "
+        "TRY_CAST(f.correlation AS DOUBLE) AS correlation_value, "
+        "w.window_kind, w.first_period_end, w.last_period_end, w.n_obs "
+        "FROM g_fact_covariance f "
+        "LEFT JOIN g_dim_window w "
+        "ON w.covariance_build_id = f.covariance_build_id AND w.window_id = f.window_id"
+    ),
+    # The risk fact beside the portfolio's risk in the same window and that window's kind, span and count. A
+    # risk bundle's windows are its covariance parent's (lineage role `covariance`), so the window dimension
+    # is reached through lineage. A left join keeps every row of the fact table.
+    "g_risk_contribution": (
+        "SELECT f.*, TRY_CAST(f.weight AS DOUBLE) AS weight_value, "
+        "TRY_CAST(f.marginal_contribution AS DOUBLE) AS marginal_contribution_value, "
+        "TRY_CAST(f.component_contribution AS DOUBLE) AS component_contribution_value, "
+        "TRY_CAST(f.percentage_contribution AS DOUBLE) AS percentage_contribution_value, "
+        "p.portfolio_variance, p.portfolio_volatility, p.diversification_ratio, p.euler_relative_gap, "
+        "TRY_CAST(p.portfolio_variance AS DOUBLE) AS portfolio_variance_value, "
+        "TRY_CAST(p.portfolio_volatility AS DOUBLE) AS portfolio_volatility_value, "
+        "TRY_CAST(p.diversification_ratio AS DOUBLE) AS diversification_ratio_value, "
+        "TRY_CAST(p.euler_relative_gap AS DOUBLE) AS euler_relative_gap_value, "
+        "l.parent_id AS covariance_build_id, "
+        "w.window_kind, w.first_period_end, w.last_period_end, w.n_obs "
+        "FROM g_fact_risk_contribution f "
+        "LEFT JOIN g_fact_portfolio_risk p "
+        "ON p.risk_build_id = f.risk_build_id AND p.window_id = f.window_id "
+        "LEFT JOIN lineage l ON l.child_kind = 'mart' AND l.child_id = f.risk_build_id "
+        "AND l.role = 'covariance' "
+        "LEFT JOIN g_dim_window w ON w.covariance_build_id = l.parent_id AND w.window_id = f.window_id"
     ),
 }
 
@@ -555,6 +593,8 @@ def _load_mart(mart_root: Path, kind: str, bundle_dir: Path) -> dict:
         bundle.payload_sha256,
         str(bundle_dir),
         canonical_json(recipe).decode("utf-8"),
+        # A float kind's environment; empty for the decimal kinds, which have none.
+        canonical_json(recipe["environment"]).decode("utf-8") if "environment" in recipe else "",
     )
     return {"id": bundle.build_id, "bundle": row, "tables": tables, "lineage": lineage}
 
