@@ -2,6 +2,9 @@
 
 `fetch` downloads the archived releases listed in release-dates.csv (one GET each, at most `cap`), saving
 every body verbatim under a manifest. The contact goes into the request User-Agent only and is never written.
+A run that stops part-way (a refused request) leaves progress.json; running `fetch` again resumes from it,
+keeps the pages already held and counts the requests already spent against the same cap.
+`parse_release` always reads the table headed "Table 1."; the summary table before it is never read.
 `parse_release` reads Table 1, "All items", unadjusted indexes, from three layouts: HTML tables (2013 on),
 HTML <PRE> text (about 2008 to 2012) and PDF (2006-05 to 2008-01, text-extracted with pypdf, imported lazily).
 `compare` sets every printed level against the flat-file level, exactly (Decimal).
@@ -20,6 +23,7 @@ import io
 import json
 import re
 import sys
+import time
 from collections.abc import Callable
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
@@ -49,6 +53,7 @@ _check_contact = _base._check_contact
 DEFAULT_RAW = Path("~/.hio-research/E-0004/raw").expanduser()
 DEFAULT_RELEASES = Path("~/.hio-research/E-0004/releases").expanduser()
 DEFAULT_CAP = 250
+PROGRESS = "progress.json"
 MONTHS = {
     m: i
     for i, m in enumerate(
@@ -57,6 +62,7 @@ MONTHS = {
 }
 LABEL = re.compile(r"^([A-Za-z]{3,4})\.?\s+(\d{4})$")
 LEVEL = re.compile(r"^\d+\.\d+$")
+TABLE_1_TEXT = re.compile(r"^[ \t]*Table 1\.[ \t]", re.MULTILINE)
 
 Getter = Callable[[str, str], tuple[int, bytes]]
 Parsed = tuple[date, "Decimal | None", date, "Decimal | None"]
@@ -93,7 +99,17 @@ def _text(fragment: str) -> str:
     return " ".join(re.sub(r"<[^>]*>", "", fragment).split())
 
 
+def _table_1_html(html: str) -> str:
+    """The <table> whose caption starts "Table 1."; a release's first "All items" row is in Table A."""
+    for table in re.finditer(r"<table\b.*?</table>", html, re.DOTALL | re.IGNORECASE):
+        caption = re.search(r"<caption\b[^>]*>(.*?)</caption>", table.group(0), re.DOTALL | re.IGNORECASE)
+        if caption and _text(caption.group(1)).startswith("Table 1."):
+            return table.group(0)
+    raise ValueError("no HTML table captioned 'Table 1.' was found")
+
+
 def _parse_html(html: str) -> Parsed:
+    html = _table_1_html(html)
     row = re.search(
         r"<tr\b[^>]*>\s*<th\b[^>]*>\s*(?:<p\b[^>]*>)?\s*All items\s*(?:</p>)?\s*</th>(.*?)</tr>",
         html,
@@ -117,7 +133,11 @@ def _parse_html(html: str) -> Parsed:
 
 def _parse_text(text: str) -> Parsed:
     """The <PRE> layout (also the text extracted from a PDF): previous and reference month, no year-ago."""
-    row = re.search(r"^[ \t]*All items\.{2,}[ \t]+(\S.*)$", text, re.MULTILINE)
+    start = TABLE_1_TEXT.search(text)
+    if not start:
+        raise ValueError("no 'Table 1.' heading found in the text")
+    text = text[start.start() :]  # the release body has its own, earlier "All items" row
+    row = re.search(r"^[ \t]*All items[ \t]*\.{2,}[ \t]+(\S.*)$", text, re.MULTILINE)
     if not row:
         raise ValueError("no 'All items' row found in the text table")
     head = text[: row.start()]
@@ -138,7 +158,8 @@ def _pdf_text(data: bytes) -> str:
     text = ""
     for page in reader.pages:
         text += (page.extract_text() or "") + "\n"
-        if re.search(r"^[ \t]*All items\.{2,}", text, re.MULTILINE):
+        start = TABLE_1_TEXT.search(text)
+        if start and re.search(r"^[ \t]*All items[ \t]*\.{2,}", text[start.start() :], re.MULTILINE):
             break
     return text
 
@@ -184,12 +205,23 @@ def fetch(
     get: Getter = http_get,
     cap: int = DEFAULT_CAP,
     now: datetime | None = None,
+    pause: float = 0.0,
 ) -> dict:
     contact = _check_contact(contact)
     resolved = out_dir.resolve()
     if resolved == REPO or REPO in resolved.parents:
         raise ValueError("the output directory must lie outside the repository")
-    if out_dir.exists() and any(out_dir.iterdir()):
+    progress_path = out_dir / PROGRESS
+    files: list[dict] = []
+    spent = 0
+    if progress_path.exists():  # an earlier run stopped part-way: keep its pages and its request count
+        progress = json.loads(progress_path.read_text())
+        spent, files = int(progress["requests"]), list(progress["files"])
+        for entry in files:
+            held = out_dir / entry["name"]
+            if not held.is_file() or hashlib.sha256(held.read_bytes()).hexdigest() != entry["sha256"]:
+                raise ValueError(f"{entry['name']} does not match progress.json; the run cannot resume")
+    elif out_dir.exists() and any(out_dir.iterdir()):
         raise ValueError("the output directory must be absent or empty")
     selected = [(d, u) for d, u in _read_dates(raw_dir) if start <= d <= end]
     if not selected:
@@ -199,18 +231,26 @@ def fetch(
     moment = now or datetime.now(UTC)
     agent = USER_AGENT_TEMPLATE.format(contact=contact)
     budget = Budget(cap, get, agent)
+    budget.count = spent
     needle = contact.encode()
     out_dir.mkdir(parents=True, exist_ok=True)
-    files = []
+    held_urls = {entry["url"] for entry in files}
     for when, url in selected:
-        body = budget.get(url)  # refuses on the request past the cap and on any non-200
-        if needle in body:
-            raise ValueError("a response contains the contact string; it was not written")
-        name = f"cpi_{when:%m%d%Y}{Path(url).suffix.lower()}"
-        (out_dir / name).write_bytes(body)  # kept as fetched, so a later refusal loses no paid-for page
-        files.append(
-            {"name": name, "url": url, "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest()}
-        )
+        if url in held_urls:
+            continue
+        if pause and budget.count > spent:
+            time.sleep(pause)
+        try:
+            body = budget.get(url)  # refuses on the request past the cap and on any non-200
+            if needle in body:
+                raise ValueError("a response contains the contact string; it was not written")
+            name = f"cpi_{when:%m%d%Y}{Path(url).suffix.lower()}"
+            (out_dir / name).write_bytes(body)
+            files.append(
+                {"name": name, "url": url, "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest()}
+            )
+        finally:  # every request spent is recorded, whether or not it returned a page
+            progress_path.write_text(json.dumps({"requests": budget.count, "files": files}, indent=1) + "\n")
     manifest = {
         "source_id": SOURCE_ID,
         "notice": NOTICE.format(date=moment.date().isoformat()),
@@ -221,6 +261,7 @@ def fetch(
         "files": files,
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
+    progress_path.unlink(missing_ok=True)
     return manifest
 
 
@@ -277,6 +318,8 @@ def read_flat(path: Path) -> dict[date, Decimal]:
         cells = [c.strip() for c in line.split("\t")]
         if cells[0] != SERIES_ID or not (len(cells) >= 4 and re.fullmatch(r"M(0[1-9]|1[0-2])", cells[2])):
             continue
+        if cells[3] == "-":  # a month BLS did not publish (October 2025)
+            continue
         levels[date(int(cells[1]), int(cells[2][1:]), 1)] = Decimal(cells[3])
     if not levels:
         raise ValueError(f"the flat file has no monthly {SERIES_ID} rows")
@@ -312,12 +355,19 @@ def main(argv: list[str] | None = None) -> int:
         if name == "fetch":
             p.add_argument("--contact", required=True, help="goes into the User-Agent only; never written")
             p.add_argument("--cap", type=int, default=DEFAULT_CAP)
+            p.add_argument("--pause", type=float, default=1.0, help="seconds between requests")
     args = parser.parse_args(argv)
     try:
         if args.command == "fetch":
             gate = RightsGate(load_genuine(REPO / "registers" / "sources.yaml"))
             manifest = fetch(
-                args.raw, args.releases, contact=args.contact, gate=gate, commit=_code_commit(), cap=args.cap
+                args.raw,
+                args.releases,
+                contact=args.contact,
+                gate=gate,
+                commit=_code_commit(),
+                cap=args.cap,
+                pause=args.pause,
             )
             print(f"requests {manifest['requests']}")
             print(f"files {len(manifest['files'])}")

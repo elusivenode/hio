@@ -1,4 +1,8 @@
-"""Archived CPI releases: parser on the committed BLS snippets, fetch and compare on invented data."""
+"""Archived CPI releases: parser on the committed BLS snippets, fetch and compare on invented data.
+
+Each snippet keeps the release's earlier summary table (Table A, or the text table in the body) ahead of
+Table 1, because that table's "All items" row comes first in the real pages and holds percent changes.
+"""
 
 import csv
 import importlib.util
@@ -63,7 +67,7 @@ def test_the_1967_base_row_is_not_taken_for_all_items():
     ("name", "old", "new", "match"),
     [
         ("cpi_07162013.htm.snippet", "233.504", "n/a", "not an index level"),
-        ("cpi_07162013.htm.snippet", "All items", "Everything", "All items"),
+        ("cpi_07162013.htm.snippet", ">All items</p>", ">Everything</p>", "All items"),
         ("cpi_07162013.htm.snippet", "Jun.<br />2012</th>", "Xyz<br />2012</th>", "month label"),
         ("cpi_07162013.htm.snippet", "Jun.<br />2012</th>", "Jun.<br />2011</th>", "a year earlier"),
         ("cpi_04152011.htm.snippet", "to Mar. 2011", "ending then", "reference-month"),
@@ -74,6 +78,24 @@ def test_a_garbled_table_refuses(name, old, new, match):
     data = snippet(name).decode().replace(old, new, 1).encode()
     with pytest.raises(ValueError, match=match):
         tool.parse_release(name, data)
+
+
+@pytest.mark.parametrize(
+    ("name", "old", "new", "match"),
+    [
+        # with Table 1 unrecognisable, the summary table's "All items" row must not be read in its place
+        ("cpi_05112022.htm.snippet", ">Table 1. ", ">Table 9. ", "Table 1"),
+        ("cpi_11102026.htm.snippet", ">Table 1. ", ">Table 9. ", "Table 1"),
+        ("cpi_07162013.htm.snippet", ">Table 1. ", ">Table 9. ", "Table 1"),
+        ("cpi_02202009.htm.snippet", " Table 1. ", " Table 9. ", "Table 1"),
+        ("cpi_04152011.htm.snippet", " Table 1. ", " Table 9. ", "Table 1"),
+    ],
+)
+def test_the_summary_table_is_never_read_for_table_1(name, old, new, match):
+    data = snippet(name).decode()
+    assert data.index("All items") < data.index(old)  # the summary row really does come first
+    with pytest.raises(ValueError, match=match):
+        tool.parse_release(name, data.replace(old, new, 1).encode())
 
 
 def test_text_that_is_not_a_table_refuses():
@@ -108,10 +130,16 @@ def tiny_pdf(lines):
 
 def test_a_pdf_is_text_extracted_then_parsed_as_text():
     pytest.importorskip("pypdf")
-    lines = [
-        "Unadjusted indexes percent change",
-        "Relative to Feb. 2007",
-        "All items....................    100.000    202.416    203.499     2.4     0.5",
+    lines = [  # the shape pypdf gives for the real 2006 PDFs: a body table first, a space before the dots
+        "All items .......... .5 .2 .4 2.4",
+        "Table 1. Consumer Price Index for All Urban Consumers",
+        "Unadjusted",
+        "indexes",
+        "Unadjusted",
+        "percent change to",
+        "Feb. 2007 from",
+        "All items ...................................... 100.000 202.416 203.499 2.4 0.5",
+        "All items \\(1967=100\\) ........................... - 606.348 609.594 - -",
     ]
     assert tool.parse_release("cpi_03162007.pdf", tiny_pdf(lines)) == (
         date(2007, 2, 1),
@@ -124,7 +152,7 @@ def test_a_pdf_is_text_extracted_then_parsed_as_text():
 def test_a_pdf_without_the_row_refuses():
     pytest.importorskip("pypdf")
     with pytest.raises(ValueError, match="All items"):
-        tool.parse_release("cpi_03162007.pdf", tiny_pdf(["Nothing to see"]))
+        tool.parse_release("cpi_03162007.pdf", tiny_pdf(["Table 1. Nothing to see"]))
 
 
 # ---- fetch on invented responses
@@ -297,6 +325,57 @@ def test_a_response_echoing_the_contact_is_refused_and_not_written(tmp_path):
     assert not (out / "manifest.json").exists()
 
 
+class FlakyNet(Net):
+    """Refuses the request numbered `fail_at` (1-based) with a 503, once."""
+
+    def __init__(self, fail_at):
+        super().__init__()
+        self.fail_at = fail_at
+
+    def get(self, url, agent):
+        status, body = super().get(url, agent)
+        if len(self.gets) == self.fail_at:
+            return 503, b""
+        return status, body
+
+
+def test_a_refused_request_leaves_progress_and_the_next_run_resumes_under_the_same_cap(tmp_path):
+    raw, out = raw_dir(tmp_path), tmp_path / "out"
+    net = FlakyNet(fail_at=3)
+    with pytest.raises(ValueError, match="HTTP 503"):
+        tool.fetch(raw, out, contact=CONTACT, gate=FakeGate(), commit="c", get=net.get, cap=6)
+    progress = json.loads((out / "progress.json").read_text())
+    assert progress["requests"] == 3 and len(progress["files"]) == 2
+    assert not (out / "manifest.json").exists()
+    assert CONTACT not in (out / "progress.json").read_text()
+    manifest = tool.fetch(raw, out, contact=CONTACT, gate=FakeGate(), commit="c", get=net.get, cap=6, now=NOW)
+    assert len(net.gets) == 5  # 3 the first time, then only the 2 pages not yet held
+    assert manifest["requests"] == 5 and len(manifest["files"]) == 4
+    assert not (out / "progress.json").exists()
+
+
+def test_a_resumed_run_cannot_exceed_the_cap_across_both_runs(tmp_path):
+    raw, out = raw_dir(tmp_path), tmp_path / "out"
+    net = FlakyNet(fail_at=3)
+    with pytest.raises(ValueError, match="HTTP 503"):
+        tool.fetch(raw, out, contact=CONTACT, gate=FakeGate(), commit="c", get=net.get, cap=4)
+    with pytest.raises(ValueError, match="more than 4 requests"):
+        tool.fetch(raw, out, contact=CONTACT, gate=FakeGate(), commit="c", get=net.get, cap=4)
+    assert len(net.gets) == 4
+    assert json.loads((out / "progress.json").read_text())["requests"] == 4
+
+
+def test_a_changed_page_refuses_the_resume(tmp_path):
+    raw, out = raw_dir(tmp_path), tmp_path / "out"
+    net = FlakyNet(fail_at=3)
+    with pytest.raises(ValueError, match="HTTP 503"):
+        tool.fetch(raw, out, contact=CONTACT, gate=FakeGate(), commit="c", get=net.get)
+    name = json.loads((out / "progress.json").read_text())["files"][0]["name"]
+    (out / name).write_bytes(b"changed")
+    with pytest.raises(ValueError, match="cannot resume"):
+        tool.fetch(raw, out, contact=CONTACT, gate=FakeGate(), commit="c", get=pytest.fail)
+
+
 def test_no_dates_in_span_refuses(tmp_path):
     with pytest.raises(ValueError, match="no release dates"):
         run(tmp_path, raw=raw_dir(tmp_path, [date(1999, 1, 1)]))
@@ -366,6 +445,16 @@ def test_read_flat_keeps_monthly_all_items_rows_only(tmp_path):
         "CUUR0000SA0      \t2013\tM13\t       230.0\t\n"
     )
     assert tool.read_flat(path) == {date(2013, 6, 1): D("233.504")}
+
+
+def test_read_flat_skips_a_month_bls_did_not_publish(tmp_path):
+    path = tmp_path / "flat.txt"
+    path.write_text(  # the real October 2025 row
+        "series_id        \tyear\tperiod\t       value\tfootnote_codes\n"
+        "CUUR0000SA0      \t2025\tM09\t     324.800\t\n"
+        "CUUR0000SA0      \t2025\tM10\t           -\tX\n"
+    )
+    assert tool.read_flat(path) == {date(2025, 9, 1): D("324.800")}
 
 
 def test_main_compare_writes_local_files_and_prints_counts_only(tmp_path, capsys):

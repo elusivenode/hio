@@ -212,6 +212,7 @@ are in operating model §1.1; the template is
 | [OD-0196](OD-0196-keep-public-history.md) | authorise_work | Public git history kept as it stands for F-REVIEW-2026-11-22-e0004-1-2 (owner's reading of EODHD's terms); current files remediated | `fix/e0004-f2-derived-values` | recorded |
 | [OD-0194](OD-0194-eodhd-s3-stability.md) | authorise_work | **One EODHD snapshot s3** (SPY, IEF, BIL; ≤12 requests) and its stability comparison, rules first | `main` | recorded |
 | [OD-0197](OD-0197-cpi-first-release-download.md) | authorise_work | **Archived CPI releases download** (245 pages, cap 250) and first-release comparison for E-0004 F-1; no rerun | `main` | recorded |
+| [OD-0198](OD-0198-cpi-parser-fix-act-autonomously.md) | authorise_work | Merge PR #124; **CPI release parser fixed** on the real layouts; act autonomously within authorised work, architect when required | `feat/cpi-first-release` | recorded |
 
 **Current position** (rewritten 2026-10-28, OD-0069):
 - **Approved:**
