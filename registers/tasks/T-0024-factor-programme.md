@@ -34,7 +34,7 @@ The first factor builds (OD-0213 to OD-0217; `docs/evidence/factors/build-1.md` 
 | US equity | SPY | built, exploratory |
 | US Treasury duration | IEF | built, exploratory |
 | Australian equity | VAS, from snapshot `s2` | built, exploratory (OD-0219) |
-| Australian government duration | none held | not built; needs a source |
+| Australian government duration | VGB, with IGB and AGVT as comparators, from snapshot `s4` | built, exploratory (OD-0222) |
 
 Each sleeve is a **declared vehicle proxy**, not a pure factor: SPY is US equity, not global equity, and a bond fund is one maturity basket, not duration itself. Every output says so.
 
@@ -59,7 +59,7 @@ A1, A2 and A3 have disjoint files and can run at once. A4 follows A1.
 |---|---|---|
 | B1 | A USD overnight cash leg with history: find a source, read its rights, then build `cash.usd.overnight` | a yes for the source and its rights |
 | B2 | A hedge forward from AUD and USD rates lockable at inception, if A3 finds suitable inputs. A compounded overnight leg does not by itself supply one | A3; a yes for any source |
-| B3 | Australian government duration: a feasibility note first (a government-bond fund's total return, stating its sovereign exposure, maturity range, fees and price-versus-NAV convention. E-0001's par-curve approximation failed its bars, so a fund is the smaller route; that does not rule out every curve construction), then a build | feasibility note **done** (OD-0221; `docs/research/T-0024-au-duration-feasibility.md`, proposed); a yes for the fetch |
+| B3 | Australian government duration: a feasibility note first (a government-bond fund's total return, stating its sovereign exposure, maturity range, fees and price-versus-NAV convention. E-0001's par-curve approximation failed its bars, so a fund is the smaller route; that does not rule out every curve construction), then a build | **done:** feasibility note (OD-0221), then one fetch and three builds, VGB, IGB and AGVT (OD-0222; `docs/evidence/factors/build-7.md`); exploratory and unaccepted |
 | B4 | A defensive-sleeve report: Australian and US duration against cash, with a 60/40 sensitivity | B1 to B3 |
 
 **Milestone C: later.** Shrinkage against sample covariance on the five sleeves, with fixed estimation windows and judged out of sample only. Credit and gold each need a separate data and exposure case. Not specified here.
