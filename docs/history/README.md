@@ -103,6 +103,7 @@ conflict with a canonical document, the canonical document wins (`AGENTS.md` pre
 | `2026-11-22-owner-approved-a2-issuer-check.md` | the owner's approval of the A2 issuer check, verbatim, with Claude's proposal | authority for OD-0224 | — |
 | `2026-11-22-owner-yes-a3-hedge-assessment.md` | the owner's yes to T-0024 package A3, verbatim, with Claude's question | authority for OD-0225 | — |
 | `2026-11-22-owner-yes-hedge-anchor.md` | the owner's yes to the IHVV hedge anchor, verbatim, with Claude's question | authority for OD-0226 | — |
+| `2026-11-22-owner-yes-session-close.md` | the owner's yes to ending the session with a handoff, verbatim, with Claude's question | authority for OD-0227 | — |
 
 **Rule going forward** (operating model §0). An owner directive that changes direction is
 committed here, and the decisions it makes become ADRs. Directives no longer live only in
