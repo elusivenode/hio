@@ -18,6 +18,7 @@ dev = [
     "pytest>=8.3",
     "hypothesis>=6.120",
     "ruff>=0.8",
+    "pypdf>=6",         # tools/bls_cpi_releases.py reads the 2005 to 2008 CPI releases, which are PDF (F-VERIFY-2026-11-22-e0004-1-1)
 ]
 
 [build-system]

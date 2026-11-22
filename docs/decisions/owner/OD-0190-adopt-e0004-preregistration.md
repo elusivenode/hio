@@ -39,4 +39,4 @@ The screen passes in both states (`docs/evidence/e0004/step1-1.md`). Counts repo
 
 ### Correction 2 (2026-11-22): step 1b ran
 
-The precision check passes: median half-width 0.167 points against 0.20 (`docs/evidence/e0004/step1b-1.md`). Step 2 still needs its own yes and IEF's NAV corroboration.
+The precision check passes: the median half-width is below the preregistered bar (the measurement, derived from EODHD returns, was removed from this record on 2026-11-22 for F-REVIEW-2026-11-22-e0004-1-2; it stays in the local run output) (`docs/evidence/e0004/step1b-1.md`). Step 2 still needs its own yes and IEF's NAV corroboration.

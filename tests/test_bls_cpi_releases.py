@@ -144,7 +144,6 @@ def tiny_pdf(lines):
 
 
 def test_a_pdf_is_text_extracted_then_parsed_as_text():
-    pytest.importorskip("pypdf")
     lines = [  # the shape pypdf gives for the real 2006 PDFs: a body table first, a space before the dots
         "All items .......... .5 .2 .4 2.4",
         "Table 1. Consumer Price Index for All Urban Consumers",
@@ -165,7 +164,6 @@ def test_a_pdf_is_text_extracted_then_parsed_as_text():
 
 
 def test_a_pdf_without_the_row_refuses():
-    pytest.importorskip("pypdf")
     with pytest.raises(ValueError, match="All items"):
         tool.parse_release("cpi_03162007.pdf", tiny_pdf(["Table 1. Nothing to see"]))
 
