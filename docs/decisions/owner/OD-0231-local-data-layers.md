@@ -37,4 +37,4 @@ It authorises no hosted database, no cloud storage and no publication. It accept
 
 ## Corrections (append-only)
 
-None.
+**1 (2026-11-22).** The owner named the backup target: "Can you access to folder level in which the hio repo is situated? Create the backup folder there". Claude created `hio-backup` beside the repository, outside it, and ran the first backup there (`docs/evidence/factors/data-layers-1.md`).

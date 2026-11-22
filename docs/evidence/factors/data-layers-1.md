@@ -57,7 +57,7 @@ Because the bytes are identical, the series that derive from these (excess, tran
 
 ## Limits
 
-- **The backup target was a scratch directory on the same disk.** It proves the tool, and protects nothing until a real target is chosen.
+- **The backup is on the same disk as the store.** After the scratch test, the owner named a folder beside the repository (OD-0231 correction 1); backup `20261122T091500Z-8639520691ad` is there, 998 files, verified and identical to the source. It guards against a deleted or damaged store, not against loss of the disk or the Mac.
 - **Silver covers the nine funds with factor specs.** The H.10 exchange-rate file and the RBA history are still read directly by their builders; in the catalogue they appear only as input files of the builds that used them.
 - **Portfolio and risk outputs are not in the catalogue.**
 - The bronze mode of the factor build is kept, so two paths to gold exist until it is retired.
