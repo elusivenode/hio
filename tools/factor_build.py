@@ -31,6 +31,17 @@ back into the vendor-shaped records and builds as the bronze mode does: the same
 A factor spec that declares `source_corrections` is refused in this mode: corrections belong to the
 observation spec, and the silver manifest records those it applied. The record names the silver set
 (`input_layer: "silver"`) and its `build_id` hashes the spec, `silver:<silver_id>` and the code commit.
+
+Silver version 2 input mode (OD-0233, `docs/decisions/silver-v2-contract.md` §5 to §7). `--silver-root`,
+`--silver-release` and `--selection` (a selection's name or id) form a third input set; the three sets never
+mix, and a partial set is refused with exit 2. The tool opens the release with
+`hio.marketdata.silver_reader.open_release` (which verifies the whole release), resolves the selection and
+reads the spec's `<SYMBOL>.<EXCHANGE>` through `fund_observations`. It refuses unless the observations'
+`source_id` is the spec's, and a spec that declares `source_corrections` is refused as in silver mode. The
+observations' rows are turned into vendor-shaped records by the same code the silver mode uses, then the
+build is the one shared path. The record has `input_layer: "silver2"`, a `silver` block (`release_id`,
+`manifest_sha256`, `selection_id`) and its `build_id` hashes the spec, `silver2:<release_id>:<selection_id>`
+and the code commit.
 """
 
 from __future__ import annotations
@@ -51,6 +62,7 @@ from pathlib import Path
 import yaml
 
 from hio.library.numeric import CTX
+from hio.marketdata.silver_reader import open_release
 
 _HERE = Path(__file__).resolve().parent
 _spec = importlib.util.spec_from_file_location("eodhd_eval_for_factor_build", _HERE / "eodhd_eval.py")
@@ -449,13 +461,26 @@ def _silver_records(name: str, data: bytes) -> list[dict]:
         rows = list(csv.reader(io.StringIO(data.decode("utf-8"), newline="")))
     except (UnicodeDecodeError, csv.Error):
         raise ValueError(f"{name} is not readable CSV") from None
-    fields = SILVER_FIELDS[name]
-    records = []
+    columns = SILVER_FILES[name]
+    cells = []
     for row in rows[1:]:
-        if len(row) != len(fields):
+        if len(row) != len(columns):
             raise ValueError(f"{name} has a row with the wrong number of cells")
+        cells.append(dict(zip(columns, row, strict=True)))
+    return _vendor_records(name, cells)
+
+
+def _vendor_records(name: str, rows: list[dict[str, str]]) -> list[dict]:
+    """Rows keyed by the version 1 column names (text cells) as the vendor-shaped records `analyse` expects:
+    an empty cell is None, a number cell is a `Decimal`. The silver 1 and silver 2 modes share this."""
+    columns = SILVER_FILES[name]
+    records = []
+    for row in rows:
+        if set(row) != set(columns):
+            raise ValueError(f"{name} has a row without exactly the contract's columns")
         record = {}
-        for field, cell in zip(fields, row, strict=True):
+        for column, field in zip(columns, SILVER_FIELDS[name], strict=True):
+            cell = row[column]
             if cell == "":
                 record[field] = None
             elif field in SILVER_NUMBERS:
@@ -556,6 +581,54 @@ def _load_silver(spec_path, silver_root, silver_id) -> dict:
     }
 
 
+# --- silver version 2 mode (OD-0233): the same series built from one selection of a verified release
+
+
+def _load_silver2(spec_path, silver_root, release_id, selection) -> dict:
+    """Open and verify a silver version 2 release, resolve the selection, read the spec's instrument and
+    qualify the series: what a silver 2 build and a silver 2 screen-only run share. Refuses with
+    ValueError."""
+    spec = read_spec(Path(spec_path))
+    if spec["source_corrections"]:
+        raise ValueError("corrections belong to the observation spec, not the factor spec")
+    release = open_release(silver_root, release_id)  # verifies the whole release
+    selection_id = release.selection_id(str(selection))
+    observed = release.fund_observations(selection_id, spec["symbol"])
+    if observed.source_id != spec["source_id"]:
+        raise ValueError("the release's source_id for the instrument differs from the spec's")
+    records = {
+        "closes.csv": _vendor_records("closes.csv", observed.closes),
+        "distributions.csv": _vendor_records("distributions.csv", observed.distributions),
+        "splits.csv": _vendor_records("splits.csv", observed.splits),
+    }
+    series = _qualified_series(
+        spec,
+        observed.quote_currency,
+        records["closes.csv"],
+        records["distributions.csv"],
+        records["splits.csv"],
+    )
+    return {
+        "spec": spec,
+        "series": series,
+        "dividends": records["distributions.csv"],
+        "splits": records["splits.csv"],
+        "source_corrections": observed.corrections,
+        "input_layer": "silver2",
+        "id_basis": f"silver2:{release.release_id}:{selection_id}",
+        "lineage": {
+            "snapshot": observed.snapshot_name,
+            "snapshot_manifest_sha256": observed.snapshot_id,
+            "inputs": [{"path": f"v2/{release.release_id}/manifest.json", "sha256": release.manifest_sha256}],
+            "silver": {
+                "release_id": release.release_id,
+                "manifest_sha256": release.manifest_sha256,
+                "selection_id": selection_id,
+            },
+        },
+    }
+
+
 def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dict, bool]:
     out = check_out(Path(out))
     return _write_build(_load_pinned(spec_path, root, snapshot, manifest_sha256), out, commit)
@@ -564,6 +637,11 @@ def _build(spec_path, root, snapshot, manifest_sha256, out, commit) -> tuple[dic
 def _build_silver(spec_path, silver_root, silver_id, out, commit) -> tuple[dict, bool]:
     out = check_out(Path(out))
     return _write_build(_load_silver(spec_path, silver_root, silver_id), out, commit)
+
+
+def _build_silver2(spec_path, silver_root, release_id, selection, out, commit) -> tuple[dict, bool]:
+    out = check_out(Path(out))
+    return _write_build(_load_silver2(spec_path, silver_root, release_id, selection), out, commit)
 
 
 def _write_build(loaded: dict, out: Path, commit) -> tuple[dict, bool]:
@@ -636,6 +714,13 @@ def build_silver(spec_path, silver_root, silver_id, out, *, commit=None) -> dict
     return _build_silver(spec_path, silver_root, silver_id, out, commit)[0]
 
 
+def build_silver2(spec_path, silver_root, release_id, selection, out, *, commit=None) -> dict:
+    """Build one factor's series from one selection of a silver version 2 release (OD-0233); returns the
+    build record. The series is the bytes the bronze build gives for the same data. Refuses with
+    ValueError."""
+    return _build_silver2(spec_path, silver_root, release_id, selection, out, commit)[0]
+
+
 def _check_report(report):
     if report is None:
         return None
@@ -680,12 +765,53 @@ def screen_only_silver(spec_path, silver_root, silver_id, report=None) -> dict:
     return _screen_result(_load_silver(spec_path, silver_root, silver_id), report)
 
 
+def screen_only_silver2(spec_path, silver_root, release_id, selection, report=None) -> dict:
+    """`screen_only` for a silver version 2 selection: verifies the release, runs the screen, writes no build
+    and runs no git. Refuses with ValueError."""
+    report = _check_report(report)
+    return _screen_result(_load_silver2(spec_path, silver_root, release_id, selection), report)
+
+
 def _print_screen(screen: dict) -> None:
     """The screen's counts only: never a day, a yield or an amount."""
     for rule in ("D1", "D2", "D3"):
         print(f"{rule}: {screen[rule]['flagged']} flagged ({screen[rule]['checked']} checked)")
     days, both = screen["flagged_days"], screen["flagged_d1_and_d2"]
     print(f"distribution_screen: {days} day(s) flagged, {both} by D1 and D2")
+
+
+def _input_mode(args) -> tuple[str | None, str | None]:
+    """(mode, problem): exactly one complete input set is allowed. bronze is `--root --snapshot
+    --manifest-sha256`; silver is `--silver-root --silver-id`; silver2 is `--silver-root --silver-release
+    --selection`. Any mixture or partial set gives a problem."""
+    bronze = (args.root, args.snapshot, args.manifest_sha256)
+    silver2 = (args.silver_release, args.selection)
+    has_bronze = any(v is not None for v in bronze)
+    has_silver = args.silver_root is not None
+    has_id = args.silver_id is not None
+    has_silver2 = any(v is not None for v in silver2)
+    if has_bronze and (has_silver or has_id or has_silver2):
+        return None, "give one input set only: bronze, silver or silver2, never a mixture"
+    if has_id and has_silver2:
+        return None, "--silver-id and --silver-release/--selection are different input sets: give one"
+    if has_bronze:
+        if any(v is None for v in bronze):
+            return None, "give --root, --snapshot and --manifest-sha256 together"
+        return "bronze", None
+    if has_id:
+        if not has_silver:
+            return None, "--silver-root and --silver-id are given together"
+        return "silver", None
+    if has_silver2:
+        if not has_silver or any(v is None for v in silver2):
+            return None, "--silver-root, --silver-release and --selection are given together"
+        return "silver2", None
+    if has_silver:
+        return None, "--silver-root needs --silver-id, or --silver-release and --selection"
+    return None, (
+        "give --root, --snapshot and --manifest-sha256, or --silver-root and --silver-id, "
+        "or --silver-root, --silver-release and --selection"
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -696,34 +822,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest-sha256")
     parser.add_argument("--silver-root", type=Path)
     parser.add_argument("--silver-id")
+    parser.add_argument("--silver-release")
+    parser.add_argument("--selection")
     parser.add_argument("--out", type=Path)
     parser.add_argument("--screen-only", action="store_true")
     parser.add_argument("--screen-report", type=Path)
     args = parser.parse_args(argv)
-    bronze = (args.root, args.snapshot, args.manifest_sha256)
-    silver = (args.silver_root, args.silver_id)
-    silver_mode = all(v is not None for v in silver)
-    problem = None
-    if any(v is not None for v in bronze) and any(v is not None for v in silver):
-        problem = (
-            "give either --root, --snapshot and --manifest-sha256, or --silver-root and --silver-id, not both"
-        )
-    elif not silver_mode and any(v is not None for v in silver):
-        problem = "--silver-root and --silver-id are given together"
-    elif not silver_mode and any(v is None for v in bronze):
-        problem = "give --root, --snapshot and --manifest-sha256 together, or --silver-root and --silver-id"
-    elif args.screen_only and args.out is not None:
-        problem = "--out is not valid with --screen-only"
-    elif not args.screen_only and args.out is None:
-        problem = "--out is required without --screen-only"
-    elif args.screen_report is not None and not args.screen_only:
-        problem = "--screen-report is valid only with --screen-only"
+    mode, problem = _input_mode(args)
+    if problem is None:
+        if args.screen_only and args.out is not None:
+            problem = "--out is not valid with --screen-only"
+        elif not args.screen_only and args.out is None:
+            problem = "--out is required without --screen-only"
+        elif args.screen_report is not None and not args.screen_only:
+            problem = "--screen-report is valid only with --screen-only"
     if problem:
         print(f"refused: {problem}", file=sys.stderr)
         return 2
     try:
         if args.screen_only:
-            if silver_mode:
+            if mode == "silver2":
+                result = screen_only_silver2(
+                    args.spec, args.silver_root, args.silver_release, args.selection, args.screen_report
+                )
+            elif mode == "silver":
                 result = screen_only_silver(args.spec, args.silver_root, args.silver_id, args.screen_report)
             else:
                 pin = (args.spec, args.root, args.snapshot, args.manifest_sha256)
@@ -734,7 +856,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"source_corrections: {len(result['source_corrections'])} applied")
             _print_screen(result["distribution_screen"])
             return 0
-        if silver_mode:
+        if mode == "silver2":
+            record, existed = _build_silver2(
+                args.spec, args.silver_root, args.silver_release, args.selection, args.out, None
+            )
+        elif mode == "silver":
             record, existed = _build_silver(args.spec, args.silver_root, args.silver_id, args.out, None)
         else:
             record, existed = _build(
